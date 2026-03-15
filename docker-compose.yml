@@ -1,0 +1,105 @@
+services:
+  # Database
+  postgres:
+    image: postgres:14-alpine
+    container_name: asset-management-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-asset_management}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - asset-management-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./asset-management-backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: asset-management-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5000
+      HOST: 0.0.0.0
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-asset_management}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      FRONTEND_PORT: ${FRONTEND_PORT:-3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - asset-management-network
+    volumes:
+      - ./asset-management-backend/src:/app/src
+      - ./asset-management-backend/logs:/app/logs
+      - ./asset-management-backend/storage:/app/storage
+      - backend_backups:/app/backups
+      - /app/node_modules
+      # Cho phép trang Quản trị hệ thống gọi lệnh docker (xem/start/stop container)
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: sh -c "npm run migrate || echo 'MIGRATE FAILED - starting server anyway' ; npm run dev"
+
+  # Frontend Web
+  frontend:
+    build:
+      context: ./asset-management-frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: asset-management-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+      NODE_ENV: ${NODE_ENV:-development}
+    depends_on:
+      - backend
+    networks:
+      - asset-management-network
+    volumes:
+      - ./asset-management-frontend/src:/app/src
+      - ./asset-management-frontend/public:/app/public
+      - ./asset-management-frontend/package.json:/app/package.json
+      - /app/node_modules
+
+  # Cloudflare Quick Tunnel - miễn phí, chạy ngay, không cần tài khoản
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: asset-management-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://frontend:3000
+    depends_on:
+      - frontend
+    networks:
+      - asset-management-network
+    profiles:
+      - cloudflare
+
+networks:
+  asset-management-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    external: true
+    name: quanlytaisan_postgres_data
+  backend_backups:

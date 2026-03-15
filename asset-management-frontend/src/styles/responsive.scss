@@ -1,0 +1,577 @@
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN SYSTEM
+   Tối ưu cho Mobile, Tablet, iPad và Desktop
+   ═══════════════════════════════════════════════════════════ */
+
+/* Breakpoints */
+:root {
+  --bp-xs: 480px;   /* Mobile nhỏ */
+  --bp-sm: 768px;   /* Tablet dọc / Mobile lớn */
+  --bp-md: 992px;   /* Tablet ngang / iPad */
+  --bp-lg: 1200px;  /* Desktop nhỏ */
+  --bp-xl: 1440px;  /* Desktop lớn */
+}
+
+/* ─────────────────────────────────────────────────────────
+   BASE: Ngăn overflow ngang
+   ───────────────────────────────────────────────────────── */
+html,
+body {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* ─────────────────────────────────────────────────────────
+   TABLES: Responsive wrapper cho tất cả bảng
+   ───────────────────────────────────────────────────────── */
+.responsive-table {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 8px;
+}
+
+.responsive-table .el-table {
+  min-width: 900px; /* Đảm bảo table có đủ không gian */
+}
+
+/* Tablet: giảm min-width */
+@media (max-width: 992px) {
+  .responsive-table .el-table {
+    min-width: 800px;
+  }
+}
+
+/* Mobile: giảm thêm */
+@media (max-width: 768px) {
+  .responsive-table .el-table {
+    min-width: 700px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   PAGE LAYOUT: Padding và spacing
+   ───────────────────────────────────────────────────────── */
+
+/* Tablet và nhỏ hơn */
+@media (max-width: 992px) {
+  .el-main {
+    padding: 16px !important;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .el-main {
+    padding: 12px !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   PAGE HEADER: Title và Action Buttons
+   ───────────────────────────────────────────────────────── */
+
+/* Tablet */
+@media (max-width: 992px) {
+  .page-header .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .page-header .header-right {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .page-header .header-right .el-button {
+    flex: 1 1 calc(50% - 4px); /* 2 nút mỗi hàng */
+    min-width: 140px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .page-header {
+    margin-bottom: 16px;
+  }
+
+  .page-header .header-content {
+    gap: 12px;
+  }
+
+  .page-header .header-right .el-button {
+    flex: 1 1 100%; /* 1 nút mỗi hàng */
+    width: 100%;
+  }
+
+  .page-title {
+    font-size: 20px !important;
+  }
+
+  .page-subtitle {
+    font-size: 13px !important;
+  }
+}
+
+/* Mobile nhỏ */
+@media (max-width: 480px) {
+  .page-title {
+    font-size: 18px !important;
+  }
+
+  .page-subtitle {
+    display: none; /* Ẩn subtitle trên màn hình rất nhỏ */
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   FILTER SECTION: Search và Filter Controls
+   ───────────────────────────────────────────────────────── */
+
+/* Tablet */
+@media (max-width: 992px) {
+  .filter-section {
+    margin-bottom: 16px;
+  }
+
+  .filter-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .filter-actions .el-input,
+  .filter-actions .el-select {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 140px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .filter-section .filter-actions {
+    width: 100%;
+  }
+
+  .filter-actions .el-input,
+  .filter-actions .el-select,
+  .filter-actions .el-button {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 12px;
+  }
+
+  .card-header .filter-actions {
+    width: 100%;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   STATISTICS CARDS: Dashboard và Summary Stats
+   ───────────────────────────────────────────────────────── */
+
+/* Desktop lớn: 8 cột */
+@media (min-width: 1440px) {
+  .stats-section .el-row {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+  }
+}
+
+/* Desktop: 6-7 cột */
+@media (max-width: 1439px) and (min-width: 1200px) {
+  .stats-section .el-row {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+/* Tablet ngang: 4 cột */
+@media (max-width: 1199px) and (min-width: 992px) {
+  .stats-section .el-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Tablet dọc: 3 cột */
+@media (max-width: 991px) and (min-width: 768px) {
+  .stats-section .el-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .stat-card .stat-value {
+    font-size: 24px !important;
+  }
+
+  .stat-card .stat-label {
+    font-size: 12px !important;
+  }
+}
+
+/* Mobile: 2 cột */
+@media (max-width: 767px) {
+  .stats-section .el-row,
+  .summary-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 12px !important;
+  }
+
+  .stat-card .stat-value {
+    font-size: 20px !important;
+  }
+
+  .stat-card .stat-label {
+    font-size: 11px !important;
+  }
+
+  .stat-card .stat-icon {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 18px !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   MAIN LAYOUT HEADER: Breadcrumb và User Info
+   ───────────────────────────────────────────────────────── */
+
+/* Tablet */
+@media (max-width: 992px) {
+  .el-header {
+    padding: 0 16px !important;
+  }
+
+  .header-left {
+    gap: 12px !important;
+  }
+
+  .breadcrumb {
+    font-size: 13px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .el-header {
+    padding: 0 10px !important;
+  }
+
+  /* Ẩn breadcrumb để tiết kiệm không gian */
+  .breadcrumb {
+    display: none !important;
+  }
+
+  /* Thu gọn user info */
+  .user-info .el-tag {
+    display: none !important;
+  }
+
+  .user-info span:not(.el-icon) {
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+  }
+
+  .header-right {
+    gap: 8px !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   DIALOGS: Form và Modal Windows
+   ───────────────────────────────────────────────────────── */
+
+/* Tablet */
+@media (max-width: 992px) {
+  .el-dialog {
+    width: 90vw !important;
+    max-width: 700px !important;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .el-dialog {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    margin: 8px auto !important;
+  }
+
+  .el-dialog__body {
+    padding: 16px !important;
+    overflow-x: hidden;
+  }
+
+  .el-dialog__header {
+    padding: 16px 16px 12px !important;
+  }
+
+  .el-dialog__footer {
+    padding: 12px 16px !important;
+  }
+
+  /* Form trong dialog */
+  .el-dialog .el-form-item {
+    margin-bottom: 16px;
+  }
+
+  .el-dialog .el-form-item__label {
+    font-size: 13px;
+  }
+
+  /* Buttons trong dialog footer */
+  .el-dialog__footer .el-button {
+    flex: 1;
+    margin: 0 4px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   CARDS: El-Card Components
+   ───────────────────────────────────────────────────────── */
+
+/* Mobile */
+@media (max-width: 768px) {
+  .el-card {
+    margin-bottom: 12px;
+  }
+
+  .el-card__header {
+    padding: 14px 16px !important;
+  }
+
+  .el-card__body {
+    padding: 16px !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   FORMS: Input Fields và Form Items
+   ───────────────────────────────────────────────────────── */
+
+/* Mobile */
+@media (max-width: 768px) {
+  .el-form-item__label {
+    font-size: 13px;
+  }
+
+  .el-input__inner,
+  .el-textarea__inner {
+    font-size: 14px;
+  }
+
+  /* Form 2 cột thành 1 cột */
+  .el-form .el-row {
+    flex-direction: column;
+  }
+
+  .el-form .el-col {
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   PAGINATION: Phân trang
+   ───────────────────────────────────────────────────────── */
+
+/* Tablet */
+@media (max-width: 992px) {
+  .pagination-section {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start !important;
+  }
+
+  .pagination-info {
+    order: 2;
+  }
+
+  .el-pagination {
+    order: 1;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .el-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .el-pagination .el-pager li {
+    min-width: 32px;
+    height: 32px;
+    line-height: 32px;
+    font-size: 13px;
+  }
+
+  .el-pagination button {
+    min-width: 32px;
+    height: 32px;
+  }
+
+  /* Ẩn một số controls không cần thiết */
+  .el-pagination .el-pagination__sizes {
+    display: none;
+  }
+
+  .el-pagination .el-pagination__jump {
+    display: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   DASHBOARD SPECIFIC
+   ───────────────────────────────────────────────────────── */
+
+/* Tablet */
+@media (max-width: 992px) {
+  .dashboard {
+    padding: 16px;
+  }
+
+  .dashboard-header h2 {
+    font-size: 24px;
+  }
+
+  .stat-value {
+    font-size: 1.75rem;
+  }
+
+  .stat-icon {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .dashboard {
+    padding: 12px;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .dashboard-header h2 {
+    font-size: 20px;
+  }
+
+  .status-capsules {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .status-capsule {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 100px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   INVENTORY CONDUCT: QR Scanner và Camera
+   ───────────────────────────────────────────────────────── */
+
+/* Mobile */
+@media (max-width: 768px) {
+  .scanner-input-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .camera-btn {
+    width: 100%;
+  }
+
+  .camera-dialog {
+    width: 95vw !important;
+  }
+
+  #qr-reader {
+    max-width: 100%;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   UTILITY CLASSES
+   ───────────────────────────────────────────────────────── */
+
+/* Hide trên mobile */
+.hidden-xs {
+  @media (max-width: 480px) {
+    display: none !important;
+  }
+}
+
+.hidden-sm {
+  @media (max-width: 768px) {
+    display: none !important;
+  }
+}
+
+.hidden-md {
+  @media (max-width: 992px) {
+    display: none !important;
+  }
+}
+
+/* Show chỉ trên mobile */
+.visible-xs {
+  display: none !important;
+  @media (max-width: 480px) {
+    display: block !important;
+  }
+}
+
+.visible-sm {
+  display: none !important;
+  @media (max-width: 768px) {
+    display: block !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   PRINT STYLES
+   ───────────────────────────────────────────────────────── */
+@media print {
+  .el-header,
+  .page-header .header-right,
+  .filter-section,
+  .el-pagination,
+  .sidebar,
+  .sidebar-toggle {
+    display: none !important;
+  }
+
+  .el-main {
+    padding: 0 !important;
+  }
+
+  .responsive-table {
+    overflow: visible;
+  }
+
+  .el-table {
+    min-width: auto !important;
+  }
+}

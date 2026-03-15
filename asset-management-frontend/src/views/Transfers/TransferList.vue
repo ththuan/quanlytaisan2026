@@ -1,0 +1,252 @@
+<template>
+  <div class="transfer-list">
+    <el-card>
+      <template #header>
+        <div class="card-header">
+          <h3>{{ $t('transfers.title') }}</h3>
+          <el-button type="primary" :icon="Plus" @click="handleCreate" v-if="!authStore.isDirector">
+            {{ $t('transfers.createTransfer') }}
+          </el-button>
+        </div>
+      </template>
+
+      <!-- Filters -->
+      <div class="filter-section">
+        <el-row :gutter="16">
+          <el-col :span="6">
+            <el-select v-model="filterStatus" :placeholder="$t('transfers.filterByStatus')" clearable @change="handleFilter">
+              <el-option v-for="s in statuses" :key="s.value" :label="s.label" :value="s.value" />
+            </el-select>
+          </el-col>
+          <el-col :span="6">
+            <el-select v-model="filterDepartment" :placeholder="$t('transfers.filterByDepartment')" clearable @change="handleFilter">
+              <el-option v-for="d in departments" :key="d.id" :label="d.name" :value="d.id" />
+            </el-select>
+          </el-col>
+          <el-col :span="6">
+            <el-button type="primary" @click="handleFilter">{{ $t('common.search') }}</el-button>
+            <el-button @click="handleReset">{{ $t('common.refresh') }}</el-button>
+          </el-col>
+        </el-row>
+      </div>
+
+      <div class="responsive-table">
+        <el-table :data="transferStore.transfers" v-loading="transferStore.loading" border stripe>
+        <el-table-column type="index" width="50" label="#" />
+        <el-table-column prop="asset.asset_code" :label="$t('transfers.assetCode')" width="120" />
+        <el-table-column prop="asset.name" :label="$t('transfers.assetName')" min-width="180" />
+        <el-table-column :label="$t('transfers.fromDepartment')" width="150">
+          <template #default="{ row }">
+            {{ row.from_department?.name || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column :label="$t('transfers.toDepartment')" width="150">
+          <template #default="{ row }">
+            {{ row.to_department?.name || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="requester.fullname" :label="$t('transfers.requestedBy')" width="140" />
+        <el-table-column prop="status" :label="$t('common.status')" width="120">
+          <template #default="{ row }">
+            <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="transfer_date" :label="$t('transfers.transferDate')" width="160">
+          <template #default="{ row }">
+            {{ formatDate(row.transfer_date) }}
+          </template>
+        </el-table-column>
+        <el-table-column :label="$t('common.actions')" width="200" fixed="right">
+          <template #default="{ row }">
+            <el-button size="small" @click="handleView(row)">{{ $t('common.view') }}</el-button>
+            <template v-if="row.status === 'pending' && authStore.isManager">
+              <el-button size="small" type="success" @click="handleApprove(row.id)">
+                {{ $t('transfers.approve') }}
+              </el-button>
+              <el-button size="small" type="danger" @click="handleReject(row.id)">
+                {{ $t('transfers.reject') }}
+              </el-button>
+            </template>
+          </template>
+        </el-table-column>
+      </el-table>
+      </div>
+
+      <div class="pagination">
+        <el-pagination
+          v-if="transferStore.pagination"
+          :current-page="transferStore.pagination.page"
+          :page-size="transferStore.pagination.limit"
+          :total="transferStore.pagination.total"
+          layout="total, prev, pager, next"
+          @current-change="handlePageChange"
+        />
+      </div>
+    </el-card>
+
+    <!-- Transfer Form Dialog -->
+    <TransferFormDialog
+      v-model:visible="formDialogVisible"
+      @success="handleFormSuccess"
+    />
+
+    <!-- Transfer Detail Dialog -->
+    <TransferDetailDialog
+      v-model:visible="detailDialogVisible"
+      :transfer="currentTransfer"
+    />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useTransferStore } from '@/stores/transfer.store';
+import { useAuthStore } from '@/stores/auth.store';
+import { useDepartments } from '@/composables/useDepartments';
+import { Plus } from '@element-plus/icons-vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import TransferFormDialog from '@/components/Transfers/TransferFormDialog.vue';
+import TransferDetailDialog from '@/components/Transfers/TransferDetailDialog.vue';
+import moment from 'moment';
+
+const { t } = useI18n();
+const transferStore = useTransferStore();
+const authStore = useAuthStore();
+
+// Sử dụng composable mới với caching tự động
+const { activeDepartments: departments, isLoading: departmentsLoading } = useDepartments();
+
+const filterStatus = ref('');
+const filterDepartment = ref('');
+const formDialogVisible = ref(false);
+const detailDialogVisible = ref(false);
+const currentTransfer = ref<any>(null);
+
+const statuses = computed(() => [
+  { value: 'pending', label: t('transfers.status.pending') },
+  { value: 'approved', label: t('transfers.status.approved') },
+  { value: 'rejected', label: t('transfers.status.rejected') },
+  { value: 'completed', label: t('transfers.status.completed') },
+]);
+
+onMounted(async () => {
+  await transferStore.fetchTransfers();
+  // Department đã tự động load qua composable
+});
+
+const handleFilter = () => {
+  transferStore.fetchTransfers({
+    status: filterStatus.value,
+    to_department_id: filterDepartment.value,
+  });
+};
+
+const handleReset = () => {
+  filterStatus.value = '';
+  filterDepartment.value = '';
+  transferStore.fetchTransfers();
+};
+
+const handlePageChange = (page: number) => {
+  transferStore.fetchTransfers({
+    page,
+    status: filterStatus.value,
+    to_department_id: filterDepartment.value,
+  });
+};
+
+const handleCreate = () => {
+  formDialogVisible.value = true;
+};
+
+const handleView = (transfer: any) => {
+  currentTransfer.value = transfer;
+  detailDialogVisible.value = true;
+};
+
+const handleApprove = async (id: number) => {
+  try {
+    await ElMessageBox.confirm(t('transfers.approveConfirm'), t('common.confirm'), {
+      type: 'warning',
+    });
+    await transferStore.approveTransfer(id);
+    ElMessage.success(t('transfers.approveSuccess'));
+    transferStore.fetchTransfers();
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.message || t('common.error'));
+    }
+  }
+};
+
+const handleReject = async (id: number) => {
+  try {
+    const { value } = await ElMessageBox.prompt(t('transfers.rejectReason'), t('transfers.reject'), {
+      confirmButtonText: t('common.confirm'),
+      cancelButtonText: t('common.cancel'),
+      inputPlaceholder: t('transfers.enterReason'),
+    });
+    await transferStore.rejectTransfer(id, value);
+    ElMessage.success(t('transfers.rejectSuccess'));
+    transferStore.fetchTransfers();
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.message || t('common.error'));
+    }
+  }
+};
+
+const handleFormSuccess = () => {
+  formDialogVisible.value = false;
+  transferStore.fetchTransfers();
+};
+
+const getStatusType = (status: string) => {
+  const types: Record<string, string> = {
+    pending: 'warning',
+    approved: 'success',
+    rejected: 'danger',
+    completed: 'success',
+  };
+  return types[status] || '';
+};
+
+const getStatusText = (status: string) => {
+  return t(`transfers.status.${status}`);
+};
+
+const formatDate = (date: string) => {
+  return date ? moment(date).format('DD/MM/YYYY HH:mm') : '-';
+};
+</script>
+
+<style scoped>
+.transfer-list {
+  padding: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header h3 {
+  margin: 0;
+}
+
+.filter-section {
+  margin-bottom: 20px;
+}
+
+.filter-section .el-select {
+  width: 100%;
+}
+
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+</style>
