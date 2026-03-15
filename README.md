@@ -46,17 +46,19 @@ Hệ thống quản lý tài sản cho các tổ chức, trường học, doanh 
 
 ## 🛠️ Tech Stack
 
-- **Backend**: Node.js 18+, Express, TypeScript, PostgreSQL 14, Sequelize, JWT + TOTP
-- **Frontend**: Vue 3, Element Plus, Pinia, Vite, TypeScript, ECharts, html5-qrcode, Vue I18n
-- **DevOps**: Docker, Docker Compose. Tùy chọn: Cloudflare Quick Tunnel (profile `cloudflare`) để chia sẻ link public.
+| Thành phần | Công nghệ |
+|------------|-----------|
+| **Backend** | Node.js 18+, Express, TypeScript, PostgreSQL 14, Sequelize, JWT + TOTP |
+| **Frontend** | Vue 3, Element Plus, Pinia, Vite, TypeScript, ECharts, html5-qrcode, Vue I18n |
+| **DevOps** | Docker, Docker Compose. Tùy chọn: Cloudflare Quick Tunnel (profile `cloudflare`) |
 
 ---
 
 ## 🚀 Quick Start
 
 ### Yêu cầu
-- Docker và Docker Compose
-- (Nếu chạy không Docker: Node.js 18+, PostgreSQL 14, npm)
+- **Docker**: Docker và Docker Compose (khuyến nghị)
+- **Không Docker**: Node.js 18+, PostgreSQL 14, npm
 
 ### Chạy bằng Docker (khuyến nghị)
 
@@ -80,33 +82,36 @@ docker compose logs -f
 ```
 
 **Truy cập:**
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:5000
 
-**Chạy thêm Cloudflare tunnel** (để có link public tạm thời):
+**Cloudflare tunnel** (link public tạm thời):
 ```bash
 docker compose --profile cloudflare up -d
 ```
 
-### Chạy không Docker (dev)
+### Chạy không Docker (phát triển)
 
+**1. Backend**
 ```bash
-git clone https://github.com/ththuan/quanlytaisan.git
 cd quanlytaisan
 cp .env.example .env
 
-# Backend
 cd asset-management-backend
 npm install
 npm run migrate
 npm run seed:admin
 npm run dev
+```
 
-# Frontend (terminal khác)
+**2. Frontend** (terminal mới)
+```bash
 cd asset-management-frontend
 npm install
 npm run dev
 ```
+
+Frontend chạy tại http://localhost:3000, backend tại http://localhost:5000 (hoặc port trong `.env`).
 
 ---
 
@@ -133,7 +138,7 @@ quanlytaisan/
 │   │   ├── stores/
 │   │   └── styles/
 │   └── Dockerfile
-├── scripts/                    # Scripts PowerShell (backup, restore, reset)
+├── scripts/                    # PowerShell: backup, restore, reset
 │   ├── backup-db.ps1
 │   ├── list-backups.ps1
 │   ├── restore-db.ps1
@@ -146,14 +151,18 @@ quanlytaisan/
 
 ---
 
-## 🔐 Tài khoản admin (tự tạo mỗi lần chạy hệ thống)
+## 🔐 Tài khoản admin
 
-Mỗi lần khởi động, hệ thống **chỉ tạo tài khoản admin** nếu chưa có. Toàn bộ dữ liệu khác (phòng ban, tài sản, người dùng…) bạn tự import theo nhu cầu. Admin luôn có đầy đủ quyền trong phần mềm.
+Mỗi lần khởi động, hệ thống **chỉ tạo tài khoản admin** nếu chưa có. Toàn bộ dữ liệu khác (phòng ban, tài sản, người dùng…) bạn tự import. **Admin luôn có đầy đủ quyền** trong phần mềm.
 
-- **Username**: `admin`
-- **Password**: `Admin@123`
+| | |
+|---|---|
+| **Username** | `admin` |
+| **Password** | `Admin@123` |
 
-⚠️ Docker: khi backend khởi động sẽ tự chạy `migrate` + `seed:admin`. Nếu cần tạo lại admin thủ công: `docker compose exec backend npm run seed:admin`.
+- **Docker**: Backend tự chạy `migrate` + `seed:admin`. Tạo lại admin thủ công:  
+  `docker compose exec backend npm run seed:admin`
+- **Không Docker**: Sau `npm run migrate` chạy `npm run seed:admin`.
 
 ---
 
@@ -161,12 +170,23 @@ Mỗi lần khởi động, hệ thống **chỉ tạo tài khoản admin** nế
 
 Trong thư mục `scripts/`:
 
-- **backup-db.ps1** – Tạo backup database
-- **list-backups.ps1** – Liệt kê file backup
-- **restore-db.ps1** – Khôi phục từ file backup
-- **reset-data.ps1** – Reset dữ liệu nghiệp vụ (cẩn thận)
+| Script | Mô tả |
+|--------|--------|
+| **backup-db.ps1** | Tạo backup database |
+| **list-backups.ps1** | Liệt kê file backup |
+| **restore-db.ps1** | Khôi phục từ file backup |
+| **reset-data.ps1** | Reset dữ liệu nghiệp vụ (cẩn thận) |
 
 Chi tiết: [scripts/README.md](./scripts/README.md).
+
+---
+
+## 📌 Cập nhật gần đây
+
+- **Khởi động**: Chỉ seed tài khoản admin (`seed:admin`), không dữ liệu mẫu; dữ liệu khác tự import.
+- **Admin**: Toàn quyền; đăng nhập mặc định `admin` / `Admin@123`.
+- **Phòng ban**: Admin có thể xóa phòng ban đang có người dùng/tài sản qua "Gỡ phòng ban rồi xóa".
+- **Frontend**: `tsconfig.json` dùng đường dẫn tương đối cho `@vue/tsconfig` (tránh lỗi khi mở workspace gốc). Cần chạy `npm install` trong `asset-management-frontend` để không lỗi type.
 
 ---
 
@@ -174,14 +194,6 @@ Chi tiết: [scripts/README.md](./scripts/README.md).
 
 - 🐛 Báo lỗi: [GitHub Issues](https://github.com/ththuan/quanlytaisan/issues)
 - 📖 Wiki: [GitHub Wiki](https://github.com/ththuan/quanlytaisan/wiki)
-
----
-
-## 📌 Cập nhật gần đây
-
-- **Khởi động hệ thống**: Chỉ seed tài khoản admin (`seed:admin`), không tạo dữ liệu mẫu; dữ liệu khác tự import.
-- **Admin**: Luôn có toàn quyền; đăng nhập mặc định `admin` / `Admin@123`.
-- **Phòng ban**: Admin có thể xóa phòng ban đang có người dùng/tài sản bằng tùy chọn "Gỡ phòng ban rồi xóa" (gỡ liên kết rồi xóa).
 
 ---
 
