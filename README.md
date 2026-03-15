@@ -1,285 +1,179 @@
 # 🏢 Hệ thống Quản lý Tài sản
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/postgresql-14-blue.svg)](https://www.postgresql.org/)
 
-Hệ thống quản lý tài sản chuyên nghiệp cho các tổ chức, trường học, doanh nghiệp.
+Hệ thống quản lý tài sản cho các tổ chức, trường học, doanh nghiệp.
+
+**Repository**: [github.com/ththuan/quanlytaisan](https://github.com/ththuan/quanlytaisan)
+
+---
 
 ## ✨ Tính năng chính
 
 ### 📦 Quản lý Tài sản
-- ✅ Thêm, sửa, xóa tài sản
-- ✅ Phân loại theo danh mục
-- ✅ Quản lý theo phòng ban
-- ✅ QR Code cho mỗi tài sản
-- ✅ Theo dõi khấu hao
-- ✅ Lịch sử thay đổi
+- Thêm, sửa, xóa tài sản
+- Phân loại theo danh mục (theo Thông tư 141/2025/TT-BTC)
+- Quản lý theo phòng ban
+- QR Code cho mỗi tài sản
+- Theo dõi khấu hao, lịch sử thay đổi
 
 ### 🔄 Điều chuyển Tài sản
-- ✅ Đề nghị điều chuyển
-- ✅ Quy trình phê duyệt
-- ✅ Lịch sử điều chuyển
-- ✅ Thông báo real-time
+- Đề nghị điều chuyển, quy trình phê duyệt
+- Lịch sử điều chuyển, thông báo
 
 ### 🛠️ Sửa chữa & Bảo trì
-- ✅ Đề nghị sửa chữa
-- ✅ Theo dõi tiến độ
-- ✅ Quản lý chi phí
-- ✅ Lịch sử bảo trì
+- Đề nghị sửa chữa, theo dõi tiến độ
+- Quản lý chi phí, lịch sử bảo trì
+- Mua sắm, kho vật tư, cấp phát
 
 ### 📋 Kiểm kê Tài sản
-- ✅ Tạo đợt kiểm kê
-- ✅ Quét QR Code
-- ✅ Báo cáo chi tiết
-- ✅ Quy trình phê duyệt
-- ✅ Xuất báo cáo Excel
+- Tạo đợt kiểm kê, quét QR Code
+- Báo cáo chi tiết, phê duyệt, xuất Excel
 
 ### 🗑️ Thanh lý Tài sản
-- ✅ Đề nghị thanh lý
-- ✅ Hồ sơ thanh lý
-- ✅ Biên bản tiêu hủy
-- ✅ Quy trình phê duyệt
-
-### 🛒 Mua sắm & Cấp phát
-- ✅ Đề nghị mua sắm
-- ✅ Quản lý kho vật tư
-- ✅ Cấp phát thiết bị
-- ✅ Theo dõi ngân sách
+- Đề nghị thanh lý, hồ sơ thanh lý, biên bản tiêu hủy
 
 ### 📊 Báo cáo & Thống kê
-- ✅ Dashboard tổng quan
-- ✅ Báo cáo theo phòng ban
-- ✅ Báo cáo theo danh mục
-- ✅ Xuất Excel/PDF
-- ✅ Charts và biểu đồ
+- Dashboard tổng quan, báo cáo theo phòng ban/danh mục
+- Xuất Excel/PDF, biểu đồ
 
 ### 👥 Quản lý Người dùng
-- ✅ Phân quyền chi tiết (Admin, Director, Department Head, Staff)
-- ✅ Xác thực 2 bước (TOTP)
-- ✅ Audit logs
-- ✅ Thông báo real-time
+- Phân quyền (Admin, Director, Department Head, Staff)
+- Xác thực 2 bước (TOTP), Audit logs
+
+---
 
 ## 🛠️ Tech Stack
 
-### Backend
-- **Runtime**: Node.js 18+
-- **Framework**: Express.js
-- **Language**: TypeScript
-- **Database**: PostgreSQL 14
-- **ORM**: Sequelize
-- **Authentication**: JWT + TOTP
-- **Testing**: Jest
-- **Process Manager**: PM2
+- **Backend**: Node.js 18+, Express, TypeScript, PostgreSQL 14, Sequelize, JWT + TOTP
+- **Frontend**: Vue 3, Element Plus, Pinia, Vite, TypeScript, ECharts, html5-qrcode, Vue I18n
+- **DevOps**: Docker, Docker Compose. Tùy chọn: Cloudflare Quick Tunnel (profile `cloudflare`) để chia sẻ link public.
 
-### Frontend
-- **Framework**: Vue 3
-- **UI Library**: Element Plus
-- **State Management**: Pinia
-- **Build Tool**: Vite
-- **Language**: TypeScript
-- **Charts**: ECharts
-- **QR Scanner**: html5-qrcode
-- **i18n**: Vue I18n
-
-### DevOps
-- **Containerization**: Docker
-- **Orchestration**: Docker Compose
-- **Reverse Proxy**: Traefik
-- **SSL/TLS**: Let's Encrypt
-- **Process Manager**: PM2
-- **Monitoring**: PM2, Docker Stats
+---
 
 ## 🚀 Quick Start
 
-### Option 1: Traefik + Docker with Free SSL (Recommended for Production) ⭐
+### Yêu cầu
+- Docker và Docker Compose
+- (Nếu chạy không Docker: Node.js 18+, PostgreSQL 14, npm)
 
-**Perfect for:**
-- ✅ Production deployment with HTTPS
-- ✅ Automatic SSL certificate management
-- ✅ Professional setup with domain name
-
-**Requirements:**
-- Real domain name (e.g., `quanlytaisan.vn`)
-- Server with public IP
-- Ports 80, 443 open to internet
-
-**Quick Start:**
-```bash
-# 1. Copy environment file
-cp .env.traefik.example .env
-
-# 2. Edit configuration
-nano .env
-# Update DOMAIN, ACME_EMAIL, passwords
-
-# 3. Run setup script
-chmod +x scripts/setup-traefik.sh
-./scripts/setup-traefik.sh
-
-# 4. Access at https://your-domain.com
-```
-
-**Documentation:**
-- 📖 [Traefik Quick Start](./TRAEFIK_QUICK_START.md) - 15 minutes setup
-- 📖 [Traefik SSL Guide](./TRAEFIK_SSL_GUIDE.md) - Complete guide
-
-### Option 2: Docker Compose (Simple Local/Internal)
-
-### Prerequisites
-- Node.js 18+
-- PostgreSQL 14+
-- npm hoặc yarn
-
-### Installation
+### Chạy bằng Docker (khuyến nghị)
 
 ```bash
-# Clone repository
+# Clone
 git clone https://github.com/ththuan/quanlytaisan.git
 cd quanlytaisan
 
-# Setup environment
+# Cấu hình
 cp .env.example .env
-# Edit .env với thông tin của bạn
+# Chỉnh .env nếu cần (DB, JWT_SECRET, port...)
 
-# Install dependencies
-cd asset-management-backend
-npm install
-
-cd ../asset-management-frontend
-npm install
-
-# Setup database
-cd ../asset-management-backend
-npm run migrate
-npm run seed
-
-# Start development
-npm run dev # Backend
-
-cd ../asset-management-frontend
-npm run dev # Frontend
-```
-
-### Docker (Recommended)
-
-```bash
-# Clone repository
-git clone https://github.com/ththuan/quanlytaisan.git
-cd quanlytaisan
-
-# Copy environment
-cp .env.example .env
-
-# Create Docker volume
+# Tạo volume cho PostgreSQL (bắt buộc lần đầu)
 docker volume create quanlytaisan_postgres_data
 
-# Start all services
-docker-compose up -d
+# Khởi động
+docker compose up -d
 
-# Check logs
-docker-compose logs -f
-
-# Access
-# Frontend: http://localhost:3000
-# Backend: http://localhost:5000
+# Xem log
+docker compose logs -f
 ```
 
-## 📚 Documentation
+**Truy cập:**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5000
 
-- 🚀 [DEPLOYMENT_SIMPLE.md](./DEPLOYMENT_SIMPLE.md) - Hướng dẫn triển khai đơn giản
-- 📖 [DEPLOYMENT.md](./DEPLOYMENT.md) - Hướng dẫn deployment chi tiết
-- 💻 [CLAUDE.md](./CLAUDE.md) - Hướng dẫn development
-- 📋 [INVENTORY_LOGIC.md](./INVENTORY_LOGIC.md) - Logic kiểm kê
-- 📱 [RESPONSIVE_GUIDE.md](./RESPONSIVE_GUIDE.md) - Responsive design
-- 📊 [INVENTORY_REPORT_GUIDE.md](./INVENTORY_REPORT_GUIDE.md) - Báo cáo kiểm kê
+**Chạy thêm Cloudflare tunnel** (để có link public tạm thời):
+```bash
+docker compose --profile cloudflare up -d
+```
 
-## 🔐 Default Credentials
+### Chạy không Docker (dev)
 
-**Admin Account**:
-- Username: `admin`
-- Password: `admin123`
+```bash
+git clone https://github.com/ththuan/quanlytaisan.git
+cd quanlytaisan
+cp .env.example .env
 
-⚠️ **Quan trọng**: Đổi mật khẩu ngay sau khi đăng nhập lần đầu!
+# Backend
+cd asset-management-backend
+npm install
+npm run migrate
+npm run seed
+npm run dev
 
-## 📊 Project Structure
+# Frontend (terminal khác)
+cd asset-management-frontend
+npm install
+npm run dev
+```
+
+---
+
+## 📁 Cấu trúc dự án
 
 ```
 quanlytaisan/
-├── .github/
-│   ├── workflows/          # GitHub Actions
-│   └── dependabot.yml      # Dependency updates
-├── asset-management-backend/
+├── asset-management-backend/   # API Express + Sequelize
 │   ├── src/
-│   │   ├── controllers/    # Request handlers
-│   │   ├── services/       # Business logic
-│   │   ├── models/         # Database models
-│   │   ├── routes/         # API routes
-│   │   ├── middleware/     # Express middleware
-│   │   └── config/         # Configuration
-│   ├── tests/              # Jest tests
-│   ├── Dockerfile          # Docker config
-│   └── ecosystem.config.js # PM2 config
-├── asset-management-frontend/
+│   │   ├── controllers/
+│   │   ├── services/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── middleware/
+│   │   └── config/
+│   ├── migrations/
+│   ├── seeders/
+│   └── Dockerfile
+├── asset-management-frontend/ # Vue 3 + Vite + Element Plus
 │   ├── src/
-│   │   ├── views/          # Pages
-│   │   ├── components/     # Vue components
-│   │   ├── services/       # API services
-│   │   ├── stores/         # Pinia stores
-│   │   └── styles/         # Global styles
-│   └── Dockerfile          # Docker config
-├── k8s/                    # Kubernetes manifests
-├── scripts/                # Deployment scripts
-├── docker-compose.yml      # Docker Compose config
-└── docs/                   # Documentation
+│   │   ├── views/
+│   │   ├── components/
+│   │   ├── services/
+│   │   ├── stores/
+│   │   └── styles/
+│   └── Dockerfile
+├── scripts/                    # Scripts PowerShell (backup, restore, reset)
+│   ├── backup-db.ps1
+│   ├── list-backups.ps1
+│   ├── restore-db.ps1
+│   ├── reset-data.ps1
+│   └── README.md
+├── docker-compose.yml
+├── .env.example
+└── README.md
 ```
 
-## 🤝 Contributing
+---
 
-1. Fork repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Create Pull Request
+## 🔐 Tài khoản mặc định (sau khi seed)
 
-### Commit Convention
+- **Username**: `admin`
+- **Password**: `admin123`
 
-```
-feat: Thêm tính năng mới
-fix: Sửa bug
-docs: Cập nhật documentation
-style: Format code
-refactor: Refactor code
-test: Thêm tests
-chore: Maintenance tasks
-```
+⚠️ Nên đổi mật khẩu ngay sau lần đăng nhập đầu.
 
-## 📄 License
+---
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## 📜 Scripts (PowerShell)
 
-## 👥 Team
+Trong thư mục `scripts/`:
 
-- **Project Manager**: Your Name
-- **Lead Developer**: Your Name
-- **DevOps Engineer**: Your Name
+- **backup-db.ps1** – Tạo backup database
+- **list-backups.ps1** – Liệt kê file backup
+- **restore-db.ps1** – Khôi phục từ file backup
+- **reset-data.ps1** – Reset dữ liệu nghiệp vụ (cẩn thận)
 
-## 📞 Support
+Chi tiết: [scripts/README.md](./scripts/README.md).
 
-- 📧 Email: support@example.com
-- 🐛 Issues: [GitHub Issues](https://github.com/ththuan/quanlytaisan/issues)
+---
+
+## 📞 Liên hệ & Đóng góp
+
+- 🐛 Báo lỗi: [GitHub Issues](https://github.com/ththuan/quanlytaisan/issues)
 - 📖 Wiki: [GitHub Wiki](https://github.com/ththuan/quanlytaisan/wiki)
-
-## 🙏 Acknowledgments
-
-- [Element Plus](https://element-plus.org/) - UI Framework
-- [Vue.js](https://vuejs.org/) - Frontend Framework
-- [Express.js](https://expressjs.com/) - Backend Framework
-- [PostgreSQL](https://www.postgresql.org/) - Database
 
 ---
 
 **Version**: 1.0.0  
-**Last Updated**: 2026-03-15  
-**Repository**: [github.com/ththuan/quanlytaisan](https://github.com/ththuan/quanlytaisan)  
-**Status**: Production Ready ✅
+**Cập nhật**: 2026-03-15

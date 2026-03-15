@@ -1,376 +1,119 @@
-# 🛠️ Deployment Scripts
+# 🛠️ Scripts – Backup, Restore, Reset Database
 
-Các script tự động hóa việc triển khai và quản lý hệ thống.
+Các script PowerShell để backup, khôi phục và reset dữ liệu database (chạy với Docker).
+
+**Yêu cầu:** Docker đang chạy, container `asset-management-postgres` đã được khởi động (ví dụ: `docker compose up -d`).
 
 ---
 
 ## 📋 Danh sách Scripts
 
-### 1. Setup Scripts
-
-#### `setup-traefik.sh` (Linux/Mac)
-Tự động setup Traefik + Docker với SSL miễn phí.
-
-**Usage:**
-```bash
-chmod +x scripts/setup-traefik.sh
-./scripts/setup-traefik.sh
-```
-
-**Chức năng:**
-- ✅ Validate cấu hình .env
-- ✅ Kiểm tra DNS
-- ✅ Kiểm tra Docker
-- ✅ Tạo volumes
-- ✅ Khởi động services
-- ✅ Đợi SSL certificate
-
-**Thời gian:** ~5-10 phút
+| Script | Mô tả |
+|--------|--------|
+| **backup-db.ps1** | Tạo file backup database (.sql) vào thư mục `backups/` |
+| **list-backups.ps1** | Xem thống kê DB hiện tại + danh sách file backup |
+| **restore-db.ps1** | Khôi phục database từ một file backup |
+| **reset-data.ps1** | Xóa toàn bộ dữ liệu nghiệp vụ (giữ users, departments, asset_categories) |
 
 ---
 
-#### `setup-traefik.ps1` (Windows)
-Phiên bản Windows PowerShell của setup script.
+## 1. backup-db.ps1
 
-**Usage:**
+Tạo bản sao lưu toàn bộ database PostgreSQL ra file `.sql` trong thư mục `backups/` (tạo thư mục nếu chưa có). File backup cũng có thể copy ra ngoài để lưu trữ.
+
+**Cách chạy:**
+
 ```powershell
-.\scripts\setup-traefik.ps1
+# Chạy từ thư mục gốc dự án (Quanlytaisan)
+.\scripts\backup-db.ps1
 ```
 
-**Chức năng:** Giống `setup-traefik.sh`
+**Backup kèm tên gợi nhớ:**
 
-**Yêu cầu:** PowerShell 5.1+
+```powershell
+.\scripts\backup-db.ps1 -Name "truoc-import"
+# Tạo file dạng: backup_20260315_143022_truoc-import.sql
+```
+
+**Kết quả:** File lưu tại `backups\backup_yyyyMMdd_HHmmss.sql` (hoặc có hậu tố `_Name` nếu dùng `-Name`). Script in ra kích thước file và danh sách 10 backup gần nhất.
 
 ---
 
-### 2. Monitoring Scripts
+## 2. list-backups.ps1
 
-#### `check-ssl.sh`
-Kiểm tra trạng thái SSL certificate.
+- In ra **thống kê database hiện tại**: số bản ghi các bảng `assets`, `users`, `departments`, `maintenance_requests`, `asset_transfers`, `inventory_reports`, `procurements`.
+- Liệt kê **các file backup** trong `backups/` (tên file, kích thước, ngày tạo) và gợi ý lệnh backup/restore/reset.
 
-**Usage:**
-```bash
-chmod +x scripts/check-ssl.sh
-./scripts/check-ssl.sh
-```
+**Cách chạy:**
 
-**Hiển thị:**
-- Certificate file status
-- Certificate details (issuer, subject)
-- Expiry date và số ngày còn lại
-- Certificate type (staging/production)
-- HTTP to HTTPS redirect
-- HTTPS response status
-- SSL Labs test link
-
-**Khi nào dùng:**
-- Sau khi setup xong
-- Khi certificate sắp hết hạn
-- Khi có vấn đề với HTTPS
-
----
-
-#### `troubleshoot-traefik.sh`
-Chẩn đoán và troubleshoot các vấn đề thường gặp.
-
-**Usage:**
-```bash
-chmod +x scripts/troubleshoot-traefik.sh
-./scripts/troubleshoot-traefik.sh
-```
-
-**Kiểm tra:**
-1. Docker environment
-2. DNS configuration
-3. Container status
-4. Port binding
-5. SSL certificate
-6. HTTP/HTTPS response
-7. Backend API
-8. Database
-9. Traefik configuration
-10. Recent errors
-
-**Khi nào dùng:**
-- Khi gặp lỗi
-- Khi certificate không được tạo
-- Khi HTTPS không hoạt động
-- Khi backend API fail
-
----
-
-## 🚀 Quick Start
-
-### Lần đầu setup:
-
-```bash
-# 1. Copy environment file
-cp .env.traefik.example .env
-
-# 2. Edit configuration
-nano .env
-
-# 3. Run setup
-chmod +x scripts/setup-traefik.sh
-./scripts/setup-traefik.sh
-```
-
-### Kiểm tra sau khi setup:
-
-```bash
-# Check SSL
-./scripts/check-ssl.sh
-
-# Troubleshoot nếu có vấn đề
-./scripts/troubleshoot-traefik.sh
+```powershell
+.\scripts\list-backups.ps1
 ```
 
 ---
 
-## 📝 Script Details
+## 3. restore-db.ps1
 
-### setup-traefik.sh
+Khôi phục database từ một file backup `.sql`. **Toàn bộ dữ liệu hiện tại sẽ bị thay thế** (drop schema public, tạo lại rồi restore từ file).
 
-**Prerequisites:**
-- .env file đã được cấu hình
-- Docker và Docker Compose đã cài đặt
-- Domain đã trỏ về server
-- Ports 80, 443 mở
+**Cách chạy:**
 
-**Các bước thực hiện:**
+```powershell
+# Chạy và chọn file từ menu (hiện tối đa 15 file mới nhất)
+.\scripts\restore-db.ps1
 
-1. **Validation**
-   - Kiểm tra .env file tồn tại
-   - Validate DOMAIN và ACME_EMAIL
-   - Kiểm tra không dùng giá trị mặc định
+# Chỉ định sẵn file (tên file, nằm trong thư mục backups)
+.\scripts\restore-db.ps1 -File "backup_20260315_120000.sql"
 
-2. **DNS Check**
-   - Resolve domain name
-   - So sánh với server IP
-   - Cảnh báo nếu không khớp
-
-3. **Docker Check**
-   - Kiểm tra Docker daemon
-   - Kiểm tra Docker Compose
-   - Verify versions
-
-4. **Port Check**
-   - Kiểm tra port 80, 443 available
-   - Hiển thị process đang dùng port (nếu có)
-
-5. **Firewall Setup**
-   - Kiểm tra UFW status
-   - Thêm rules cho ports 22, 80, 443
-
-6. **Volume Creation**
-   - Tạo postgres_data volume
-   - Tạo traefik-certificates volume
-
-7. **Directory Creation**
-   - Tạo logs directory
-   - Tạo storage directory
-   - Tạo backups directory
-
-8. **Environment Selection**
-   - Chọn staging hoặc production
-   - Set ACME_CA_SERVER nếu staging
-
-9. **Docker Operations**
-   - Pull images
-   - Build images
-   - Start services
-
-10. **Certificate Wait**
-    - Đợi certificate được tạo (tối đa 5 phút)
-    - Monitor Traefik logs
-    - Verify acme.json file
-
-11. **Final Report**
-    - Hiển thị URLs
-    - Hiển thị credentials
-    - Hiển thị useful commands
-
----
-
-### check-ssl.sh
-
-**Output sections:**
-
-1. **Certificate File**
-   - Kiểm tra acme.json tồn tại
-   - Kiểm tra file size
-
-2. **Certificate Details**
-   - Issuer
-   - Subject
-   - Validity period
-
-3. **Certificate Expiry**
-   - Expiration date
-   - Days remaining
-   - Status (valid/expiring/expired)
-
-4. **Certificate Type**
-   - Staging or Production
-   - Issuer verification
-
-5. **HTTP Redirect**
-   - Test HTTP to HTTPS redirect
-   - Check status code
-
-6. **HTTPS Response**
-   - Test HTTPS endpoint
-   - Check status code
-
-7. **SSL Labs Link**
-   - Provide detailed test link
-
----
-
-### troubleshoot-traefik.sh
-
-**Diagnostic sections:**
-
-1. **Docker Environment**
-   - Docker daemon status
-   - Docker Compose version
-
-2. **DNS Configuration**
-   - Domain resolution
-   - IP comparison
-
-3. **Docker Containers**
-   - Container status
-   - Running/stopped state
-
-4. **Port Binding**
-   - Port 80, 443 binding
-   - Traefik port exposure
-
-5. **SSL Certificate**
-   - Certificate file check
-   - Certificate content
-   - Domain count
-
-6. **HTTP/HTTPS Response**
-   - HTTP redirect test
-   - HTTPS response test
-
-7. **Backend API**
-   - API health check
-   - Status code
-
-8. **Database**
-   - PostgreSQL ready check
-
-9. **Traefik Configuration**
-   - Router count
-   - Service count
-
-10. **Recent Errors**
-    - Last 10 error lines from logs
-
-**Common solutions provided:**
-- Certificate not generated
-- HTTPS not working
-- Backend API not working
-- General troubleshooting steps
-
----
-
-## 🔧 Customization
-
-### Thêm custom checks
-
-Edit `troubleshoot-traefik.sh`:
-
-```bash
-# Add new check section
-echo -e "${BLUE}11. Custom Check${NC}"
-echo "-------------------"
-# Your check logic here
-echo ""
+# Bỏ qua bước xác nhận (yes/no)
+.\scripts\restore-db.ps1 -File "backup_20260315_120000.sql" -Force
 ```
 
-### Thêm custom setup steps
+Script sẽ hỏi xác nhận trước khi restore (trừ khi dùng `-Force`).
 
-Edit `setup-traefik.sh`:
+---
 
-```bash
-# Add before "Final checks"
-print_info "Running custom setup..."
-# Your setup logic here
-print_success "Custom setup complete"
+## 4. reset-data.ps1
+
+Xóa **toàn bộ dữ liệu nghiệp vụ** bằng `TRUNCATE ... CASCADE` trên các bảng: assets, maintenance_requests, asset_transfers, procurements, inventory_*, stock_*, audit_logs, asset_disposal_*, …
+
+**Giữ nguyên:** `users`, `departments`, `asset_categories`.
+
+Dùng khi muốn làm sạch dữ liệu để import lại hoặc test từ đầu mà không xóa user/phòng ban/danh mục.
+
+**Cách chạy:**
+
+```powershell
+# Có hỏi xác nhận (yes/no)
+.\scripts\reset-data.ps1
+
+# Bỏ qua xác nhận
+.\scripts\reset-data.ps1 -Force
 ```
 
 ---
 
-## 🐛 Troubleshooting
+## 📁 Thư mục backups/
 
-### Script không chạy được
-
-**Problem:** Permission denied
-
-**Solution:**
-```bash
-chmod +x scripts/*.sh
-```
+- **backup-db.ps1** ghi file vào `backups/` (nằm cạnh thư mục `scripts/`, tức `Quanlytaisan/backups/`).
+- **restore-db.ps1** và **list-backups.ps1** đọc file từ cùng thư mục đó.
+- Nên thêm `backups/` vào `.gitignore` (hoặc không commit file `.sql`) để tránh đẩy backup lên Git.
 
 ---
 
-### Script báo lỗi "command not found"
+## 🐛 Lỗi thường gặp
 
-**Problem:** Missing dependencies
+**“Container asset-management-postgres không chạy”**  
+→ Khởi động stack: `docker compose up -d` từ thư mục gốc dự án.
 
-**Solution:**
-```bash
-# Install required tools
-sudo apt install -y curl git nano dnsutils
+**“Không tìm thấy thư mục backups/” khi restore/list**  
+→ Chạy ít nhất một lần `.\scripts\backup-db.ps1` để tạo thư mục và có file backup.
 
-# For check-ssl.sh
-sudo apt install -y openssl
-```
-
----
-
-### DNS check fail
-
-**Problem:** DNS chưa propagate
-
-**Solution:**
-- Đợi 5-10 phút
-- Kiểm tra DNS settings
-- Dùng `nslookup` hoặc `dig` để verify
+**PowerShell không cho chạy script**  
+→ Mở PowerShell với quyền phù hợp và chạy:  
+`Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`  
+(nếu bạn chấp nhận chạy script local).
 
 ---
 
-## 📚 Related Documentation
-
-- [TRAEFIK_QUICK_START.md](../TRAEFIK_QUICK_START.md) - Quick start guide
-- [TRAEFIK_SSL_GUIDE.md](../TRAEFIK_SSL_GUIDE.md) - Complete guide
-- [DEPLOYMENT_COMPARISON.md](../DEPLOYMENT_COMPARISON.md) - Deployment options
-
----
-
-## 🤝 Contributing
-
-Để contribute script mới:
-
-1. Tạo script trong `scripts/`
-2. Thêm shebang: `#!/bin/bash`
-3. Thêm description header
-4. Test kỹ trước khi commit
-5. Update README này
-
----
-
-## 📞 Support
-
-Nếu script gặp lỗi:
-1. Chạy với verbose mode: `bash -x scripts/script-name.sh`
-2. Kiểm tra logs
-3. Tạo GitHub issue với error output
-
----
-
-**Last updated**: 2026-03-15
+**Cập nhật:** 2026-03-15
