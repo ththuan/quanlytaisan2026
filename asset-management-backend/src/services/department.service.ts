@@ -1,4 +1,4 @@
-import { Department, User } from '../models';
+import { Department, User, Asset, AssetTransfer, MaintenanceRequest } from '../models';
 import { NotFoundError, ConflictError, ValidationError } from '../utils/errorHandler';
 import { getPaginationParams, buildPaginationResult, getOffset, PaginationResult } from '../utils/pagination';
 import ExcelJS from 'exceljs';
@@ -139,7 +139,7 @@ class DepartmentService {
     return this.getDepartmentById(id);
   }
 
-  async deleteDepartment(id: number): Promise<void> {
+  async deleteDepartment(id: number, options?: { reassignUsersAndAssets?: boolean }): Promise<void> {
     const department = await Department.findByPk(id);
 
     if (!department) {
@@ -155,16 +155,39 @@ class DepartmentService {
       throw new ConflictError('Cannot delete department with sub-departments');
     }
 
-    // Check if department has users
-    const users = await User.count({
-      where: { department_id: id },
-    });
+    const userCount = await User.count({ where: { department_id: id } });
+    const assetCount = await Asset.count({ where: { current_department_id: id } });
 
-    if (users > 0) {
-      throw new ConflictError('Cannot delete department with users');
+    const hasUsersOrAssets = userCount > 0 || assetCount > 0;
+    if (hasUsersOrAssets) {
+      if (options?.reassignUsersAndAssets) {
+        // Admin chọn "gỡ phòng ban rồi xóa": gỡ user, tài sản, điều chuyển, đề nghị sửa chữa
+        await User.update({ department_id: null }, { where: { department_id: id } });
+        await Asset.update({ current_department_id: null }, { where: { current_department_id: id } });
+        await AssetTransfer.update({ from_department_id: null }, { where: { from_department_id: id } });
+        await AssetTransfer.update({ to_department_id: null }, { where: { to_department_id: id } });
+        await MaintenanceRequest.update({ department_id: null }, { where: { department_id: id } });
+        await MaintenanceRequest.update({ receiving_department_id: null }, { where: { receiving_department_id: id } });
+      } else {
+        const parts: string[] = [];
+        if (userCount > 0) parts.push(`${userCount} người dùng`);
+        if (assetCount > 0) parts.push(`${assetCount} tài sản`);
+        throw new ConflictError(
+          `Không thể xóa phòng ban đang có ${parts.join(' và ')}. Bạn có thể chọn "Gỡ phòng ban rồi xóa" để gỡ và xóa.`
+        );
+      }
     }
 
-    await department.destroy();
+    try {
+      await department.destroy();
+    } catch (err: any) {
+      if (err.name === 'SequelizeForeignKeyConstraintError' || err.message?.includes('foreign key')) {
+        throw new ConflictError(
+          'Phòng ban vẫn đang được tham chiếu (ví dụ: báo cáo kiểm kê). Vui lòng xóa hoặc chuyển các bản ghi liên quan trước.'
+        );
+      }
+      throw err;
+    }
   }
 
   async getDepartmentTree(): Promise<Department[]> {

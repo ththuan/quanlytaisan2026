@@ -99,7 +99,7 @@ cp .env.example .env
 cd asset-management-backend
 npm install
 npm run migrate
-npm run seed
+npm run seed:admin
 npm run dev
 
 # Frontend (terminal khác)
@@ -146,12 +146,14 @@ quanlytaisan/
 
 ---
 
-## 🔐 Tài khoản mặc định (sau khi seed)
+## 🔐 Tài khoản admin (tự tạo mỗi lần chạy hệ thống)
+
+Mỗi lần khởi động, hệ thống **chỉ tạo tài khoản admin** nếu chưa có. Toàn bộ dữ liệu khác (phòng ban, tài sản, người dùng…) bạn tự import theo nhu cầu. Admin luôn có đầy đủ quyền trong phần mềm.
 
 - **Username**: `admin`
-- **Password**: `admin123`
+- **Password**: `Admin@123`
 
-⚠️ Nên đổi mật khẩu ngay sau lần đăng nhập đầu.
+⚠️ Docker: khi backend khởi động sẽ tự chạy `migrate` + `seed:admin`. Nếu cần tạo lại admin thủ công: `docker compose exec backend npm run seed:admin`.
 
 ---
 
@@ -172,6 +174,14 @@ Chi tiết: [scripts/README.md](./scripts/README.md).
 
 - 🐛 Báo lỗi: [GitHub Issues](https://github.com/ththuan/quanlytaisan/issues)
 - 📖 Wiki: [GitHub Wiki](https://github.com/ththuan/quanlytaisan/wiki)
+
+---
+
+## 📌 Cập nhật gần đây
+
+- **Khởi động hệ thống**: Chỉ seed tài khoản admin (`seed:admin`), không tạo dữ liệu mẫu; dữ liệu khác tự import.
+- **Admin**: Luôn có toàn quyền; đăng nhập mặc định `admin` / `Admin@123`.
+- **Phòng ban**: Admin có thể xóa phòng ban đang có người dùng/tài sản bằng tùy chọn "Gỡ phòng ban rồi xóa" (gỡ liên kết rồi xóa).
 
 ---
 

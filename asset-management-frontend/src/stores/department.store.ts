@@ -109,11 +109,11 @@ export const useDepartmentStore = defineStore('department', {
       }
     },
 
-    async deleteDepartment(id: number) {
+    async deleteDepartment(id: number, reassignUsersAndAssets = false) {
       this.loading = true;
       this.error = null;
       try {
-        await departmentService.delete(id);
+        await departmentService.delete(id, reassignUsersAndAssets);
         this.departments = this.departments.filter((d) => d.id !== id);
       } catch (error: any) {
         this.error = error.response?.data?.message || 'Failed to delete department';

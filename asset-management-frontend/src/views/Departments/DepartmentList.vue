@@ -267,19 +267,41 @@ const handleFormSuccess = () => {
   fetchDepartments();
 };
 
-const handleDelete = async (id: number) => {
+const handleDelete = async (id: number, reassignAndDelete = false) => {
   try {
-    await ElMessageBox.confirm(t('departments.deleteConfirm'), t('common.warning'), {
-      confirmButtonText: t('common.confirm'),
-      cancelButtonText: t('common.cancel'),
-      type: 'warning',
-    });
-    await api.delete(`/departments/${id}`);
+    if (!reassignAndDelete) {
+      await ElMessageBox.confirm(t('departments.deleteConfirm'), t('common.warning'), {
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+        type: 'warning',
+      });
+    }
+    await departmentService.delete(id, reassignAndDelete);
     ElMessage.success(t('departments.deleteSuccess'));
     fetchDepartments();
   } catch (error: any) {
-    if (error !== 'cancel') {
-      console.error('Error deleting department:', error);
+    if (error === 'cancel') return;
+    const msg = error.response?.data?.message || error.message || '';
+    const canReassign = /người dùng|tài sản|Gỡ phòng ban/i.test(msg);
+    if (canReassign) {
+      try {
+        await ElMessageBox.confirm(
+          'Phòng ban này đang có người dùng và/hoặc tài sản. Bạn có muốn gỡ phòng ban khỏi họ rồi xóa phòng ban?',
+          'Gỡ phòng ban rồi xóa',
+          {
+            confirmButtonText: 'Gỡ và xóa',
+            cancelButtonText: 'Hủy',
+            type: 'warning',
+          }
+        );
+        await handleDelete(id, true);
+      } catch (inner: any) {
+        if (inner !== 'cancel') {
+          ElMessage.error(inner.response?.data?.message || 'Xóa thất bại');
+        }
+      }
+    } else {
+      ElMessage.error(msg || 'Không thể xóa phòng ban');
     }
   }
 };

@@ -54,8 +54,9 @@ class DepartmentService {
     return response;
   }
 
-  async delete(id: number) {
-    const response: any = await api.delete(`/departments/${id}`);
+  async delete(id: number, reassignUsersAndAssets = false) {
+    const params = reassignUsersAndAssets ? { reassignUsersAndAssets: 'true' } : undefined;
+    const response: any = await api.delete(`/departments/${id}`, { params });
     return response;
   }
 

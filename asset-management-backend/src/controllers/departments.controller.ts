@@ -74,7 +74,8 @@ class DepartmentsController {
   async deleteDepartment(req: Request, res: Response, next: NextFunction) {
     try {
       const id = parseInt(req.params.id);
-      await departmentService.deleteDepartment(id);
+      const reassignUsersAndAssets = req.query.reassignUsersAndAssets === 'true';
+      await departmentService.deleteDepartment(id, { reassignUsersAndAssets });
 
       return res.json({
         success: true,

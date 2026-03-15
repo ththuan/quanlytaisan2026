@@ -56,7 +56,7 @@ services:
       - /app/node_modules
       # Cho phép trang Quản trị hệ thống gọi lệnh docker (xem/start/stop container)
       - /var/run/docker.sock:/var/run/docker.sock
-    command: sh -c "npm run migrate || echo 'MIGRATE FAILED - starting server anyway' ; npm run dev"
+    command: sh -c "npm run migrate || echo 'MIGRATE FAILED' ; (npm run seed:admin || true) ; npm run dev"
 
   # Frontend Web
   frontend:

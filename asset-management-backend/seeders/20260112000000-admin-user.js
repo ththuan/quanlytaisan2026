@@ -2,8 +2,15 @@
 
 const bcrypt = require('bcryptjs');
 
+/** Chỉ tạo tài khoản admin nếu chưa có (idempotent). Mỗi lần chạy hệ thống chỉ cần admin, dữ liệu khác user tự import. */
 module.exports = {
   async up(queryInterface) {
+    const [existing] = await queryInterface.sequelize.query(
+      "SELECT id FROM users WHERE username = 'admin' LIMIT 1;"
+    );
+    if (existing && existing.length > 0) {
+      return; // Admin đã tồn tại, không ghi đè
+    }
     const passwordHash = await bcrypt.hash('Admin@123', 10);
     await queryInterface.bulkInsert(
       'users',
