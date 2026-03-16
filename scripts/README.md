@@ -13,7 +13,7 @@ Các script PowerShell để backup, khôi phục và reset dữ liệu database
 | **backup-db.ps1** | Tạo file backup database (.sql) vào thư mục `backups/` |
 | **list-backups.ps1** | Xem thống kê DB hiện tại + danh sách file backup |
 | **restore-db.ps1** | Khôi phục database từ một file backup |
-| **reset-data.ps1** | Xóa toàn bộ dữ liệu nghiệp vụ (giữ users, departments, asset_categories) |
+| **reset-data.ps1** | Xóa toàn bộ dữ liệu nghiệp vụ và phòng ban (giữ users, asset_categories) |
 
 ---
 
@@ -75,11 +75,11 @@ Script sẽ hỏi xác nhận trước khi restore (trừ khi dùng `-Force`).
 
 ## 4. reset-data.ps1
 
-Xóa **toàn bộ dữ liệu nghiệp vụ** bằng `TRUNCATE ... CASCADE` trên các bảng: assets, maintenance_requests, asset_transfers, procurements, inventory_*, stock_*, audit_logs, asset_disposal_*, …
+Xóa **toàn bộ dữ liệu nghiệp vụ và phòng ban** bằng `TRUNCATE ... CASCADE` trên các bảng: assets, maintenance_requests, asset_transfers, procurements, inventory_*, stock_*, audit_logs, asset_disposal_*, **departments**, …
 
-**Giữ nguyên:** `users`, `departments`, `asset_categories`.
+**Giữ nguyên:** `users`, `asset_categories`.
 
-Dùng khi muốn làm sạch dữ liệu để import lại hoặc test từ đầu mà không xóa user/phòng ban/danh mục.
+Dùng khi muốn làm sạch dữ liệu để import lại hoặc test từ đầu mà không xóa user và danh mục tài sản.
 
 **Cách chạy:**
 

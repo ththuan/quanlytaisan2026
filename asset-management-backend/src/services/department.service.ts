@@ -152,7 +152,9 @@ class DepartmentService {
     });
 
     if (subDepartments > 0) {
-      throw new ConflictError('Cannot delete department with sub-departments');
+      throw new ConflictError(
+        'Không thể xóa phòng ban đang có phòng ban con. Vui lòng xóa hoặc chuyển các phòng ban con trước.'
+      );
     }
 
     const userCount = await User.count({ where: { department_id: id } });

@@ -69,6 +69,47 @@ class UserService {
     const response: any = await api.post(`/users/${id}/reset-password`);
     return response;
   }
+
+  async downloadImportTemplate(): Promise<void> {
+    const data = await api.get('/users/import/template', { responseType: 'blob' });
+    const blob = new Blob([data as unknown as BlobPart], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'mau_import_nguoi_dung.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+
+  async validateUsersFile(file: File): Promise<{ success: boolean; message: string; data: UserImportResult }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response: any = await api.post('/users/import?validateOnly=true', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    if (response?.data) response.data.validatedOnly = true;
+    return response;
+  }
+
+  async importUsers(file: File): Promise<{ success: boolean; message: string; data: UserImportResult }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/users/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }) as Promise<any>;
+  }
+}
+
+export interface UserImportResult {
+  total: number;
+  imported: number;
+  failed: number;
+  errors: Array<{ row: number; field: string; message: string }>;
+  validatedOnly?: boolean;
 }
 
 export default new UserService();

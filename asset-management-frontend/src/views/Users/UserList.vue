@@ -4,9 +4,12 @@
       <template #header>
         <div class="card-header">
           <h3>{{ $t('users.title') }}</h3>
-          <el-button type="primary" :icon="Plus" @click="handleCreate" v-if="authStore.isAdmin">
-            {{ $t('users.addUser') }}
-          </el-button>
+          <div v-if="authStore.isAdmin" style="display: flex; gap: 8px;">
+            <el-button :icon="Upload" @click="showImportDialog = true">Import Excel</el-button>
+            <el-button type="primary" :icon="Plus" @click="handleCreate">
+              {{ $t('users.addUser') }}
+            </el-button>
+          </div>
         </div>
       </template>
 
@@ -104,6 +107,106 @@
       @success="handleFormSuccess"
     />
 
+    <!-- Import Dialog -->
+    <el-dialog v-model="showImportDialog" title="Import người dùng hàng loạt từ Excel" width="560px" :close-on-click-modal="false">
+      <div class="import-dialog-content">
+        <el-alert type="info" :closable="false" show-icon class="import-guide">
+          <template #default>
+            <ol class="guide-list" style="margin: 0; padding-left: 18px;">
+              <li>Tải file mẫu Excel, điền thông tin (Tên đăng nhập, Email, Mật khẩu, Vai trò bắt buộc)</li>
+              <li>Upload file → bấm <strong>Kiểm tra lỗi</strong></li>
+              <li>Nếu có lỗi: sửa file rồi Kiểm tra lại. Nếu không lỗi: bấm <strong>Xác nhận import</strong></li>
+            </ol>
+          </template>
+        </el-alert>
+        <div class="import-section">
+          <h4>Bước 1: Tải file mẫu</h4>
+          <el-button type="primary" :icon="Download" @click="handleDownloadImportTemplate" :loading="downloadingTemplate">Tải file mẫu Excel</el-button>
+        </div>
+        <div class="import-section">
+          <h4>Bước 2: Upload file đã điền</h4>
+          <el-upload
+            ref="importUploadRef"
+            :auto-upload="false"
+            :limit="1"
+            accept=".xlsx,.xls"
+            :on-change="handleImportFileChange"
+            drag
+            class="import-upload"
+          >
+            <el-icon class="el-icon--upload"><Upload /></el-icon>
+            <div class="el-upload__text">Kéo thả file vào đây hoặc <em>click để chọn file</em></div>
+            <template #tip><div class="el-upload__tip">Chỉ chấp nhận file Excel (.xlsx, .xls), tối đa 10MB</div></template>
+          </el-upload>
+        </div>
+        <div v-if="importResult" class="import-result">
+          <template v-if="importResult.validatedOnly">
+            <el-alert
+              :title="importResult.failed === 0 ? 'Kiểm tra xong – không có lỗi' : 'Import có lỗi'"
+              :type="importResult.failed === 0 ? 'success' : 'warning'"
+              show-icon
+              :closable="false"
+            >
+              <template #default>
+                <div class="result-summary">
+                  <p>Tổng số dòng: <strong>{{ importResult.total }}</strong></p>
+                  <p v-if="importResult.failed === 0">Sẽ import: <strong class="text-success">{{ importResult.imported }}</strong> dòng. Bạn có chắc muốn thực hiện?</p>
+                  <template v-else>
+                    <p>Hợp lệ: <strong class="text-success">{{ importResult.imported }}</strong></p>
+                    <p>Lỗi: <strong class="text-danger">{{ importResult.failed }}</strong> – sửa file rồi bấm "Kiểm tra lại"</p>
+                  </template>
+                </div>
+              </template>
+            </el-alert>
+          </template>
+          <template v-else>
+            <el-alert
+              :title="importResult.imported > 0 ? 'Import thành công' : 'Import có lỗi'"
+              :type="importResult.failed === 0 ? 'success' : 'warning'"
+              show-icon
+              :closable="false"
+            >
+              <template #default>
+                <div class="result-summary">
+                  <p>Tổng số dòng: <strong>{{ importResult.total }}</strong></p>
+                  <p>Thành công: <strong class="text-success">{{ importResult.imported }}</strong></p>
+                  <p>Thất bại: <strong class="text-danger">{{ importResult.failed }}</strong></p>
+                </div>
+              </template>
+            </el-alert>
+          </template>
+          <div v-if="importResult.errors.length > 0" class="error-list">
+            <h4>Chi tiết lỗi:</h4>
+            <el-table :data="importResult.errors" max-height="200" size="small">
+              <el-table-column prop="row" label="Dòng" width="60" />
+              <el-table-column prop="field" label="Trường" width="100" />
+              <el-table-column prop="message" label="Lỗi" />
+            </el-table>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="closeImportDialog">Đóng</el-button>
+        <el-button
+          v-if="!importResult || (importResult.validatedOnly && importResult.failed > 0)"
+          type="primary"
+          @click="handleValidateUsers"
+          :loading="importing"
+          :disabled="!selectedImportFile"
+        >
+          {{ importResult?.validatedOnly && importResult?.failed > 0 ? 'Kiểm tra lại' : 'Kiểm tra lỗi' }}
+        </el-button>
+        <el-button
+          v-if="importResult?.validatedOnly && importResult?.failed === 0"
+          type="primary"
+          @click="handleConfirmImportUsers"
+          :loading="importing"
+        >
+          Xác nhận import
+        </el-button>
+      </template>
+    </el-dialog>
+
     <!-- View Dialog -->
     <el-dialog v-model="viewDialogVisible" :title="$t('users.userDetails')" width="600px">
       <el-descriptions :column="1" border v-if="currentUser">
@@ -128,10 +231,10 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
-import { Plus, Search } from '@element-plus/icons-vue';
+import { Plus, Search, Upload, Download } from '@element-plus/icons-vue';
 import { ElMessageBox, ElMessage } from 'element-plus';
 import api from '@/services/api';
-import userService from '@/services/user.service';
+import userService, { type UserImportResult } from '@/services/user.service';
 import UserFormDialog from '@/components/Users/UserFormDialog.vue';
 
 interface User {
@@ -155,6 +258,13 @@ const filterStatus = ref('');
 const formDialogVisible = ref(false);
 const viewDialogVisible = ref(false);
 const currentUser = ref<User | null>(null);
+
+const showImportDialog = ref(false);
+const selectedImportFile = ref<File | null>(null);
+const importResult = ref<UserImportResult | null>(null);
+const importing = ref(false);
+const downloadingTemplate = ref(false);
+const importUploadRef = ref<any>(null);
 
 const userRoles = computed(() => [
   { value: 'admin', label: t('users.roles.admin') },
@@ -239,6 +349,70 @@ const handleView = (user: User) => {
 
 const handleFormSuccess = () => {
   fetchUsers();
+};
+
+const handleDownloadImportTemplate = async () => {
+  downloadingTemplate.value = true;
+  try {
+    await userService.downloadImportTemplate();
+    ElMessage.success('Đã tải file mẫu');
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.message || 'Không thể tải file mẫu');
+  } finally {
+    downloadingTemplate.value = false;
+  }
+};
+
+const handleImportFileChange = (uploadFile: any) => {
+  if (uploadFile?.raw) {
+    selectedImportFile.value = uploadFile.raw;
+    importResult.value = null;
+  }
+};
+
+const handleValidateUsers = async () => {
+  if (!selectedImportFile.value) {
+    ElMessage.warning('Vui lòng chọn file Excel');
+    return;
+  }
+  importing.value = true;
+  try {
+    const result = await userService.validateUsersFile(selectedImportFile.value);
+    importResult.value = { ...result.data, validatedOnly: true };
+    if (result.success) ElMessage.success(result.message);
+    else ElMessage.warning(result.message);
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.message || 'Có lỗi khi kiểm tra file');
+  } finally {
+    importing.value = false;
+  }
+};
+
+const handleConfirmImportUsers = async () => {
+  if (!selectedImportFile.value) return;
+  importing.value = true;
+  try {
+    const result = await userService.importUsers(selectedImportFile.value);
+    importResult.value = { ...result.data };
+    if (result.success) {
+      ElMessage.success(result.message);
+      fetchUsers();
+    } else {
+      ElMessage.warning(result.message);
+      if (result.data?.imported > 0) fetchUsers();
+    }
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.message || 'Có lỗi khi import');
+  } finally {
+    importing.value = false;
+  }
+};
+
+const closeImportDialog = () => {
+  showImportDialog.value = false;
+  selectedImportFile.value = null;
+  importResult.value = null;
+  importUploadRef.value?.clearFiles();
 };
 
 const handleToggleStatus = async (user: User) => {
@@ -350,4 +524,28 @@ const formatDate = (date: string) => {
 .filter-section {
   margin-bottom: 20px;
 }
+
+.import-dialog-content .import-section {
+  margin-bottom: 16px;
+}
+.import-dialog-content .import-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+}
+.import-dialog-content .import-result {
+  margin-top: 16px;
+}
+.import-dialog-content .result-summary p {
+  margin: 4px 0;
+}
+.import-dialog-content .error-list {
+  margin-top: 12px;
+}
+.import-dialog-content .error-list h4 {
+  margin: 0 0 8px 0;
+  color: var(--el-color-danger);
+  font-size: 13px;
+}
+.text-success { color: var(--el-color-success); }
+.text-danger { color: var(--el-color-danger); }
 </style>

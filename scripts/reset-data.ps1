@@ -1,7 +1,7 @@
 # ============================================================
 # reset-data.ps1
-# Xóa dữ liệu nghiệp vụ (tài sản, bảo trì, điều chuyển, ...)
-# GIỮ NGUYÊN: users, departments, asset_categories
+# Xóa dữ liệu nghiệp vụ và phòng ban (tài sản, bảo trì, điều chuyển, phòng ban, ...)
+# GIỮ NGUYÊN: users, asset_categories
 # ============================================================
 
 param(
@@ -19,9 +19,9 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Se xoa cac bang:" -ForegroundColor Yellow
 Write-Host "  - assets, maintenance_requests, asset_transfers"
-Write-Host "  - procurements, inventory_*, stock_*, audit_logs ..."
+Write-Host "  - procurements, inventory_*, stock_*, audit_logs, departments ..."
 Write-Host ""
-Write-Host "GIU NGUYEN: users, departments, asset_categories" -ForegroundColor Green
+Write-Host "GIU NGUYEN: users, asset_categories" -ForegroundColor Green
 Write-Host ""
 
 if (-not $Force) {
@@ -35,7 +35,7 @@ if (-not $Force) {
 Write-Host ""
 Write-Host "Dang xoa du lieu..." -ForegroundColor Yellow
 
-$sql = @"
+$sql1 = @"
 TRUNCATE TABLE
   asset_disposal_items,
   asset_disposal_cases,
@@ -58,10 +58,17 @@ TRUNCATE TABLE
   annual_reports,
   assets
 RESTART IDENTITY CASCADE;
+"@
+
+$sql2 = @"
+UPDATE users SET department_id = NULL;
+TRUNCATE TABLE departments RESTART IDENTITY CASCADE;
 SELECT 'Reset thanh cong!' as result;
 "@
 
-docker exec $CONTAINER psql -U $DB_USER -d $DB_NAME -c $sql
+docker exec $CONTAINER psql -U $DB_USER -d $DB_NAME -c $sql1
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+docker exec $CONTAINER psql -U $DB_USER -d $DB_NAME -c $sql2
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host ""

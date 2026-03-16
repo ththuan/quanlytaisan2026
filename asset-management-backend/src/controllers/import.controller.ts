@@ -81,6 +81,7 @@ export const downloadTemplate = async (req: AuthRequest, res: Response, next: Ne
 
 /**
  * Import tài sản từ file Excel
+ * Query: ?validateOnly=true → chỉ kiểm tra lỗi, không ghi database
  */
 export const importAssets = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -90,12 +91,29 @@ export const importAssets = async (req: AuthRequest, res: Response, next: NextFu
         message: 'Vui lòng upload file Excel',
       });
     }
-    
-    const result = await importService.importAssetsFromExcel(req.file.buffer, req.user!.id);
-    
+
+    const validateOnly = req.query.validateOnly === 'true';
+    const result = await importService.importAssetsFromExcel(req.file.buffer, req.user!.id, { validateOnly });
+
+    if (validateOnly) {
+      return res.json({
+        success: result.failed === 0,
+        message: result.failed === 0
+          ? `Kiểm tra xong: ${result.imported} dòng hợp lệ, sẵn sàng import.`
+          : `Phát hiện ${result.failed} lỗi. Vui lòng sửa file rồi kiểm tra lại.`,
+        data: {
+          total: result.total,
+          imported: result.imported,
+          failed: result.failed,
+          errors: result.errors,
+          validatedOnly: true,
+        },
+      });
+    }
+
     res.json({
       success: result.success,
-      message: result.success 
+      message: result.success
         ? `Import thành công ${result.imported}/${result.total} tài sản`
         : `Import hoàn tất với ${result.failed} lỗi`,
       data: {

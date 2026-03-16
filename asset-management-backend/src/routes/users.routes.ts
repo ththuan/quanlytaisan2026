@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import usersController from '../controllers/users.controller';
+import usersController, { uploadUserImport } from '../controllers/users.controller';
 import { authenticateToken } from '../middleware/auth.middleware';
 import { requireRole } from '../middleware/authorization.middleware';
 import { validateRequest } from '../middleware/validation';
@@ -21,6 +21,19 @@ router.get(
   '/',
   requireRole('admin'),
   usersController.getAllUsers
+);
+
+// Import người dùng (phải đặt trước /:id)
+router.get(
+  '/import/template',
+  requireRole('admin'),
+  usersController.downloadImportTemplate
+);
+router.post(
+  '/import',
+  requireRole('admin'),
+  uploadUserImport,
+  usersController.importUsers
 );
 
 router.get(

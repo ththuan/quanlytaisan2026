@@ -11,6 +11,8 @@ export interface ImportResult {
   imported: number;
   failed: number;
   errors: ImportError[];
+  /** true = kết quả từ bước "Kiểm tra lỗi", chưa ghi DB */
+  validatedOnly?: boolean;
 }
 
 export interface ImportError {
@@ -46,7 +48,25 @@ export const downloadTemplate = async (): Promise<void> => {
 };
 
 /**
- * Import assets from Excel file
+ * Chỉ kiểm tra file Excel, không ghi database. Trả về lỗi (nếu có) để user sửa trước khi import.
+ */
+export const validateAssetsFile = async (file: File): Promise<{
+  success: boolean;
+  message: string;
+  data: ImportResult;
+}> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post('/import/assets?validateOnly=true', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  const res = response as any;
+  if (res?.data) res.data.validatedOnly = true;
+  return res;
+};
+
+/**
+ * Import assets from Excel file (ghi database). Nên gọi validateAssetsFile trước, chỉ gọi khi không còn lỗi.
  */
 export const importAssets = async (file: File): Promise<{
   success: boolean;
@@ -55,18 +75,14 @@ export const importAssets = async (file: File): Promise<{
 }> => {
   const formData = new FormData();
   formData.append('file', file);
-  
   const response = await api.post('/import/assets', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
+    headers: { 'Content-Type': 'multipart/form-data' },
   });
-  
-  // api interceptor đã unwrap response.data (axios), nên response = { success, message, data }
   return response as any;
 };
 
 export default {
   downloadTemplate,
+  validateAssetsFile,
   importAssets,
 };

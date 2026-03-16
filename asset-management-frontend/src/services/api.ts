@@ -108,9 +108,12 @@ api.interceptors.response.use(
         duration: 5000,
         showClose: true,
       });
+    } else if (error.response?.status === 409) {
+      // 409 Conflict - để component (ví dụ xóa phòng ban) tự hiển thị và xử lý (gỡ rồi xóa)
+      // Không hiện toast ở đây để tránh trùng và để component show dialog khi cần
     } else {
-      // Chỉ hiện lỗi nếu không phải 401/403/404/429
-      if (error.response?.status !== 401 && error.response?.status !== 403 && error.response?.status !== 404 && error.response?.status !== 429) {
+      // Chỉ hiện lỗi nếu không phải 401/403/404/429/409
+      if (error.response?.status !== 401 && error.response?.status !== 403 && error.response?.status !== 404 && error.response?.status !== 429 && error.response?.status !== 409) {
         ElMessage.error({
           message: message,
           duration: 5000,

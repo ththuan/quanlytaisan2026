@@ -282,11 +282,16 @@ class SystemAdminService {
       ];
 
       await sequelize.query(`TRUNCATE TABLE ${tables.join(', ')} RESTART IDENTITY CASCADE`);
-      logger.info('Business data reset successfully');
+
+      // Gỡ tham chiếu phòng ban khỏi users rồi xóa toàn bộ phòng ban
+      await sequelize.query('UPDATE users SET department_id = NULL');
+      await sequelize.query('TRUNCATE TABLE departments RESTART IDENTITY CASCADE');
+
+      logger.info('Business data reset successfully (including departments)');
 
       return {
         success: true,
-        message: 'Dữ liệu nghiệp vụ đã được xóa. Giữ nguyên: users, departments, asset_categories',
+        message: 'Dữ liệu nghiệp vụ và phòng ban đã được xóa. Giữ nguyên: users, asset_categories',
       };
     } catch (error) {
       logger.error('Reset business data failed:', error);

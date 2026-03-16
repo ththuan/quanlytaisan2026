@@ -336,6 +336,7 @@ const handleFileChange = async (event: Event) => {
   try {
     const result: any = await departmentService.importExcel(file);
     const summary = result?.data || result;
+    const errors: Array<{ row: number; field: string; message: string }> = summary?.errors || [];
 
     if (result?.success) {
       ElMessage.success(
@@ -343,9 +344,14 @@ const handleFileChange = async (event: Event) => {
           `Import thành công ${summary.imported || 0}/${summary.total || 0} phòng ban`
       );
     } else {
-      ElMessage.warning(
-        result?.message || 'Import hoàn tất nhưng có lỗi, vui lòng kiểm tra lại file'
-      );
+      const detail = errors.length
+        ? errors.slice(0, 3).map(e => `Dòng ${e.row}: ${e.message}`).join('; ')
+        : '';
+      ElMessage.warning({
+        message: (result?.message || 'Import có lỗi. Vui lòng kiểm tra lại file.') + (detail ? ` ${detail}` : ''),
+        duration: 8000,
+        showClose: true,
+      });
     }
 
     await fetchDepartments();
@@ -378,12 +384,13 @@ const getTypeColor = (type: string) => {
 };
 
 const getTypeText = (type: string) => {
-  if (!type) return '-';
+  if (!type || !String(type).trim()) return '-';
 
-  // Map cả key nội bộ lẫn giá trị tiếng Việt (legacy)
+  // Map cả key nội bộ lẫn giá trị tiếng Việt (sau import có thể có nhiều dạng)
   const labels: Record<string, string> = {
     department: t('departments.types.department'),
     'phòng ban': t('departments.types.department'),
+    phòng: t('departments.types.department'),
     faculty: t('departments.types.faculty'),
     khoa: t('departments.types.faculty'),
     center: t('departments.types.center'),
@@ -394,10 +401,12 @@ const getTypeText = (type: string) => {
     lab: t('departments.types.lab'),
     'phòng thực hành': t('departments.types.lab'),
     meeting_room: t('departments.types.meeting_room'),
+    'phòng họp': t('departments.types.meeting_room'),
     hall: t('departments.types.hall'),
+    'hội trường': t('departments.types.hall'),
   };
 
-  const normalized = type.toLowerCase();
+  const normalized = String(type).trim().toLowerCase();
   return labels[normalized] || type; // fallback hiển thị nguyên gốc nếu chưa map
 };
 

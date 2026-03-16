@@ -274,7 +274,8 @@
             <ol class="guide-list">
               <li>Tải file mẫu Excel về máy</li>
               <li>Điền thông tin tài sản theo mẫu (các trường có dấu * là bắt buộc)</li>
-              <li>Upload file đã điền lên hệ thống</li>
+              <li>Upload file → bấm <strong>Kiểm tra lỗi</strong> (chưa ghi database)</li>
+              <li>Nếu có lỗi: sửa file rồi Kiểm tra lại. Nếu không lỗi: bấm <strong>Xác nhận import</strong></li>
             </ol>
           </template>
         </el-alert>
@@ -312,24 +313,49 @@
           </el-upload>
         </div>
 
-        <!-- Import result -->
+        <!-- Kết quả kiểm tra / import -->
         <div v-if="importResult" class="import-result">
-          <el-alert
-            :title="importResult.success ? 'Import thành công' : 'Import có lỗi'"
-            :type="importResult.success ? 'success' : 'warning'"
-            show-icon
-            :closable="false"
-          >
-            <template #default>
-              <div class="result-summary">
-                <p>Tổng số dòng: <strong>{{ importResult.total }}</strong></p>
-                <p>Thành công: <strong class="text-success">{{ importResult.imported }}</strong></p>
-                <p>Thất bại: <strong class="text-danger">{{ importResult.failed }}</strong></p>
-              </div>
-            </template>
-          </el-alert>
+          <!-- Đang ở bước kiểm tra (chưa ghi DB) -->
+          <template v-if="importResult.validatedOnly">
+            <el-alert
+              :title="importResult.failed === 0 ? 'Kiểm tra xong – không có lỗi' : 'Import có lỗi'"
+              :type="importResult.failed === 0 ? 'success' : 'warning'"
+              show-icon
+              :closable="false"
+            >
+              <template #default>
+                <div class="result-summary">
+                  <p>Tổng số dòng: <strong>{{ importResult.total }}</strong></p>
+                  <p v-if="importResult.failed === 0">
+                    Sẽ import: <strong class="text-success">{{ importResult.imported }}</strong> dòng. Bạn có chắc muốn thực hiện?
+                  </p>
+                  <template v-else>
+                    <p>Hợp lệ: <strong class="text-success">{{ importResult.imported }}</strong></p>
+                    <p>Lỗi: <strong class="text-danger">{{ importResult.failed }}</strong> – sửa file rồi bấm "Kiểm tra lại"</p>
+                  </template>
+                </div>
+              </template>
+            </el-alert>
+          </template>
+          <!-- Đã import thật -->
+          <template v-else>
+            <el-alert
+              :title="importResult.success ? 'Import thành công' : 'Import có lỗi'"
+              :type="importResult.success ? 'success' : 'warning'"
+              show-icon
+              :closable="false"
+            >
+              <template #default>
+                <div class="result-summary">
+                  <p>Tổng số dòng: <strong>{{ importResult.total }}</strong></p>
+                  <p>Thành công: <strong class="text-success">{{ importResult.imported }}</strong></p>
+                  <p>Thất bại: <strong class="text-danger">{{ importResult.failed }}</strong></p>
+                </div>
+              </template>
+            </el-alert>
+          </template>
 
-          <!-- Error list -->
+          <!-- Chi tiết lỗi -->
           <div v-if="importResult.errors.length > 0" class="error-list">
             <h4>Chi tiết lỗi:</h4>
             <el-table :data="importResult.errors" max-height="200" size="small">
@@ -344,13 +370,22 @@
 
       <template #footer>
         <el-button @click="closeImportDialog">Đóng</el-button>
-        <el-button 
-          type="primary" 
-          @click="handleImport" 
+        <el-button
+          v-if="!importResult || (importResult.validatedOnly && importResult.failed > 0)"
+          type="primary"
+          @click="handleValidate"
           :loading="importing"
           :disabled="!selectedFile"
         >
-          Import
+          {{ importResult?.validatedOnly && importResult?.failed > 0 ? 'Kiểm tra lại' : 'Kiểm tra lỗi' }}
+        </el-button>
+        <el-button
+          v-if="importResult?.validatedOnly && importResult?.failed === 0"
+          type="primary"
+          @click="handleConfirmImport"
+          :loading="importing"
+        >
+          Xác nhận import
         </el-button>
       </template>
     </el-dialog>
@@ -685,25 +720,41 @@ const handleExceed = () => {
   ElMessage.warning('Chỉ được upload 1 file');
 };
 
-const handleImport = async () => {
+/** Bước 1: Chỉ kiểm tra file, không ghi database */
+const handleValidate = async () => {
   if (!selectedFile.value) {
     ElMessage.warning('Vui lòng chọn file Excel');
     return;
   }
-
   importing.value = true;
   try {
-    const result = await importService.importAssets(selectedFile.value);
-    importResult.value = { ...result.data, success: result.success };
-    
+    const result = await importService.validateAssetsFile(selectedFile.value);
+    importResult.value = { ...result.data, success: result.success, validatedOnly: true };
     if (result.success) {
       ElMessage.success(result.message);
     } else {
       ElMessage.warning(result.message);
     }
-    // Refresh danh sách bất kể thành công hay có lỗi một phần
-    if (result.data?.imported > 0) {
+  } catch (error: any) {
+    ElMessage.error(error.response?.data?.message || 'Có lỗi khi kiểm tra file');
+  } finally {
+    importing.value = false;
+  }
+};
+
+/** Bước 2: Xác nhận import – ghi database (chỉ hiện khi kiểm tra không lỗi) */
+const handleConfirmImport = async () => {
+  if (!selectedFile.value) return;
+  importing.value = true;
+  try {
+    const result = await importService.importAssets(selectedFile.value);
+    importResult.value = { ...result.data, success: result.success };
+    if (result.success) {
+      ElMessage.success(result.message);
       assetStore.fetchAssets();
+    } else {
+      ElMessage.warning(result.message);
+      if (result.data?.imported > 0) assetStore.fetchAssets();
     }
   } catch (error: any) {
     ElMessage.error(error.response?.data?.message || 'Có lỗi xảy ra khi import');

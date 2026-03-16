@@ -1,14 +1,21 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import path from 'path';
 import viteCompression from 'vite-plugin-compression';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  // Load .env từ thư mục cha (quanlytaisan) để dùng chung với backend, fallback về thư mục hiện tại
+  const rootEnv = loadEnv(mode, path.resolve(__dirname, '..'), '');
+  const localEnv = loadEnv(mode, __dirname, '');
+  const env = { ...rootEnv, ...localEnv };
+  const useHttps = env.VITE_HTTPS === 'true';
+
+  return {
   plugins: [
     vue(),
-    // Chỉ bật SSL nếu VITE_HTTPS=true trong .env
-    process.env.VITE_HTTPS === 'true' ? basicSsl() : null,
+    // Chỉ bật SSL nếu VITE_HTTPS=true trong .env (đọc từ quanlytaisan/.env hoặc frontend/.env)
+    useHttps ? basicSsl() : null,
     // Gzip compression cho production build
     viteCompression({
       algorithm: 'gzip',
@@ -45,11 +52,12 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: Number(process.env.FRONTEND_PORT) || 3000,
+    port: Number(env.FRONTEND_PORT || env.VITE_FRONTEND_PORT) || 3000,
+    // HTTPS do plugin basicSsl() thiết lập khi VITE_HTTPS=true
     allowedHosts: true,
     proxy: {
       '/storage': {
-        target: process.env.VITE_PROXY_TARGET || 'http://backend:5000',
+        target: env.VITE_PROXY_TARGET || 'http://backend:5000',
         changeOrigin: true,
         ws: false,
         secure: false,
@@ -57,7 +65,7 @@ export default defineConfig({
       '/api': {
         // Khi chạy trong Docker, `backend` là service name.
         // Khi chạy bên ngoài, có thể set VITE_PROXY_TARGET=http://localhost:5000
-        target: process.env.VITE_PROXY_TARGET || 'http://backend:5000',
+        target: env.VITE_PROXY_TARGET || 'http://backend:5000',
         changeOrigin: true,
         ws: false,
         secure: false,
@@ -86,4 +94,5 @@ export default defineConfig({
       },
     },
   },
+};
 });

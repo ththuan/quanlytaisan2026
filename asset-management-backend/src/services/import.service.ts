@@ -500,6 +500,14 @@ export const generateTemplateToFile = async (filePath: string): Promise<void> =>
   await workbook.xlsx.writeFile(filePath);
 };
 
+/** Chuyển giá trị từ Excel (có thể là số thập phân "1445.1") sang integer để lưu DB */
+const toInteger = (value: unknown, defaultValue: number): number => {
+  if (value === null || value === undefined || value === '') return defaultValue;
+  const n = Number(value);
+  if (!Number.isFinite(n)) return defaultValue;
+  return Math.round(n);
+};
+
 // Map tình trạng từ tiếng Việt sang enum
 const mapCondition = (condition?: string): 'good' | 'fair' | 'poor' | 'damaged' => {
   if (!condition) return 'good';
@@ -512,7 +520,13 @@ const mapCondition = (condition?: string): 'good' | 'fair' | 'poor' | 'damaged' 
 };
 
 // Xử lý import từ file Excel (vẫn dùng xlsx để đọc vì nó ổn định)
-export const importAssetsFromExcel = async (fileBuffer: Buffer, userId: number): Promise<ImportResult> => {
+// validateOnly = true: chỉ kiểm tra lỗi, không ghi database (dùng cho bước "Kiểm tra lỗi" trước khi import)
+export const importAssetsFromExcel = async (
+  fileBuffer: Buffer,
+  userId: number,
+  options?: { validateOnly?: boolean }
+): Promise<ImportResult> => {
+  const validateOnly = options?.validateOnly === true;
   const result: ImportResult = {
     success: true,
     total: 0,
@@ -700,70 +714,64 @@ export const importAssetsFromExcel = async (fileBuffer: Buffer, userId: number):
         continue;
       }
       
-      // Tạo tài sản mới
-      try {
-        // Tính ngày sử dụng từ năm (nếu không có thì dùng năm hiện tại cho mã tài sản)
-        const currentYear = new Date().getFullYear();
-        const year = yearOfUse ? Number(yearOfUse) : currentYear;
-        const acquisitionDate = yearOfUse ? new Date(year, 0, 1) : null; // Null nếu không có năm
-        
-        // Lấy mã loại tài sản từ category
-        const categoryCode = category!.code;
-        
-        // Tự sinh mã tài sản
-        const generatedAssetCode = await generateAssetCode(categoryCode, year);
-        
-        // Lấy thông tin từ category
-        const depreciationRate = category?.depreciation_rate || 0;
-        const usefulLife = category?.useful_life_years || 0;
-        const isDepreciable = category?.is_depreciable ?? false;
-        
-        // Tính giá trị còn lại và khấu hao lũy kế
-        // Chỉ tính khấu hao khi CÓ CẢ năm sử dụng VÀ nguyên giá
-        const originalVal = originalValue ? Number(originalValue) : 0;
-        const hasYearOfUse = !!yearOfUse;
-        const hasOriginalValue = originalVal > 0;
-        
-        let accumulatedDepreciation = 0;
-        let currentValue = originalVal;
-        
-        // Chỉ tính khấu hao khi có đủ thông tin: năm sử dụng, nguyên giá, và tài sản được phép khấu hao
-        if (isDepreciable && depreciationRate > 0 && hasYearOfUse && hasOriginalValue) {
-          const yearsUsed = currentYear - year;
-          if (yearsUsed > 0) {
-            const annualDepreciation = originalVal * (depreciationRate / 100);
-            accumulatedDepreciation = Math.min(annualDepreciation * yearsUsed, originalVal);
-            currentValue = originalVal - accumulatedDepreciation;
-          }
+      // Tính toán dữ liệu sẽ ghi (dùng cho cả validateOnly và import thật)
+      const currentYear = new Date().getFullYear();
+      const yearRaw = yearOfUse != null && yearOfUse !== '' ? toInteger(yearOfUse, currentYear) : currentYear;
+      const year = Math.max(1990, Math.min(2100, yearRaw));
+      const acquisitionDate = yearOfUse != null && yearOfUse !== '' ? new Date(year, 0, 1) : null;
+      const categoryCode = category!.code;
+      const depreciationRate = category?.depreciation_rate || 0;
+      const usefulLife = toInteger(category?.useful_life_years, 0);
+      const isDepreciable = category?.is_depreciable ?? false;
+      const originalVal = originalValue ? Number(originalValue) : 0;
+      const hasYearOfUse = !!yearOfUse;
+      const hasOriginalValue = originalVal > 0;
+      let accumulatedDepreciation = 0;
+      if (isDepreciable && depreciationRate > 0 && hasYearOfUse && hasOriginalValue) {
+        const yearsUsed = currentYear - year;
+        if (yearsUsed > 0) {
+          const annualDepreciation = originalVal * (depreciationRate / 100);
+          accumulatedDepreciation = Math.min(annualDepreciation * yearsUsed, originalVal);
         }
-        
+      }
+      const quantity = Math.max(1, toInteger(row['Số lượng'], 1));
+      const yearInUseForDb = yearOfUse != null && yearOfUse !== '' ? year : null;
+
+      // Chế độ chỉ kiểm tra: không ghi DB, chỉ đếm dòng hợp lệ
+      if (validateOnly) {
+        result.imported++;
+        continue;
+      }
+
+      // Tạo tài sản mới (import thật)
+      try {
+        const generatedAssetCode = await generateAssetCode(categoryCode, year);
         const mappedCondition = mapCondition(row['Tình trạng']?.toString());
-        // Tình trạng Hỏng -> status là 'damaged'; còn lại -> 'active'
         const mappedStatus = mappedCondition === 'damaged' ? 'damaged' : 'active';
+        const currentValue = originalVal - Math.round(accumulatedDepreciation);
 
         await Asset.create({
           asset_code: generatedAssetCode,
           name: assetName!,
           description: row['Mô tả']?.toString() || '',
-          category_id: category!.id,   // FK để JOIN dashboard hoạt động đúng
+          category_id: category!.id,
           category_code: categoryCode,
           current_department_id: departmentId!,
-          purchase_date: acquisitionDate, // Null nếu không có năm sử dụng
-          purchase_price: hasOriginalValue ? originalVal : null, // Null nếu không có nguyên giá
-          current_value: hasOriginalValue ? currentValue : null, // Null nếu không có nguyên giá
-          quantity: Number(row['Số lượng']) || 1,
+          purchase_date: acquisitionDate,
+          purchase_price: hasOriginalValue ? originalVal : null,
+          current_value: hasOriginalValue ? currentValue : null,
+          quantity,
           unit: row['Đơn vị tính']?.toString() || category?.unit || 'Cái',
           serial_number: row['Số serial']?.toString() || null,
           location: row['Vị trí']?.toString() || '',
           condition: mappedCondition,
           status: mappedStatus,
-          is_depreciable: isDepreciable && hasYearOfUse && hasOriginalValue, // Chỉ đánh dấu khấu hao nếu có đủ thông tin
+          is_depreciable: isDepreciable && hasYearOfUse && hasOriginalValue,
           depreciation_rate: depreciationRate,
           useful_life: usefulLife,
-          accumulated_depreciation: accumulatedDepreciation, // 0 nếu không tính khấu hao
-          year_in_use: yearOfUse ? year : null, // Null nếu không nhập năm sử dụng
+          accumulated_depreciation: Math.round(accumulatedDepreciation),
+          year_in_use: yearInUseForDb,
         });
-        
         result.imported++;
       } catch (error: any) {
         result.errors.push({
