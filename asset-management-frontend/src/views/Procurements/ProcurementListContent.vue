@@ -1,30 +1,87 @@
 <template>
   <div>
     <div class="header-actions">
-      <el-button type="primary" @click="openCreate" v-if="!authStore.isDirector">Tạo mới</el-button>
+      <el-button
+        v-if="!authStore.isDirector"
+        type="primary"
+        @click="openCreate"
+      >
+        Tạo mới
+      </el-button>
     </div>
 
     <el-card class="summary-card">
       <div class="summary-header">
-        <div class="summary-title">Tổng hợp mua sắm theo năm</div>
+        <div class="summary-title">
+          Tổng hợp mua sắm theo năm
+        </div>
         <div class="summary-filters">
-          <el-select v-model="selectedYear" placeholder="Chọn năm" style="width: 140px" @change="loadSummary">
-            <el-option v-for="y in years" :key="y" :label="String(y)" :value="y" />
+          <el-select
+            v-model="selectedYear"
+            placeholder="Chọn năm"
+            style="width: 140px"
+            @change="loadSummary"
+          >
+            <el-option
+              v-for="y in years"
+              :key="y"
+              :label="String(y)"
+              :value="y"
+            />
           </el-select>
-          <el-button type="primary" plain @click="loadSummary">Tải</el-button>
-          <el-button type="success" @click="exportSummaryExcel" :loading="exporting">Xuất Excel</el-button>
+          <el-button
+            type="primary"
+            plain
+            @click="loadSummary"
+          >
+            Tải
+          </el-button>
+          <el-button
+            type="success"
+            :loading="exporting"
+            @click="exportSummaryExcel"
+          >
+            Xuất Excel
+          </el-button>
         </div>
       </div>
 
 
-      <el-table :data="summaryRows" v-loading="summaryLoading" style="width: 100%">
-
-        <el-table-column prop="category_code" label="Mã loại" width="120" />
-        <el-table-column prop="category" label="Loại tài sản" min-width="260" />
-        <el-table-column prop="name" label="Tên tài sản" min-width="220" />
-        <el-table-column prop="unit" label="Đơn vị" width="120" />
-        <el-table-column prop="total_quantity" label="Tổng SL" width="120" />
-        <el-table-column prop="total_amount" label="Tổng tiền" width="160">
+      <el-table
+        v-loading="summaryLoading"
+        :data="summaryRows"
+        style="width: 100%"
+      >
+        <el-table-column
+          prop="category_code"
+          label="Mã loại"
+          width="120"
+        />
+        <el-table-column
+          prop="category"
+          label="Loại tài sản"
+          min-width="260"
+        />
+        <el-table-column
+          prop="name"
+          label="Tên tài sản"
+          min-width="220"
+        />
+        <el-table-column
+          prop="unit"
+          label="Đơn vị"
+          width="120"
+        />
+        <el-table-column
+          prop="total_quantity"
+          label="Tổng SL"
+          width="120"
+        />
+        <el-table-column
+          prop="total_amount"
+          label="Tổng tiền"
+          width="160"
+        >
           <template #default="scope">
             {{ formatMoney(scope.row.total_amount) }}
           </template>
@@ -34,42 +91,123 @@
 
     <el-card>
       <div class="filters">
-        <el-input v-model="filters.search" placeholder="Tìm theo mã/tiêu đề" clearable style="max-width: 240px" />
-        <el-select v-model="filters.year" placeholder="Năm" clearable style="width: 140px">
-          <el-option v-for="y in years" :key="y" :label="String(y)" :value="y" />
+        <el-input
+          v-model="filters.search"
+          placeholder="Tìm theo mã/tiêu đề"
+          clearable
+          style="max-width: 240px"
+        />
+        <el-select
+          v-model="filters.year"
+          placeholder="Năm"
+          clearable
+          style="width: 140px"
+        >
+          <el-option
+            v-for="y in years"
+            :key="y"
+            :label="String(y)"
+            :value="y"
+          />
         </el-select>
-        <el-select v-model="filters.status" placeholder="Trạng thái" clearable style="width: 160px">
-          <el-option label="Nháp" value="draft" />
-          <el-option label="Đã hoàn tất" value="fulfilled" />
-          <el-option label="Đã hủy" value="cancelled" />
+        <el-select
+          v-model="filters.status"
+          :placeholder="$t('common.status')"
+          clearable
+          style="width: 160px"
+          @change="load"
+        >
+          <el-option
+            :label="$t('procurement.status.draft')"
+            value="draft"
+          />
+          <el-option
+            :label="$t('procurement.status.fulfilled')"
+            value="fulfilled"
+          />
+          <el-option
+            :label="$t('procurement.status.cancelled')"
+            value="cancelled"
+          />
         </el-select>
-        <el-button type="primary" @click="load">Tải</el-button>
+        <el-button
+          type="primary"
+          @click="load"
+        >
+          {{ $t('common.search') }}
+        </el-button>
       </div>
 
-      <el-table :data="rows" v-loading="loading" style="width: 100%">
-        <el-table-column prop="code" label="Mã" width="140" />
-        <el-table-column prop="title" label="Nội dung" min-width="240" />
-        <el-table-column label="Cấp phát (phòng ban)" min-width="220">
+      <el-table
+        v-loading="loading"
+        :data="rows"
+        style="width: 100%"
+      >
+        <el-table-column
+          prop="code"
+          label="Mã"
+          width="140"
+        />
+        <el-table-column
+          prop="title"
+          label="Nội dung"
+          min-width="240"
+        />
+        <el-table-column
+          label="Cấp phát (phòng ban)"
+          min-width="220"
+        >
           <template #default="scope">
             {{ scope.row.receiving_department?.name || '—' }}
           </template>
         </el-table-column>
-        <el-table-column label="Ngày mua" width="140">
+        <el-table-column
+          label="Ngày mua"
+          width="140"
+        >
           <template #default="scope">
             {{ formatDate(scope.row.purchase_date) }}
           </template>
         </el-table-column>
-        <el-table-column label="Trạng thái" width="130">
+        <el-table-column
+          label="Trạng thái"
+          width="130"
+        >
           <template #default="scope">
-            <el-tag :type="statusTagType(scope.row.status)">{{ statusLabel(scope.row.status) }}</el-tag>
+            <el-tag :type="statusTagType(scope.row.status)">
+              {{ statusLabel(scope.row.status) }}
+            </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="Thao tác" width="220" fixed="right">
+        <el-table-column
+          :label="$t('common.actions')"
+          width="220"
+          fixed="right"
+        >
           <template #default="scope">
-            <el-button size="small" @click="openDetail(scope.row.id)">Xem</el-button>
+            <el-button
+              size="small"
+              @click="openDetail(scope.row.id)"
+            >
+              {{ $t('common.view') }}
+            </el-button>
             <template v-if="!authStore.isDirector">
-              <el-button v-if="scope.row.status === 'draft'" size="small" @click="openEdit(scope.row.id)">Sửa</el-button>
-              <el-button v-if="scope.row.status === 'draft'" size="small" type="danger" plain @click="confirmDelete(scope.row.id)">Xóa</el-button>
+              <el-button
+                v-if="scope.row.status === 'draft'"
+                size="small"
+                @click="openEdit(scope.row.id)"
+              >
+                Sửa
+              </el-button>
+              <el-button
+                v-if="scope.row.status === 'draft'"
+                size="small"
+                type="danger"
+                plain
+                @click="confirmDelete(scope.row.id)"
+              >
+                Xóa
+              </el-button>
             </template>
           </template>
         </el-table-column>
@@ -88,7 +226,11 @@
       </div>
     </el-card>
 
-    <ProcurementFormDialog v-model="formVisible" :edit-id="editId" @saved="handleSaved" />
+    <ProcurementFormDialog
+      v-model="formVisible"
+      :edit-id="editId"
+      @saved="handleSaved"
+    />
     <ProcurementDetailDialog
       :visible="detailVisible"
       :item="detailItem"
@@ -102,6 +244,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { ElMessageBox, ElMessage } from 'element-plus';
 import { useAuthStore } from '@/stores/auth.store';
 import procurementService from '@/services/procurement.service';
@@ -278,17 +421,17 @@ const confirmDelete = async (id: number) => {
   }
 };
 
+const { t } = useI18n();
 const statusLabel = (s: string) => {
-  if (s === 'draft') return 'Nháp';
-  if (s === 'fulfilled') return 'Đã hoàn tất';
-  if (s === 'cancelled') return 'Đã hủy';
-  return s || '—';
+  const key = `procurement.status.${s}`;
+  const v = t(key);
+  return v !== key ? v : s || '—';
 };
 
 const statusTagType = (s: string) => {
   if (s === 'draft') return 'info';
   if (s === 'fulfilled') return 'success';
-  if (s === 'cancelled') return 'danger';
+  if (s === 'cancelled') return 'info';
   return 'info';
 };
 

@@ -3,24 +3,38 @@
     <!-- Header -->
     <div class="page-header">
       <div class="header-left">
-        <el-button @click="goBack" :icon="ArrowLeft">Quay lại</el-button>
+        <el-button
+          :icon="ArrowLeft"
+          @click="goBack"
+        >
+          Quay lại
+        </el-button>
         <h2>Thực hiện kiểm kê</h2>
       </div>
       <div class="header-right">
         <el-button 
-          @click="markUnscannedAsMissing" 
-          :loading="markingMissing"
+          :loading="markingMissing" 
           :disabled="!hasUnscannedAssets"
           type="warning"
+          @click="markUnscannedAsMissing"
         >
           <el-icon><Warning /></el-icon>
           Đánh dấu tài sản chưa quét là Thiếu
         </el-button>
-        <el-button @click="saveAsDraft" :loading="saving" :disabled="!hasChanges">
+        <el-button
+          :loading="saving"
+          :disabled="!hasChanges"
+          @click="saveAsDraft"
+        >
           <el-icon><DocumentCopy /></el-icon>
           Lưu nháp
         </el-button>
-        <el-button type="primary" @click="submitReport" :loading="submitting" :disabled="!canSubmit">
+        <el-button
+          type="primary"
+          :loading="submitting"
+          :disabled="!canSubmit"
+          @click="submitReport"
+        >
           <el-icon><Select /></el-icon>
           Nộp báo cáo
         </el-button>
@@ -28,23 +42,34 @@
     </div>
 
     <!-- Round Info - Enhanced -->
-    <el-card v-if="round" class="round-info">
+    <el-card
+      v-if="round"
+      class="round-info"
+    >
       <div class="round-info-header">
         <div class="round-info-main">
-          <h3 class="round-name">{{ round.round_name }}</h3>
+          <h3 class="round-name">
+            {{ round.round_name }}
+          </h3>
           <div class="round-details">
             <div class="detail-item">
-              <el-icon class="detail-icon"><Calendar /></el-icon>
+              <el-icon class="detail-icon">
+                <Calendar />
+              </el-icon>
               <span class="detail-label">Năm:</span>
               <span class="detail-value">{{ round.round_year }}</span>
             </div>
             <div class="detail-item">
-              <el-icon class="detail-icon"><Timer /></el-icon>
+              <el-icon class="detail-icon">
+                <Timer />
+              </el-icon>
               <span class="detail-label">Thời gian:</span>
               <span class="detail-value">{{ formatDate(round.start_date) }} - {{ formatDate(round.end_date) }}</span>
             </div>
             <div class="detail-item">
-              <el-icon class="detail-icon"><OfficeBuilding /></el-icon>
+              <el-icon class="detail-icon">
+                <OfficeBuilding />
+              </el-icon>
               <span class="detail-label">Phòng ban:</span>
               <span class="detail-value">{{ departmentName }}</span>
             </div>
@@ -64,8 +89,12 @@
     <!-- Summary Stats - Enhanced Dashboard -->
     <div class="summary-stats">
       <el-card class="stat-card">
-        <div class="stat-value">{{ totalAssets }}</div>
-        <div class="stat-label">Tổng tài sản</div>
+        <div class="stat-value">
+          {{ totalAssets }}
+        </div>
+        <div class="stat-label">
+          Tổng tài sản
+        </div>
         <div class="stat-progress">
           <el-progress 
             :percentage="totalAssets > 0 ? Math.round((checkedCount / totalAssets) * 100) : 0" 
@@ -75,36 +104,56 @@
         </div>
       </el-card>
       <el-card class="stat-card success">
-        <div class="stat-value">{{ matchedCount }}</div>
-        <div class="stat-label">Khớp (Còn tồn tại)</div>
+        <div class="stat-value">
+          {{ matchedCount }}
+        </div>
+        <div class="stat-label">
+          Khớp (Còn tồn tại)
+        </div>
         <div class="stat-percentage">
           {{ totalAssets > 0 ? Math.round((matchedCount / totalAssets) * 100) : 0 }}%
         </div>
       </el-card>
       <el-card class="stat-card danger">
-        <div class="stat-value">{{ missingCount }}</div>
-        <div class="stat-label">Thiếu (Mất)</div>
+        <div class="stat-value">
+          {{ missingCount }}
+        </div>
+        <div class="stat-label">
+          Thiếu (Mất)
+        </div>
         <div class="stat-percentage">
           {{ totalAssets > 0 ? Math.round((missingCount / totalAssets) * 100) : 0 }}%
         </div>
       </el-card>
       <el-card class="stat-card warning">
-        <div class="stat-value">{{ needsRepairCount }}</div>
-        <div class="stat-label">Cần sửa chữa</div>
+        <div class="stat-value">
+          {{ needsRepairCount }}
+        </div>
+        <div class="stat-label">
+          Cần sửa chữa
+        </div>
         <div class="stat-percentage">
           {{ totalAssets > 0 ? Math.round((needsRepairCount / totalAssets) * 100) : 0 }}%
         </div>
       </el-card>
       <el-card class="stat-card danger">
-        <div class="stat-value">{{ damagedCount }}</div>
-        <div class="stat-label">Hỏng/Thanh lý</div>
+        <div class="stat-value">
+          {{ damagedCount }}
+        </div>
+        <div class="stat-label">
+          Hỏng/Thanh lý
+        </div>
         <div class="stat-percentage">
           {{ totalAssets > 0 ? Math.round((damagedCount / totalAssets) * 100) : 0 }}%
         </div>
       </el-card>
       <el-card class="stat-card">
-        <div class="stat-value">{{ checkedCount }}/{{ totalAssets }}</div>
-        <div class="stat-label">Đã kiểm</div>
+        <div class="stat-value">
+          {{ checkedCount }}/{{ totalAssets }}
+        </div>
+        <div class="stat-label">
+          Đã kiểm
+        </div>
         <div class="stat-progress">
           <el-progress 
             :percentage="totalAssets > 0 ? Math.round((checkedCount / totalAssets) * 100) : 0" 
@@ -114,9 +163,16 @@
         </div>
       </el-card>
       <el-card class="stat-card warning">
-        <div class="stat-value">{{ unscannedCount }}</div>
-        <div class="stat-label">Chưa quét QR</div>
-        <div class="stat-hint" v-if="unscannedCount > 0">
+        <div class="stat-value">
+          {{ unscannedCount }}
+        </div>
+        <div class="stat-label">
+          Chưa quét QR
+        </div>
+        <div
+          v-if="unscannedCount > 0"
+          class="stat-hint"
+        >
           <el-icon><Warning /></el-icon>
           Sẽ đánh dấu "Thiếu" khi nộp
         </div>
@@ -124,34 +180,41 @@
     </div>
 
     <!-- Barcode Scanner Input -->
-    <el-card class="scanner-card" v-if="round">
+    <el-card
+      v-if="round"
+      class="scanner-card"
+    >
       <div class="scanner-container">
         <div class="scanner-input-row">
           <el-input
+            ref="scannerInputRef"
             v-model="scannedCode"
             placeholder="Quét mã QR/Barcode hoặc nhập mã tài sản (Enter để tìm)"
             :prefix-icon="Search"
             clearable
-            @keyup.enter="handleScanCode"
-            @clear="scannedCode = ''"
-            ref="scannerInputRef"
             size="large"
             class="scanner-input"
+            @keyup.enter="handleScanCode"
+            @clear="scannedCode = ''"
           >
             <template #append>
-              <el-button @click="handleScanCode" :loading="scanning" type="primary">
+              <el-button
+                :loading="scanning"
+                type="primary"
+                @click="handleScanCode"
+              >
                 <el-icon><Search /></el-icon>
                 Tìm
               </el-button>
             </template>
           </el-input>
           <el-button 
-            @click="openCameraScanner" 
             :icon="Camera" 
             type="success" 
-            size="large"
+            size="large" 
             class="camera-btn"
             :disabled="scanning"
+            @click="openCameraScanner"
           >
             Mở Camera
           </el-button>
@@ -176,30 +239,50 @@
       title="Quét QR Code từ Camera"
       width="90%"
       :close-on-click-modal="false"
-      @close="stopCameraScanner"
       class="camera-dialog"
+      @close="stopCameraScanner"
     >
       <div class="camera-scanner-container">
-        <div :id="'qr-reader'" :key="cameraKey" class="qr-reader"></div>
-        <div v-if="cameraScanning" class="camera-status">
-          <el-icon class="is-loading"><Loading /></el-icon>
+        <div
+          :id="'qr-reader'"
+          :key="cameraKey"
+          class="qr-reader"
+        />
+        <div
+          v-if="cameraScanning"
+          class="camera-status"
+        >
+          <el-icon class="is-loading">
+            <Loading />
+          </el-icon>
           <span>Đang quét QR code...</span>
         </div>
-        <div v-if="cameraError" class="camera-error">
+        <div
+          v-if="cameraError"
+          class="camera-error"
+        >
           <el-alert
             type="error"
             :closable="false"
             show-icon
           >
             <template #title>
-              <div style="white-space: pre-line;">{{ cameraError }}</div>
+              <div style="white-space: pre-line;">
+                {{ cameraError }}
+              </div>
             </template>
           </el-alert>
         </div>
       </div>
       <template #footer>
-        <el-button @click="stopCameraScanner">Đóng</el-button>
-        <el-button type="primary" @click="switchCamera" v-if="hasMultipleCameras">
+        <el-button @click="stopCameraScanner">
+          Đóng
+        </el-button>
+        <el-button
+          v-if="hasMultipleCameras"
+          type="primary"
+          @click="switchCamera"
+        >
           Đổi Camera
         </el-button>
       </template>
@@ -218,101 +301,251 @@
               clearable
               style="width: 250px"
             />
-            <el-select v-model="filterStatus" placeholder="Lọc trạng thái" clearable style="width: 150px">
-              <el-option label="Chưa kiểm" value="unchecked" />
-              <el-option label="Đã kiểm" value="checked" />
-              <el-option label="Khớp" value="matched" />
-              <el-option label="Thiếu" value="missing" />
-              <el-option label="Cần sửa" value="needs_repair" />
-              <el-option label="Hỏng" value="damaged" />
-              <el-option label="Chờ thanh lý" value="pending_disposal" />
+            <el-select
+              v-model="filterStatus"
+              placeholder="Lọc trạng thái"
+              clearable
+              style="width: 150px"
+            >
+              <el-option
+                label="Chưa kiểm"
+                value="unchecked"
+              />
+              <el-option
+                label="Đã kiểm"
+                value="checked"
+              />
+              <el-option
+                label="Khớp"
+                value="matched"
+              />
+              <el-option
+                label="Thiếu"
+                value="missing"
+              />
+              <el-option
+                label="Cần sửa"
+                value="needs_repair"
+              />
+              <el-option
+                label="Hỏng"
+                value="damaged"
+              />
+              <el-option
+                label="Chờ thanh lý"
+                value="pending_disposal"
+              />
             </el-select>
           </div>
         </div>
       </template>
 
       <div class="responsive-table">
-        <el-table :data="filteredAssets" v-loading="loading" stripe @row-click="handleRowClick">
-        <el-table-column type="index" label="STT" width="60" align="center" />
-        <el-table-column prop="asset_code" label="Mã tài sản" width="120" />
-        <el-table-column prop="category_code" label="Mã loại TS" width="100" />
-        <el-table-column prop="name" label="Tên tài sản" min-width="200">
-          <template #default="{ row }">
-            {{ row.name }}
-            <el-tag v-if="row.status === 'pending_disposal'" type="danger" size="small" style="margin-left: 4px">Chờ thanh lý</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="unit" label="ĐVT" width="80" align="center">
-          <template #default="{ row }">
-            <span>{{ row.unit || '-' }}</span>
-            <el-tag v-if="!canScanAsset(row)" type="info" size="small" style="margin-left: 4px">
-              Không QR
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="SL sổ sách" width="100" align="center">
-          <template #default="{ row }">
-            {{ row.quantity || 1 }}
-          </template>
-        </el-table-column>
-        <el-table-column label="SL thực tế" width="100" align="center">
-          <template #default="{ row }">
-            <span v-if="row.inventory_detail" :class="getQuantityClass(row)">
-              {{ row.inventory_detail.actual_quantity }}
-            </span>
-            <span v-else class="text-muted">-</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="Chênh lệch" width="100" align="center">
-          <template #default="{ row }">
-            <span v-if="row.inventory_detail" :class="getDifferenceClass(row)">
-              {{ formatDifference(getCalculatedDifference(row)) }}
-            </span>
-            <span v-else class="text-muted">-</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="Nguyên giá" width="130" align="right">
-          <template #default="{ row }">
-            {{ formatCurrency(row.original_value) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="Giá trị còn lại" width="130" align="right">
-          <template #default="{ row }">
-            {{ formatCurrency(row.current_value) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="Tình trạng" width="120" align="center">
-          <template #default="{ row }">
-            <el-tag v-if="row.inventory_detail" :type="getConditionType(row.inventory_detail.asset_condition)" size="small">
-              {{ getConditionLabel(row.inventory_detail.asset_condition) }}
-            </el-tag>
-            <span v-else class="text-muted">-</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="Kết quả" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag v-if="row.inventory_detail" :type="getStatusType(row.inventory_detail.check_status)" size="small">
-              {{ getCheckStatusLabel(row.inventory_detail.check_status) }}
-            </el-tag>
-            <el-tag v-else type="info" size="small">Chưa kiểm</el-tag>
-          </template>
-        </el-table-column>
-      </el-table>
+        <el-table
+          v-loading="loading"
+          :data="filteredAssets"
+          stripe
+          @row-click="handleRowClick"
+        >
+          <el-table-column
+            type="index"
+            label="STT"
+            width="60"
+            align="center"
+          />
+          <el-table-column
+            prop="asset_code"
+            label="Mã tài sản"
+            width="120"
+          />
+          <el-table-column
+            prop="category_code"
+            label="Mã loại TS"
+            width="100"
+          />
+          <el-table-column
+            prop="name"
+            label="Tên tài sản"
+            min-width="200"
+          >
+            <template #default="{ row }">
+              {{ row.name }}
+              <el-tag
+                v-if="row.status === 'pending_disposal'"
+                type="danger"
+                size="small"
+                style="margin-left: 4px"
+              >
+                Chờ thanh lý
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="unit"
+            label="ĐVT"
+            width="80"
+            align="center"
+          >
+            <template #default="{ row }">
+              <span>{{ row.unit || '-' }}</span>
+              <el-tag
+                v-if="!canScanAsset(row)"
+                type="info"
+                size="small"
+                style="margin-left: 4px"
+              >
+                Không QR
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="SL sổ sách"
+            width="100"
+            align="center"
+          >
+            <template #default="{ row }">
+              {{ row.quantity || 1 }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="SL thực tế"
+            width="100"
+            align="center"
+          >
+            <template #default="{ row }">
+              <span
+                v-if="row.inventory_detail"
+                :class="getQuantityClass(row)"
+              >
+                {{ row.inventory_detail.actual_quantity }}
+              </span>
+              <span
+                v-else
+                class="text-muted"
+              >-</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Chênh lệch"
+            width="100"
+            align="center"
+          >
+            <template #default="{ row }">
+              <span
+                v-if="row.inventory_detail"
+                :class="getDifferenceClass(row)"
+              >
+                {{ formatDifference(getCalculatedDifference(row)) }}
+              </span>
+              <span
+                v-else
+                class="text-muted"
+              >-</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Nguyên giá"
+            width="130"
+            align="right"
+          >
+            <template #default="{ row }">
+              {{ formatCurrency(row.original_value) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Giá trị còn lại"
+            width="130"
+            align="right"
+          >
+            <template #default="{ row }">
+              {{ formatCurrency(row.current_value) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Tình trạng"
+            width="120"
+            align="center"
+          >
+            <template #default="{ row }">
+              <el-tag
+                v-if="row.inventory_detail"
+                :type="getConditionType(row.inventory_detail.asset_condition)"
+                size="small"
+              >
+                {{ getConditionLabel(row.inventory_detail.asset_condition) }}
+              </el-tag>
+              <span
+                v-else
+                class="text-muted"
+              >-</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Kết quả"
+            width="100"
+            align="center"
+          >
+            <template #default="{ row }">
+              <el-tag
+                v-if="row.inventory_detail"
+                :type="getStatusType(row.inventory_detail.check_status)"
+                size="small"
+              >
+                {{ getCheckStatusLabel(row.inventory_detail.check_status) }}
+              </el-tag>
+              <el-tag
+                v-else
+                type="info"
+                size="small"
+              >
+                Chưa kiểm
+              </el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
       </div>
     </el-card>
 
     <!-- Check Asset Dialog -->
-    <el-dialog v-model="showCheckDialog" title="Kiểm kê tài sản" width="600" @close="onCheckDialogClose">
-      <div v-if="selectedAsset" class="check-dialog-content">
+    <el-dialog
+      v-model="showCheckDialog"
+      title="Kiểm kê tài sản"
+      width="600"
+      @close="onCheckDialogClose"
+    >
+      <div
+        v-if="selectedAsset"
+        class="check-dialog-content"
+      >
         <div class="asset-info">
-          <el-descriptions :column="2" border>
-            <el-descriptions-item label="Mã tài sản">{{ selectedAsset.asset_code }}</el-descriptions-item>
-            <el-descriptions-item label="Mã loại">{{ selectedAsset.category_code }}</el-descriptions-item>
-            <el-descriptions-item label="Tên tài sản" :span="2">{{ selectedAsset.name }}</el-descriptions-item>
-            <el-descriptions-item label="Đơn vị tính">{{ selectedAsset.unit || 'Cái' }}</el-descriptions-item>
-            <el-descriptions-item label="SL theo sổ sách">{{ selectedAsset.quantity || 1 }}</el-descriptions-item>
-            <el-descriptions-item label="Nguyên giá">{{ formatCurrency(selectedAsset.original_value) }}</el-descriptions-item>
-            <el-descriptions-item label="Giá trị còn lại">{{ formatCurrency(selectedAsset.current_value) }}</el-descriptions-item>
+          <el-descriptions
+            :column="2"
+            border
+          >
+            <el-descriptions-item label="Mã tài sản">
+              {{ selectedAsset.asset_code }}
+            </el-descriptions-item>
+            <el-descriptions-item label="Mã loại">
+              {{ selectedAsset.category_code }}
+            </el-descriptions-item>
+            <el-descriptions-item
+              label="Tên tài sản"
+              :span="2"
+            >
+              {{ selectedAsset.name }}
+            </el-descriptions-item>
+            <el-descriptions-item label="Đơn vị tính">
+              {{ selectedAsset.unit || 'Cái' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="SL theo sổ sách">
+              {{ selectedAsset.quantity || 1 }}
+            </el-descriptions-item>
+            <el-descriptions-item label="Nguyên giá">
+              {{ formatCurrency(selectedAsset.original_value) }}
+            </el-descriptions-item>
+            <el-descriptions-item label="Giá trị còn lại">
+              {{ formatCurrency(selectedAsset.current_value) }}
+            </el-descriptions-item>
           </el-descriptions>
         </div>
 
@@ -362,8 +595,14 @@
           </template>
         </el-alert>
 
-        <el-form :model="checkForm" label-width="140px">
-          <el-form-item label="Số lượng thực tế" required>
+        <el-form
+          :model="checkForm"
+          label-width="140px"
+        >
+          <el-form-item
+            label="Số lượng thực tế"
+            required
+          >
             <el-input-number 
               v-model="checkForm.actual_quantity" 
               :min="0" 
@@ -372,19 +611,45 @@
               :step="canScanAsset(selectedAsset) ? 1 : 0.01"
               :disabled="selectedAsset && canScanAsset(selectedAsset) && selectedAsset.inventory_detail"
             />
-            <span v-if="selectedAsset && !canScanAsset(selectedAsset)" class="hint" style="margin-left: 10px">
+            <span
+              v-if="selectedAsset && !canScanAsset(selectedAsset)"
+              class="hint"
+              style="margin-left: 10px"
+            >
               (Tài sản diện tích - có thể nhập số thập phân)
             </span>
-            <span v-if="selectedAsset && canScanAsset(selectedAsset) && selectedAsset.inventory_detail" class="hint" style="margin-left: 10px; color: #909399">
+            <span
+              v-if="selectedAsset && canScanAsset(selectedAsset) && selectedAsset.inventory_detail"
+              class="hint"
+              style="margin-left: 10px; color: #909399"
+            >
               (Đã quét QR - Số lượng không thể chỉnh sửa)
             </span>
           </el-form-item>
-          <el-form-item label="Tình trạng tài sản" required>
-            <el-select v-model="checkForm.asset_condition" style="width: 100%">
-              <el-option value="good" label="0 - Tốt: Còn sử dụng được và đang sử dụng" />
-              <el-option value="usable" label="1 - Sử dụng được: Còn sử dụng được nhưng chưa sử dụng" />
-              <el-option value="needs_repair" label="2 - Cần sửa chữa: Còn sửa được → Đưa vào quy trình sửa chữa" />
-              <el-option value="damaged" label="3 - Hỏng nặng: Sửa KHÔNG được → Đưa vào thanh lý" />
+          <el-form-item
+            label="Tình trạng tài sản"
+            required
+          >
+            <el-select
+              v-model="checkForm.asset_condition"
+              style="width: 100%"
+            >
+              <el-option
+                value="good"
+                label="0 - Tốt: Còn sử dụng được và đang sử dụng"
+              />
+              <el-option
+                value="usable"
+                label="1 - Sử dụng được: Còn sử dụng được nhưng chưa sử dụng"
+              />
+              <el-option
+                value="needs_repair"
+                label="2 - Cần sửa chữa: Còn sửa được → Đưa vào quy trình sửa chữa"
+              />
+              <el-option
+                value="damaged"
+                label="3 - Hỏng nặng: Sửa KHÔNG được → Đưa vào thanh lý"
+              />
             </el-select>
             <div style="margin-top: 8px; font-size: 12px; color: #909399; line-height: 1.5;">
               <strong>Lưu ý:</strong> 
@@ -394,28 +659,57 @@
               </ul>
             </div>
           </el-form-item>
-          <el-form-item label="Kết quả kiểm kê" required>
+          <el-form-item
+            label="Kết quả kiểm kê"
+            required
+          >
             <el-select 
               v-model="checkForm.check_status" 
               style="width: 100%"
               :disabled="selectedAsset && canScanAsset(selectedAsset) && selectedAsset.inventory_detail"
             >
-              <el-option value="matched" label="Khớp với sổ sách" />
-              <el-option value="missing" label="Thiếu (không tìm thấy)" />
-              <el-option value="damaged" label="Hư hỏng cần xử lý" />
+              <el-option
+                value="matched"
+                label="Khớp với sổ sách"
+              />
+              <el-option
+                value="missing"
+                label="Thiếu (không tìm thấy)"
+              />
+              <el-option
+                value="damaged"
+                label="Hư hỏng cần xử lý"
+              />
             </el-select>
-            <span v-if="selectedAsset && canScanAsset(selectedAsset) && selectedAsset.inventory_detail" class="hint" style="margin-left: 10px; color: #909399">
+            <span
+              v-if="selectedAsset && canScanAsset(selectedAsset) && selectedAsset.inventory_detail"
+              class="hint"
+              style="margin-left: 10px; color: #909399"
+            >
               (Đã quét QR - Kết quả "Khớp" không thể chỉnh sửa, chỉ có thể chỉnh sửa tình trạng)
             </span>
           </el-form-item>
           <el-form-item label="Ghi chú">
-            <el-input v-model="checkForm.notes" type="textarea" :rows="3" placeholder="Ghi chú thêm về tài sản..." />
+            <el-input
+              v-model="checkForm.notes"
+              type="textarea"
+              :rows="3"
+              placeholder="Ghi chú thêm về tài sản..."
+            />
           </el-form-item>
         </el-form>
       </div>
       <template #footer>
-        <el-button @click="() => { showCheckDialog = false; isFromScan = false; }">Hủy</el-button>
-        <el-button type="primary" @click="saveCheck" :loading="savingCheck">Lưu kết quả</el-button>
+        <el-button @click="() => { showCheckDialog = false; isFromScan = false; }">
+          Hủy
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="savingCheck"
+          @click="saveCheck"
+        >
+          Lưu kết quả
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -937,7 +1231,7 @@ const handleScanCode = async () => {
         // Khi quét QR thành công → tự động lưu với trạng thái "Khớp" và số lượng = sổ sách
         // Đây là bằng chứng chắc chắn tài sản còn tồn tại, không thể chỉnh sửa số lượng và kết quả
         // Chỉ có thể chỉnh sửa tình trạng tài sản (tốt, cần sửa, hỏng...)
-        // Giá trị thực tế không cần nhập vì khấu hao đã được tính tự động theo năm
+        // Giá trị thực tế không cần nhập vì hao mòn đã được tính tự động theo năm
         const autoSaveData = {
           asset_id: foundAsset.id,
           actual_quantity: bookQuantity, // Phải = số lượng sổ sách (chứng minh tài sản còn tồn tại)

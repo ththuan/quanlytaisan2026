@@ -8,14 +8,17 @@
   >
     <el-form
       ref="formRef"
+      v-loading="loading"
       :model="formData"
       :rules="rules"
       label-position="top"
-      v-loading="loading"
     >
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item :label="$t('users.username')" prop="username">
+          <el-form-item
+            :label="$t('users.username')"
+            prop="username"
+          >
             <el-input 
               v-model="formData.username" 
               :placeholder="$t('users.username')"
@@ -24,21 +27,40 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item :label="$t('users.email')" prop="email">
-            <el-input v-model="formData.email" :placeholder="$t('users.email')" />
+          <el-form-item
+            :label="$t('users.email')"
+            prop="email"
+          >
+            <el-input
+              v-model="formData.email"
+              :placeholder="$t('users.email')"
+            />
           </el-form-item>
         </el-col>
       </el-row>
 
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item :label="$t('users.fullname')" prop="fullname">
-            <el-input v-model="formData.fullname" :placeholder="$t('users.fullname')" />
+          <el-form-item
+            :label="$t('users.fullname')"
+            prop="fullname"
+          >
+            <el-input
+              v-model="formData.fullname"
+              :placeholder="$t('users.fullname')"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item :label="$t('users.role')" prop="role">
-            <el-select v-model="formData.role" :placeholder="$t('users.role')" style="width: 100%">
+          <el-form-item
+            :label="$t('users.role')"
+            prop="role"
+          >
+            <el-select
+              v-model="formData.role"
+              :placeholder="$t('users.role')"
+              style="width: 100%"
+            >
               <el-option
                 v-for="role in userRoles"
                 :key="role.value"
@@ -50,9 +72,15 @@
         </el-col>
       </el-row>
 
-      <el-row :gutter="20" v-if="!isEdit">
+      <el-row
+        v-if="!isEdit"
+        :gutter="20"
+      >
         <el-col :span="12">
-          <el-form-item :label="$t('users.password')" prop="password">
+          <el-form-item
+            :label="$t('users.password')"
+            prop="password"
+          >
             <el-input
               v-model="formData.password"
               type="password"
@@ -62,7 +90,10 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item :label="$t('users.confirmPassword')" prop="confirmPassword">
+          <el-form-item
+            :label="$t('users.confirmPassword')"
+            prop="confirmPassword"
+          >
             <el-input
               v-model="formData.confirmPassword"
               type="password"
@@ -75,7 +106,10 @@
 
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item :label="$t('users.department')" prop="department_id">
+          <el-form-item
+            :label="$t('users.department')"
+            prop="department_id"
+          >
             <el-select 
               v-model="formData.department_id" 
               :placeholder="$t('users.department')" 
@@ -92,8 +126,14 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="12" v-if="isEdit">
-          <el-form-item :label="$t('common.status')" prop="is_active">
+        <el-col
+          v-if="isEdit"
+          :span="12"
+        >
+          <el-form-item
+            :label="$t('common.status')"
+            prop="is_active"
+          >
             <el-switch
               v-model="formData.is_active"
               :active-text="$t('users.active')"
@@ -106,8 +146,14 @@
 
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">{{ $t('common.cancel') }}</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="loading">
+        <el-button @click="handleClose">
+          {{ $t('common.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="loading"
+          @click="handleSubmit"
+        >
           {{ $t('common.save') }}
         </el-button>
       </div>

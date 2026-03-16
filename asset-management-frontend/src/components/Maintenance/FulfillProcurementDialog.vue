@@ -22,10 +22,23 @@
         </div>
       </el-alert>
 
-      <el-form :model="form" label-width="160px">
+      <el-form
+        :model="form"
+        label-width="160px"
+      >
         <el-form-item label="Phòng ban nhận">
-          <el-select v-model="form.department_id" filterable placeholder="Chọn phòng ban nhận" style="width: 100%">
-            <el-option v-for="d in departments" :key="d.id" :label="d.name" :value="d.id" />
+          <el-select
+            v-model="form.department_id"
+            filterable
+            placeholder="Chọn phòng ban nhận"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="d in departments"
+              :key="d.id"
+              :label="d.name"
+              :value="d.id"
+            />
           </el-select>
         </el-form-item>
 
@@ -39,58 +52,134 @@
           />
         </el-form-item>
 
-        <el-divider content-position="left">Danh sách tài sản sẽ tạo</el-divider>
+        <el-divider content-position="left">
+          Danh sách tài sản sẽ tạo
+        </el-divider>
 
         <div style="display:flex; gap:8px; margin-bottom: 10px;">
-          <el-button type="primary" @click="addLine">Thêm dòng</el-button>
-          <el-button @click="resetFromRequest">Tự điền theo đề nghị</el-button>
+          <el-button
+            type="primary"
+            @click="addLine"
+          >
+            Thêm dòng
+          </el-button>
+          <el-button @click="resetFromRequest">
+            Tự điền theo đề nghị
+          </el-button>
         </div>
 
         <div class="responsive-table">
-          <el-table :data="form.assets" border stripe size="small">
-          <el-table-column label="Mã (prefix)" min-width="180">
-            <template #default="{ row }">
-              <el-input v-model="row.asset_code_prefix" placeholder="VD: MS-2026-0001" />
-            </template>
-          </el-table-column>
-          <el-table-column label="Tên tài sản" min-width="240">
-            <template #default="{ row }">
-              <el-input v-model="row.name" placeholder="Tên tài sản" />
-            </template>
-          </el-table-column>
-          <el-table-column label="Mã loại (category_code)" min-width="160">
-            <template #default="{ row }">
-              <el-input v-model="row.category_code" placeholder="VD: 7523" />
-            </template>
-          </el-table-column>
-          <el-table-column label="SL" width="90" align="center">
-            <template #default="{ row }">
-              <el-input-number v-model="row.quantity" :min="1" :max="500" />
-            </template>
-          </el-table-column>
-          <el-table-column label="Đơn giá (VND)" width="160" align="right">
-            <template #default="{ row }">
-              <el-input-number v-model="row.purchase_price" :min="0" :step="100000" :controls="false" style="width: 100%" />
-            </template>
-          </el-table-column>
-          <el-table-column label="Đơn vị" width="120" align="center">
-            <template #default="{ row }">
-              <el-input v-model="row.unit" placeholder="cái" />
-            </template>
-          </el-table-column>
-          <el-table-column label="" width="70" fixed="right" align="center">
-            <template #default="{ $index }">
-              <el-button type="danger" link @click="removeLine($index)">Xóa</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+          <el-table
+            :data="form.assets"
+            border
+            stripe
+            size="small"
+          >
+            <el-table-column
+              label="Mã (prefix)"
+              min-width="180"
+            >
+              <template #default="{ row }">
+                <el-input
+                  v-model="row.asset_code_prefix"
+                  placeholder="VD: MS-2026-0001"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Tên tài sản"
+              min-width="240"
+            >
+              <template #default="{ row }">
+                <el-input
+                  v-model="row.name"
+                  placeholder="Tên tài sản"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Mã loại (category_code)"
+              min-width="160"
+            >
+              <template #default="{ row }">
+                <el-input
+                  v-model="row.category_code"
+                  placeholder="VD: 7523"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="SL"
+              width="90"
+              align="center"
+            >
+              <template #default="{ row }">
+                <el-input-number
+                  v-model="row.quantity"
+                  :min="1"
+                  :max="500"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Đơn giá (VND)"
+              width="160"
+              align="right"
+            >
+              <template #default="{ row }">
+                <el-input-number
+                  v-model="row.purchase_price"
+                  :min="0"
+                  :step="100000"
+                  :controls="false"
+                  style="width: 100%"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Đơn vị"
+              width="120"
+              align="center"
+            >
+              <template #default="{ row }">
+                <el-input
+                  v-model="row.unit"
+                  placeholder="cái"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              label=""
+              width="70"
+              fixed="right"
+              align="center"
+            >
+              <template #default="{ $index }">
+                <el-button
+                  type="danger"
+                  link
+                  @click="removeLine($index)"
+                >
+                  Xóa
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
         </div>
       </el-form>
     </div>
 
     <template #footer>
-      <el-button @click="emit('update:visible', false)">Hủy</el-button>
-      <el-button type="primary" :loading="loading" @click="submit">Hoàn tất & tạo tài sản</el-button>
+      <el-button @click="emit('update:visible', false)">
+        Hủy
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="loading"
+        @click="submit"
+      >
+        Hoàn tất & tạo tài sản
+      </el-button>
     </template>
   </el-dialog>
 </template>

@@ -16,6 +16,7 @@ const i18n = createI18n({
 export default i18n;
 
 // Helper function (giữ API cũ, nhưng khóa về 'vi')
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- parameter kept for API compatibility
 export const setLanguage = (_lang?: 'vi') => {
   i18n.global.locale.value = 'vi';
   localStorage.setItem('language', 'vi');

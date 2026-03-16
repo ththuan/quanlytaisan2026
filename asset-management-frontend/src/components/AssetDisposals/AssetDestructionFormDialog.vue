@@ -6,8 +6,15 @@
     :close-on-click-modal="false"
     @closed="resetForm"
   >
-    <div class="dialog-hint" v-if="formData.disposal_type === 'destruction'">
-      <el-alert type="info" show-icon :closable="false">
+    <div
+      v-if="formData.disposal_type === 'destruction'"
+      class="dialog-hint"
+    >
+      <el-alert
+        type="info"
+        show-icon
+        :closable="false"
+      >
         <template #title>
           <b>Tiêu hủy tài sản</b> – Điều 24 Quy chế 2026: Áp dụng cho tài sản liên quan đến
           bí mật nhà nước, bảo vệ môi trường, phần mềm hết hạn bản quyền. Hiệu trưởng quyết
@@ -15,8 +22,15 @@
         </template>
       </el-alert>
     </div>
-    <div class="dialog-hint" v-else>
-      <el-alert type="warning" show-icon :closable="false">
+    <div
+      v-else
+      class="dialog-hint"
+    >
+      <el-alert
+        type="warning"
+        show-icon
+        :closable="false"
+      >
         <template #title>
           <b>Thanh lý tài sản</b> – Điều 23 Quy chế 2026: Áp dụng khi TS hết hạn sử dụng,
           hư hỏng không sửa được, hoặc chi phí sửa chữa &gt; 30% nguyên giá.
@@ -24,38 +38,97 @@
       </el-alert>
     </div>
 
-    <el-form ref="formRef" :model="formData" :rules="rules" label-width="170px" style="margin-top:12px">
+    <el-form
+      ref="formRef"
+      :model="formData"
+      :rules="rules"
+      label-width="170px"
+      style="margin-top:12px"
+    >
       <!-- Loại xử lý -->
-      <el-form-item label="Loại xử lý" prop="disposal_type">
+      <el-form-item
+        label="Loại xử lý"
+        prop="disposal_type"
+      >
         <el-radio-group v-model="formData.disposal_type">
-          <el-radio-button value="liquidation">Thanh lý (Điều 23)</el-radio-button>
-          <el-radio-button value="destruction">Tiêu hủy (Điều 24)</el-radio-button>
+          <el-radio-button value="liquidation">
+            Thanh lý (Điều 23)
+          </el-radio-button>
+          <el-radio-button value="destruction">
+            Tiêu hủy (Điều 24)
+          </el-radio-button>
         </el-radio-group>
       </el-form-item>
 
       <!-- Hình thức tiêu hủy -->
-      <el-form-item v-if="formData.disposal_type === 'destruction'" label="Hình thức tiêu hủy" prop="destruction_method">
-        <el-select v-model="formData.destruction_method" placeholder="Chọn hình thức" style="width:100%">
-          <el-option label="Sử dụng hóa chất" value="chemical" />
-          <el-option label="Biện pháp cơ học" value="mechanical" />
-          <el-option label="Chôn lấp" value="burial" />
-          <el-option label="Tháo gỡ / cài đặt lại phần mềm" value="software" />
-          <el-option label="Hình thức khác" value="other" />
+      <el-form-item
+        v-if="formData.disposal_type === 'destruction'"
+        label="Hình thức tiêu hủy"
+        prop="destruction_method"
+      >
+        <el-select
+          v-model="formData.destruction_method"
+          placeholder="Chọn hình thức"
+          style="width:100%"
+        >
+          <el-option
+            label="Sử dụng hóa chất"
+            value="chemical"
+          />
+          <el-option
+            label="Biện pháp cơ học"
+            value="mechanical"
+          />
+          <el-option
+            label="Chôn lấp"
+            value="burial"
+          />
+          <el-option
+            label="Tháo gỡ / cài đặt lại phần mềm"
+            value="software"
+          />
+          <el-option
+            label="Hình thức khác"
+            value="other"
+          />
         </el-select>
       </el-form-item>
 
       <!-- Hình thức thanh lý -->
-      <el-form-item v-else label="Hình thức thanh lý" prop="disposal_method">
-        <el-select v-model="formData.disposal_method" placeholder="Chọn hình thức" style="width:100%">
-          <el-option label="Bán đấu giá (≥50 triệu/TS)" value="sell_auction" />
-          <el-option label="Bán niêm yết (10–50 triệu/TS)" value="sell_listed" />
-          <el-option label="Bán chỉ định (&lt;10 triệu/TS)" value="sell_direct" />
-          <el-option label="Phá dỡ / hủy bỏ" value="demolish" />
+      <el-form-item
+        v-else
+        label="Hình thức thanh lý"
+        prop="disposal_method"
+      >
+        <el-select
+          v-model="formData.disposal_method"
+          placeholder="Chọn hình thức"
+          style="width:100%"
+        >
+          <el-option
+            label="Bán đấu giá (≥50 triệu/TS)"
+            value="sell_auction"
+          />
+          <el-option
+            label="Bán niêm yết (10–50 triệu/TS)"
+            value="sell_listed"
+          />
+          <el-option
+            label="Bán chỉ định (&lt;10 triệu/TS)"
+            value="sell_direct"
+          />
+          <el-option
+            label="Phá dỡ / hủy bỏ"
+            value="demolish"
+          />
         </el-select>
       </el-form-item>
 
       <!-- Danh sách tài sản chờ thanh lý nhóm theo đơn vị -->
-      <el-form-item label="Danh sách tài sản" prop="asset_ids">
+      <el-form-item
+        label="Danh sách tài sản"
+        prop="asset_ids"
+      >
         <div style="width:100%">
           <div class="asset-summary-bar">
             <el-checkbox
@@ -65,16 +138,36 @@
             >
               Chọn tất cả
             </el-checkbox>
-            <el-tag type="info" size="small">Đã chọn: {{ selectedAssetIds.size }} tài sản</el-tag>
-            <el-button size="small" text type="primary" :loading="groupedLoading" @click="loadGroupedAssets">
+            <el-tag
+              type="info"
+              size="small"
+            >
+              Đã chọn: {{ selectedAssetIds.size }} tài sản
+            </el-tag>
+            <el-button
+              size="small"
+              text
+              type="primary"
+              :loading="groupedLoading"
+              @click="loadGroupedAssets"
+            >
               <el-icon><Refresh /></el-icon> Tải lại
             </el-button>
           </div>
 
-          <div v-loading="groupedLoading" class="grouped-assets-container">
-            <el-empty v-if="!groupedLoading && groupedData.length === 0" description="Không có tài sản nào đang chờ thanh lý" />
+          <div
+            v-loading="groupedLoading"
+            class="grouped-assets-container"
+          >
+            <el-empty
+              v-if="!groupedLoading && groupedData.length === 0"
+              description="Không có tài sản nào đang chờ thanh lý"
+            />
 
-            <el-collapse v-model="expandedDepts" v-if="groupedData.length > 0">
+            <el-collapse
+              v-if="groupedData.length > 0"
+              v-model="expandedDepts"
+            >
               <el-collapse-item
                 v-for="group in groupedData"
                 :key="group.department_id ?? 'none'"
@@ -89,13 +182,32 @@
                       @click.stop
                     />
                     <span class="dept-name">{{ group.department_name }}</span>
-                    <el-tag size="small" type="warning">{{ group.assets.length }} tài sản</el-tag>
-                    <el-tag size="small" type="info">Chọn: {{ countDeptSelected(group) }}</el-tag>
+                    <el-tag
+                      size="small"
+                      type="warning"
+                    >
+                      {{ group.assets.length }} tài sản
+                    </el-tag>
+                    <el-tag
+                      size="small"
+                      type="info"
+                    >
+                      Chọn: {{ countDeptSelected(group) }}
+                    </el-tag>
                   </div>
                 </template>
 
-                <el-table :data="group.assets" size="small" border style="width:100%" max-height="250">
-                  <el-table-column width="45" align="center">
+                <el-table
+                  :data="group.assets"
+                  size="small"
+                  border
+                  style="width:100%"
+                  max-height="250"
+                >
+                  <el-table-column
+                    width="45"
+                    align="center"
+                  >
                     <template #default="{ row }">
                       <el-checkbox
                         :model-value="selectedAssetIds.has(row.id)"
@@ -103,13 +215,33 @@
                       />
                     </template>
                   </el-table-column>
-                  <el-table-column prop="asset_code" label="Mã TS" width="130" />
-                  <el-table-column prop="name" label="Tên tài sản" min-width="220" />
-                  <el-table-column label="Nguyên giá" width="150" align="right">
-                    <template #default="{ row }">{{ formatVND(row.purchase_price) }}</template>
+                  <el-table-column
+                    prop="asset_code"
+                    label="Mã TS"
+                    width="130"
+                  />
+                  <el-table-column
+                    prop="name"
+                    label="Tên tài sản"
+                    min-width="220"
+                  />
+                  <el-table-column
+                    label="Nguyên giá"
+                    width="150"
+                    align="right"
+                  >
+                    <template #default="{ row }">
+                      {{ formatVND(row.purchase_price) }}
+                    </template>
                   </el-table-column>
-                  <el-table-column label="Giá trị còn lại" width="150" align="right">
-                    <template #default="{ row }">{{ formatVND(row.current_value) }}</template>
+                  <el-table-column
+                    label="Giá trị còn lại"
+                    width="150"
+                    align="right"
+                  >
+                    <template #default="{ row }">
+                      {{ formatVND(row.current_value) }}
+                    </template>
                   </el-table-column>
                 </el-table>
               </el-collapse-item>
@@ -118,35 +250,94 @@
 
           <!-- Tìm kiếm thêm tài sản -->
           <div class="extra-search-section">
-            <el-divider content-position="left">Thêm tài sản thủ công</el-divider>
-            <el-input v-model="assetSearch" placeholder="Tìm mã hoặc tên tài sản để thêm..." clearable
-                      @input="searchAssets" :prefix-icon="Search" />
-            <div v-if="searchResults.length > 0" class="search-results">
-              <div v-for="a in searchResults" :key="a.id" class="search-item" @click="addManualAsset(a)">
+            <el-divider content-position="left">
+              Thêm tài sản thủ công
+            </el-divider>
+            <el-input
+              v-model="assetSearch"
+              placeholder="Tìm mã hoặc tên tài sản để thêm..."
+              clearable
+              :prefix-icon="Search"
+              @input="searchAssets"
+            />
+            <div
+              v-if="searchResults.length > 0"
+              class="search-results"
+            >
+              <div
+                v-for="a in searchResults"
+                :key="a.id"
+                class="search-item"
+                @click="addManualAsset(a)"
+              >
                 <span class="code">{{ a.asset_code }}</span>
                 <span class="name">{{ a.name }}</span>
                 <span class="dept">{{ a.department?.name || '' }}</span>
                 <span class="price">{{ formatVND(a.purchase_price) }}</span>
               </div>
             </div>
-            <div v-else-if="assetSearch && !searchLoading" class="no-results">Không tìm thấy tài sản phù hợp</div>
+            <div
+              v-else-if="assetSearch && !searchLoading"
+              class="no-results"
+            >
+              Không tìm thấy tài sản phù hợp
+            </div>
           </div>
 
           <!-- Tài sản thêm thủ công -->
-          <div v-if="manualAssets.length > 0" class="manual-assets-section">
-            <div class="manual-label">Tài sản thêm thủ công:</div>
-            <el-table :data="manualAssets" size="small" border style="width:100%" max-height="150">
-              <el-table-column prop="asset_code" label="Mã TS" width="130" />
-              <el-table-column prop="name" label="Tên tài sản" min-width="200" />
-              <el-table-column label="Đơn vị" width="160">
-                <template #default="{ row }">{{ row._dept_name || '—' }}</template>
-              </el-table-column>
-              <el-table-column label="Nguyên giá" width="140" align="right">
-                <template #default="{ row }">{{ formatVND(row.purchase_price) }}</template>
-              </el-table-column>
-              <el-table-column label="" width="50">
+          <div
+            v-if="manualAssets.length > 0"
+            class="manual-assets-section"
+          >
+            <div class="manual-label">
+              Tài sản thêm thủ công:
+            </div>
+            <el-table
+              :data="manualAssets"
+              size="small"
+              border
+              style="width:100%"
+              max-height="150"
+            >
+              <el-table-column
+                prop="asset_code"
+                label="Mã TS"
+                width="130"
+              />
+              <el-table-column
+                prop="name"
+                label="Tên tài sản"
+                min-width="200"
+              />
+              <el-table-column
+                label="Đơn vị"
+                width="160"
+              >
                 <template #default="{ row }">
-                  <el-button size="small" type="danger" text :icon="Delete" @click="removeManualAsset(row.id)" />
+                  {{ row._dept_name || '—' }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                label="Nguyên giá"
+                width="140"
+                align="right"
+              >
+                <template #default="{ row }">
+                  {{ formatVND(row.purchase_price) }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                label=""
+                width="50"
+              >
+                <template #default="{ row }">
+                  <el-button
+                    size="small"
+                    type="danger"
+                    text
+                    :icon="Delete"
+                    @click="removeManualAsset(row.id)"
+                  />
                 </template>
               </el-table-column>
             </el-table>
@@ -155,15 +346,28 @@
       </el-form-item>
 
       <!-- Ghi chú / lý do -->
-      <el-form-item label="Lý do / ghi chú" prop="notes">
-        <el-input v-model="formData.notes" type="textarea" :rows="3"
-                  placeholder="Ghi rõ lý do đề nghị xử lý (hư hỏng, hết hạn, bí mật nhà nước...)" />
+      <el-form-item
+        label="Lý do / ghi chú"
+        prop="notes"
+      >
+        <el-input
+          v-model="formData.notes"
+          type="textarea"
+          :rows="3"
+          placeholder="Ghi rõ lý do đề nghị xử lý (hư hỏng, hết hạn, bí mật nhà nước...)"
+        />
       </el-form-item>
     </el-form>
 
     <template #footer>
-      <el-button @click="visible = false">Hủy</el-button>
-      <el-button type="primary" :loading="submitting" @click="submit">
+      <el-button @click="visible = false">
+        Hủy
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="submitting"
+        @click="submit"
+      >
         Tạo hồ sơ {{ formData.disposal_type === 'destruction' ? 'tiêu hủy' : 'thanh lý' }}
       </el-button>
     </template>

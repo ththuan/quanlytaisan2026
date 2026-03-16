@@ -38,6 +38,14 @@ export default {
     all: 'Tất cả',
     noData: 'Không có dữ liệu',
     refresh: 'Làm mới',
+    apiErrors: {
+      network: 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.',
+      sessionExpired: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+      forbidden: 'Bạn không có quyền thực hiện thao tác này.',
+      notFound: 'Không tìm thấy dữ liệu.',
+      rateLimit: 'Quá nhiều yêu cầu. Vui lòng đợi một chút rồi thử lại.',
+      serverError: 'Lỗi server. Vui lòng thử lại sau.',
+    },
     export: 'Xuất',
     import: 'Nhập',
     print: 'In',
@@ -76,6 +84,21 @@ export default {
     roundDetail: 'Chi tiết đợt kiểm kê',
     conduct: 'Thực hiện kiểm kê',
     reportDetail: 'Chi tiết báo cáo kiểm kê',
+    roundStatus: {
+      not_started: 'Chưa bắt đầu',
+      in_progress: 'Đang thực hiện',
+      completed: 'Hoàn thành',
+      awaiting_approval: 'Chờ duyệt',
+    },
+    reportStatus: {
+      draft: 'Bản nháp',
+      pending: 'Chờ duyệt',
+      approved_by_head: 'Trưởng Đơn vị đã duyệt',
+      approved_by_admin: 'Quản trị viên đã duyệt',
+      completed: 'Hoàn thành',
+      rejected_by_head: 'Trưởng Đơn vị từ chối',
+      rejected_by_admin: 'Quản trị viên từ chối',
+    },
   },
 
   // Auth
@@ -138,7 +161,7 @@ export default {
     warrantyDate: 'Ngày hết bảo hành',
     warrantyExpired: 'Hết bảo hành',
     warrantyValid: 'Còn bảo hành',
-    depreciation: 'Khấu hao',
+    depreciation: 'Hao mòn',
     location: 'Vị trí',
     detailLocation: 'Vị trí chi tiết',
     description: 'Mô tả',
@@ -149,19 +172,21 @@ export default {
     locationInfo: 'Vị trí & Phòng ban',
     financialInfo: 'Thông tin tài chính',
     locationPlaceholder: 'VD: Phòng 301, Tầng 3, Tòa nhà A',
-    // Thông tin khấu hao
-    depreciationInfo: 'Thông tin khấu hao',
+    // Thông tin hao mòn (thiết bị, tài sản cố định)
+    depreciationInfo: 'Thông tin hao mòn',
     usefulLife: 'Thời gian sử dụng',
     annualDepreciationRate: 'Tỷ lệ hao mòn/năm',
     yearsUsed: 'Số năm đã sử dụng',
     remainingUsefulLife: 'Thời gian sử dụng còn lại',
-    depreciationProgress: 'Tiến độ khấu hao',
+    depreciationProgress: 'Tiến độ hao mòn',
     annualDepreciation: 'Mức hao mòn/năm',
     accumulatedDepreciation: 'Hao mòn lũy kế',
     calculatedCurrentValue: 'Giá trị còn lại (tính toán)',
-    fullyDepreciated: 'Đã khấu hao hết',
-    nonDepreciable: 'Không tính khấu hao',
-    nonDepreciableDesc: 'Danh mục Công cụ dụng cụ không tính khấu hao do giá trị thấp hoặc sử dụng ngắn hạn. Giá trị tài sản được giữ nguyên theo nguyên giá.',
+    fullyDepreciated: 'Đã hao mòn hết',
+    nonDepreciable: 'Không tính hao mòn',
+    nonDepreciableDesc: 'Danh mục Công cụ dụng cụ không tính hao mòn do giá trị thấp hoặc sử dụng ngắn hạn. Giá trị tài sản được giữ nguyên theo nguyên giá.',
+    depreciationRateLabel: 'Tỷ lệ hao mòn (%/năm)',
+    hasDepreciation: 'Có hao mòn',
     status: {
       active: 'Đang sử dụng',
       inactive: 'Không sử dụng',
@@ -509,5 +534,27 @@ export default {
     filterByYear: 'Lọc theo năm',
     filterByStatus: 'Lọc theo trạng thái',
     filterByDepartment: 'Lọc theo phòng ban',
+  },
+
+  // Procurement (Tăng/Giảm tài sản - mua sắm)
+  procurement: {
+    status: {
+      draft: 'Nháp',
+      fulfilled: 'Đã hoàn tất',
+      cancelled: 'Đã hủy',
+    },
+  },
+
+  // Asset disposals
+  assetDisposals: {
+    subtitle: 'Danh sách hồ sơ thanh lý / tiêu hủy tài sản',
+    createCase: 'Tạo hồ sơ tiêu hủy / thanh lý',
+    searchPlaceholder: 'Tìm theo mã hồ sơ',
+    caseCode: 'Mã hồ sơ',
+    status: {
+      pending: 'Chờ xử lý',
+      completed: 'Đã hoàn tất',
+      cancelled: 'Đã hủy',
+    },
   },
 };

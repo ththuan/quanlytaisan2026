@@ -4,7 +4,12 @@
       <template #header>
         <div class="card-header">
           <h3>{{ $t('transfers.title') }}</h3>
-          <el-button type="primary" :icon="Plus" @click="handleCreate" v-if="!authStore.isDirector">
+          <el-button
+            v-if="!authStore.isDirector"
+            type="primary"
+            :icon="Plus"
+            @click="handleCreate"
+          >
             {{ $t('transfers.createTransfer') }}
           </el-button>
         </div>
@@ -12,64 +17,174 @@
 
       <!-- Filters -->
       <div class="filter-section">
-        <el-row :gutter="16">
-          <el-col :span="6">
-            <el-select v-model="filterStatus" :placeholder="$t('transfers.filterByStatus')" clearable @change="handleFilter">
-              <el-option v-for="s in statuses" :key="s.value" :label="s.label" :value="s.value" />
+        <el-row
+          :gutter="16"
+          class="filter-row"
+        >
+          <el-col
+            :xs="24"
+            :sm="10"
+            :md="8"
+          >
+            <el-input
+              v-model="searchQuery"
+              :placeholder="$t('transfers.enterAssetCode')"
+              clearable
+              @clear="handleFilterImmediate"
+              @keyup.enter="handleFilterImmediate"
+            />
+          </el-col>
+          <el-col
+            :xs="12"
+            :sm="7"
+            :md="6"
+          >
+            <el-select
+              v-model="filterStatus"
+              :placeholder="$t('transfers.filterByStatus')"
+              clearable
+              @change="handleFilterImmediate"
+            >
+              <el-option
+                v-for="s in statuses"
+                :key="s.value"
+                :label="s.label"
+                :value="s.value"
+              />
             </el-select>
           </el-col>
-          <el-col :span="6">
-            <el-select v-model="filterDepartment" :placeholder="$t('transfers.filterByDepartment')" clearable @change="handleFilter">
-              <el-option v-for="d in departments" :key="d.id" :label="d.name" :value="d.id" />
+          <el-col
+            :xs="12"
+            :sm="7"
+            :md="6"
+          >
+            <el-select
+              v-model="filterDepartment"
+              :placeholder="$t('transfers.filterByDepartment')"
+              clearable
+              @change="handleFilterImmediate"
+            >
+              <el-option
+                v-for="d in departments"
+                :key="d.id"
+                :label="d.name"
+                :value="d.id"
+              />
             </el-select>
           </el-col>
-          <el-col :span="6">
-            <el-button type="primary" @click="handleFilter">{{ $t('common.search') }}</el-button>
-            <el-button @click="handleReset">{{ $t('common.refresh') }}</el-button>
+          <el-col
+            :xs="24"
+            :sm="24"
+            :md="4"
+            class="filter-actions"
+          >
+            <el-button
+              type="primary"
+              @click="handleFilterImmediate"
+            >
+              {{ $t('common.search') }}
+            </el-button>
+            <el-button @click="handleReset">
+              {{ $t('common.refresh') }}
+            </el-button>
           </el-col>
         </el-row>
       </div>
 
       <div class="responsive-table">
-        <el-table :data="transferStore.transfers" v-loading="transferStore.loading" border stripe>
-        <el-table-column type="index" width="50" label="#" />
-        <el-table-column prop="asset.asset_code" :label="$t('transfers.assetCode')" width="120" />
-        <el-table-column prop="asset.name" :label="$t('transfers.assetName')" min-width="180" />
-        <el-table-column :label="$t('transfers.fromDepartment')" width="150">
-          <template #default="{ row }">
-            {{ row.from_department?.name || '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column :label="$t('transfers.toDepartment')" width="150">
-          <template #default="{ row }">
-            {{ row.to_department?.name || '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="requester.fullname" :label="$t('transfers.requestedBy')" width="140" />
-        <el-table-column prop="status" :label="$t('common.status')" width="120">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="transfer_date" :label="$t('transfers.transferDate')" width="160">
-          <template #default="{ row }">
-            {{ formatDate(row.transfer_date) }}
-          </template>
-        </el-table-column>
-        <el-table-column :label="$t('common.actions')" width="200" fixed="right">
-          <template #default="{ row }">
-            <el-button size="small" @click="handleView(row)">{{ $t('common.view') }}</el-button>
-            <template v-if="row.status === 'pending' && authStore.isManager">
-              <el-button size="small" type="success" @click="handleApprove(row.id)">
-                {{ $t('transfers.approve') }}
-              </el-button>
-              <el-button size="small" type="danger" @click="handleReject(row.id)">
-                {{ $t('transfers.reject') }}
-              </el-button>
+        <el-table
+          v-loading="transferStore.loading"
+          :data="transferStore.transfers"
+          border
+          stripe
+        >
+          <el-table-column
+            type="index"
+            width="50"
+            label="#"
+          />
+          <el-table-column
+            prop="asset.asset_code"
+            :label="$t('transfers.assetCode')"
+            width="120"
+          />
+          <el-table-column
+            prop="asset.name"
+            :label="$t('transfers.assetName')"
+            min-width="180"
+          />
+          <el-table-column
+            :label="$t('transfers.fromDepartment')"
+            width="150"
+          >
+            <template #default="{ row }">
+              {{ row.from_department?.name || '-' }}
             </template>
-          </template>
-        </el-table-column>
-      </el-table>
+          </el-table-column>
+          <el-table-column
+            :label="$t('transfers.toDepartment')"
+            width="150"
+          >
+            <template #default="{ row }">
+              {{ row.to_department?.name || '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="requester.fullname"
+            :label="$t('transfers.requestedBy')"
+            width="140"
+          />
+          <el-table-column
+            prop="status"
+            :label="$t('common.status')"
+            width="120"
+          >
+            <template #default="{ row }">
+              <el-tag :type="getStatusType(row.status)">
+                {{ getStatusText(row.status) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="transfer_date"
+            :label="$t('transfers.transferDate')"
+            width="160"
+          >
+            <template #default="{ row }">
+              {{ formatDate(row.transfer_date) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            :label="$t('common.actions')"
+            width="200"
+            fixed="right"
+          >
+            <template #default="{ row }">
+              <el-button
+                size="small"
+                @click="handleView(row)"
+              >
+                {{ $t('common.view') }}
+              </el-button>
+              <template v-if="row.status === 'pending' && authStore.isManager">
+                <el-button
+                  size="small"
+                  type="success"
+                  @click="handleApprove(row.id)"
+                >
+                  {{ $t('transfers.approve') }}
+                </el-button>
+                <el-button
+                  size="small"
+                  type="danger"
+                  @click="handleReject(row.id)"
+                >
+                  {{ $t('transfers.reject') }}
+                </el-button>
+              </template>
+            </template>
+          </el-table-column>
+        </el-table>
       </div>
 
       <div class="pagination">
@@ -109,14 +224,16 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import TransferFormDialog from '@/components/Transfers/TransferFormDialog.vue';
 import TransferDetailDialog from '@/components/Transfers/TransferDetailDialog.vue';
 import moment from 'moment';
+import { debounce } from '@/services/apiHelper';
 
 const { t } = useI18n();
 const transferStore = useTransferStore();
 const authStore = useAuthStore();
 
 // Sử dụng composable mới với caching tự động
-const { activeDepartments: departments, isLoading: departmentsLoading } = useDepartments();
+const { activeDepartments: departments, isLoading: _departmentsLoading } = useDepartments();
 
+const searchQuery = ref('');
 const filterStatus = ref('');
 const filterDepartment = ref('');
 const formDialogVisible = ref(false);
@@ -135,14 +252,22 @@ onMounted(async () => {
   // Department đã tự động load qua composable
 });
 
-const handleFilter = () => {
+const applyFilters = () => {
   transferStore.fetchTransfers({
-    status: filterStatus.value,
-    to_department_id: filterDepartment.value,
+    search: searchQuery.value || undefined,
+    status: filterStatus.value || undefined,
+    to_department_id: filterDepartment.value || undefined,
   });
 };
 
+const handleFilterImmediate = () => {
+  applyFilters();
+};
+
+const _handleFilter = debounce(applyFilters, 400);
+
 const handleReset = () => {
+  searchQuery.value = '';
   filterStatus.value = '';
   filterDepartment.value = '';
   transferStore.fetchTransfers();
@@ -151,8 +276,9 @@ const handleReset = () => {
 const handlePageChange = (page: number) => {
   transferStore.fetchTransfers({
     page,
-    status: filterStatus.value,
-    to_department_id: filterDepartment.value,
+    search: searchQuery.value || undefined,
+    status: filterStatus.value || undefined,
+    to_department_id: filterDepartment.value || undefined,
   });
 };
 
@@ -242,6 +368,23 @@ const formatDate = (date: string) => {
 
 .filter-section .el-select {
   width: 100%;
+}
+
+.filter-row {
+  align-items: center;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .filter-actions {
+    justify-content: flex-start;
+  }
 }
 
 .pagination {

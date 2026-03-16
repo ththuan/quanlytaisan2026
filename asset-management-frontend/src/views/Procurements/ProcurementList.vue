@@ -3,15 +3,27 @@
     <div class="page-header">
       <div>
         <h2>Tăng / Giảm tài sản</h2>
-        <div class="sub">Theo dõi tăng tài sản (mua sắm/cấp phát) và giảm tài sản (thanh lý)</div>
+        <div class="sub">
+          Theo dõi tăng tài sản (mua sắm/cấp phát) và giảm tài sản (thanh lý)
+        </div>
       </div>
     </div>
 
-    <el-tabs v-model="activeTab" type="card">
-      <el-tab-pane label="Tăng tài sản" name="increase">
+    <el-tabs
+      v-model="activeTab"
+      type="card"
+    >
+      <el-tab-pane
+        label="Tăng tài sản"
+        name="increase"
+      >
         <ProcurementListContent />
       </el-tab-pane>
-      <el-tab-pane label="Giảm tài sản" name="decrease" lazy>
+      <el-tab-pane
+        label="Giảm tài sản"
+        name="decrease"
+        lazy
+      >
         <AssetDisposalCaseList />
       </el-tab-pane>
     </el-tabs>

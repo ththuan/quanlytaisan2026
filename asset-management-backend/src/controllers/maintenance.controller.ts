@@ -59,7 +59,7 @@ class MaintenanceController {
       // CRITICAL: Log detailed info about damage_images in request
       const damageImagesInBody = req.body.damage_images;
       const damageImagesType = typeof damageImagesInBody;
-      let diagnosticInfo = {
+      const diagnosticInfo = {
         type: damageImagesType,
         hasValue: !!damageImagesInBody,
         length: damageImagesInBody ? (typeof damageImagesInBody === 'string' ? damageImagesInBody.length : 'N/A') : 0,

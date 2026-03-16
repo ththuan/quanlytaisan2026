@@ -1,10 +1,10 @@
 <template>
   <el-dialog
     :model-value="visible"
-    @update:model-value="$emit('update:visible', $event)"
     :title="$t('transfers.createTransfer')"
     width="650px"
     :close-on-click-modal="false"
+    @update:model-value="$emit('update:visible', $event)"
   >
     <el-form
       ref="formRef"
@@ -14,14 +14,17 @@
       label-position="top"
     >
       <!-- Step 1: Chọn phòng ban nguồn -->
-      <el-form-item :label="$t('transfers.fromDepartment')" prop="from_department_id">
+      <el-form-item
+        :label="$t('transfers.fromDepartment')"
+        prop="from_department_id"
+      >
         <el-select
           v-model="formData.from_department_id"
           :placeholder="$t('transfers.selectSourceDepartment')"
           style="width: 100%"
-          @change="handleSourceDepartmentChange"
           filterable
           :disabled="!!userDepartmentId"
+          @change="handleSourceDepartmentChange"
         >
           <el-option
             v-for="dept in sourceDepartments"
@@ -33,7 +36,10 @@
       </el-form-item>
 
       <!-- Step 2: Chọn tài sản từ phòng ban đã chọn -->
-      <el-form-item :label="$t('transfers.selectAsset')" prop="asset_id">
+      <el-form-item
+        :label="$t('transfers.selectAsset')"
+        prop="asset_id"
+      >
         <el-select
           v-model="formData.asset_id"
           :placeholder="formData.from_department_id ? $t('transfers.selectAsset') : $t('transfers.selectSourceDepartmentFirst')"
@@ -52,21 +58,37 @@
             <div class="asset-option">
               <span class="asset-code">{{ asset.asset_code }}</span>
               <span class="asset-name">{{ asset.name }}</span>
-              <el-tag size="small" :type="getStatusType(asset.status)">
+              <el-tag
+                size="small"
+                :type="getStatusType(asset.status)"
+              >
                 {{ $t(`assets.status.${asset.status}`) }}
               </el-tag>
             </div>
           </el-option>
         </el-select>
-        <div class="asset-count" v-if="formData.from_department_id">
+        <div
+          v-if="formData.from_department_id"
+          class="asset-count"
+        >
           {{ $t('transfers.assetCount', { count: departmentAssets.length }) }}
         </div>
       </el-form-item>
 
       <!-- Thông tin tài sản đã chọn -->
-      <el-card v-if="selectedAsset" class="selected-asset-info" shadow="never">
-        <div class="asset-info-header">{{ $t('transfers.selectedAssetInfo') }}</div>
-        <el-descriptions :column="2" size="small" border>
+      <el-card
+        v-if="selectedAsset"
+        class="selected-asset-info"
+        shadow="never"
+      >
+        <div class="asset-info-header">
+          {{ $t('transfers.selectedAssetInfo') }}
+        </div>
+        <el-descriptions
+          :column="2"
+          size="small"
+          border
+        >
           <el-descriptions-item :label="$t('assets.assetCode')">
             {{ selectedAsset.asset_code }}
           </el-descriptions-item>
@@ -81,14 +103,20 @@
               {{ $t(`assets.status.${selectedAsset.status}`) }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item :label="$t('assets.currentValue')" :span="2">
+          <el-descriptions-item
+            :label="$t('assets.currentValue')"
+            :span="2"
+          >
             {{ formatCurrency(selectedAsset.current_value) }}
           </el-descriptions-item>
         </el-descriptions>
       </el-card>
 
       <!-- Step 3: Chọn phòng ban đích -->
-      <el-form-item :label="$t('transfers.toDepartment')" prop="to_department_id">
+      <el-form-item
+        :label="$t('transfers.toDepartment')"
+        prop="to_department_id"
+      >
         <el-select
           v-model="formData.to_department_id"
           :placeholder="$t('transfers.selectTargetDepartment')"
@@ -105,7 +133,10 @@
       </el-form-item>
 
       <!-- Lý do điều chuyển -->
-      <el-form-item :label="$t('transfers.reason')" prop="reason">
+      <el-form-item
+        :label="$t('transfers.reason')"
+        prop="reason"
+      >
         <el-input
           v-model="formData.reason"
           type="textarea"
@@ -137,8 +168,14 @@
     </el-form>
 
     <template #footer>
-      <el-button @click="$emit('update:visible', false)">{{ $t('common.cancel') }}</el-button>
-      <el-button type="primary" :loading="loading" @click="handleSubmit">
+      <el-button @click="$emit('update:visible', false)">
+        {{ $t('common.cancel') }}
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="loading"
+        @click="handleSubmit"
+      >
         {{ $t('common.save') }}
       </el-button>
     </template>

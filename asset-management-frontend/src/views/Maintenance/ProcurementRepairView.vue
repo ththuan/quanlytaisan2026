@@ -7,11 +7,20 @@
         </div>
       </template>
       
-      <el-tabs v-model="activeTab" type="border-card">
-        <el-tab-pane label="Sửa chữa" name="repair">
+      <el-tabs
+        v-model="activeTab"
+        type="border-card"
+      >
+        <el-tab-pane
+          label="Sửa chữa"
+          name="repair"
+        >
           <RepairList />
         </el-tab-pane>
-        <el-tab-pane :label="$t('maintenance.tabs.procurement')" name="procurement">
+        <el-tab-pane
+          :label="$t('maintenance.tabs.procurement')"
+          name="procurement"
+        >
           <ProcurementList />
         </el-tab-pane>
       </el-tabs>

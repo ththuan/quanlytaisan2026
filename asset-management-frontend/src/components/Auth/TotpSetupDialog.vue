@@ -9,10 +9,20 @@
     <!-- Status: 2FA already enabled -->
     <template v-if="isEnabled && innerStep === 'status'">
       <div class="totp-status enabled">
-        <el-icon class="status-icon" color="#67c23a"><CircleCheck /></el-icon>
+        <el-icon
+          class="status-icon"
+          color="#67c23a"
+        >
+          <CircleCheck />
+        </el-icon>
         <p>Xác thực 2 bước đang <strong>bật</strong>. Tài khoản của bạn được bảo vệ bởi Google Authenticator.</p>
       </div>
-      <el-button type="danger" plain @click="innerStep = 'disable'" style="width:100%;margin-top:16px">
+      <el-button
+        type="danger"
+        plain
+        style="width:100%;margin-top:16px"
+        @click="innerStep = 'disable'"
+      >
         Tắt xác thực 2 bước
       </el-button>
     </template>
@@ -20,10 +30,20 @@
     <!-- Status: 2FA not enabled -->
     <template v-else-if="!isEnabled && innerStep === 'status'">
       <div class="totp-status disabled">
-        <el-icon class="status-icon" color="#e6a23c"><Warning /></el-icon>
+        <el-icon
+          class="status-icon"
+          color="#e6a23c"
+        >
+          <Warning />
+        </el-icon>
         <p>Xác thực 2 bước chưa được bật. Hãy cài đặt Google Authenticator để tăng bảo mật.</p>
       </div>
-      <el-button type="primary" @click="startSetup" :loading="loading" style="width:100%;margin-top:16px">
+      <el-button
+        type="primary"
+        :loading="loading"
+        style="width:100%;margin-top:16px"
+        @click="startSetup"
+      >
         Bật xác thực 2 bước
       </el-button>
     </template>
@@ -31,19 +51,30 @@
     <!-- Setup step 1: show QR code -->
     <template v-else-if="innerStep === 'qr'">
       <p class="step-hint">
-        1. Mở ứng dụng <strong>Google Authenticator</strong> trên điện thoại.<br />
-        2. Nhấn dấu <strong>+</strong> → <em>Quét mã QR</em>.<br />
+        1. Mở ứng dụng <strong>Google Authenticator</strong> trên điện thoại.<br>
+        2. Nhấn dấu <strong>+</strong> → <em>Quét mã QR</em>.<br>
         3. Quét mã bên dưới.
       </p>
       <div class="qr-wrapper">
-        <img :src="qrCodeUrl" alt="QR Code" class="qr-image" />
+        <img
+          :src="qrCodeUrl"
+          alt="QR Code"
+          class="qr-image"
+        >
       </div>
       <p class="secret-hint">
         Hoặc nhập thủ công:
-        <el-tag type="info" style="font-family:monospace;font-size:13px;letter-spacing:2px">{{ secret }}</el-tag>
+        <el-tag
+          type="info"
+          style="font-family:monospace;font-size:13px;letter-spacing:2px"
+        >
+          {{ secret }}
+        </el-tag>
       </p>
       <el-divider />
-      <p class="step-hint">Sau khi quét, nhập mã 6 chữ số từ ứng dụng để xác nhận:</p>
+      <p class="step-hint">
+        Sau khi quét, nhập mã 6 chữ số từ ứng dụng để xác nhận:
+      </p>
       <el-input
         v-model="verifyCode"
         placeholder="000000"
@@ -53,14 +84,24 @@
         @keyup.enter="handleEnable"
       />
       <div class="dialog-footer">
-        <el-button @click="innerStep = 'status'">Huỷ</el-button>
-        <el-button type="primary" :loading="loading" @click="handleEnable">Xác nhận &amp; Bật</el-button>
+        <el-button @click="innerStep = 'status'">
+          Huỷ
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="loading"
+          @click="handleEnable"
+        >
+          Xác nhận &amp; Bật
+        </el-button>
       </div>
     </template>
 
     <!-- Disable step -->
     <template v-else-if="innerStep === 'disable'">
-      <p class="step-hint">Nhập mật khẩu hiện tại để tắt xác thực 2 bước:</p>
+      <p class="step-hint">
+        Nhập mật khẩu hiện tại để tắt xác thực 2 bước:
+      </p>
       <el-input
         v-model="disablePassword"
         type="password"
@@ -70,8 +111,16 @@
         @keyup.enter="handleDisable"
       />
       <div class="dialog-footer">
-        <el-button @click="innerStep = 'status'">Huỷ</el-button>
-        <el-button type="danger" :loading="loading" @click="handleDisable">Tắt xác thực 2 bước</el-button>
+        <el-button @click="innerStep = 'status'">
+          Huỷ
+        </el-button>
+        <el-button
+          type="danger"
+          :loading="loading"
+          @click="handleDisable"
+        >
+          Tắt xác thực 2 bước
+        </el-button>
       </div>
     </template>
   </el-dialog>

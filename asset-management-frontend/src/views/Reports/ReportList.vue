@@ -4,7 +4,12 @@
       <template #header>
         <div class="card-header">
           <h3>{{ $t('reports.title') }}</h3>
-          <el-button type="primary" :icon="Plus" @click="handleCreate" v-if="authStore.isManager">
+          <el-button
+            v-if="authStore.isManager"
+            type="primary"
+            :icon="Plus"
+            @click="handleCreate"
+          >
             {{ $t('reports.createReport') }}
           </el-button>
         </div>
@@ -14,68 +19,174 @@
       <div class="filter-section">
         <el-row :gutter="16">
           <el-col :span="5">
-            <el-select v-model="filterYear" :placeholder="$t('reports.filterByYear')" clearable @change="handleFilter">
-              <el-option v-for="y in years" :key="y" :label="y.toString()" :value="y" />
+            <el-select
+              v-model="filterYear"
+              :placeholder="$t('reports.filterByYear')"
+              clearable
+              @change="handleFilter"
+            >
+              <el-option
+                v-for="y in years"
+                :key="y"
+                :label="y.toString()"
+                :value="y"
+              />
             </el-select>
           </el-col>
           <el-col :span="5">
-            <el-select v-model="filterStatus" :placeholder="$t('reports.filterByStatus')" clearable @change="handleFilter">
-              <el-option v-for="s in statuses" :key="s.value" :label="s.label" :value="s.value" />
+            <el-select
+              v-model="filterStatus"
+              :placeholder="$t('reports.filterByStatus')"
+              clearable
+              @change="handleFilter"
+            >
+              <el-option
+                v-for="s in statuses"
+                :key="s.value"
+                :label="s.label"
+                :value="s.value"
+              />
             </el-select>
           </el-col>
           <el-col :span="6">
-            <el-select v-model="filterDepartment" :placeholder="$t('reports.filterByDepartment')" clearable @change="handleFilter">
-              <el-option v-for="d in departments" :key="d.id" :label="d.name" :value="d.id" />
+            <el-select
+              v-model="filterDepartment"
+              :placeholder="$t('reports.filterByDepartment')"
+              clearable
+              @change="handleFilter"
+            >
+              <el-option
+                v-for="d in departments"
+                :key="d.id"
+                :label="d.name"
+                :value="d.id"
+              />
             </el-select>
           </el-col>
           <el-col :span="6">
-            <el-button type="primary" @click="handleFilter">{{ $t('common.search') }}</el-button>
-            <el-button @click="handleReset">{{ $t('common.refresh') }}</el-button>
+            <el-button
+              type="primary"
+              @click="handleFilter"
+            >
+              {{ $t('common.search') }}
+            </el-button>
+            <el-button @click="handleReset">
+              {{ $t('common.refresh') }}
+            </el-button>
           </el-col>
         </el-row>
       </div>
 
       <div class="responsive-table">
-        <el-table :data="reportStore.reports" v-loading="reportStore.loading" border stripe>
-        <el-table-column type="index" width="50" label="#" />
-        <el-table-column prop="department.name" :label="$t('reports.department')" min-width="180" />
-        <el-table-column prop="year" :label="$t('reports.year')" width="100" />
-        <el-table-column prop="total_assets" :label="$t('reports.totalAssets')" width="120" />
-        <el-table-column prop="active_assets" :label="$t('reports.activeAssets')" width="120" />
-        <el-table-column prop="damaged_assets" :label="$t('reports.damagedAssets')" width="120" />
-        <el-table-column prop="lost_assets" :label="$t('reports.lostAssets')" width="100" />
-        <el-table-column prop="total_value" :label="$t('reports.totalValue')" width="150">
-          <template #default="{ row }">
-            {{ formatCurrency(row.total_value) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" :label="$t('common.status')" width="120">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="$t('common.actions')" width="240" fixed="right">
-          <template #default="{ row }">
-            <el-button size="small" @click="handleView(row)">{{ $t('common.view') }}</el-button>
-            <el-button size="small" type="warning" @click="handleEdit(row)" v-if="canEdit(row)">
-              {{ $t('common.edit') }}
-            </el-button>
-            <template v-if="row.status === 'draft' && authStore.isManager">
-              <el-button size="small" type="primary" @click="handleSubmit(row.id)">
-                {{ $t('reports.submit') }}
-              </el-button>
+        <el-table
+          v-loading="reportStore.loading"
+          :data="reportStore.reports"
+          border
+          stripe
+        >
+          <el-table-column
+            type="index"
+            width="50"
+            label="#"
+          />
+          <el-table-column
+            prop="department.name"
+            :label="$t('reports.department')"
+            min-width="180"
+          />
+          <el-table-column
+            prop="year"
+            :label="$t('reports.year')"
+            width="100"
+          />
+          <el-table-column
+            prop="total_assets"
+            :label="$t('reports.totalAssets')"
+            width="120"
+          />
+          <el-table-column
+            prop="active_assets"
+            :label="$t('reports.activeAssets')"
+            width="120"
+          />
+          <el-table-column
+            prop="damaged_assets"
+            :label="$t('reports.damagedAssets')"
+            width="120"
+          />
+          <el-table-column
+            prop="lost_assets"
+            :label="$t('reports.lostAssets')"
+            width="100"
+          />
+          <el-table-column
+            prop="total_value"
+            :label="$t('reports.totalValue')"
+            width="150"
+          >
+            <template #default="{ row }">
+              {{ formatCurrency(row.total_value) }}
             </template>
-            <template v-if="row.status === 'submitted' && (authStore.isAdmin || authStore.isDirector)">
-              <el-button size="small" type="success" @click="handleApprove(row.id)">
-                {{ $t('reports.approve') }}
-              </el-button>
-              <el-button size="small" type="danger" @click="handleReject(row.id)">
-                {{ $t('reports.reject') }}
-              </el-button>
+          </el-table-column>
+          <el-table-column
+            prop="status"
+            :label="$t('common.status')"
+            width="120"
+          >
+            <template #default="{ row }">
+              <el-tag :type="getStatusType(row.status)">
+                {{ getStatusText(row.status) }}
+              </el-tag>
             </template>
-          </template>
-        </el-table-column>
-      </el-table>
+          </el-table-column>
+          <el-table-column
+            :label="$t('common.actions')"
+            width="240"
+            fixed="right"
+          >
+            <template #default="{ row }">
+              <el-button
+                size="small"
+                @click="handleView(row)"
+              >
+                {{ $t('common.view') }}
+              </el-button>
+              <el-button
+                v-if="canEdit(row)"
+                size="small"
+                type="warning"
+                @click="handleEdit(row)"
+              >
+                {{ $t('common.edit') }}
+              </el-button>
+              <template v-if="row.status === 'draft' && authStore.isManager">
+                <el-button
+                  size="small"
+                  type="primary"
+                  @click="handleSubmit(row.id)"
+                >
+                  {{ $t('reports.submit') }}
+                </el-button>
+              </template>
+              <template v-if="row.status === 'submitted' && (authStore.isAdmin || authStore.isDirector)">
+                <el-button
+                  size="small"
+                  type="success"
+                  @click="handleApprove(row.id)"
+                >
+                  {{ $t('reports.approve') }}
+                </el-button>
+                <el-button
+                  size="small"
+                  type="danger"
+                  @click="handleReject(row.id)"
+                >
+                  {{ $t('reports.reject') }}
+                </el-button>
+              </template>
+            </template>
+          </el-table-column>
+        </el-table>
       </div>
 
       <div class="pagination">
@@ -103,7 +214,6 @@
       :report="currentReport"
     />
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -122,7 +232,7 @@ const reportStore = useReportStore();
 const authStore = useAuthStore();
 
 // Sử dụng composable với caching tự động
-const { activeDepartments: departments, isLoading: departmentsLoading } = useDepartments();
+const { activeDepartments: departments, isLoading: _departmentsLoading } = useDepartments();
 
 const filterYear = ref<number | null>(null);
 const filterStatus = ref('');

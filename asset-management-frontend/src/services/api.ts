@@ -3,6 +3,12 @@ import type { AxiosInstance, AxiosError, AxiosResponse, InternalAxiosRequestConf
 import { ElMessage, ElNotification } from 'element-plus';
 import router from '@/router';
 import { useAuthStore } from '@/stores/auth.store';
+import i18n from '@/i18n';
+
+function t(key: string): string {
+  const v = i18n.global?.t?.(key);
+  return typeof v === 'string' ? v : key;
+}
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
@@ -56,8 +62,8 @@ api.interceptors.response.use(
       // Chỉ hiện thông báo nếu lỗi liên tiếp hoặc đã lâu không có lỗi
       if (consecutiveNetworkErrors === 1 || (now - lastNetworkErrorTime > 10000)) {
         ElNotification.error({
-          title: 'Lỗi kết nối',
-          message: 'Không thể kết nối đến server. Vui lòng kiểm tra:\n1. Backend server có đang chạy không?\n2. URL backend có đúng không?\n3. Kết nối mạng của bạn',
+          title: t('common.error'),
+          message: t('common.apiErrors.network'),
           duration: 8000,
         });
       }
@@ -83,9 +89,9 @@ api.interceptors.response.use(
         localStorage.removeItem('user');
       }
       router.replace('/login');
-      ElMessage.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      ElMessage.error(t('common.apiErrors.sessionExpired'));
     } else if (error.response?.status === 403) {
-      ElMessage.error('Bạn không có quyền thực hiện thao tác này');
+      ElMessage.error(t('common.apiErrors.forbidden'));
     } else if (error.response?.status === 400) {
       // Validation errors - show detailed message
       ElMessage.error({
@@ -95,16 +101,15 @@ api.interceptors.response.use(
       });
     } else if (error.response?.status >= 500) {
       ElMessage.error({
-        message: `Lỗi server: ${message}`,
+        message: `${t('common.apiErrors.serverError')} ${message}`,
         duration: 5000,
         showClose: true,
       });
     } else if (error.response?.status === 404) {
-      ElMessage.error('Không tìm thấy dữ liệu');
+      ElMessage.error(t('common.apiErrors.notFound'));
     } else if (error.response?.status === 429) {
-      // Rate limit error - chỉ hiện 1 lần
       ElMessage.error({
-        message: 'Quá nhiều yêu cầu. Vui lòng đợi một chút rồi thử lại.',
+        message: t('common.apiErrors.rateLimit'),
         duration: 5000,
         showClose: true,
       });

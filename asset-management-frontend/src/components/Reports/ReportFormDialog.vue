@@ -1,10 +1,10 @@
 <template>
   <el-dialog
     :model-value="visible"
-    @update:model-value="$emit('update:visible', $event)"
     :title="isEdit ? $t('reports.editReport') : $t('reports.createReport')"
     width="600px"
     :close-on-click-modal="false"
+    @update:model-value="$emit('update:visible', $event)"
   >
     <el-form
       ref="formRef"
@@ -15,26 +15,42 @@
     >
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item :label="$t('reports.department')" prop="department_id">
+          <el-form-item
+            :label="$t('reports.department')"
+            prop="department_id"
+          >
             <el-select
               v-model="formData.department_id"
               :placeholder="$t('reports.selectDepartment')"
               style="width: 100%"
               :disabled="isEdit"
             >
-              <el-option v-for="d in departments" :key="d.id" :label="d.name" :value="d.id" />
+              <el-option
+                v-for="d in departments"
+                :key="d.id"
+                :label="d.name"
+                :value="d.id"
+              />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item :label="$t('reports.year')" prop="year">
+          <el-form-item
+            :label="$t('reports.year')"
+            prop="year"
+          >
             <el-select
               v-model="formData.year"
               :placeholder="$t('reports.selectYear')"
               style="width: 100%"
               :disabled="isEdit"
             >
-              <el-option v-for="y in years" :key="y" :label="y.toString()" :value="y" />
+              <el-option
+                v-for="y in years"
+                :key="y"
+                :label="y.toString()"
+                :value="y"
+              />
             </el-select>
           </el-form-item>
         </el-col>
@@ -45,12 +61,20 @@
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item :label="$t('reports.totalAssets')">
-            <el-input-number v-model="formData.total_assets" :min="0" style="width: 100%" />
+            <el-input-number
+              v-model="formData.total_assets"
+              :min="0"
+              style="width: 100%"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item :label="$t('reports.activeAssets')">
-            <el-input-number v-model="formData.active_assets" :min="0" style="width: 100%" />
+            <el-input-number
+              v-model="formData.active_assets"
+              :min="0"
+              style="width: 100%"
+            />
           </el-form-item>
         </el-col>
       </el-row>
@@ -58,12 +82,20 @@
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item :label="$t('reports.damagedAssets')">
-            <el-input-number v-model="formData.damaged_assets" :min="0" style="width: 100%" />
+            <el-input-number
+              v-model="formData.damaged_assets"
+              :min="0"
+              style="width: 100%"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item :label="$t('reports.lostAssets')">
-            <el-input-number v-model="formData.lost_assets" :min="0" style="width: 100%" />
+            <el-input-number
+              v-model="formData.lost_assets"
+              :min="0"
+              style="width: 100%"
+            />
           </el-form-item>
         </el-col>
       </el-row>
@@ -88,8 +120,15 @@
         />
       </el-form-item>
 
-      <div class="auto-calculate-section" v-if="!isEdit">
-        <el-button type="info" @click="autoCalculate" :loading="calculating">
+      <div
+        v-if="!isEdit"
+        class="auto-calculate-section"
+      >
+        <el-button
+          type="info"
+          :loading="calculating"
+          @click="autoCalculate"
+        >
           {{ $t('reports.autoCalculate') }}
         </el-button>
         <span class="hint">{{ $t('reports.autoCalculateHint') }}</span>
@@ -97,8 +136,14 @@
     </el-form>
 
     <template #footer>
-      <el-button @click="$emit('update:visible', false)">{{ $t('common.cancel') }}</el-button>
-      <el-button type="primary" :loading="loading" @click="handleSubmit">
+      <el-button @click="$emit('update:visible', false)">
+        {{ $t('common.cancel') }}
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="loading"
+        @click="handleSubmit"
+      >
         {{ $t('common.save') }}
       </el-button>
     </template>

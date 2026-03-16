@@ -263,7 +263,7 @@ export const calculateAssetDepreciation = async (req: Request, res: Response, ne
 
     res.status(200).json({
       success: true,
-      message: 'Đã tính toán khấu hao thành công',
+      message: 'Đã tính toán hao mòn thành công',
       data: result,
     });
   } catch (error) {

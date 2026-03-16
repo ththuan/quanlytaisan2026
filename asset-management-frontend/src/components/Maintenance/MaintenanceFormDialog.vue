@@ -1,10 +1,10 @@
 <template>
   <el-dialog
     :model-value="visible"
-    @update:model-value="$emit('update:visible', $event)"
     :title="isEdit ? $t('maintenance.editRequest') : $t('maintenance.createRequest')"
     width="650px"
     :close-on-click-modal="false"
+    @update:model-value="$emit('update:visible', $event)"
   >
     <el-form
       ref="formRef"
@@ -13,7 +13,11 @@
       label-width="140px"
       label-position="top"
     >
-      <el-form-item :label="$t('maintenance.selectAsset')" prop="asset_id" v-if="!isEdit">
+      <el-form-item
+        v-if="!isEdit"
+        :label="$t('maintenance.selectAsset')"
+        prop="asset_id"
+      >
         <el-select
           v-model="formData.asset_id"
           :placeholder="$t('maintenance.selectAsset')"
@@ -32,13 +36,28 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item :label="$t('maintenance.department')" v-if="!isEdit">
-        <el-select v-model="formData.department_id" :placeholder="$t('maintenance.selectDepartment')" style="width: 100%">
-          <el-option v-for="d in departments" :key="d.id" :label="d.name" :value="d.id" />
+      <el-form-item
+        v-if="!isEdit"
+        :label="$t('maintenance.department')"
+      >
+        <el-select
+          v-model="formData.department_id"
+          :placeholder="$t('maintenance.selectDepartment')"
+          style="width: 100%"
+        >
+          <el-option
+            v-for="d in departments"
+            :key="d.id"
+            :label="d.name"
+            :value="d.id"
+          />
         </el-select>
       </el-form-item>
 
-      <el-form-item :label="$t('maintenance.description')" prop="description">
+      <el-form-item
+        :label="$t('maintenance.description')"
+        prop="description"
+      >
         <el-input
           v-model="formData.description"
           type="textarea"
@@ -49,9 +68,20 @@
 
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item :label="$t('maintenance.urgency')" prop="urgency">
-            <el-select v-model="formData.urgency" style="width: 100%">
-              <el-option v-for="u in urgencies" :key="u.value" :label="u.label" :value="u.value" />
+          <el-form-item
+            :label="$t('maintenance.urgency')"
+            prop="urgency"
+          >
+            <el-select
+              v-model="formData.urgency"
+              style="width: 100%"
+            >
+              <el-option
+                v-for="u in urgencies"
+                :key="u.value"
+                :label="u.label"
+                :value="u.value"
+              />
             </el-select>
           </el-form-item>
         </el-col>
@@ -68,24 +98,48 @@
         </el-col>
       </el-row>
 
-      <el-row :gutter="20" v-if="isEdit && authStore.isManager">
+      <el-row
+        v-if="isEdit && authStore.isManager"
+        :gutter="20"
+      >
         <el-col :span="12">
           <el-form-item :label="$t('maintenance.status')">
-            <el-select v-model="formData.status" style="width: 100%">
-              <el-option v-for="s in statuses" :key="s.value" :label="s.label" :value="s.value" />
+            <el-select
+              v-model="formData.status"
+              style="width: 100%"
+            >
+              <el-option
+                v-for="s in statuses"
+                :key="s.value"
+                :label="s.label"
+                :value="s.value"
+              />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item :label="$t('maintenance.assignTo')">
-            <el-select v-model="formData.assigned_to" :placeholder="$t('maintenance.selectAssignee')" style="width: 100%" clearable>
-              <el-option v-for="u in users" :key="u.id" :label="u.fullname || u.username" :value="u.id" />
+            <el-select
+              v-model="formData.assigned_to"
+              :placeholder="$t('maintenance.selectAssignee')"
+              style="width: 100%"
+              clearable
+            >
+              <el-option
+                v-for="u in users"
+                :key="u.id"
+                :label="u.fullname || u.username"
+                :value="u.id"
+              />
             </el-select>
           </el-form-item>
         </el-col>
       </el-row>
 
-      <el-row :gutter="20" v-if="isEdit">
+      <el-row
+        v-if="isEdit"
+        :gutter="20"
+      >
         <el-col :span="12">
           <el-form-item :label="$t('maintenance.startDate')">
             <el-date-picker
@@ -119,8 +173,14 @@
     </el-form>
 
     <template #footer>
-      <el-button @click="$emit('update:visible', false)">{{ $t('common.cancel') }}</el-button>
-      <el-button type="primary" :loading="loading" @click="handleSubmit">
+      <el-button @click="$emit('update:visible', false)">
+        {{ $t('common.cancel') }}
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="loading"
+        @click="handleSubmit"
+      >
         {{ $t('common.save') }}
       </el-button>
     </template>

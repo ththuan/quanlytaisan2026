@@ -1,31 +1,77 @@
 <template>
-  <el-dialog :model-value="visible" title="Chi tiết phiếu" width="980px" @close="emit('update:visible', false)">
+  <el-dialog
+    :model-value="visible"
+    title="Chi tiết phiếu"
+    width="980px"
+    @close="emit('update:visible', false)"
+  >
     <div v-if="!item">
       <el-empty description="Không có dữ liệu" />
     </div>
     <div v-else>
-      <el-descriptions :column="2" border>
-        <el-descriptions-item label="Mã phiếu">{{ item.code }}</el-descriptions-item>
-        <el-descriptions-item label="Trạng thái">
-          <el-tag :type="statusType" effect="light">{{ statusText }}</el-tag>
+      <el-descriptions
+        :column="2"
+        border
+      >
+        <el-descriptions-item label="Mã phiếu">
+          {{ item.code }}
         </el-descriptions-item>
-        <el-descriptions-item label="Nội dung" :span="2">{{ item.title }}</el-descriptions-item>
-        <el-descriptions-item label="Cấp phát (phòng ban)">{{ item.receiving_department?.name }}</el-descriptions-item>
-        <el-descriptions-item label="Ngày mua">{{ item.purchase_date || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="Mô tả" :span="2">{{ item.description || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="Trạng thái">
+          <el-tag
+            :type="statusType"
+            effect="light"
+          >
+            {{ statusText }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item
+          label="Nội dung"
+          :span="2"
+        >
+          {{ item.title }}
+        </el-descriptions-item>
+        <el-descriptions-item label="Cấp phát (phòng ban)">
+          {{ item.receiving_department?.name }}
+        </el-descriptions-item>
+        <el-descriptions-item label="Ngày mua">
+          {{ item.purchase_date || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item
+          label="Mô tả"
+          :span="2"
+        >
+          {{ item.description || '-' }}
+        </el-descriptions-item>
       </el-descriptions>
 
-      <el-divider content-position="left">Pháp lý mua sắm</el-divider>
-      <el-descriptions :column="2" border>
-        <el-descriptions-item label="Nhà cung cấp">{{ item.supplier_name || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="Chứng từ">{{ legalDocText }}</el-descriptions-item>
-        <el-descriptions-item label="Số hợp đồng">{{ item.contract_no || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="Số hóa đơn">{{ item.invoice_no || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="Mã đơn hàng">{{ item.order_code || '-' }}</el-descriptions-item>
-        <el-descriptions-item label=""> </el-descriptions-item>
+      <el-divider content-position="left">
+        Pháp lý mua sắm
+      </el-divider>
+      <el-descriptions
+        :column="2"
+        border
+      >
+        <el-descriptions-item label="Nhà cung cấp">
+          {{ item.supplier_name || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="Chứng từ">
+          {{ legalDocText }}
+        </el-descriptions-item>
+        <el-descriptions-item label="Số hợp đồng">
+          {{ item.contract_no || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="Số hóa đơn">
+          {{ item.invoice_no || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="Mã đơn hàng">
+          {{ item.order_code || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="" />
       </el-descriptions>
 
-      <el-divider content-position="left">File chứng từ (PDF)</el-divider>
+      <el-divider content-position="left">
+        File chứng từ (PDF)
+      </el-divider>
       <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
         <el-upload
           :auto-upload="false"
@@ -33,7 +79,12 @@
           accept="application/pdf"
           :on-change="handleFileChange"
         >
-          <el-button type="primary" :loading="uploading">Chọn file PDF</el-button>
+          <el-button
+            type="primary"
+            :loading="uploading"
+          >
+            Chọn file PDF
+          </el-button>
         </el-upload>
         <div style="color:#909399; font-size: 12px;">
           Tối đa 20MB, chỉ PDF. Upload xong sẽ hiển thị bên dưới.
@@ -41,53 +92,140 @@
       </div>
 
       <el-table
+        v-loading="documentsLoading"
         :data="documents"
         border
         stripe
         size="small"
-        v-loading="documentsLoading"
         empty-text="Chưa có chứng từ"
       >
-        <el-table-column prop="file_name" label="Tên file" min-width="280" />
-        <el-table-column prop="size_bytes" label="Dung lượng" width="120" align="right">
-          <template #default="{ row }">{{ formatFileSize(row.size_bytes) }}</template>
-        </el-table-column>
-        <el-table-column prop="created_at" label="Ngày upload" width="160">
-          <template #default="{ row }">{{ formatDate(row.created_at) }}</template>
-        </el-table-column>
-        <el-table-column label="Thao tác" width="180" fixed="right">
+        <el-table-column
+          prop="file_name"
+          label="Tên file"
+          min-width="280"
+        />
+        <el-table-column
+          prop="size_bytes"
+          label="Dung lượng"
+          width="120"
+          align="right"
+        >
           <template #default="{ row }">
-            <el-button size="small" type="primary" plain @click="openPdf(row)">Xem</el-button>
-            <el-button size="small" type="danger" plain :loading="deletingId === row.id" @click="confirmDelete(row)">Xóa</el-button>
+            {{ formatFileSize(row.size_bytes) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="created_at"
+          label="Ngày upload"
+          width="160"
+        >
+          <template #default="{ row }">
+            {{ formatDate(row.created_at) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="Thao tác"
+          width="180"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <el-button
+              size="small"
+              type="primary"
+              plain
+              @click="openPdf(row)"
+            >
+              Xem
+            </el-button>
+            <el-button
+              size="small"
+              type="danger"
+              plain
+              :loading="deletingId === row.id"
+              @click="confirmDelete(row)"
+            >
+              Xóa
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
 
-      <el-divider content-position="left">Danh sách dòng</el-divider>
+      <el-divider content-position="left">
+        Danh sách dòng
+      </el-divider>
       <div class="responsive-table">
-        <el-table :data="item.items || []" border stripe size="small">
-          <el-table-column prop="asset_code_prefix" label="Mã prefix" min-width="160" />
-          <el-table-column prop="name" label="Tên" min-width="240" />
-          <el-table-column label="Loại tài sản" min-width="240">
+        <el-table
+          :data="item.items || []"
+          border
+          stripe
+          size="small"
+        >
+          <el-table-column
+            prop="asset_code_prefix"
+            label="Mã prefix"
+            min-width="160"
+          />
+          <el-table-column
+            prop="name"
+            label="Tên"
+            min-width="240"
+          />
+          <el-table-column
+            label="Loại tài sản"
+            min-width="240"
+          >
             <template #default="{ row }">
               <span>{{ row.category_code || '-' }}</span>
               <span v-if="row.category"> - {{ row.category }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="quantity" label="SL" width="80" align="center" />
-          <el-table-column prop="purchase_price" label="Đơn giá" width="140" align="right">
-            <template #default="{ row }">{{ formatCurrency(row.purchase_price) }}</template>
+          <el-table-column
+            prop="quantity"
+            label="SL"
+            width="80"
+            align="center"
+          />
+          <el-table-column
+            prop="purchase_price"
+            label="Đơn giá"
+            width="140"
+            align="right"
+          >
+            <template #default="{ row }">
+              {{ formatCurrency(row.purchase_price) }}
+            </template>
           </el-table-column>
-          <el-table-column label="Thành tiền" width="160" align="right">
-            <template #default="{ row }">{{ formatCurrency((Number(row.quantity || 0) * Number(row.purchase_price || 0))) }}</template>
+          <el-table-column
+            label="Thành tiền"
+            width="160"
+            align="right"
+          >
+            <template #default="{ row }">
+              {{ formatCurrency((Number(row.quantity || 0) * Number(row.purchase_price || 0))) }}
+            </template>
           </el-table-column>
-          <el-table-column prop="unit" label="Đơn vị" width="100" align="center" />
-          <el-table-column prop="serial_number" label="Serial" width="160" />
-          <el-table-column prop="location" label="Vị trí" min-width="180" />
+          <el-table-column
+            prop="unit"
+            label="Đơn vị"
+            width="100"
+            align="center"
+          />
+          <el-table-column
+            prop="serial_number"
+            label="Serial"
+            width="160"
+          />
+          <el-table-column
+            prop="location"
+            label="Vị trí"
+            min-width="180"
+          />
         </el-table>
       </div>
 
-      <el-divider content-position="left">Tài sản đã tạo</el-divider>
+      <el-divider content-position="left">
+        Tài sản đã tạo
+      </el-divider>
       <div v-if="Array.isArray(item.created_asset_ids) && item.created_asset_ids.length">
         <el-button
           v-for="id in item.created_asset_ids"
@@ -101,15 +239,36 @@
           #{{ id }}
         </el-button>
       </div>
-      <div v-else style="color:#909399">Chưa tạo tài sản</div>
+      <div
+        v-else
+        style="color:#909399"
+      >
+        Chưa tạo tài sản
+      </div>
     </div>
 
     <template #footer>
-      <div v-if="item && item.status === 'draft' && authStore.isAdmin" class="dialog-footer-actions">
-        <el-button type="primary" @click="emit('edit', item.id)">Sửa nội dung &amp; Giá thực tế</el-button>
-        <el-button type="success" :loading="fulfilling" @click="handleFulfill">Xác nhận tăng tài sản</el-button>
+      <div
+        v-if="item && item.status === 'draft' && authStore.isAdmin"
+        class="dialog-footer-actions"
+      >
+        <el-button
+          type="primary"
+          @click="emit('edit', item.id)"
+        >
+          Sửa nội dung &amp; Giá thực tế
+        </el-button>
+        <el-button
+          type="success"
+          :loading="fulfilling"
+          @click="handleFulfill"
+        >
+          Xác nhận tăng tài sản
+        </el-button>
       </div>
-      <el-button @click="emit('update:visible', false)">Đóng</el-button>
+      <el-button @click="emit('update:visible', false)">
+        Đóng
+      </el-button>
     </template>
   </el-dialog>
 </template>

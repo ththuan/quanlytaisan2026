@@ -2,40 +2,96 @@
   <div class="page">
     <div class="page-header">
       <div>
-        <h2>Giảm tài sản</h2>
-        <div class="sub">Danh sách hồ sơ thanh lý / tiêu hủy tài sản</div>
+        <h2>{{ $t('menu.assetDisposals') }}</h2>
+        <div class="sub">
+          {{ $t('assetDisposals.subtitle') }}
+        </div>
       </div>
-      <el-button type="danger" :icon="Delete" @click="destructionVisible = true" v-if="authStore.isAdmin">
-        Tạo hồ sơ tiêu hủy / thanh lý
+      <el-button
+        v-if="authStore.isAdmin"
+        type="danger"
+        :icon="Delete"
+        @click="destructionVisible = true"
+      >
+        {{ $t('assetDisposals.createCase') }}
       </el-button>
     </div>
 
     <el-card>
       <div class="filters">
-        <el-input v-model="filters.search" placeholder="Tìm theo mã hồ sơ" clearable style="max-width: 280px" />
-        <el-select v-model="filters.status" placeholder="Trạng thái" clearable style="width: 180px">
-          <el-option label="Chờ xử lý" value="pending" />
-          <el-option label="Đã hoàn tất" value="completed" />
-          <el-option label="Đã hủy" value="cancelled" />
+        <el-input
+          v-model="filters.search"
+          :placeholder="$t('assetDisposals.searchPlaceholder')"
+          clearable
+          style="max-width: 280px"
+        />
+        <el-select
+          v-model="filters.status"
+          :placeholder="$t('common.status')"
+          clearable
+          style="width: 180px"
+        >
+          <el-option
+            :label="$t('assetDisposals.status.pending')"
+            value="pending"
+          />
+          <el-option
+            :label="$t('assetDisposals.status.completed')"
+            value="completed"
+          />
+          <el-option
+            :label="$t('assetDisposals.status.cancelled')"
+            value="cancelled"
+          />
         </el-select>
-        <el-button type="primary" @click="load">Tải</el-button>
+        <el-button
+          type="primary"
+          @click="load"
+        >
+          {{ $t('common.search') }}
+        </el-button>
       </div>
 
-      <el-table :data="rows" v-loading="loading" style="width: 100%">
-        <el-table-column prop="code" label="Mã hồ sơ" width="170" />
-        <el-table-column label="Trạng thái" width="140">
+      <el-table
+        v-loading="loading"
+        :data="rows"
+        style="width: 100%"
+      >
+        <el-table-column
+          prop="code"
+          :label="$t('assetDisposals.caseCode')"
+          width="170"
+        />
+        <el-table-column
+          :label="$t('common.status')"
+          width="160"
+        >
           <template #default="scope">
-            <el-tag :type="statusTagType(scope.row.status)">{{ statusLabel(scope.row.status) }}</el-tag>
+            <el-tag :type="statusTagType(scope.row.status)">
+              {{ statusLabel(scope.row.status) }}
+            </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="Ngày tạo" width="160">
+        <el-table-column
+          :label="$t('common.createdAt')"
+          width="180"
+        >
           <template #default="scope">
             <span>{{ formatDateTime(scope.row.created_at || scope.row.createdAt) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="Thao tác" width="120" fixed="right">
+        <el-table-column
+          :label="$t('common.actions')"
+          width="140"
+          fixed="right"
+        >
           <template #default="scope">
-            <el-button size="small" @click="openDetail(scope.row.id)">Xem</el-button>
+            <el-button
+              size="small"
+              @click="openDetail(scope.row.id)"
+            >
+              {{ $t('common.view') }}
+            </el-button>
           </template>
         </el-table-column>
       </el-table>

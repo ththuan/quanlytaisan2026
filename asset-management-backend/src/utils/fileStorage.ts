@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import logger from './logger';
 
 /**
  * Utility functions for handling file storage
@@ -62,7 +63,7 @@ export function saveBase64Image(
     const mimeType = prefix.split(':')[1]?.split(';')[0] || 'image/png';
     extension = mimeType.split('/')[1] || 'png';
   } catch (e) {
-    console.warn('⚠️ [fileStorage] Failed to parse extension, defaulting to png', e);
+    logger.warn('⚠️ [fileStorage] Failed to parse extension, defaulting to png', { error: e });
   }
 
   // Decode base64 to binary
@@ -82,7 +83,7 @@ export function saveBase64Image(
   // Return relative path (relative to storage/public)
   const relativePath = `maintenance-requests/${maintenanceId}/${filename}`;
 
-  console.log('✅ Saved image:', {
+  logger.info('✅ Saved image', {
     maintenanceId,
     orderNumber,
     extension,
@@ -123,9 +124,9 @@ export function deleteImageFile(imagePath: string): void {
 
   if (fs.existsSync(fullPath)) {
     fs.unlinkSync(fullPath);
-    console.log('✅ Deleted image:', fullPath);
+    logger.info('✅ Deleted image', { fullPath });
   } else {
-    console.warn('⚠️ Image file not found:', fullPath);
+    logger.warn('⚠️ Image file not found', { fullPath });
   }
 }
 
@@ -146,7 +147,7 @@ export function deleteMaintenanceImages(maintenanceId: number): void {
 
     // Remove the directory
     fs.rmdirSync(maintenanceDir);
-    console.log('✅ Deleted maintenance images directory:', maintenanceDir);
+    logger.info('✅ Deleted maintenance images directory', { maintenanceDir });
   }
 }
 

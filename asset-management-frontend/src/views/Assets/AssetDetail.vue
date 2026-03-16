@@ -2,12 +2,18 @@
   <div class="asset-detail-page">
     <div class="page-header">
       <div class="header-left">
-        <el-button :icon="ArrowLeft" @click="$router.back()" class="back-btn">
+        <el-button
+          :icon="ArrowLeft"
+          class="back-btn"
+          @click="$router.back()"
+        >
           {{ $t('common.back') }}
         </el-button>
       </div>
       <div class="header-center">
-        <h2 class="page-title">{{ $t('assets.assetDetail') }}</h2>
+        <h2 class="page-title">
+          {{ $t('assets.assetDetail') }}
+        </h2>
       </div>
       <div class="header-right">
         <el-tooltip
@@ -18,51 +24,75 @@
           <el-button 
             type="danger" 
             :icon="Delete" 
-            @click="handleDelete"
             plain
+            @click="handleDelete"
           >
             Xóa (lỗi nhập liệu)
           </el-button>
         </el-tooltip>
         <el-button 
+          v-if="(authStore.isStaff || authStore.isDepartmentHead) && (assetStore.currentAsset?.status === 'active' || assetStore.currentAsset?.status === 'inactive')" 
           type="danger" 
           :icon="Warning" 
-          @click="handleReportDamage" 
-          v-if="(authStore.isStaff || authStore.isDepartmentHead) && (assetStore.currentAsset?.status === 'active' || assetStore.currentAsset?.status === 'inactive')"
+          @click="handleReportDamage"
         >
           Báo hỏng
         </el-button>
         <el-button 
+          v-if="authStore.isAdmin" 
           type="primary" 
           :icon="Edit" 
-          @click="handleEdit" 
-          v-if="authStore.isAdmin"
+          @click="handleEdit"
         >
           {{ $t('common.edit') }}
         </el-button>
       </div>
     </div>
 
-    <div class="content-wrapper" v-if="assetStore.currentAsset" v-loading="assetStore.loading">
+    <div
+      v-if="assetStore.currentAsset"
+      v-loading="assetStore.loading"
+      class="content-wrapper"
+    >
       <!-- Asset Header Card -->
-      <el-card class="asset-header-card" shadow="never">
+      <el-card
+        class="asset-header-card"
+        shadow="never"
+      >
         <div class="asset-header">
           <div class="asset-icon">
-            <el-icon :size="48"><Box /></el-icon>
+            <el-icon :size="48">
+              <Box />
+            </el-icon>
           </div>
           <div class="asset-main-info">
-            <div class="asset-code">{{ assetStore.currentAsset.asset_code }}</div>
-            <h1 class="asset-name">{{ assetStore.currentAsset.name }}</h1>
+            <div class="asset-code">
+              {{ assetStore.currentAsset.asset_code }}
+            </div>
+            <h1 class="asset-name">
+              {{ assetStore.currentAsset.name }}
+            </h1>
             <div class="asset-meta">
-              <el-tag :type="getStatusType(assetStore.currentAsset.status)" size="large" effect="dark">
+              <el-tag
+                :type="getStatusType(assetStore.currentAsset.status)"
+                size="large"
+                effect="dark"
+              >
                 {{ $t(`assets.status.${assetStore.currentAsset.status}`) }}
               </el-tag>
               <!-- chỉ giữ một tag hiển thị mã loại + tên -->
-              <el-tag type="warning" size="large" v-if="assetStore.currentAsset.category_code">
+              <el-tag
+                v-if="assetStore.currentAsset.category_code"
+                type="warning"
+                size="large"
+              >
                 {{ assetStore.currentAsset.category_code }}
                 <span v-if="assetStore.currentAsset.assetCategory?.name"> - {{ assetStore.currentAsset.assetCategory.name }}</span>
               </el-tag>
-              <span class="asset-type" v-if="assetStore.currentAsset.asset_type">
+              <span
+                v-if="assetStore.currentAsset.asset_type"
+                class="asset-type"
+              >
                 {{ assetStore.currentAsset.asset_type }}
               </span>
             </div>
@@ -70,11 +100,20 @@
         </div>
       </el-card>
 
-      <el-row :gutter="20" class="detail-cards">
+      <el-row
+        :gutter="20"
+        class="detail-cards"
+      >
         <!-- Left Column -->
-        <el-col :xs="24" :md="12">
+        <el-col
+          :xs="24"
+          :md="12"
+        >
           <!-- Thông tin cơ bản -->
-          <el-card class="info-card" shadow="never">
+          <el-card
+            class="info-card"
+            shadow="never"
+          >
             <template #header>
               <div class="card-title">
                 <el-icon><Document /></el-icon>
@@ -83,41 +122,70 @@
             </template>
             <div class="info-grid">
               <div class="info-row">
-                <div class="info-label">{{ $t('assets.serialNumber') }}</div>
-                <div class="info-value">{{ assetStore.currentAsset.serial_number || '-' }}</div>
+                <div class="info-label">
+                  {{ $t('assets.serialNumber') }}
+                </div>
+                <div class="info-value">
+                  {{ assetStore.currentAsset.serial_number || '-' }}
+                </div>
               </div>
               <div class="info-row">
-                <div class="info-label">Ngày mua</div>
-                <div class="info-value">{{ formatDate(assetStore.currentAsset.purchase_date) }}</div>
+                <div class="info-label">
+                  Ngày mua
+                </div>
+                <div class="info-value">
+                  {{ formatDate(assetStore.currentAsset.purchase_date) }}
+                </div>
               </div>
               <div class="info-row">
-                <div class="info-label">Năm đưa vào sử dụng</div>
-                <div class="info-value">{{ assetStore.currentAsset.year_in_use || '-' }}</div>
+                <div class="info-label">
+                  Năm đưa vào sử dụng
+                </div>
+                <div class="info-value">
+                  {{ assetStore.currentAsset.year_in_use || '-' }}
+                </div>
               </div>
               <div class="info-row">
-                <div class="info-label">Đơn vị tính</div>
-                <div class="info-value">{{ assetStore.currentAsset.unit || '-' }}</div>
+                <div class="info-label">
+                  Đơn vị tính
+                </div>
+                <div class="info-value">
+                  {{ assetStore.currentAsset.unit || '-' }}
+                </div>
               </div>
               <div class="info-row">
-                <div class="info-label">Số lượng</div>
+                <div class="info-label">
+                  Số lượng
+                </div>
                 <div class="info-value">
                   {{ assetStore.currentAsset.quantity || 1 }}
                   <span v-if="assetStore.currentAsset.unit"> {{ assetStore.currentAsset.unit }}</span>
                 </div>
               </div>
               <div class="info-row">
-                <div class="info-label">{{ $t('assets.purchasePrice') }}</div>
-                <div class="info-value">{{ formatCurrency(assetStore.currentAsset.purchase_price) }}</div>
+                <div class="info-label">
+                  {{ $t('assets.purchasePrice') }}
+                </div>
+                <div class="info-value">
+                  {{ formatCurrency(assetStore.currentAsset.purchase_price) }}
+                </div>
               </div>
               <div class="info-row">
-                <div class="info-label">{{ $t('assets.description') }}</div>
-                <div class="info-value">{{ assetStore.currentAsset.description || '-' }}</div>
+                <div class="info-label">
+                  {{ $t('assets.description') }}
+                </div>
+                <div class="info-value">
+                  {{ assetStore.currentAsset.description || '-' }}
+                </div>
               </div>
             </div>
           </el-card>
 
           <!-- Vị trí & Phòng ban -->
-          <el-card class="info-card" shadow="never">
+          <el-card
+            class="info-card"
+            shadow="never"
+          >
             <template #header>
               <div class="card-title">
                 <el-icon><Location /></el-icon>
@@ -126,43 +194,71 @@
             </template>
             <div class="info-grid">
               <div class="info-row highlight-row">
-                <div class="info-label">{{ $t('assets.department') }}</div>
+                <div class="info-label">
+                  {{ $t('assets.department') }}
+                </div>
                 <div class="info-value">
-                  <el-tag type="primary" size="large">
+                  <el-tag
+                    type="primary"
+                    size="large"
+                  >
                     {{ assetStore.currentAsset.current_department?.name || '-' }}
                   </el-tag>
                 </div>
               </div>
               <div class="info-row">
-                <div class="info-label">{{ $t('assets.detailLocation') }}</div>
-                <div class="info-value">{{ assetStore.currentAsset.location || '-' }}</div>
+                <div class="info-label">
+                  {{ $t('assets.detailLocation') }}
+                </div>
+                <div class="info-value">
+                  {{ assetStore.currentAsset.location || '-' }}
+                </div>
               </div>
             </div>
           </el-card>
 
           <!-- QR Code Card - Chỉ hiển thị cho tài sản không phải nhà cửa công trình -->
-          <el-card class="info-card qrcode-card" shadow="never" v-if="!isBuildingAsset">
+          <el-card
+            v-if="!isBuildingAsset"
+            class="info-card qrcode-card"
+            shadow="never"
+          >
             <template #header>
               <div class="card-title">
                 <el-icon><Document /></el-icon>
                 <span>Mã QR Code</span>
               </div>
             </template>
-            <div class="qrcode-content" v-loading="loadingQRCode">
-              <div v-if="qrCodeImage" class="qrcode-display">
-                <img :src="qrCodeImage" alt="QR Code" class="qrcode-image" />
+            <div
+              v-loading="loadingQRCode"
+              class="qrcode-content"
+            >
+              <div
+                v-if="qrCodeImage"
+                class="qrcode-display"
+              >
+                <img
+                  :src="qrCodeImage"
+                  alt="QR Code"
+                  class="qrcode-image"
+                >
                 <div class="qrcode-actions">
-                  <el-button type="success" :icon="Download" @click="downloadQRCode" block>
+                  <el-button
+                    type="success"
+                    :icon="Download"
+                    block
+                    @click="downloadQRCode"
+                  >
                     Tải QR Code
                   </el-button>
                   <el-button 
+                    v-if="canRegenerateQRCode" 
                     type="primary" 
                     :icon="Refresh" 
-                    @click="generateQRCode" 
                     :loading="generatingQR" 
                     :disabled="!canRegenerateQRCode"
                     block
-                    v-if="canRegenerateQRCode"
+                    @click="generateQRCode"
                   >
                     Tạo lại QR Code
                   </el-button>
@@ -177,16 +273,21 @@
                   </p>
                 </div>
               </div>
-              <div v-else class="qrcode-placeholder">
-                <el-icon class="qrcode-icon"><Document /></el-icon>
+              <div
+                v-else
+                class="qrcode-placeholder"
+              >
+                <el-icon class="qrcode-icon">
+                  <Document />
+                </el-icon>
                 <p>Chưa có QR code</p>
                 <el-button 
+                  v-if="canRegenerateQRCode" 
                   type="primary" 
-                  @click="generateQRCode" 
                   :loading="generatingQR" 
                   :icon="Refresh"
                   :disabled="!canRegenerateQRCode"
-                  v-if="canRegenerateQRCode"
+                  @click="generateQRCode"
                 >
                   Tạo QR Code
                 </el-button>
@@ -208,18 +309,30 @@
         </el-col>
 
         <!-- Right Column -->
-        <el-col :xs="24" :md="12">
-          <!-- Thông tin khấu hao -->
-          <el-card class="info-card depreciation-card" shadow="never">
+        <el-col
+          :xs="24"
+          :md="12"
+        >
+          <!-- Thông tin hao mòn -->
+          <el-card
+            class="info-card depreciation-card"
+            shadow="never"
+          >
             <template #header>
               <div class="card-title">
                 <el-icon><TrendCharts /></el-icon>
                 <span>{{ $t('assets.depreciationInfo') }}</span>
               </div>
             </template>
-            <div class="depreciation-content" v-if="assetStore.currentAsset.depreciation_info">
-              <!-- Hiển thị khi tài sản KHÔNG tính khấu hao (công cụ dụng cụ) -->
-              <div v-if="assetStore.currentAsset.depreciation_info.isDepreciable === false" class="non-depreciable-notice">
+            <div
+              v-if="assetStore.currentAsset.depreciation_info"
+              class="depreciation-content"
+            >
+              <!-- Hiển thị khi tài sản KHÔNG tính hao mòn (công cụ dụng cụ) -->
+              <div
+                v-if="assetStore.currentAsset.depreciation_info.isDepreciable === false"
+                class="non-depreciable-notice"
+              >
                 <el-alert
                   :title="$t('assets.nonDepreciable')"
                   type="info"
@@ -227,32 +340,55 @@
                   show-icon
                   :closable="false"
                 />
-                <div class="depreciation-values" style="margin-top: 20px;">
+                <div
+                  class="depreciation-values"
+                  style="margin-top: 20px;"
+                >
                   <div class="value-box primary">
-                    <div class="value-label">{{ $t('assets.currentValue') }}</div>
-                    <div class="value-amount">{{ formatCurrency(assetStore.currentAsset.depreciation_info.originalValue) }}</div>
+                    <div class="value-label">
+                      {{ $t('assets.currentValue') }}
+                    </div>
+                    <div class="value-amount">
+                      {{ formatCurrency(assetStore.currentAsset.depreciation_info.originalValue) }}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <!-- Hiển thị khi tài sản CÓ tính khấu hao -->
+              <!-- Hiển thị khi tài sản CÓ tính hao mòn -->
               <template v-else>
                 <div class="depreciation-summary">
                   <div class="depreciation-item">
-                    <div class="dep-label">{{ $t('assets.usefulLife') }}</div>
-                    <div class="dep-value">{{ formatNumber(assetStore.currentAsset.depreciation_info.usefulLifeYears || assetStore.currentAsset.depreciation_info.usefulLife) }} {{ $t('common.years') }}</div>
+                    <div class="dep-label">
+                      {{ $t('assets.usefulLife') }}
+                    </div>
+                    <div class="dep-value">
+                      {{ formatNumber(assetStore.currentAsset.depreciation_info.usefulLifeYears || assetStore.currentAsset.depreciation_info.usefulLife) }} {{ $t('common.years') }}
+                    </div>
                   </div>
                   <div class="depreciation-item">
-                    <div class="dep-label">{{ $t('assets.annualDepreciationRate') }}</div>
-                    <div class="dep-value">{{ formatNumber(assetStore.currentAsset.depreciation_info.depreciationRate || assetStore.currentAsset.depreciation_info.annualDepreciationRate) }}%</div>
+                    <div class="dep-label">
+                      {{ $t('assets.annualDepreciationRate') }}
+                    </div>
+                    <div class="dep-value">
+                      {{ formatNumber(assetStore.currentAsset.depreciation_info.depreciationRate || assetStore.currentAsset.depreciation_info.annualDepreciationRate) }}%
+                    </div>
                   </div>
                   <div class="depreciation-item">
-                    <div class="dep-label">{{ $t('assets.yearsUsed') }}</div>
-                    <div class="dep-value">{{ formatNumber(assetStore.currentAsset.depreciation_info.yearsUsed) }} {{ $t('common.years') }}</div>
+                    <div class="dep-label">
+                      {{ $t('assets.yearsUsed') }}
+                    </div>
+                    <div class="dep-value">
+                      {{ formatNumber(assetStore.currentAsset.depreciation_info.yearsUsed) }} {{ $t('common.years') }}
+                    </div>
                   </div>
                   <div class="depreciation-item">
-                    <div class="dep-label">{{ $t('assets.remainingUsefulLife') }}</div>
-                    <div class="dep-value">{{ formatNumber(assetStore.currentAsset.depreciation_info.remainingUsefulLife) }} {{ $t('common.years') }}</div>
+                    <div class="dep-label">
+                      {{ $t('assets.remainingUsefulLife') }}
+                    </div>
+                    <div class="dep-value">
+                      {{ formatNumber(assetStore.currentAsset.depreciation_info.remainingUsefulLife) }} {{ $t('common.years') }}
+                    </div>
                   </div>
                 </div>
                 
@@ -270,20 +406,37 @@
 
                 <div class="depreciation-values">
                   <div class="value-box">
-                    <div class="value-label">{{ $t('assets.annualDepreciation') }}</div>
-                    <div class="value-amount warning">{{ formatCurrency(assetStore.currentAsset.depreciation_info.annualDepreciationAmount) }}/{{ $t('common.year') }}</div>
+                    <div class="value-label">
+                      {{ $t('assets.annualDepreciation') }}
+                    </div>
+                    <div class="value-amount warning">
+                      {{ formatCurrency(assetStore.currentAsset.depreciation_info.annualDepreciationAmount) }}/{{ $t('common.year') }}
+                    </div>
                   </div>
                   <div class="value-box">
-                    <div class="value-label">{{ $t('assets.accumulatedDepreciation') }}</div>
-                    <div class="value-amount danger">{{ formatCurrency(assetStore.currentAsset.depreciation_info.accumulatedDepreciation) }}</div>
+                    <div class="value-label">
+                      {{ $t('assets.accumulatedDepreciation') }}
+                    </div>
+                    <div class="value-amount danger">
+                      {{ formatCurrency(assetStore.currentAsset.depreciation_info.accumulatedDepreciation) }}
+                    </div>
                   </div>
                   <div class="value-box primary">
-                    <div class="value-label">{{ $t('assets.calculatedCurrentValue') }}</div>
-                    <div class="value-amount">{{ formatCurrency(calculatedRemainingValue) }}</div>
+                    <div class="value-label">
+                      {{ $t('assets.calculatedCurrentValue') }}
+                    </div>
+                    <div class="value-amount">
+                      {{ formatCurrency(calculatedRemainingValue) }}
+                    </div>
                   </div>
                 </div>
 
-                <el-tag v-if="assetStore.currentAsset.depreciation_info.isFullyDepreciated" type="warning" size="large" class="fully-depreciated-tag">
+                <el-tag
+                  v-if="assetStore.currentAsset.depreciation_info.isFullyDepreciated"
+                  type="warning"
+                  size="large"
+                  class="fully-depreciated-tag"
+                >
                   {{ $t('assets.fullyDepreciated') }}
                 </el-tag>
               </template>
@@ -291,14 +444,21 @@
           </el-card>
 
           <!-- Lịch sử điều chuyển -->
-          <el-card class="info-card transfer-history-card" shadow="never" v-if="transferHistory.length > 0">
+          <el-card
+            v-if="transferHistory.length > 0"
+            class="info-card transfer-history-card"
+            shadow="never"
+          >
             <template #header>
               <div class="card-title">
                 <el-icon><Switch /></el-icon>
                 <span>Lịch sử điều chuyển</span>
               </div>
             </template>
-            <div class="transfer-history-content" v-loading="loadingHistory">
+            <div
+              v-loading="loadingHistory"
+              class="transfer-history-content"
+            >
               <div 
                 v-for="(transfer, index) in transferHistory" 
                 :key="transfer.id"
@@ -306,7 +466,10 @@
                 :class="{ 'latest-transfer': index === 0 }"
               >
                 <div class="transfer-header">
-                  <el-tag :type="getTransferStatusType(transfer.status)" size="small">
+                  <el-tag
+                    :type="getTransferStatusType(transfer.status)"
+                    size="small"
+                  >
                     {{ getTransferStatusText(transfer.status) }}
                   </el-tag>
                   <span class="transfer-date">{{ formatDate(transfer.transfer_date || transfer.created_at) }}</span>
@@ -314,14 +477,22 @@
                 <div class="transfer-details">
                   <div class="transfer-path">
                     <span class="transfer-from">{{ transfer.from_department?.name || 'Chưa xác định' }}</span>
-                    <el-icon class="transfer-arrow"><ArrowRight /></el-icon>
+                    <el-icon class="transfer-arrow">
+                      <ArrowRight />
+                    </el-icon>
                     <span class="transfer-to">{{ transfer.to_department?.name || 'Chưa xác định' }}</span>
                   </div>
-                  <div class="transfer-reason" v-if="transfer.reason">
+                  <div
+                    v-if="transfer.reason"
+                    class="transfer-reason"
+                  >
                     <span class="reason-label">Lý do:</span>
                     <span class="reason-text">{{ transfer.reason }}</span>
                   </div>
-                  <div class="transfer-requester" v-if="transfer.requester">
+                  <div
+                    v-if="transfer.requester"
+                    class="transfer-requester"
+                  >
                     <span class="requester-label">Người đề nghị:</span>
                     <span class="requester-text">{{ transfer.requester?.fullname || transfer.requester?.username }}</span>
                   </div>
@@ -331,43 +502,68 @@
           </el-card>
 
           <!-- Lịch sử sửa chữa -->
-          <el-card class="info-card repair-history-card" shadow="never" v-if="repairHistory.length > 0">
+          <el-card
+            v-if="repairHistory.length > 0"
+            class="info-card repair-history-card"
+            shadow="never"
+          >
             <template #header>
               <div class="card-title">
                 <el-icon><SetUp /></el-icon>
                 <span>Lịch sử sửa chữa</span>
               </div>
             </template>
-            <div class="repair-history-content" v-loading="loadingRepairHistory">
+            <div
+              v-loading="loadingRepairHistory"
+              class="repair-history-content"
+            >
               <div
                 v-for="repair in repairHistory"
                 :key="repair.id"
                 class="repair-item"
               >
                 <div class="repair-header">
-                  <el-tag :type="getRepairStatusType(repair.status)" size="small">
+                  <el-tag
+                    :type="getRepairStatusType(repair.status)"
+                    size="small"
+                  >
                     {{ getRepairStatusText(repair.status) }}
                   </el-tag>
                   <span class="repair-date">{{ formatDate(repair.created_at) }}</span>
                 </div>
                 <div class="repair-details">
-                  <div class="repair-description" v-if="repair.description">
+                  <div
+                    v-if="repair.description"
+                    class="repair-description"
+                  >
                     <span class="detail-label">Mô tả hư hỏng:</span>
                     <span class="detail-text">{{ repair.description }}</span>
                   </div>
-                  <div class="repair-cost" v-if="repair.estimated_cost">
+                  <div
+                    v-if="repair.estimated_cost"
+                    class="repair-cost"
+                  >
                     <span class="detail-label">Chi phí dự kiến:</span>
                     <span class="detail-text cost-value">{{ formatCurrency(Number(repair.estimated_cost)) }}</span>
                   </div>
-                  <div class="repair-requester" v-if="repair.requester">
+                  <div
+                    v-if="repair.requester"
+                    class="repair-requester"
+                  >
                     <span class="detail-label">Người đề nghị:</span>
                     <span class="detail-text">{{ repair.requester?.fullname || repair.requester?.username }}</span>
                   </div>
-                  <div class="repair-assignee" v-if="repair.assignee">
+                  <div
+                    v-if="repair.assignee"
+                    class="repair-assignee"
+                  >
                     <span class="detail-label">Người thực hiện:</span>
                     <span class="detail-text">{{ repair.assignee?.fullname || repair.assignee?.username }}</span>
                   </div>
-                  <div class="repair-dates" v-if="repair.start_date || repair.completion_date">
+                  <div
+                    v-if="repair.start_date || repair.completion_date"
+                    class="repair-dates"
+                  >
                     <span class="detail-label">Thời gian:</span>
                     <span class="detail-text">
                       <template v-if="repair.start_date">{{ formatDate(repair.start_date) }}</template>
@@ -376,7 +572,10 @@
                     </span>
                   </div>
                   <!-- Tiến trình phê duyệt -->
-                  <div class="repair-approvals" v-if="repair.approvals && repair.approvals.length > 0">
+                  <div
+                    v-if="repair.approvals && repair.approvals.length > 0"
+                    class="repair-approvals"
+                  >
                     <span class="detail-label">Phê duyệt:</span>
                     <div class="approval-steps">
                       <div
@@ -401,7 +600,11 @@
           </el-card>
 
           <!-- Hình ảnh tài sản -->
-          <el-card class="info-card image-card" shadow="never" style="margin-top: 20px;">
+          <el-card
+            class="info-card image-card"
+            shadow="never"
+            style="margin-top: 20px;"
+          >
             <template #header>
               <div class="card-title">
                 <el-icon><Picture /></el-icon>
@@ -418,12 +621,20 @@
                 hide-on-click-modal
                 class="asset-image-preview"
               />
-              <div v-else class="image-placeholder-box">
-                <el-icon class="image-icon-placeholder"><Picture /></el-icon>
+              <div
+                v-else
+                class="image-placeholder-box"
+              >
+                <el-icon class="image-icon-placeholder">
+                  <Picture />
+                </el-icon>
                 <p>Chưa có hình ảnh</p>
               </div>
               
-              <div class="image-actions" style="margin-top: 15px;">
+              <div
+                class="image-actions"
+                style="margin-top: 15px;"
+              >
                 <el-upload
                   action="#"
                   :auto-upload="false"
@@ -431,7 +642,11 @@
                   accept="image/*"
                   :on-change="handleImageChange"
                 >
-                  <el-button type="primary" :icon="Upload" :loading="uploadingImage">
+                  <el-button
+                    type="primary"
+                    :icon="Upload"
+                    :loading="uploadingImage"
+                  >
                     {{ assetStore.currentAsset.image_url ? 'Cập nhật hình ảnh' : 'Tải lên hình ảnh' }}
                   </el-button>
                 </el-upload>

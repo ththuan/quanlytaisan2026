@@ -12,10 +12,16 @@
       label-position="top"
     >
       <el-form-item label="Tài sản">
-        <el-input :value="`${asset?.asset_code} - ${asset?.name}`" disabled />
+        <el-input
+          :value="`${asset?.asset_code} - ${asset?.name}`"
+          disabled
+        />
       </el-form-item>
 
-      <el-form-item label="Mô tả tình trạng hỏng hóc" prop="description">
+      <el-form-item
+        label="Mô tả tình trạng hỏng hóc"
+        prop="description"
+      >
         <el-input
           v-model="form.description"
           type="textarea"
@@ -24,12 +30,30 @@
         />
       </el-form-item>
 
-      <el-form-item label="Mức độ khẩn cấp" prop="urgency">
-        <el-select v-model="form.urgency" style="width: 100%;">
-          <el-option label="Thấp" value="low" />
-          <el-option label="Bình thường" value="normal" />
-          <el-option label="Cao" value="high" />
-          <el-option label="Nghiêm trọng (Cần xử lý ngay)" value="critical" />
+      <el-form-item
+        label="Mức độ khẩn cấp"
+        prop="urgency"
+      >
+        <el-select
+          v-model="form.urgency"
+          style="width: 100%;"
+        >
+          <el-option
+            label="Thấp"
+            value="low"
+          />
+          <el-option
+            label="Bình thường"
+            value="normal"
+          />
+          <el-option
+            label="Cao"
+            value="high"
+          />
+          <el-option
+            label="Nghiêm trọng (Cần xử lý ngay)"
+            value="critical"
+          />
         </el-select>
       </el-form-item>
 
@@ -51,14 +75,27 @@
     </el-form>
 
     <!-- Image preview dialog -->
-    <el-dialog v-model="previewVisible" title="Xem trước hình ảnh" append-to-body>
-      <img :src="previewImageUrl" style="width: 100%;" />
+    <el-dialog
+      v-model="previewVisible"
+      title="Xem trước hình ảnh"
+      append-to-body
+    >
+      <img
+        :src="previewImageUrl"
+        style="width: 100%;"
+      >
     </el-dialog>
 
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="dialogVisible = false">Hủy</el-button>
-        <el-button type="danger" :loading="loading" @click="handleSubmit">
+        <el-button @click="dialogVisible = false">
+          Hủy
+        </el-button>
+        <el-button
+          type="danger"
+          :loading="loading"
+          @click="handleSubmit"
+        >
           Gửi yêu cầu Báo hỏng
         </el-button>
       </div>

@@ -3,7 +3,12 @@
     <!-- Header with create button -->
     <div class="list-header">
       <h4>{{ $t('maintenance.procurement.title') }}</h4>
-      <el-button type="primary" :icon="Plus" @click="handleCreate" v-if="!authStore.isDirector">
+      <el-button
+        v-if="!authStore.isDirector"
+        type="primary"
+        :icon="Plus"
+        @click="handleCreate"
+      >
         {{ $t('maintenance.procurement.createRequest') }}
       </el-button>
     </div>
@@ -12,98 +17,182 @@
     <div class="filter-section">
       <el-row :gutter="16">
         <el-col :span="6">
-          <el-select v-model="filterStatus" :placeholder="$t('maintenance.filterByStatus')" clearable @change="handleFilter">
-            <el-option v-for="s in statuses" :key="s.value" :label="s.label" :value="s.value" />
+          <el-select
+            v-model="filterStatus"
+            :placeholder="$t('maintenance.filterByStatus')"
+            clearable
+            @change="handleFilter"
+          >
+            <el-option
+              v-for="s in statuses"
+              :key="s.value"
+              :label="s.label"
+              :value="s.value"
+            />
           </el-select>
         </el-col>
         <el-col :span="6">
-          <el-select v-model="filterDepartment" :placeholder="$t('maintenance.filterByDepartment')" clearable @change="handleFilter">
-            <el-option v-for="d in departments" :key="d.id" :label="d.name" :value="d.id" />
+          <el-select
+            v-model="filterDepartment"
+            :placeholder="$t('maintenance.filterByDepartment')"
+            clearable
+            @change="handleFilter"
+          >
+            <el-option
+              v-for="d in departments"
+              :key="d.id"
+              :label="d.name"
+              :value="d.id"
+            />
           </el-select>
         </el-col>
         <el-col :span="6">
-          <el-button type="primary" @click="handleFilter">{{ $t('common.search') }}</el-button>
-          <el-button @click="handleReset">{{ $t('common.refresh') }}</el-button>
+          <el-button
+            type="primary"
+            @click="handleFilter"
+          >
+            {{ $t('common.search') }}
+          </el-button>
+          <el-button @click="handleReset">
+            {{ $t('common.refresh') }}
+          </el-button>
         </el-col>
       </el-row>
     </div>
 
     <!-- Table -->
     <div class="responsive-table">
-      <el-table :data="requests" v-loading="loading" border stripe>
-      <el-table-column type="index" width="50" label="TT" />
-      <el-table-column prop="device_name" :label="$t('maintenance.procurement.deviceName')" min-width="200" />
-      <el-table-column prop="quantity" :label="$t('maintenance.procurement.quantity')" width="100" align="center" />
-      <el-table-column prop="unit" :label="$t('maintenance.procurement.unit')" width="100" align="center" />
-      <el-table-column prop="unit_price" :label="$t('maintenance.procurement.unitPrice')" width="150" align="right">
-        <template #default="{ row }">
-          {{ formatCurrency(row.unit_price) }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="total_price" :label="$t('maintenance.procurement.totalPrice')" width="150" align="right">
-        <template #default="{ row }">
-          {{ formatCurrency(row.total_price || (row.quantity * row.unit_price)) }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="department.name" :label="$t('maintenance.procurement.directUser')" min-width="150" />
-      <el-table-column prop="status" :label="$t('common.status')" width="120">
-        <template #default="{ row }">
-          <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column :label="$t('common.actions')" width="250" fixed="right">
-        <template #default="{ row }">
-          <el-button size="small" @click="handleView(row)">{{ $t('common.view') }}</el-button>
-          <el-button size="small" type="warning" @click="handleEdit(row)" v-if="canEdit(row)">
-            {{ $t('common.edit') }}
-          </el-button>
-          <!-- Nút Xóa - chỉ hiển thị cho người tạo khi status là draft hoặc new (chưa gửi phê duyệt) -->
-          <el-button 
-            v-if="canDelete(row)"
-            size="small" 
-            type="danger" 
-            @click="handleDelete(row)"
-          >
-            {{ $t('common.delete') }}
-          </el-button>
-          <!-- Nút Gửi phê duyệt - chỉ hiển thị cho người tạo khi status là draft hoặc rejected -->
-          <el-button 
-            v-if="(row.status === 'draft' || row.status === 'rejected' || row.status?.startsWith('rejected_by')) && row.requested_by === authStore.user?.id"
-            size="small" 
-            type="success" 
-            @click="handleSubmitForApproval(row)"
-          >
-            Gửi phê duyệt
-          </el-button>
-          <!-- Nút Phê duyệt - hiển thị theo cấp phê duyệt -->
-          <el-button 
-            v-if="canApproveAtCurrentLevel(row)"
-            size="small" 
-            type="success" 
-            @click="handleApprove(row.id)"
-          >
-            {{ getApproveButtonText(row) }}
-          </el-button>
-          <el-button
-            v-if="canFulfill(row)"
-            size="small"
-            type="primary"
-            :loading="fulfillLoading"
-            @click="handleFulfill(row)"
-          >
-            Hoàn tất & tạo TS
-          </el-button>
-          <el-button
-            v-if="authStore.isAdmin && row.linked_procurement_id"
-            size="small"
-            type="success"
-            @click="router.push({ path: '/procurements', query: { openId: String(row.linked_procurement_id) } })"
-          >
-            Xem phiếu Tăng TS
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+      <el-table
+        v-loading="loading"
+        :data="requests"
+        border
+        stripe
+      >
+        <el-table-column
+          type="index"
+          width="50"
+          label="TT"
+        />
+        <el-table-column
+          prop="device_name"
+          :label="$t('maintenance.procurement.deviceName')"
+          min-width="200"
+        />
+        <el-table-column
+          prop="quantity"
+          :label="$t('maintenance.procurement.quantity')"
+          width="100"
+          align="center"
+        />
+        <el-table-column
+          prop="unit"
+          :label="$t('maintenance.procurement.unit')"
+          width="100"
+          align="center"
+        />
+        <el-table-column
+          prop="unit_price"
+          :label="$t('maintenance.procurement.unitPrice')"
+          width="150"
+          align="right"
+        >
+          <template #default="{ row }">
+            {{ formatCurrency(row.unit_price) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="total_price"
+          :label="$t('maintenance.procurement.totalPrice')"
+          width="150"
+          align="right"
+        >
+          <template #default="{ row }">
+            {{ formatCurrency(row.total_price || (row.quantity * row.unit_price)) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="department.name"
+          :label="$t('maintenance.procurement.directUser')"
+          min-width="150"
+        />
+        <el-table-column
+          prop="status"
+          :label="$t('common.status')"
+          width="120"
+        >
+          <template #default="{ row }">
+            <el-tag :type="getStatusType(row.status)">
+              {{ getStatusText(row.status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          :label="$t('common.actions')"
+          width="250"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <el-button
+              size="small"
+              @click="handleView(row)"
+            >
+              {{ $t('common.view') }}
+            </el-button>
+            <el-button
+              v-if="canEdit(row)"
+              size="small"
+              type="warning"
+              @click="handleEdit(row)"
+            >
+              {{ $t('common.edit') }}
+            </el-button>
+            <!-- Nút Xóa - chỉ hiển thị cho người tạo khi status là draft hoặc new (chưa gửi phê duyệt) -->
+            <el-button 
+              v-if="canDelete(row)"
+              size="small" 
+              type="danger" 
+              @click="handleDelete(row)"
+            >
+              {{ $t('common.delete') }}
+            </el-button>
+            <!-- Nút Gửi phê duyệt - chỉ hiển thị cho người tạo khi status là draft hoặc rejected -->
+            <el-button 
+              v-if="(row.status === 'draft' || row.status === 'rejected' || row.status?.startsWith('rejected_by')) && row.requested_by === authStore.user?.id"
+              size="small" 
+              type="success" 
+              @click="handleSubmitForApproval(row)"
+            >
+              Gửi phê duyệt
+            </el-button>
+            <!-- Nút Phê duyệt - hiển thị theo cấp phê duyệt -->
+            <el-button 
+              v-if="canApproveAtCurrentLevel(row)"
+              size="small" 
+              type="success" 
+              @click="handleApprove(row.id)"
+            >
+              {{ getApproveButtonText(row) }}
+            </el-button>
+            <el-button
+              v-if="canFulfill(row)"
+              size="small"
+              type="primary"
+              :loading="fulfillLoading"
+              @click="handleFulfill(row)"
+            >
+              Hoàn tất & tạo TS
+            </el-button>
+            <el-button
+              v-if="authStore.isAdmin && row.linked_procurement_id"
+              size="small"
+              type="success"
+              @click="router.push({ path: '/procurements', query: { openId: String(row.linked_procurement_id) } })"
+            >
+              Xem phiếu Tăng TS
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
     </div>
 
     <!-- Pagination -->

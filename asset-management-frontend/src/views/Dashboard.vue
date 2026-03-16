@@ -3,98 +3,200 @@
     <div class="dashboard-header">
       <div>
         <h2>{{ $t('dashboard.title') }}</h2>
-        <p class="header-subtitle">Tổng quan hoạt động quản lý tài sản</p>
+        <p class="header-subtitle">
+          Tổng quan hoạt động quản lý tài sản
+        </p>
       </div>
       <div class="dashboard-filters">
-        <el-segmented v-model="timeRange" :options="timeRangeOptions" size="default" />
+        <el-segmented
+          v-model="timeRange"
+          :options="timeRangeOptions"
+          size="default"
+        />
       </div>
     </div>
 
-    <el-row :gutter="16" class="stats-row">
+    <el-row
+      :gutter="16"
+      class="stats-row"
+    >
       <!-- 1. Tổng tài sản -->
-      <el-col :xs="12" :sm="8" :md="4">
-        <el-card class="stat-card stat-clickable" shadow="hover" @click="$router.push('/assets')">
+      <el-col
+        :xs="12"
+        :sm="8"
+        :md="4"
+      >
+        <el-card
+          class="stat-card stat-clickable"
+          shadow="hover"
+          @click="$router.push('/assets')"
+        >
           <div class="stat-icon assets-icon">
-            <el-icon size="24"><Box /></el-icon>
+            <el-icon size="24">
+              <Box />
+            </el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value text-truncate">{{ formatNumber(stats.assetsTotal) }}</div>
-            <div class="stat-label">Tổng tài sản</div>
+            <div class="stat-value text-truncate">
+              {{ formatNumber(stats.assetsTotal) }}
+            </div>
+            <div class="stat-label">
+              Tổng tài sản
+            </div>
           </div>
         </el-card>
       </el-col>
 
       <!-- 2. Mua sắm -->
-      <el-col :xs="12" :sm="8" :md="4">
-        <el-card class="stat-card stat-clickable" shadow="hover" @click="$router.push('/maintenance')">
+      <el-col
+        :xs="12"
+        :sm="8"
+        :md="4"
+      >
+        <el-card
+          class="stat-card stat-clickable"
+          shadow="hover"
+          @click="$router.push('/maintenance')"
+        >
           <div class="stat-icon procurements-icon">
-            <el-icon size="24"><ShoppingCart /></el-icon>
+            <el-icon size="24">
+              <ShoppingCart />
+            </el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value text-truncate">{{ formatNumber(stats.procurements) }}</div>
-            <div class="stat-label">Mua sắm</div>
+            <div class="stat-value text-truncate">
+              {{ formatNumber(stats.procurements) }}
+            </div>
+            <div class="stat-label">
+              Mua sắm
+            </div>
           </div>
         </el-card>
       </el-col>
 
       <!-- 3. Sửa chữa -->
-      <el-col :xs="12" :sm="8" :md="4">
-        <el-card class="stat-card stat-clickable" shadow="hover" @click="$router.push('/maintenance')">
+      <el-col
+        :xs="12"
+        :sm="8"
+        :md="4"
+      >
+        <el-card
+          class="stat-card stat-clickable"
+          shadow="hover"
+          @click="$router.push('/maintenance')"
+        >
           <div class="stat-icon maintenance-icon">
-            <el-icon size="24"><Setting /></el-icon>
+            <el-icon size="24">
+              <Setting />
+            </el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value text-truncate">{{ formatNumber(stats.maintenancePending) }}</div>
-            <div class="stat-label">Sửa chữa</div>
+            <div class="stat-value text-truncate">
+              {{ formatNumber(stats.maintenancePending) }}
+            </div>
+            <div class="stat-label">
+              Sửa chữa
+            </div>
           </div>
         </el-card>
       </el-col>
 
       <!-- 4. Điều chuyển -->
-      <el-col :xs="12" :sm="8" :md="4">
-        <el-card class="stat-card stat-clickable" shadow="hover" @click="$router.push('/transfers')">
+      <el-col
+        :xs="12"
+        :sm="8"
+        :md="4"
+      >
+        <el-card
+          class="stat-card stat-clickable"
+          shadow="hover"
+          @click="$router.push('/transfers')"
+        >
           <div class="stat-icon transfers-icon">
-            <el-icon size="24"><Sort /></el-icon>
+            <el-icon size="24">
+              <Sort />
+            </el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value text-truncate">{{ formatNumber(stats.transfersTotal) }}</div>
-            <div class="stat-label">Điều chuyển</div>
+            <div class="stat-value text-truncate">
+              {{ formatNumber(stats.transfersTotal) }}
+            </div>
+            <div class="stat-label">
+              Điều chuyển
+            </div>
           </div>
         </el-card>
       </el-col>
 
       <!-- 5. Kiểm kê -->
-      <el-col :xs="12" :sm="8" :md="4">
-        <el-card class="stat-card stat-clickable" shadow="hover" @click="$router.push('/inventory')">
+      <el-col
+        :xs="12"
+        :sm="8"
+        :md="4"
+      >
+        <el-card
+          class="stat-card stat-clickable"
+          shadow="hover"
+          @click="$router.push('/inventory')"
+        >
           <div class="stat-icon inventory-icon">
-            <el-icon size="24"><List /></el-icon>
+            <el-icon size="24">
+              <List />
+            </el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value text-truncate">{{ formatNumber(inventoryPending) }}</div>
-            <div class="stat-label">Kiểm kê</div>
+            <div class="stat-value text-truncate">
+              {{ formatNumber(inventoryPending) }}
+            </div>
+            <div class="stat-label">
+              Kiểm kê
+            </div>
           </div>
         </el-card>
       </el-col>
 
       <!-- 6. Đề nghị thanh lý -->
-      <el-col :xs="12" :sm="8" :md="4">
-        <el-card class="stat-card stat-clickable" shadow="hover" @click="$router.push('/asset-disposals')">
+      <el-col
+        :xs="12"
+        :sm="8"
+        :md="4"
+      >
+        <el-card
+          class="stat-card stat-clickable"
+          shadow="hover"
+          @click="$router.push('/asset-disposals')"
+        >
           <div class="stat-icon issues-icon">
-            <el-icon size="24"><Delete /></el-icon>
+            <el-icon size="24">
+              <Delete />
+            </el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value text-truncate">{{ formatNumber(disposalPending) }}</div>
-            <div class="stat-label">Đề nghị thanh lý</div>
+            <div class="stat-value text-truncate">
+              {{ formatNumber(disposalPending) }}
+            </div>
+            <div class="stat-label">
+              Đề nghị thanh lý
+            </div>
           </div>
         </el-card>
       </el-col>
     </el-row>
 
-    <el-row :gutter="16" class="charts-row">
+    <el-row
+      :gutter="16"
+      class="charts-row"
+    >
       <el-col :span="24">
-        <el-card class="chart-card" shadow="hover">
+        <el-card
+          class="chart-card"
+          shadow="hover"
+        >
           <template #header>
-            <div class="card-header" style="justify-content: space-between;">
+            <div
+              class="card-header"
+              style="justify-content: space-between;"
+            >
               <div class="header-left">
                 <span class="card-title">Mạng lưới tài sản thông minh</span>
               </div>
@@ -104,8 +206,8 @@
                     v-for="s in assetsByStatus" 
                     :key="s.status" 
                     class="status-capsule"
-                    @click="goToAssets({ status: s.status })"
                     :style="{ '--status-color': getStatusColor(s.status) }"
+                    @click="goToAssets({ status: s.status })"
                   >
                     <span class="capsule-label">{{ getStatusText(s.status) }}</span>
                     <span class="capsule-value">{{ s.count }}</span>
@@ -115,7 +217,10 @@
             </div>
           </template>
 
-          <div class="dept-chart force-full-width" style="height: 600px;">
+          <div
+            class="dept-chart force-full-width"
+            style="height: 600px;"
+          >
             <VChart
               class="dept-echart"
               :option="graphOption"
@@ -130,42 +235,84 @@
 
 
 
-    <el-row :gutter="16" class="charts-row">
-      <el-col :xs="24" :md="24">
-        <el-card class="chart-card" shadow="hover">
+    <el-row
+      :gutter="16"
+      class="charts-row"
+    >
+      <el-col
+        :xs="24"
+        :md="24"
+      >
+        <el-card
+          class="chart-card"
+          shadow="hover"
+        >
           <template #header>
             <div class="card-header">
               <span class="card-title">Lịch sử thao tác gần đây</span>
             </div>
           </template>
 
-          <el-table :data="auditLogs" size="small" v-loading="loading">
-            <el-table-column label="Thời gian" width="160">
+          <el-table
+            v-loading="loading"
+            :data="auditLogs"
+            size="small"
+          >
+            <el-table-column
+              label="Thời gian"
+              width="160"
+            >
               <template #default="{ row }">
                 {{ formatDateTime(row.created_at) }}
               </template>
             </el-table-column>
-            <el-table-column label="Người dùng" min-width="140">
+            <el-table-column
+              label="Người dùng"
+              min-width="140"
+            >
               <template #default="{ row }">
                 {{ getUserDisplayName(row) }}
               </template>
             </el-table-column>
-            <el-table-column label="Vai trò" width="130">
+            <el-table-column
+              label="Vai trò"
+              width="130"
+            >
               <template #default="{ row }">
-                <el-tag :type="getRoleTagType(row.user?.role)" size="small">{{ getRoleText(row.user?.role) }}</el-tag>
+                <el-tag
+                  :type="getRoleTagType(row.user?.role)"
+                  size="small"
+                >
+                  {{ getRoleText(row.user?.role) }}
+                </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="Hành động" width="120">
+            <el-table-column
+              label="Hành động"
+              width="120"
+            >
               <template #default="{ row }">
-                <el-tag :type="getActionTagType(row.action)" size="small" effect="plain">{{ getActionText(row.action) }}</el-tag>
+                <el-tag
+                  :type="getActionTagType(row.action)"
+                  size="small"
+                  effect="plain"
+                >
+                  {{ getActionText(row.action) }}
+                </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="Đối tượng" min-width="180">
+            <el-table-column
+              label="Đối tượng"
+              min-width="180"
+            >
               <template #default="{ row }">
                 {{ getTargetText(row) }}
               </template>
             </el-table-column>
-            <el-table-column label="Địa chỉ IP" width="130">
+            <el-table-column
+              label="Địa chỉ IP"
+              width="130"
+            >
               <template #default="{ row }">
                 <span class="ip-text">{{ row.ip_address ? row.ip_address.replace(/^::ffff:/, '') : '-' }}</span>
               </template>
@@ -443,7 +590,7 @@ const graphOption = computed(() => {
       links.push({
         source: 'center',
         target: deptNodeId,
-        lineStyle: { width: 2, color: '#cbd5e1', curveness: 0.1 }
+        lineStyle: { width: 0.8, color: '#cbd5e1', curveness: 0.1 }
       });
     }
 
@@ -487,7 +634,12 @@ const graphOption = computed(() => {
       links.push({
         source: sourceNodeId,
         target: catNodeId,
-        lineStyle: { width: 1, color: '#e2e8f0', curveness: 0.3, type: 'dashed' }
+        lineStyle: {
+          width: 0.6,
+          color: '#e2e8f0',
+          opacity: 0.9,
+          curveness: 0.3
+        }
       });
     });
 
@@ -504,7 +656,11 @@ const graphOption = computed(() => {
         itemStyle: { color: '#94a3b8', opacity: 0.5 },
         label: { show: false }
       });
-      links.push({ source: sourceNodeId, target: otherNodeId });
+      links.push({
+        source: sourceNodeId,
+        target: otherNodeId,
+        lineStyle: { width: 0.6, color: '#e2e8f0', opacity: 0.85, curveness: 0.2 }
+      });
     }
 
     if (!isCenterDept) deptIdx++;
@@ -526,6 +682,11 @@ const graphOption = computed(() => {
         layout: 'force',
         data: nodes,
         links: links,
+        lineStyle: {
+          color: '#cbd5e1',
+          width: 0.7,
+          opacity: 0.85
+        },
         roam: true,
         draggable: true,
         force: {

@@ -3,12 +3,27 @@
     <el-card>
       <template #header>
         <div class="stock-header">
-          <div class="title">Lịch sử kho</div>
+          <div class="title">
+            Lịch sử kho
+          </div>
           <div class="actions">
-            <el-select v-model="type" style="width: 140px" @change="fetchHistory">
-              <el-option label="Tất cả" value="all" />
-              <el-option label="Nhập kho" value="in" />
-              <el-option label="Xuất kho" value="out" />
+            <el-select
+              v-model="type"
+              style="width: 140px"
+              @change="fetchHistory"
+            >
+              <el-option
+                label="Tất cả"
+                value="all"
+              />
+              <el-option
+                label="Nhập kho"
+                value="in"
+              />
+              <el-option
+                label="Xuất kho"
+                value="out"
+              />
             </el-select>
             <el-date-picker
               v-model="dateRange"
@@ -28,53 +43,110 @@
               @keyup.enter="fetchHistory"
               @clear="fetchHistory"
             />
-            <el-button :loading="loading" @click="fetchHistory">Tải</el-button>
+            <el-button
+              :loading="loading"
+              @click="fetchHistory"
+            >
+              Tải
+            </el-button>
           </div>
         </div>
       </template>
 
       <div class="responsive-table">
-        <el-table :data="rows" v-loading="loading" border stripe>
-        <el-table-column prop="date" label="Ngày" width="130" />
-        <el-table-column label="Loại" width="110" align="center">
-          <template #default="{ row }">
-            <el-tag :type="row.type === 'in' ? 'success' : 'warning'" effect="light">
-              {{ row.type === 'in' ? 'Nhập' : 'Xuất' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="code" label="Mã phiếu" width="150" />
-        <el-table-column label="Vật tư" min-width="260">
-          <template #default="{ row }">
-            <div style="font-weight: 600;">{{ row.item?.code }} - {{ row.item?.name }}</div>
-            <div style="color:#909399; font-size:12px;">ĐVT: {{ row.item?.unit || '-' }}</div>
-          </template>
-        </el-table-column>
-        <el-table-column prop="quantity" label="SL" width="90" align="right" />
-        <el-table-column label="Đơn giá" width="150" align="right">
-          <template #default="{ row }">{{ row.type === 'in' ? formatCurrency(row.unit_price) : '-' }}</template>
-        </el-table-column>
-        <el-table-column label="Thành tiền" width="160" align="right">
-          <template #default="{ row }">{{ row.type === 'in' ? formatCurrency(row.amount) : '-' }}</template>
-        </el-table-column>
-        <el-table-column label="Chi tiết" min-width="320">
-          <template #default="{ row }">
-            <template v-if="row.type === 'in'">
-              <div><strong>Vận đơn:</strong> {{ row.shopee_waybill || '-' }}</div>
-              <div><strong>Nhà cung cấp:</strong> {{ row.supplier_name || '-' }}</div>
-              <div><strong>Hóa đơn:</strong> {{ row.invoice_no || '-' }}</div>
+        <el-table
+          v-loading="loading"
+          :data="rows"
+          border
+          stripe
+        >
+          <el-table-column
+            prop="date"
+            label="Ngày"
+            width="130"
+          />
+          <el-table-column
+            label="Loại"
+            width="110"
+            align="center"
+          >
+            <template #default="{ row }">
+              <el-tag
+                :type="row.type === 'in' ? 'success' : 'warning'"
+                effect="light"
+              >
+                {{ row.type === 'in' ? 'Nhập' : 'Xuất' }}
+              </el-tag>
             </template>
-            <template v-else>
-              <div><strong>Ở đâu:</strong> {{ row.location }}</div>
-              <div><strong>Vào việc:</strong> {{ row.purpose }}</div>
+          </el-table-column>
+          <el-table-column
+            prop="code"
+            label="Mã phiếu"
+            width="150"
+          />
+          <el-table-column
+            label="Vật tư"
+            min-width="260"
+          >
+            <template #default="{ row }">
+              <div style="font-weight: 600;">
+                {{ row.item?.code }} - {{ row.item?.name }}
+              </div>
+              <div style="color:#909399; font-size:12px;">
+                ĐVT: {{ row.item?.unit || '-' }}
+              </div>
             </template>
-            <div v-if="row.notes"><strong>Ghi chú:</strong> {{ row.notes }}</div>
-          </template>
-        </el-table-column>
-      </el-table>
+          </el-table-column>
+          <el-table-column
+            prop="quantity"
+            label="SL"
+            width="90"
+            align="right"
+          />
+          <el-table-column
+            label="Đơn giá"
+            width="150"
+            align="right"
+          >
+            <template #default="{ row }">
+              {{ row.type === 'in' ? formatCurrency(row.unit_price) : '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Thành tiền"
+            width="160"
+            align="right"
+          >
+            <template #default="{ row }">
+              {{ row.type === 'in' ? formatCurrency(row.amount) : '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Chi tiết"
+            min-width="320"
+          >
+            <template #default="{ row }">
+              <template v-if="row.type === 'in'">
+                <div><strong>Vận đơn:</strong> {{ row.shopee_waybill || '-' }}</div>
+                <div><strong>Nhà cung cấp:</strong> {{ row.supplier_name || '-' }}</div>
+                <div><strong>Hóa đơn:</strong> {{ row.invoice_no || '-' }}</div>
+              </template>
+              <template v-else>
+                <div><strong>Ở đâu:</strong> {{ row.location }}</div>
+                <div><strong>Vào việc:</strong> {{ row.purpose }}</div>
+              </template>
+              <div v-if="row.notes">
+                <strong>Ghi chú:</strong> {{ row.notes }}
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
       </div>
 
-      <div v-if="!rows.length && !loading" style="margin-top: 16px;">
+      <div
+        v-if="!rows.length && !loading"
+        style="margin-top: 16px;"
+      >
         <el-empty description="Chưa có lịch sử nhập/xuất kho" />
       </div>
     </el-card>

@@ -1,5 +1,6 @@
 import { Sequelize, Options } from 'sequelize';
 import dotenv from 'dotenv';
+import logger from '../utils/logger';
 
 dotenv.config();
 
@@ -10,7 +11,7 @@ const dbConfig: Options = {
   username: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || '',
   dialect: 'postgres',
-  logging: process.env.NODE_ENV === 'development' ? console.log : false,
+  logging: process.env.NODE_ENV === 'development' ? (msg) => logger.debug(msg) : false,
   pool: {
     max: parseInt(process.env.DB_POOL_MAX || '5', 10),
     min: parseInt(process.env.DB_POOL_MIN || '0', 10),
@@ -31,9 +32,9 @@ const sequelize = new Sequelize(dbConfig);
 export const testConnection = async (): Promise<void> => {
   try {
     await sequelize.authenticate();
-    console.log('✅ Database connection established successfully.');
+    logger.info('✅ Database connection established successfully.');
   } catch (error) {
-    console.error('❌ Unable to connect to the database:', error);
+    logger.error('❌ Unable to connect to the database:', { error });
     throw error;
   }
 };

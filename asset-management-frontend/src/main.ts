@@ -38,4 +38,12 @@ app.use(router);
 app.use(ElementPlus);
 app.use(i18n);
 
+// Frontend observability: log lỗi JS để debug (có thể mở rộng gửi lên backend sau)
+app.config.errorHandler = (err: unknown, instance, info) => {
+  console.error('[App Error]', info, err);
+  if (err instanceof Error && err.stack) {
+    console.error('[Stack]', err.stack);
+  }
+};
+
 app.mount('#app');

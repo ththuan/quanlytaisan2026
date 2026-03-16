@@ -4,9 +4,21 @@
       <template #header>
         <div class="card-header">
           <h3>{{ $t('users.title') }}</h3>
-          <div v-if="authStore.isAdmin" style="display: flex; gap: 8px;">
-            <el-button :icon="Upload" @click="showImportDialog = true">Import Excel</el-button>
-            <el-button type="primary" :icon="Plus" @click="handleCreate">
+          <div
+            v-if="authStore.isAdmin"
+            style="display: flex; gap: 8px;"
+          >
+            <el-button
+              :icon="Upload"
+              @click="showImportDialog = true"
+            >
+              Import Excel
+            </el-button>
+            <el-button
+              type="primary"
+              :icon="Plus"
+              @click="handleCreate"
+            >
               {{ $t('users.addUser') }}
             </el-button>
           </div>
@@ -30,73 +42,141 @@
             </el-input>
           </el-col>
           <el-col :span="5">
-            <el-select v-model="filterRole" :placeholder="$t('users.filterByRole')" clearable @change="handleFilter">
-              <el-option v-for="role in userRoles" :key="role.value" :label="role.label" :value="role.value" />
+            <el-select
+              v-model="filterRole"
+              :placeholder="$t('users.filterByRole')"
+              clearable
+              @change="handleFilter"
+            >
+              <el-option
+                v-for="role in userRoles"
+                :key="role.value"
+                :label="role.label"
+                :value="role.value"
+              />
             </el-select>
           </el-col>
           <el-col :span="5">
-            <el-select v-model="filterStatus" :placeholder="$t('users.filterByStatus')" clearable @change="handleFilter">
-              <el-option :label="$t('users.active')" value="active" />
-              <el-option :label="$t('users.inactive')" value="inactive" />
+            <el-select
+              v-model="filterStatus"
+              :placeholder="$t('users.filterByStatus')"
+              clearable
+              @change="handleFilter"
+            >
+              <el-option
+                :label="$t('users.active')"
+                value="active"
+              />
+              <el-option
+                :label="$t('users.inactive')"
+                value="inactive"
+              />
             </el-select>
           </el-col>
           <el-col :span="6">
-            <el-button type="primary" @click="handleSearch">{{ $t('common.search') }}</el-button>
-            <el-button @click="handleReset">{{ $t('common.refresh') }}</el-button>
+            <el-button
+              type="primary"
+              @click="handleSearch"
+            >
+              {{ $t('common.search') }}
+            </el-button>
+            <el-button @click="handleReset">
+              {{ $t('common.refresh') }}
+            </el-button>
           </el-col>
         </el-row>
       </div>
 
       <div class="responsive-table">
-        <el-table :data="filteredUsers" :loading="loading" border stripe>
-        <el-table-column prop="username" :label="$t('users.username')" width="150" />
-        <el-table-column prop="fullname" :label="$t('users.fullname')" min-width="180" />
-        <el-table-column prop="email" :label="$t('users.email')" min-width="200" />
-        <el-table-column prop="role" :label="$t('users.role')" width="120">
-          <template #default="{ row }">
-            <el-tag :type="getRoleColor(row.role) ?? 'info'">{{ getRoleText(row.role) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="$t('common.status')" width="120">
-          <template #default="{ row }">
-<el-tag :type="row.is_active === true ? 'success' : 'danger'">
-            {{ row.is_active ? $t('users.active') : $t('users.inactive') }}
-          </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="$t('common.actions')" width="320" fixed="right">
-          <template #default="{ row }">
-            <el-button size="small" @click="handleView(row)">{{ $t('common.view') }}</el-button>
-            <el-button size="small" type="warning" @click="handleEdit(row)" v-if="authStore.isAdmin">
-              {{ $t('common.edit') }}
-            </el-button>
-            <el-button
-              size="small"
-              type="info"
-              @click="handleResetPassword(row)"
-              v-if="authStore.isAdmin && row.id !== authStore.user?.id"
-            >
-              {{ $t('users.resetPassword') }}
-            </el-button>
-            <el-button
-              size="small"
-              type="danger"
-              @click="handleDelete(row)"
-              v-if="authStore.isAdmin && row.id !== authStore.user?.id"
-            >
-              {{ $t('common.delete') }}
-            </el-button>
-            <el-button
-              size="small"
-              type="danger"
-              @click="handleToggleStatus(row)"
-              v-if="authStore.isAdmin && row.id !== authStore.user?.id"
-            >
-              {{ row.is_active ? $t('users.deactivate') : $t('users.activate') }}
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+        <el-table
+          :data="filteredUsers"
+          :loading="loading"
+          border
+          stripe
+        >
+          <el-table-column
+            prop="username"
+            :label="$t('users.username')"
+            width="150"
+          />
+          <el-table-column
+            prop="fullname"
+            :label="$t('users.fullname')"
+            min-width="180"
+          />
+          <el-table-column
+            prop="email"
+            :label="$t('users.email')"
+            min-width="200"
+          />
+          <el-table-column
+            prop="role"
+            :label="$t('users.role')"
+            width="120"
+          >
+            <template #default="{ row }">
+              <el-tag :type="getRoleColor(row.role) ?? 'info'">
+                {{ getRoleText(row.role) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            :label="$t('common.status')"
+            width="120"
+          >
+            <template #default="{ row }">
+              <el-tag :type="row.is_active === true ? 'success' : 'danger'">
+                {{ row.is_active ? $t('users.active') : $t('users.inactive') }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            :label="$t('common.actions')"
+            width="320"
+            fixed="right"
+          >
+            <template #default="{ row }">
+              <el-button
+                size="small"
+                @click="handleView(row)"
+              >
+                {{ $t('common.view') }}
+              </el-button>
+              <el-button
+                v-if="authStore.isAdmin"
+                size="small"
+                type="warning"
+                @click="handleEdit(row)"
+              >
+                {{ $t('common.edit') }}
+              </el-button>
+              <el-button
+                v-if="authStore.isAdmin && row.id !== authStore.user?.id"
+                size="small"
+                type="info"
+                @click="handleResetPassword(row)"
+              >
+                {{ $t('users.resetPassword') }}
+              </el-button>
+              <el-button
+                v-if="authStore.isAdmin && row.id !== authStore.user?.id"
+                size="small"
+                type="danger"
+                @click="handleDelete(row)"
+              >
+                {{ $t('common.delete') }}
+              </el-button>
+              <el-button
+                v-if="authStore.isAdmin && row.id !== authStore.user?.id"
+                size="small"
+                type="danger"
+                @click="handleToggleStatus(row)"
+              >
+                {{ row.is_active ? $t('users.deactivate') : $t('users.activate') }}
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
       </div>
     </el-card>
 
@@ -108,11 +188,24 @@
     />
 
     <!-- Import Dialog -->
-    <el-dialog v-model="showImportDialog" title="Import người dùng hàng loạt từ Excel" width="560px" :close-on-click-modal="false">
+    <el-dialog
+      v-model="showImportDialog"
+      title="Import người dùng hàng loạt từ Excel"
+      width="560px"
+      :close-on-click-modal="false"
+    >
       <div class="import-dialog-content">
-        <el-alert type="info" :closable="false" show-icon class="import-guide">
+        <el-alert
+          type="info"
+          :closable="false"
+          show-icon
+          class="import-guide"
+        >
           <template #default>
-            <ol class="guide-list" style="margin: 0; padding-left: 18px;">
+            <ol
+              class="guide-list"
+              style="margin: 0; padding-left: 18px;"
+            >
               <li>Tải file mẫu Excel, điền thông tin (Tên đăng nhập, Email, Mật khẩu, Vai trò bắt buộc)</li>
               <li>Upload file → bấm <strong>Kiểm tra lỗi</strong></li>
               <li>Nếu có lỗi: sửa file rồi Kiểm tra lại. Nếu không lỗi: bấm <strong>Xác nhận import</strong></li>
@@ -121,7 +214,14 @@
         </el-alert>
         <div class="import-section">
           <h4>Bước 1: Tải file mẫu</h4>
-          <el-button type="primary" :icon="Download" @click="handleDownloadImportTemplate" :loading="downloadingTemplate">Tải file mẫu Excel</el-button>
+          <el-button
+            type="primary"
+            :icon="Download"
+            :loading="downloadingTemplate"
+            @click="handleDownloadImportTemplate"
+          >
+            Tải file mẫu Excel
+          </el-button>
         </div>
         <div class="import-section">
           <h4>Bước 2: Upload file đã điền</h4>
@@ -134,12 +234,23 @@
             drag
             class="import-upload"
           >
-            <el-icon class="el-icon--upload"><Upload /></el-icon>
-            <div class="el-upload__text">Kéo thả file vào đây hoặc <em>click để chọn file</em></div>
-            <template #tip><div class="el-upload__tip">Chỉ chấp nhận file Excel (.xlsx, .xls), tối đa 10MB</div></template>
+            <el-icon class="el-icon--upload">
+              <Upload />
+            </el-icon>
+            <div class="el-upload__text">
+              Kéo thả file vào đây hoặc <em>click để chọn file</em>
+            </div>
+            <template #tip>
+              <div class="el-upload__tip">
+                Chỉ chấp nhận file Excel (.xlsx, .xls), tối đa 10MB
+              </div>
+            </template>
           </el-upload>
         </div>
-        <div v-if="importResult" class="import-result">
+        <div
+          v-if="importResult"
+          class="import-result"
+        >
           <template v-if="importResult.validatedOnly">
             <el-alert
               :title="importResult.failed === 0 ? 'Kiểm tra xong – không có lỗi' : 'Import có lỗi'"
@@ -150,7 +261,9 @@
               <template #default>
                 <div class="result-summary">
                   <p>Tổng số dòng: <strong>{{ importResult.total }}</strong></p>
-                  <p v-if="importResult.failed === 0">Sẽ import: <strong class="text-success">{{ importResult.imported }}</strong> dòng. Bạn có chắc muốn thực hiện?</p>
+                  <p v-if="importResult.failed === 0">
+                    Sẽ import: <strong class="text-success">{{ importResult.imported }}</strong> dòng. Bạn có chắc muốn thực hiện?
+                  </p>
                   <template v-else>
                     <p>Hợp lệ: <strong class="text-success">{{ importResult.imported }}</strong></p>
                     <p>Lỗi: <strong class="text-danger">{{ importResult.failed }}</strong> – sửa file rồi bấm "Kiểm tra lại"</p>
@@ -175,32 +288,52 @@
               </template>
             </el-alert>
           </template>
-          <div v-if="importResult.errors.length > 0" class="error-list">
+          <div
+            v-if="importResult.errors.length > 0"
+            class="error-list"
+          >
             <h4>Chi tiết lỗi:</h4>
-            <el-table :data="importResult.errors" max-height="200" size="small">
-              <el-table-column prop="row" label="Dòng" width="60" />
-              <el-table-column prop="field" label="Trường" width="100" />
-              <el-table-column prop="message" label="Lỗi" />
+            <el-table
+              :data="importResult.errors"
+              max-height="200"
+              size="small"
+            >
+              <el-table-column
+                prop="row"
+                label="Dòng"
+                width="60"
+              />
+              <el-table-column
+                prop="field"
+                label="Trường"
+                width="100"
+              />
+              <el-table-column
+                prop="message"
+                label="Lỗi"
+              />
             </el-table>
           </div>
         </div>
       </div>
       <template #footer>
-        <el-button @click="closeImportDialog">Đóng</el-button>
+        <el-button @click="closeImportDialog">
+          Đóng
+        </el-button>
         <el-button
           v-if="!importResult || (importResult.validatedOnly && importResult.failed > 0)"
           type="primary"
-          @click="handleValidateUsers"
           :loading="importing"
           :disabled="!selectedImportFile"
+          @click="handleValidateUsers"
         >
           {{ importResult?.validatedOnly && importResult?.failed > 0 ? 'Kiểm tra lại' : 'Kiểm tra lỗi' }}
         </el-button>
         <el-button
           v-if="importResult?.validatedOnly && importResult?.failed === 0"
           type="primary"
-          @click="handleConfirmImportUsers"
           :loading="importing"
+          @click="handleConfirmImportUsers"
         >
           Xác nhận import
         </el-button>
@@ -208,20 +341,38 @@
     </el-dialog>
 
     <!-- View Dialog -->
-    <el-dialog v-model="viewDialogVisible" :title="$t('users.userDetails')" width="600px">
-      <el-descriptions :column="1" border v-if="currentUser">
-        <el-descriptions-item :label="$t('users.username')">{{ currentUser.username }}</el-descriptions-item>
-        <el-descriptions-item :label="$t('users.fullname')">{{ currentUser.fullname || '-' }}</el-descriptions-item>
-        <el-descriptions-item :label="$t('users.email')">{{ currentUser.email }}</el-descriptions-item>
+    <el-dialog
+      v-model="viewDialogVisible"
+      :title="$t('users.userDetails')"
+      width="600px"
+    >
+      <el-descriptions
+        v-if="currentUser"
+        :column="1"
+        border
+      >
+        <el-descriptions-item :label="$t('users.username')">
+          {{ currentUser.username }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="$t('users.fullname')">
+          {{ currentUser.fullname || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="$t('users.email')">
+          {{ currentUser.email }}
+        </el-descriptions-item>
         <el-descriptions-item :label="$t('users.role')">
-          <el-tag :type="getRoleColor(currentUser.role) ?? 'info'">{{ getRoleText(currentUser.role) }}</el-tag>
+          <el-tag :type="getRoleColor(currentUser.role) ?? 'info'">
+            {{ getRoleText(currentUser.role) }}
+          </el-tag>
         </el-descriptions-item>
         <el-descriptions-item :label="$t('common.status')">
           <el-tag :type="currentUser.is_active === true ? 'success' : 'danger'">
             {{ currentUser.is_active ? $t('users.active') : $t('users.inactive') }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item :label="$t('common.createdAt')">{{ formatDate(currentUser.created_at) }}</el-descriptions-item>
+        <el-descriptions-item :label="$t('common.createdAt')">
+          {{ formatDate(currentUser.created_at) }}
+        </el-descriptions-item>
       </el-descriptions>
     </el-dialog>
   </div>

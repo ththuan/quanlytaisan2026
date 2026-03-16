@@ -1,13 +1,19 @@
 <template>
   <el-dialog
     :model-value="visible"
-    @update:model-value="$emit('update:visible', $event)"
     :title="$t('reports.reportDetail')"
     width="700px"
+    @update:model-value="$emit('update:visible', $event)"
   >
     <template v-if="report">
-      <el-descriptions :column="2" border>
-        <el-descriptions-item :label="$t('reports.department')" :span="2">
+      <el-descriptions
+        :column="2"
+        border
+      >
+        <el-descriptions-item
+          :label="$t('reports.department')"
+          :span="2"
+        >
           <el-tag>{{ report.Department?.name || '-' }}</el-tag>
         </el-descriptions-item>
         
@@ -26,62 +32,102 @@
 
       <el-row :gutter="20">
         <el-col :span="6">
-          <el-statistic :title="$t('reports.totalAssets')" :value="report.total_assets || 0">
+          <el-statistic
+            :title="$t('reports.totalAssets')"
+            :value="report.total_assets || 0"
+          >
             <template #suffix>
               <el-icon><Box /></el-icon>
             </template>
           </el-statistic>
         </el-col>
         <el-col :span="6">
-          <el-statistic :title="$t('reports.activeAssets')" :value="report.active_assets || 0">
+          <el-statistic
+            :title="$t('reports.activeAssets')"
+            :value="report.active_assets || 0"
+          >
             <template #prefix>
-              <el-icon style="color: #67c23a"><CircleCheck /></el-icon>
+              <el-icon style="color: #67c23a">
+                <CircleCheck />
+              </el-icon>
             </template>
           </el-statistic>
         </el-col>
         <el-col :span="6">
-          <el-statistic :title="$t('reports.damagedAssets')" :value="report.damaged_assets || 0">
+          <el-statistic
+            :title="$t('reports.damagedAssets')"
+            :value="report.damaged_assets || 0"
+          >
             <template #prefix>
-              <el-icon style="color: #e6a23c"><Warning /></el-icon>
+              <el-icon style="color: #e6a23c">
+                <Warning />
+              </el-icon>
             </template>
           </el-statistic>
         </el-col>
         <el-col :span="6">
-          <el-statistic :title="$t('reports.lostAssets')" :value="report.lost_assets || 0">
+          <el-statistic
+            :title="$t('reports.lostAssets')"
+            :value="report.lost_assets || 0"
+          >
             <template #prefix>
-              <el-icon style="color: #f56c6c"><CircleClose /></el-icon>
+              <el-icon style="color: #f56c6c">
+                <CircleClose />
+              </el-icon>
             </template>
           </el-statistic>
         </el-col>
       </el-row>
 
       <div class="total-value-card">
-        <div class="label">{{ $t('reports.totalValue') }}</div>
-        <div class="value">{{ formatCurrency(report.total_value) }}</div>
+        <div class="label">
+          {{ $t('reports.totalValue') }}
+        </div>
+        <div class="value">
+          {{ formatCurrency(report.total_value) }}
+        </div>
       </div>
 
-      <el-divider v-if="report.notes">{{ $t('reports.notes') }}</el-divider>
+      <el-divider v-if="report.notes">
+        {{ $t('reports.notes') }}
+      </el-divider>
       
-      <div v-if="report.notes" class="notes-section">
+      <div
+        v-if="report.notes"
+        class="notes-section"
+      >
         {{ report.notes }}
       </div>
 
       <el-divider>{{ $t('common.auditInfo') }}</el-divider>
 
-      <el-descriptions :column="2" border size="small">
+      <el-descriptions
+        :column="2"
+        border
+        size="small"
+      >
         <el-descriptions-item :label="$t('reports.createdBy')">
           {{ report.CreatedBy?.full_name || '-' }}
         </el-descriptions-item>
         <el-descriptions-item :label="$t('common.createdAt')">
           {{ formatDateTime(report.created_at) }}
         </el-descriptions-item>
-        <el-descriptions-item :label="$t('reports.submittedAt')" v-if="report.submitted_at">
+        <el-descriptions-item
+          v-if="report.submitted_at"
+          :label="$t('reports.submittedAt')"
+        >
           {{ formatDateTime(report.submitted_at) }}
         </el-descriptions-item>
-        <el-descriptions-item :label="$t('reports.approvedBy')" v-if="report.approved_by">
+        <el-descriptions-item
+          v-if="report.approved_by"
+          :label="$t('reports.approvedBy')"
+        >
           {{ report.ApprovedBy?.full_name || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item :label="$t('reports.approvedAt')" v-if="report.approved_at">
+        <el-descriptions-item
+          v-if="report.approved_at"
+          :label="$t('reports.approvedAt')"
+        >
           {{ formatDateTime(report.approved_at) }}
         </el-descriptions-item>
       </el-descriptions>
@@ -133,7 +179,9 @@
     </template>
 
     <template #footer>
-      <el-button @click="$emit('update:visible', false)">{{ $t('common.close') }}</el-button>
+      <el-button @click="$emit('update:visible', false)">
+        {{ $t('common.close') }}
+      </el-button>
     </template>
   </el-dialog>
 </template>
@@ -151,7 +199,7 @@ defineEmits<{
   'update:visible': [value: boolean];
 }>();
 
-const { t } = useI18n();
+useI18n();
 
 const getStatusType = (status: string) => {
   const types: Record<string, string> = {

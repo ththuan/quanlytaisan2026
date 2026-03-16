@@ -10,7 +10,7 @@
  */
 
 import ExcelJS from 'exceljs';
-import { Op, QueryTypes } from 'sequelize';
+import { QueryTypes } from 'sequelize';
 import sequelize from '../config/database';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -86,7 +86,9 @@ function applyDataRowStyle(row: ExcelJS.Row) {
   });
 }
 
-function addUnitHeader(ws: ExcelJS.Worksheet, unitName: string, year: number, title: string) {
+// Hàm dự phòng để thêm header đơn vị vào worksheet (có thể dùng cho báo cáo theo đơn vị)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- giữ cho tương lai
+function _addUnitHeader(ws: ExcelJS.Worksheet, unitName: string, year: number, title: string) {
   ws.mergeCells('A1:A3');
   ws.getCell('A1').value = 'TRƯỜNG CAO ĐẲNG KINH TẾ - KỸ THUẬT CẦN THƠ';
   ws.getCell('A1').font = { bold: true, size: 11 };
@@ -242,7 +244,7 @@ export async function export04b(year: number): Promise<Buffer> {
 
   const headerRow = ws.addRow([
     'STT', 'Mã tài sản', 'Tên tài sản', 'Loại tài sản', 'ĐVT', 'Số lượng',
-    'Nguyên giá\n(đồng)', 'Giá trị còn lại\n(đồng)', 'Khấu hao lũy kế\n(đồng)',
+    'Nguyên giá\n(đồng)', 'Giá trị còn lại\n(đồng)', 'Hao mòn lũy kế\n(đồng)',
     'Tình trạng\nsử dụng', 'Đơn vị sử dụng', 'Ghi chú',
   ]);
   applyHeaderStyle(headerRow);
@@ -424,7 +426,7 @@ export async function export04c(year: number): Promise<Buffer> {
 // ─── Kê khai tài sản – CSDL Quốc gia ────────────────────────────────────────
 // Định dạng kê khai theo NĐ 186/2025 / Thông tư 120/2025 (Điều 62-63)
 
-export async function exportKeKhai(year: number): Promise<Buffer> {
+export async function exportKeKhai(_year: number): Promise<Buffer> {
   const assets: any[] = await sequelize.query(
     `SELECT a.*, d.name AS department_name
      FROM assets a

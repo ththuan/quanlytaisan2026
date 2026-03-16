@@ -140,7 +140,7 @@ export const generateTemplate = async (): Promise<Buffer> => {
     { header: 'Mã loại', key: 'code', width: 15 },
     { header: 'Tên loại tài sản', key: 'name', width: 50 },
     { header: 'Đơn vị tính', key: 'unit', width: 15 },
-    { header: 'Có khấu hao', key: 'depreciable', width: 12 },
+    { header: 'Có hao mòn', key: 'depreciable', width: 12 },
     { header: 'Tỷ lệ KH (%)', key: 'rate', width: 12 },
     { header: 'Thời gian sử dụng (năm)', key: 'useful_life', width: 22 },
   ];
@@ -257,7 +257,7 @@ export const generateTemplateWithCategories = async (): Promise<Buffer> => {
     { header: 'Mã loại', key: 'code', width: 15 },
     { header: 'Tên loại tài sản', key: 'name', width: 50 },
     { header: 'Đơn vị tính', key: 'unit', width: 15 },
-    { header: 'Có khấu hao', key: 'depreciable', width: 12 },
+    { header: 'Có hao mòn', key: 'depreciable', width: 12 },
     { header: 'Tỷ lệ KH (%)', key: 'rate', width: 12 },
     { header: 'Thời gian sử dụng (năm)', key: 'useful_life', width: 22 },
   ];
@@ -450,7 +450,7 @@ export const generateTemplateToFile = async (filePath: string): Promise<void> =>
     { header: 'Mã loại', key: 'code', width: 15 },
     { header: 'Tên loại tài sản', key: 'name', width: 50 },
     { header: 'Đơn vị tính', key: 'unit', width: 15 },
-    { header: 'Có khấu hao', key: 'depreciable', width: 12 },
+    { header: 'Có hao mòn', key: 'depreciable', width: 12 },
     { header: 'Tỷ lệ KH (%)', key: 'rate', width: 12 },
     { header: 'Thời gian sử dụng (năm)', key: 'useful_life', width: 22 },
   ];

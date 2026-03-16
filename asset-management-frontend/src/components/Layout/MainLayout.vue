@@ -1,6 +1,10 @@
 <template>
   <el-container class="main-layout">
-    <div v-if="isMobile && !isHidden" class="sidebar-backdrop" @click="closeSidebar" />
+    <div
+      v-if="isMobile && !isHidden"
+      class="sidebar-backdrop"
+      @click="closeSidebar"
+    />
 
     <el-aside
       v-show="!isHidden"
@@ -14,12 +18,12 @@
       <el-menu
         :default-active="$route.path"
         router
-        @select="handleMenuSelect"
         background-color="#304156"
         text-color="#bfcbd9"
         active-text-color="#409EFF"
         :collapse-transition="false"
         :unique-opened="true"
+        @select="handleMenuSelect"
       >
         <el-menu-item index="/">
           <el-icon><House /></el-icon>
@@ -49,13 +53,19 @@
         </el-menu-item>
 
         <!-- Mua sắm/Cấp phát: admin + director -->
-        <el-menu-item index="/procurements" v-if="isAdminOrDirector">
+        <el-menu-item
+          v-if="isAdminOrDirector"
+          index="/procurements"
+        >
           <el-icon><Document /></el-icon>
           <span>{{ $t('menu.procurements') }}</span>
         </el-menu-item>
 
         <!-- Kho vật tư: admin + director -->
-        <el-menu-item index="/stock" v-if="isAdminOrDirector">
+        <el-menu-item
+          v-if="isAdminOrDirector"
+          index="/stock"
+        >
           <el-icon><Box /></el-icon>
           <span>Kho vật tư</span>
         </el-menu-item>
@@ -72,7 +82,10 @@
         </el-menu-item>
 
         <!-- Báo cáo: admin + director -->
-        <el-menu-item index="/reports" v-if="isAdminOrDirector">
+        <el-menu-item
+          v-if="isAdminOrDirector"
+          index="/reports"
+        >
           <el-icon><DataAnalysis /></el-icon>
           <span>Báo cáo</span>
         </el-menu-item>
@@ -80,17 +93,26 @@
         <el-divider class="sidebar-divider" />
 
         <!-- Admin-only modules moved to bottom for nicer visual order -->
-        <el-menu-item index="/departments" v-if="isAdminOrDirector">
+        <el-menu-item
+          v-if="isAdminOrDirector"
+          index="/departments"
+        >
           <el-icon><OfficeBuilding /></el-icon>
           <span>{{ $t('menu.departments') }}</span>
         </el-menu-item>
 
-        <el-menu-item index="/users" v-if="authStore.user?.role === 'admin'">
+        <el-menu-item
+          v-if="authStore.user?.role === 'admin'"
+          index="/users"
+        >
           <el-icon><UserFilled /></el-icon>
           <span>{{ $t('menu.users') }}</span>
         </el-menu-item>
 
-        <el-menu-item index="/system-admin" v-if="authStore.user?.role === 'admin'">
+        <el-menu-item
+          v-if="authStore.user?.role === 'admin'"
+          index="/system-admin"
+        >
           <el-icon><Setting /></el-icon>
           <span>Quản trị hệ thống</span>
         </el-menu-item>
@@ -110,10 +132,23 @@
             />
             <div class="breadcrumb">
               <el-breadcrumb separator="/">
-                <el-breadcrumb-item :to="{ path: '/' }">{{ $t('common.home') }}</el-breadcrumb-item>
-                <el-breadcrumb-item v-if="$route.name !== 'Dashboard'">
-                  {{ currentBreadcrumbLabel }}
+                <el-breadcrumb-item :to="{ path: '/' }">
+                  {{ $t('common.home') }}
                 </el-breadcrumb-item>
+                <template
+                  v-for="(item, idx) in breadcrumbItems"
+                  :key="idx"
+                >
+                  <el-breadcrumb-item
+                    v-if="item.path"
+                    :to="item.path"
+                  >
+                    {{ item.label }}
+                  </el-breadcrumb-item>
+                  <el-breadcrumb-item v-else>
+                    {{ item.label }}
+                  </el-breadcrumb-item>
+                </template>
               </el-breadcrumb>
             </div>
           </div>
@@ -124,7 +159,11 @@
               <span class="user-info">
                 <el-icon><User /></el-icon>
                 {{ authStore.user?.fullname || authStore.user?.username }}
-                <el-tag size="small" type="info" style="margin-left: 8px">{{ getRoleName }}</el-tag>
+                <el-tag
+                  size="small"
+                  type="info"
+                  style="margin-left: 8px"
+                >{{ getRoleName }}</el-tag>
                 <el-icon class="el-icon--right"><ArrowDown /></el-icon>
               </span>
               <template #dropdown>
@@ -132,9 +171,18 @@
                   <el-dropdown-item disabled>
                     <span style="color: #909399">{{ authStore.user?.department?.name || 'Chưa phân đơn vị' }}</span>
                   </el-dropdown-item>
-                  <el-dropdown-item @click="showChangePasswordDialog = true">🔑 Đổi mật khẩu</el-dropdown-item>
-                  <el-dropdown-item @click="showTotpDialog = true">🔐 Xác thực 2 bước</el-dropdown-item>
-                  <el-dropdown-item divided @click="handleLogout">{{ $t('auth.logout') }}</el-dropdown-item>
+                  <el-dropdown-item @click="showChangePasswordDialog = true">
+                    🔑 Đổi mật khẩu
+                  </el-dropdown-item>
+                  <el-dropdown-item @click="showTotpDialog = true">
+                    🔐 Xác thực 2 bước
+                  </el-dropdown-item>
+                  <el-dropdown-item
+                    divided
+                    @click="handleLogout"
+                  >
+                    {{ $t('auth.logout') }}
+                  </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -144,7 +192,10 @@
 
       <el-main>
         <router-view v-slot="{ Component }">
-          <transition name="route" mode="out-in">
+          <transition
+            name="route"
+            mode="out-in"
+          >
             <component :is="Component" />
           </transition>
         </router-view>
@@ -154,7 +205,6 @@
 
   <TotpSetupDialog v-model="showTotpDialog" />
   <ChangePasswordDialog v-model="showChangePasswordDialog" />
-
 </template>
 
 <script setup lang="ts">
@@ -174,12 +224,20 @@ const { t } = useI18n();
 const showTotpDialog = ref(false);
 const showChangePasswordDialog = ref(false);
 
-const currentBreadcrumbLabel = computed(() => {
-  const titleKey = router.currentRoute.value.meta?.titleKey as string | undefined;
-  if (titleKey) return t(titleKey);
+const breadcrumbItems = computed(() => {
+  const route = router.currentRoute.value;
+  const meta = route.meta as { titleKey?: string; breadcrumbParent?: { path: string; titleKey: string } };
+  const items: { path?: string; label: string }[] = [];
 
-  const name = router.currentRoute.value.name;
-  return typeof name === 'string' ? name : '';
+  if (route.name === 'Dashboard') return items;
+
+  const parent = meta?.breadcrumbParent;
+  if (parent) {
+    items.push({ path: parent.path, label: t(parent.titleKey) });
+  }
+  const titleKey = meta?.titleKey;
+  items.push({ label: titleKey ? t(titleKey) : (typeof route.name === 'string' ? route.name : '') });
+  return items;
 });
 
 const isAdminOrDirector = computed(() => {

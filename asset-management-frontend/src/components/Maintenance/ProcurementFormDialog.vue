@@ -1,11 +1,11 @@
 <template>
   <el-dialog
     :model-value="visible"
-    @update:model-value="$emit('update:visible', $event)"
     :title="isEdit ? $t('maintenance.procurement.editRequest') : $t('maintenance.procurement.createRequest')"
     width="95%"
     :close-on-click-modal="false"
     top="5vh"
+    @update:model-value="$emit('update:visible', $event)"
   >
     <el-form
       ref="formRef"
@@ -15,24 +15,53 @@
       label-position="top"
     >
       <!-- Thông tin chung -->
-      <el-card shadow="never" style="margin-bottom: 20px; background: #f5f7fa;">
+      <el-card
+        shadow="never"
+        style="margin-bottom: 20px; background: #f5f7fa;"
+      >
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="Đơn vị sử dụng trực tiếp">
-              <el-input :value="userDepartmentName" disabled style="width: 100%" />
+              <el-input
+                :value="userDepartmentName"
+                disabled
+                style="width: 100%"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="Mức độ ưu tiên" prop="urgency">
-              <el-select v-model="formData.urgency" style="width: 100%">
-                <el-option v-for="u in urgencies" :key="u.value" :label="u.label" :value="u.value" />
+            <el-form-item
+              label="Mức độ ưu tiên"
+              prop="urgency"
+            >
+              <el-select
+                v-model="formData.urgency"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="u in urgencies"
+                  :key="u.value"
+                  :label="u.label"
+                  :value="u.value"
+                />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="8" v-if="isEdit && authStore.isManager">
+          <el-col
+            v-if="isEdit && authStore.isManager"
+            :span="8"
+          >
             <el-form-item :label="$t('common.status')">
-              <el-select v-model="formData.status" style="width: 100%">
-                <el-option v-for="s in statuses" :key="s.value" :label="s.label" :value="s.value" />
+              <el-select
+                v-model="formData.status"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="s in statuses"
+                  :key="s.value"
+                  :label="s.label"
+                  :value="s.value"
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -40,7 +69,10 @@
 
         <el-row :gutter="20">
           <el-col :span="24">
-            <el-form-item label="Thuyết minh nhu cầu mua sắm" prop="justification">
+            <el-form-item
+              label="Thuyết minh nhu cầu mua sắm"
+              prop="justification"
+            >
               <el-input
                 v-model="formData.justification"
                 type="textarea"
@@ -55,10 +87,18 @@
       <!-- Bảng danh sách thiết bị -->
       <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
         <h3 style="margin: 0; font-size: 16px; color: #303133;">
-          <i class="el-icon-box" style="margin-right: 8px;"></i>
+          <i
+            class="el-icon-box"
+            style="margin-right: 8px;"
+          />
           Danh sách thiết bị, công cụ dụng cụ cần mua
         </h3>
-        <el-button type="primary" size="default" @click="addItem" :icon="Plus">
+        <el-button
+          type="primary"
+          size="default"
+          :icon="Plus"
+          @click="addItem"
+        >
           Thêm thiết bị
         </el-button>
       </div>
@@ -71,7 +111,12 @@
         show-summary
         :header-cell-style="{ background: '#f5f7fa', color: '#606266', fontWeight: 'bold' }"
       >
-        <el-table-column type="index" label="TT" width="55" align="center" />
+        <el-table-column
+          type="index"
+          label="TT"
+          width="55"
+          align="center"
+        />
         
         <el-table-column min-width="200">
           <template #header>
@@ -84,8 +129,8 @@
             <el-input 
               v-model="row.device_name" 
               placeholder="Nhập tên máy móc, thiết bị, model"
-              @input="validateItem($index)"
               size="default"
+              @input="validateItem($index)"
             />
           </template>
         </el-table-column>
@@ -103,8 +148,8 @@
               type="textarea"
               :rows="2"
               placeholder="Nhập tính năng"
-              @input="validateItem($index)"
               size="default"
+              @input="validateItem($index)"
             />
           </template>
         </el-table-column>
@@ -120,8 +165,8 @@
             <el-input 
               v-model="row.unit" 
               placeholder="Cái"
-              @input="validateItem($index)"
               size="default"
+              @input="validateItem($index)"
             />
           </template>
         </el-table-column>
@@ -139,14 +184,18 @@
               :min="1" 
               :controls="false"
               style="width: 100%"
+              size="default"
               @change="calculateTotal"
               @input="validateItem($index)"
-              size="default"
             />
           </template>
         </el-table-column>
 
-        <el-table-column label="Đơn giá dự toán" width="135" align="right">
+        <el-table-column
+          label="Đơn giá dự toán"
+          width="135"
+          align="right"
+        >
           <template #default="{ row, $index }">
             <el-input-number 
               v-model="row.estimated_unit_price" 
@@ -154,14 +203,18 @@
               :step="100000"
               :controls="false"
               style="width: 100%"
+              size="default"
               @change="calculateTotal"
               @input="validateItem($index)"
-              size="default"
             />
           </template>
         </el-table-column>
 
-        <el-table-column label="Thành tiền" width="135" align="right">
+        <el-table-column
+          label="Thành tiền"
+          width="135"
+          align="right"
+        >
           <template #default="{ row }">
             <span style="font-weight: 600; color: #409eff;">
               {{ formatCurrency(row.quantity * (row.estimated_unit_price || 0)) }}
@@ -169,7 +222,10 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="Link sản phẩm" width="200">
+        <el-table-column
+          label="Link sản phẩm"
+          width="200"
+        >
           <template #default="{ row }">
             <el-input 
               v-model="row.product_link" 
@@ -183,7 +239,11 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="Hình ảnh" width="120" align="center">
+        <el-table-column
+          label="Hình ảnh"
+          width="120"
+          align="center"
+        >
           <template #default="{ row, $index }">
             <div style="display: flex; flex-direction: column; gap: 4px; align-items: center; padding: 4px 0;">
               <el-image 
@@ -199,7 +259,11 @@
                 accept="image/*"
                 :on-change="(file: any) => handleImageUpload(file, $index)"
               >
-                <el-button size="small" :type="row.product_image ? 'default' : 'primary'" link>
+                <el-button
+                  size="small"
+                  :type="row.product_image ? 'default' : 'primary'"
+                  link
+                >
                   <el-icon><Picture /></el-icon>
                   {{ row.product_image ? 'Đổi' : 'Chọn' }}
                 </el-button>
@@ -218,21 +282,28 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="Xóa" width="70" align="center">
+        <el-table-column
+          label="Xóa"
+          width="70"
+          align="center"
+        >
           <template #default="{ $index }">
             <el-button 
               type="danger" 
               size="small" 
               :icon="Delete"
               circle
-              @click="removeItem($index)"
               :disabled="formData.items.length === 1"
+              @click="removeItem($index)"
             />
           </template>
         </el-table-column>
       </el-table>
 
-      <el-card shadow="never" style="background: #fafafa;">
+      <el-card
+        shadow="never"
+        style="background: #fafafa;"
+      >
         <el-form-item :label="$t('maintenance.notes')">
           <el-input
             v-model="formData.notes"
@@ -249,21 +320,29 @@
         <div style="color: #909399; font-size: 14px;">
           <span v-if="!isEdit">Tổng: {{ formData.items.length }} thiết bị - Tổng tiền dự toán: <strong style="color: #409eff;">{{ formatCurrency(totalPrice) }}</strong></span>
           <span v-else-if="currentStatus === 'draft' || currentStatus === 'rejected' || currentStatus?.startsWith('rejected_by')">
-            <el-tag type="info" size="small">Trạng thái: {{ getStatusText(currentStatus) }}</el-tag>
+            <el-tag
+              type="info"
+              size="small"
+            >Trạng thái: {{ getStatusText(currentStatus) }}</el-tag>
           </span>
         </div>
         <div>
-          <el-button @click="$emit('update:visible', false)" size="large">
+          <el-button
+            size="large"
+            @click="$emit('update:visible', false)"
+          >
             {{ $t('common.cancel') }}
           </el-button>
           <!-- Nút Lưu nháp - chỉ hiển thị khi draft hoặc rejected -->
           <el-button 
             v-if="canSaveDraft"
             :loading="loading" 
-            @click="handleSaveDraft" 
-            size="large"
+            size="large" 
+            @click="handleSaveDraft"
           >
-            <el-icon style="margin-right: 4px;"><Document /></el-icon>
+            <el-icon style="margin-right: 4px;">
+              <Document />
+            </el-icon>
             Lưu nháp
           </el-button>
           <!-- Nút Gửi phê duyệt - chỉ hiển thị khi draft hoặc rejected -->
@@ -271,10 +350,12 @@
             v-if="canSubmit"
             type="success" 
             :loading="submitting" 
-            @click="handleSubmitForApproval" 
-            size="large"
+            size="large" 
+            @click="handleSubmitForApproval"
           >
-            <el-icon style="margin-right: 4px;"><Promotion /></el-icon>
+            <el-icon style="margin-right: 4px;">
+              <Promotion />
+            </el-icon>
             Gửi phê duyệt
           </el-button>
           <!-- Nút Lưu - cho các trường hợp khác -->
@@ -282,10 +363,12 @@
             v-else
             type="primary" 
             :loading="loading" 
-            @click="handleSubmit" 
-            size="large"
+            size="large" 
+            @click="handleSubmit"
           >
-            <el-icon style="margin-right: 4px;"><Check /></el-icon>
+            <el-icon style="margin-right: 4px;">
+              <Check />
+            </el-icon>
             {{ $t('common.save') }}
           </el-button>
         </div>

@@ -8,17 +8,30 @@
   >
     <el-form
       ref="formRef"
+      v-loading="loading"
       :model="formData"
       :rules="rules"
       label-position="top"
-      v-loading="loading"
     >
-      <el-form-item :label="$t('departments.departmentName')" prop="name">
-        <el-input v-model="formData.name" :placeholder="$t('departments.departmentName')" />
+      <el-form-item
+        :label="$t('departments.departmentName')"
+        prop="name"
+      >
+        <el-input
+          v-model="formData.name"
+          :placeholder="$t('departments.departmentName')"
+        />
       </el-form-item>
 
-      <el-form-item :label="$t('departments.departmentType')" prop="type">
-        <el-select v-model="formData.type" :placeholder="$t('departments.departmentType')" style="width: 100%">
+      <el-form-item
+        :label="$t('departments.departmentType')"
+        prop="type"
+      >
+        <el-select
+          v-model="formData.type"
+          :placeholder="$t('departments.departmentType')"
+          style="width: 100%"
+        >
           <el-option
             v-for="type in departmentTypes"
             :key="type.value"
@@ -28,7 +41,10 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item :label="$t('departments.parentDepartment')" prop="parent_department_id">
+      <el-form-item
+        :label="$t('departments.parentDepartment')"
+        prop="parent_department_id"
+      >
         <el-select 
           v-model="formData.parent_department_id" 
           :placeholder="$t('departments.parentDepartment')" 
@@ -45,7 +61,10 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item :label="$t('common.description')" prop="description">
+      <el-form-item
+        :label="$t('common.description')"
+        prop="description"
+      >
         <el-input
           v-model="formData.description"
           type="textarea"
@@ -57,8 +76,14 @@
 
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">{{ $t('common.cancel') }}</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="loading">
+        <el-button @click="handleClose">
+          {{ $t('common.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="loading"
+          @click="handleSubmit"
+        >
           {{ $t('common.save') }}
         </el-button>
       </div>

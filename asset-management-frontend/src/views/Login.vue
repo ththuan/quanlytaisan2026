@@ -1,8 +1,8 @@
 <template>
   <div class="login-container">
     <!-- Animated background accents -->
-    <div class="bg-blur-blob blob-1"></div>
-    <div class="bg-blur-blob blob-2"></div>
+    <div class="bg-blur-blob blob-1" />
+    <div class="bg-blur-blob blob-2" />
     
     <!-- Left Section: Premium Interactive Network -->
     <div class="login-left">
@@ -10,18 +10,26 @@
         <div class="network-wrapper">
           <div class="network-core">
             <!-- Dynamic abstract connections -->
-            <div class="web-lines"></div>
+            <div class="web-lines" />
             <!-- Interactive-feeling nodes with refined glow -->
-            <div v-for="n in 35" :key="n" :class="['node-dot', `dot-${n}`]"></div>
+            <div
+              v-for="n in 35"
+              :key="n"
+              :class="['node-dot', `dot-${n}`]"
+            />
             <!-- Floating asset geometry -->
-            <div v-for="i in 8" :key="`ring-${i}`" :class="['asset-ring', `ring-${i}`]"></div>
-            <div class="asset-cube cube-1"></div>
-            <div class="asset-cube cube-2"></div>
+            <div
+              v-for="i in 8"
+              :key="`ring-${i}`"
+              :class="['asset-ring', `ring-${i}`]"
+            />
+            <div class="asset-cube cube-1" />
+            <div class="asset-cube cube-2" />
           </div>
         </div>
       </div>
       <!-- Premium grain texture overlay -->
-      <div class="grain-overlay"></div>
+      <div class="grain-overlay" />
     </div>
 
     <!-- Right Section: Premium Login Form -->
@@ -29,9 +37,16 @@
       <div class="form-card">
         <div class="login-header">
           <div class="logo-wrapper">
-            <img :src="logoUrl" alt="School Logo" class="school-logo" @error="onLogoError" />
+            <img
+              :src="logoUrl"
+              alt="School Logo"
+              class="school-logo"
+              @error="onLogoError"
+            >
           </div>
-          <p class="sub-welcome">Hệ thống quản lý tài sản thông minh</p>
+          <p class="sub-welcome">
+            Hệ thống quản lý tài sản thông minh
+          </p>
         </div>
 
         <div class="form-wrapper">
@@ -41,10 +56,13 @@
             :model="loginForm"
             :rules="rules"
             label-position="top"
-            @submit.prevent="handleLogin"
             class="premium-form"
+            @submit.prevent="handleLogin"
           >
-            <el-form-item label="Tài khoản" prop="username">
+            <el-form-item
+              label="Tài khoản"
+              prop="username"
+            >
               <el-input
                 v-model="loginForm.username"
                 placeholder="Tên đăng nhập của bạn"
@@ -53,7 +71,10 @@
               />
             </el-form-item>
 
-            <el-form-item label="Mật khẩu" prop="password">
+            <el-form-item
+              label="Mật khẩu"
+              prop="password"
+            >
               <el-input
                 v-model="loginForm.password"
                 type="password"
@@ -66,28 +87,43 @@
             </el-form-item>
 
             <div class="form-actions-row">
-              <el-checkbox v-model="rememberMe">Ghi nhớ</el-checkbox>
-              <el-link class="forgot-link">Quên mật khẩu?</el-link>
+              <el-checkbox v-model="rememberMe">
+                Ghi nhớ
+              </el-checkbox>
+              <el-link class="forgot-link">
+                Quên mật khẩu?
+              </el-link>
             </div>
 
             <el-button
               type="primary"
               :loading="authStore.loading"
-              @click="handleLogin"
               class="premium-submit-btn"
+              @click="handleLogin"
             >
               Tiếp tục
-              <el-icon class="el-icon--right"><ArrowRight /></el-icon>
+              <el-icon class="el-icon--right">
+                <ArrowRight />
+              </el-icon>
             </el-button>
           </el-form>
 
           <!-- Step 2: 2FA -->
-          <div v-else class="totp-step">
+          <div
+            v-else
+            class="totp-step"
+          >
             <div class="totp-icon-box">
-              <div class="shield-icon">🛡️</div>
+              <div class="shield-icon">
+                🛡️
+              </div>
             </div>
-            <h3 class="totp-title">Xác thực bảo mật</h3>
-            <p class="totp-hint">Nhập mã xác thực từ ứng dụng của bạn</p>
+            <h3 class="totp-title">
+              Xác thực bảo mật
+            </h3>
+            <p class="totp-hint">
+              Nhập mã xác thực từ ứng dụng của bạn
+            </p>
             <el-input
               v-model="totpCode"
               placeholder="0 0 0 0 0 0"
@@ -99,13 +135,17 @@
             <el-button
               type="primary"
               :loading="authStore.loading"
-              @click="handleVerify2FA"
               class="premium-submit-btn"
               style="margin-top: 30px"
+              @click="handleVerify2FA"
             >
               Xác thực ngay
             </el-button>
-            <el-button link @click="step = 'credentials'" class="back-btn">
+            <el-button
+              link
+              class="back-btn"
+              @click="step = 'credentials'"
+            >
               Quay về bước trước
             </el-button>
           </div>

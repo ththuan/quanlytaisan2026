@@ -1,11 +1,11 @@
 <template>
   <el-dialog
     :model-value="visible"
-    @update:model-value="$emit('update:visible', $event)"
     :title="isEdit ? 'Sửa đề nghị sửa chữa' : 'Tạo đề nghị sửa chữa'"
     width="90%"
     :close-on-click-modal="false"
     top="5vh"
+    @update:model-value="$emit('update:visible', $event)"
   >
     <el-form
       ref="formRef"
@@ -15,17 +15,35 @@
       label-position="top"
     >
       <!-- Thông tin chung -->
-      <el-card shadow="never" style="margin-bottom: 20px; background: #f5f7fa;">
+      <el-card
+        shadow="never"
+        style="margin-bottom: 20px; background: #f5f7fa;"
+      >
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="Đơn vị sử dụng trực tiếp">
-              <el-input :value="userDepartmentName" disabled style="width: 100%" />
+              <el-input
+                :value="userDepartmentName"
+                disabled
+                style="width: 100%"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="Mức độ ưu tiên" prop="urgency">
-              <el-select v-model="formData.urgency" style="width: 100%">
-                <el-option v-for="u in urgencies" :key="u.value" :label="u.label" :value="u.value" />
+            <el-form-item
+              label="Mức độ ưu tiên"
+              prop="urgency"
+            >
+              <el-select
+                v-model="formData.urgency"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="u in urgencies"
+                  :key="u.value"
+                  :label="u.label"
+                  :value="u.value"
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -33,7 +51,10 @@
       </el-card>
 
       <!-- Chọn tài sản -->
-      <el-card shadow="never" style="margin-bottom: 20px;">
+      <el-card
+        shadow="never"
+        style="margin-bottom: 20px;"
+      >
         <template #header>
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-weight: 600;">Chọn tài sản cần sửa chữa</span>
@@ -48,15 +69,19 @@
           </div>
         </template>
         
-        <el-form-item label="Tài sản" prop="asset_id" required>
+        <el-form-item
+          label="Tài sản"
+          prop="asset_id"
+          required
+        >
           <el-select
             v-model="formData.asset_id"
             filterable
             :loading="assetLoading"
             placeholder="Chọn tài sản cần sửa chữa"
             style="width: 100%"
-            @change="handleAssetChange"
             :disabled="isEdit"
+            @change="handleAssetChange"
             @focus="loadInitialAssets"
           >
             <el-option
@@ -78,7 +103,10 @@
               <span style="color: #909399;">Không tìm thấy tài sản nào</span>
             </el-option>
           </el-select>
-          <div v-if="assetOptions.length === 0 && !assetLoading" style="margin-top: 8px; font-size: 12px; color: #909399;">
+          <div
+            v-if="assetOptions.length === 0 && !assetLoading"
+            style="margin-top: 8px; font-size: 12px; color: #909399;"
+          >
             <span v-if="!authStore.userDepartmentId">
               ⚠️ Bạn chưa được gán vào phòng ban nào. Vui lòng liên hệ quản trị viên.
             </span>
@@ -116,12 +144,18 @@
       </el-card>
 
       <!-- Thông tin sửa chữa -->
-      <el-card shadow="never" style="margin-bottom: 20px;">
+      <el-card
+        shadow="never"
+        style="margin-bottom: 20px;"
+      >
         <template #header>
           <span style="font-weight: 600;">Thông tin sửa chữa</span>
         </template>
 
-        <el-form-item label="Thuyết minh nhu cầu sửa chữa" prop="justification">
+        <el-form-item
+          label="Thuyết minh nhu cầu sửa chữa"
+          prop="justification"
+        >
           <el-input
             v-model="formData.justification"
             type="textarea"
@@ -145,7 +179,10 @@
             style="width: 100%"
             placeholder="Nhập chi phí dự kiến"
           />
-          <div v-if="selectedAsset && selectedAsset.purchase_price && formData.estimated_cost" style="margin-top: 8px; font-size: 12px; color: #909399;">
+          <div
+            v-if="selectedAsset && selectedAsset.purchase_price && formData.estimated_cost"
+            style="margin-top: 8px; font-size: 12px; color: #909399;"
+          >
             Chi phí dự kiến: {{ formatCurrency(formData.estimated_cost) }}
             <br>
             Nguyên giá: {{ formatCurrency(Number(selectedAsset.purchase_price)) }}
@@ -155,16 +192,25 @@
             Tỷ lệ so với nguyên giá: <strong :style="{ color: costPercentage > 30 ? '#f56c6c' : '#67c23a' }">
               {{ costPercentage.toFixed(2) }}%
             </strong>
-            <span v-if="costPercentage > 30" style="color: #f56c6c; margin-left: 8px;">
+            <span
+              v-if="costPercentage > 30"
+              style="color: #f56c6c; margin-left: 8px;"
+            >
               ⚠️ Vượt quá 30% nguyên giá, đề nghị sẽ bị từ chối
             </span>
-            <div v-if="selectedAsset.current_value && formData.estimated_cost" style="margin-top: 4px;">
+            <div
+              v-if="selectedAsset.current_value && formData.estimated_cost"
+              style="margin-top: 4px;"
+            >
               Tỷ lệ so với giá trị còn lại: <strong :style="{ color: (formData.estimated_cost / Number(selectedAsset.current_value) * 100) > 50 ? '#f56c6c' : '#67c23a' }">
                 {{ ((formData.estimated_cost / Number(selectedAsset.current_value)) * 100).toFixed(2) }}%
               </strong>
             </div>
           </div>
-          <div v-if="!canEditEstimatedCost" style="margin-top: 8px; font-size: 12px; color: #909399;">
+          <div
+            v-if="!canEditEstimatedCost"
+            style="margin-top: 8px; font-size: 12px; color: #909399;"
+          >
             💡 Chi phí dự kiến sẽ được admin phân tích và nhập dựa trên nguyên giá và giá trị còn lại của tài sản.
           </div>
         </el-form-item>
@@ -202,21 +248,29 @@
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div style="color: #909399; font-size: 14px;">
           <span v-if="currentStatus === 'draft' || currentStatus === 'rejected' || currentStatus?.startsWith('rejected_by')">
-            <el-tag type="info" size="small">Trạng thái: {{ getStatusText(currentStatus) }}</el-tag>
+            <el-tag
+              type="info"
+              size="small"
+            >Trạng thái: {{ getStatusText(currentStatus) }}</el-tag>
           </span>
         </div>
         <div>
-          <el-button @click="$emit('update:visible', false)" size="large">
+          <el-button
+            size="large"
+            @click="$emit('update:visible', false)"
+          >
             {{ $t('common.cancel') }}
           </el-button>
           <!-- Nút Lưu nháp -->
           <el-button 
             v-if="canSaveDraft"
             :loading="loading" 
-            @click="handleSaveDraft" 
-            size="large"
+            size="large" 
+            @click="handleSaveDraft"
           >
-            <el-icon style="margin-right: 4px;"><Document /></el-icon>
+            <el-icon style="margin-right: 4px;">
+              <Document />
+            </el-icon>
             Lưu nháp
           </el-button>
           <!-- Nút Gửi phê duyệt -->
@@ -224,10 +278,12 @@
             v-if="canSubmit"
             type="success" 
             :loading="submitting" 
-            @click="handleSubmitForApproval" 
-            size="large"
+            size="large" 
+            @click="handleSubmitForApproval"
           >
-            <el-icon style="margin-right: 4px;"><Promotion /></el-icon>
+            <el-icon style="margin-right: 4px;">
+              <Promotion />
+            </el-icon>
             Gửi phê duyệt
           </el-button>
           <!-- Nút Lưu -->
@@ -235,10 +291,12 @@
             v-else
             type="primary" 
             :loading="loading" 
-            @click="handleSubmit" 
-            size="large"
+            size="large" 
+            @click="handleSubmit"
           >
-            <el-icon style="margin-right: 4px;"><Check /></el-icon>
+            <el-icon style="margin-right: 4px;">
+              <Check />
+            </el-icon>
             {{ $t('common.save') }}
           </el-button>
         </div>
@@ -246,8 +304,14 @@
     </template>
 
     <!-- Image preview dialog -->
-    <el-dialog v-model="previewVisible" title="Xem trước hình ảnh">
-      <img :src="previewImageUrl" style="width: 100%;" />
+    <el-dialog
+      v-model="previewVisible"
+      title="Xem trước hình ảnh"
+    >
+      <img
+        :src="previewImageUrl"
+        style="width: 100%;"
+      >
     </el-dialog>
   </el-dialog>
 </template>
@@ -284,7 +348,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const departmentStore = useDepartmentStore();
 const authStore = useAuthStore();
-const { searchAssets: searchAssetsComposable } = useAssets();
+const { searchAssets: _searchAssetsComposable } = useAssets();
 
 const formRef = ref<FormInstance>();
 const loading = ref(false);

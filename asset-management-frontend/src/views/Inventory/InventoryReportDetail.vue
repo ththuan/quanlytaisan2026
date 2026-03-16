@@ -3,7 +3,12 @@
     <!-- Header -->
     <div class="page-header">
       <div class="header-left">
-        <el-button @click="goBack" :icon="ArrowLeft">Quay lại</el-button>
+        <el-button
+          :icon="ArrowLeft"
+          @click="goBack"
+        >
+          Quay lại
+        </el-button>
         <h2>Chi tiết báo cáo kiểm kê</h2>
       </div>
       <div class="header-right">
@@ -20,8 +25,8 @@
         <el-button 
           v-if="canApprove"
           type="warning" 
-          @click="openApproveDialog"
           :disabled="report?.status !== 'pending' && report?.status !== 'approved_by_head'"
+          @click="openApproveDialog"
         >
           <el-icon><Select /></el-icon>
           Duyệt báo cáo
@@ -29,17 +34,26 @@
       </div>
     </div>
 
-    <div v-loading="loading" v-if="report">
+    <div
+      v-if="report"
+      v-loading="loading"
+    >
       <!-- Report Info -->
       <el-card class="report-info-card">
         <div class="report-header">
           <div class="report-title-section">
             <h3>{{ report.department?.name || 'Chưa xác định' }}</h3>
             <div class="report-meta">
-              <el-tag :type="getStatusType(report.status)" size="large">
+              <el-tag
+                :type="getStatusType(report.status)"
+                size="large"
+              >
                 {{ getStatusLabel(report.status) }}
               </el-tag>
-              <span v-if="report.rejection_count && report.rejection_count > 0" class="rejection-badge">
+              <span
+                v-if="report.rejection_count && report.rejection_count > 0"
+                class="rejection-badge"
+              >
                 Đã bị từ chối {{ report.rejection_count }} lần
               </span>
             </div>
@@ -83,33 +97,53 @@
       <!-- Dashboard Stats -->
       <div class="summary-stats">
         <el-card class="stat-card">
-          <div class="stat-value">{{ report.total_assets || 0 }}</div>
-          <div class="stat-label">Tổng tài sản</div>
+          <div class="stat-value">
+            {{ report.total_assets || 0 }}
+          </div>
+          <div class="stat-label">
+            Tổng tài sản
+          </div>
         </el-card>
         <el-card class="stat-card success">
-          <div class="stat-value">{{ report.matched_assets || 0 }}</div>
-          <div class="stat-label">Khớp (Còn tồn tại)</div>
+          <div class="stat-value">
+            {{ report.matched_assets || 0 }}
+          </div>
+          <div class="stat-label">
+            Khớp (Còn tồn tại)
+          </div>
           <div class="stat-percentage">
             {{ report.total_assets > 0 ? Math.round(((report.matched_assets || 0) / report.total_assets) * 100) : 0 }}%
           </div>
         </el-card>
         <el-card class="stat-card danger">
-          <div class="stat-value">{{ report.missing_assets || 0 }}</div>
-          <div class="stat-label">Thiếu (Mất)</div>
+          <div class="stat-value">
+            {{ report.missing_assets || 0 }}
+          </div>
+          <div class="stat-label">
+            Thiếu (Mất)
+          </div>
           <div class="stat-percentage">
             {{ report.total_assets > 0 ? Math.round(((report.missing_assets || 0) / report.total_assets) * 100) : 0 }}%
           </div>
         </el-card>
         <el-card class="stat-card warning">
-          <div class="stat-value">{{ report.needs_repair_assets || 0 }}</div>
-          <div class="stat-label">Cần sửa chữa</div>
+          <div class="stat-value">
+            {{ report.needs_repair_assets || 0 }}
+          </div>
+          <div class="stat-label">
+            Cần sửa chữa
+          </div>
           <div class="stat-percentage">
             {{ report.total_assets > 0 ? Math.round(((report.needs_repair_assets || 0) / report.total_assets) * 100) : 0 }}%
           </div>
         </el-card>
         <el-card class="stat-card danger">
-          <div class="stat-value">{{ report.damaged_assets || 0 }}</div>
-          <div class="stat-label">Hỏng/Thanh lý</div>
+          <div class="stat-value">
+            {{ report.damaged_assets || 0 }}
+          </div>
+          <div class="stat-label">
+            Hỏng/Thanh lý
+          </div>
           <div class="stat-percentage">
             {{ report.total_assets > 0 ? Math.round(((report.damaged_assets || 0) / report.total_assets) * 100) : 0 }}%
           </div>
@@ -180,120 +214,240 @@
                 clearable
                 style="width: 250px"
               />
-              <el-select v-model="filterStatus" placeholder="Lọc kết quả" clearable style="width: 150px">
-                <el-option label="Khớp" value="matched" />
-                <el-option label="Thiếu" value="missing" />
-                <el-option label="Cần sửa" value="needs_repair" />
-                <el-option label="Hỏng" value="damaged" />
+              <el-select
+                v-model="filterStatus"
+                placeholder="Lọc kết quả"
+                clearable
+                style="width: 150px"
+              >
+                <el-option
+                  label="Khớp"
+                  value="matched"
+                />
+                <el-option
+                  label="Thiếu"
+                  value="missing"
+                />
+                <el-option
+                  label="Cần sửa"
+                  value="needs_repair"
+                />
+                <el-option
+                  label="Hỏng"
+                  value="damaged"
+                />
               </el-select>
             </div>
           </div>
         </template>
 
         <div class="responsive-table">
-          <el-table :data="filteredDetails" stripe>
-          <el-table-column type="index" label="STT" width="60" align="center" />
-          <el-table-column prop="asset.asset_code" label="Mã tài sản" width="120" />
-          <el-table-column label="Mã loại TS" width="100">
-            <template #default="{ row }">
-              {{ row.asset?.category_code || row.asset?.category || '-' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="asset.name" label="Tên tài sản" min-width="200" />
-          <el-table-column label="ĐVT" width="80" align="center">
-            <template #default="{ row }">
-              {{ row.asset?.unit || '-' }}
-            </template>
-          </el-table-column>
-          <el-table-column label="SL sổ sách" width="100" align="center">
-            <template #default="{ row }">
-              {{ row.book_quantity ?? row.asset?.quantity ?? 1 }}
-            </template>
-          </el-table-column>
-          <el-table-column label="SL thực tế" width="100" align="center">
-            <template #default="{ row }">
-              <span :class="getQuantityClass(row)">
-                {{ row.actual_quantity ?? 0 }}
-              </span>
-            </template>
-          </el-table-column>
-          <el-table-column label="Chênh lệch" width="100" align="center">
-            <template #default="{ row }">
-              <span :class="getDifferenceClass(row)">
-                {{ formatDifference(row.quantity_difference) }}
-              </span>
-            </template>
-          </el-table-column>
-          <el-table-column label="Nguyên giá" width="130" align="right">
-            <template #default="{ row }">
-              {{ formatCurrency(row.asset?.original_value ?? row.asset?.purchase_price ?? 0) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="Giá trị còn lại" width="130" align="right">
-            <template #default="{ row }">
-              {{ formatCurrency(row.asset?.current_value ?? 0) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="Tình trạng" width="150" align="center">
-            <template #default="{ row }">
-              <el-tag :type="getConditionType(row.asset_condition)" size="small">
-                {{ getConditionLabel(row.asset_condition) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="Kết quả" width="100" align="center">
-            <template #default="{ row }">
-              <el-tag :type="getCheckStatusType(row.check_status)" size="small">
-                {{ getCheckStatusLabel(row.check_status) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="Ghi chú" min-width="200">
-            <template #default="{ row }">
-              <span v-if="row.notes">{{ row.notes }}</span>
-              <span v-else class="text-muted">-</span>
-            </template>
-          </el-table-column>
-        </el-table>
+          <el-table
+            :data="filteredDetails"
+            stripe
+          >
+            <el-table-column
+              type="index"
+              label="STT"
+              width="60"
+              align="center"
+            />
+            <el-table-column
+              prop="asset.asset_code"
+              label="Mã tài sản"
+              width="120"
+            />
+            <el-table-column
+              label="Mã loại TS"
+              width="100"
+            >
+              <template #default="{ row }">
+                {{ row.asset?.category_code || row.asset?.category || '-' }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="asset.name"
+              label="Tên tài sản"
+              min-width="200"
+            />
+            <el-table-column
+              label="ĐVT"
+              width="80"
+              align="center"
+            >
+              <template #default="{ row }">
+                {{ row.asset?.unit || '-' }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="SL sổ sách"
+              width="100"
+              align="center"
+            >
+              <template #default="{ row }">
+                {{ row.book_quantity ?? row.asset?.quantity ?? 1 }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="SL thực tế"
+              width="100"
+              align="center"
+            >
+              <template #default="{ row }">
+                <span :class="getQuantityClass(row)">
+                  {{ row.actual_quantity ?? 0 }}
+                </span>
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Chênh lệch"
+              width="100"
+              align="center"
+            >
+              <template #default="{ row }">
+                <span :class="getDifferenceClass(row)">
+                  {{ formatDifference(row.quantity_difference) }}
+                </span>
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Nguyên giá"
+              width="130"
+              align="right"
+            >
+              <template #default="{ row }">
+                {{ formatCurrency(row.asset?.original_value ?? row.asset?.purchase_price ?? 0) }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Giá trị còn lại"
+              width="130"
+              align="right"
+            >
+              <template #default="{ row }">
+                {{ formatCurrency(row.asset?.current_value ?? 0) }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Tình trạng"
+              width="150"
+              align="center"
+            >
+              <template #default="{ row }">
+                <el-tag
+                  :type="getConditionType(row.asset_condition)"
+                  size="small"
+                >
+                  {{ getConditionLabel(row.asset_condition) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Kết quả"
+              width="100"
+              align="center"
+            >
+              <template #default="{ row }">
+                <el-tag
+                  :type="getCheckStatusType(row.check_status)"
+                  size="small"
+                >
+                  {{ getCheckStatusLabel(row.check_status) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Ghi chú"
+              min-width="200"
+            >
+              <template #default="{ row }">
+                <span v-if="row.notes">{{ row.notes }}</span>
+                <span
+                  v-else
+                  class="text-muted"
+                >-</span>
+              </template>
+            </el-table-column>
+          </el-table>
         </div>
       </el-card>
     </div>
 
     <!-- Approve Dialog -->
-    <el-dialog v-model="showApproveDialog" title="Duyệt báo cáo kiểm kê" width="800">
+    <el-dialog
+      v-model="showApproveDialog"
+      title="Duyệt báo cáo kiểm kê"
+      width="800"
+    >
       <div v-if="report">
         <div class="approve-header">
           <h3>Phòng ban: <strong>{{ report.department?.name }}</strong></h3>
           <div class="approve-stats">
             <el-row :gutter="16">
-              <el-col :xs="12" :sm="6">
+              <el-col
+                :xs="12"
+                :sm="6"
+              >
                 <div class="stat-box success">
-                  <div class="stat-number">{{ report.matched_assets || 0 }}</div>
-                  <div class="stat-text">Khớp (Còn tồn tại)</div>
+                  <div class="stat-number">
+                    {{ report.matched_assets || 0 }}
+                  </div>
+                  <div class="stat-text">
+                    Khớp (Còn tồn tại)
+                  </div>
                 </div>
               </el-col>
-              <el-col :xs="12" :sm="6">
+              <el-col
+                :xs="12"
+                :sm="6"
+              >
                 <div class="stat-box danger">
-                  <div class="stat-number">{{ report.missing_assets || 0 }}</div>
-                  <div class="stat-text">Thiếu (Mất)</div>
+                  <div class="stat-number">
+                    {{ report.missing_assets || 0 }}
+                  </div>
+                  <div class="stat-text">
+                    Thiếu (Mất)
+                  </div>
                 </div>
               </el-col>
-              <el-col :xs="12" :sm="6">
+              <el-col
+                :xs="12"
+                :sm="6"
+              >
                 <div class="stat-box danger">
-                  <div class="stat-number">{{ report.damaged_assets || 0 }}</div>
-                  <div class="stat-text">Hỏng/Thanh lý</div>
+                  <div class="stat-number">
+                    {{ report.damaged_assets || 0 }}
+                  </div>
+                  <div class="stat-text">
+                    Hỏng/Thanh lý
+                  </div>
                 </div>
               </el-col>
-              <el-col :xs="12" :sm="6" v-if="(report.needs_repair_assets || 0) > 0">
+              <el-col
+                v-if="(report.needs_repair_assets || 0) > 0"
+                :xs="12"
+                :sm="6"
+              >
                 <div class="stat-box warning">
-                  <div class="stat-number">{{ report.needs_repair_assets || 0 }}</div>
-                  <div class="stat-text">Cần sửa chữa</div>
+                  <div class="stat-number">
+                    {{ report.needs_repair_assets || 0 }}
+                  </div>
+                  <div class="stat-text">
+                    Cần sửa chữa
+                  </div>
                 </div>
               </el-col>
-              <el-col :xs="12" :sm="6">
+              <el-col
+                :xs="12"
+                :sm="6"
+              >
                 <div class="stat-box">
-                  <div class="stat-number">{{ report.total_assets || 0 }}</div>
-                  <div class="stat-text">Tổng tài sản</div>
+                  <div class="stat-number">
+                    {{ report.total_assets || 0 }}
+                  </div>
+                  <div class="stat-text">
+                    Tổng tài sản
+                  </div>
                 </div>
               </el-col>
             </el-row>
@@ -328,18 +482,42 @@
           </el-alert>
         </div>
 
-        <el-form :model="approveData" label-width="100px" class="approve-form">
+        <el-form
+          :model="approveData"
+          label-width="100px"
+          class="approve-form"
+        >
           <el-form-item label="Quyết định">
             <el-radio-group v-model="approveData.approved">
-              <el-radio :value="true">Phê duyệt</el-radio>
-              <el-radio :value="false">Từ chối</el-radio>
+              <el-radio :value="true">
+                Phê duyệt
+              </el-radio>
+              <el-radio :value="false">
+                Từ chối
+              </el-radio>
             </el-radio-group>
           </el-form-item>
-          <el-form-item v-if="!approveData.approved" label="Lý do">
-            <el-input v-model="approveData.rejection_reason" type="textarea" :rows="3" placeholder="Nhập lý do từ chối..." />
+          <el-form-item
+            v-if="!approveData.approved"
+            label="Lý do"
+          >
+            <el-input
+              v-model="approveData.rejection_reason"
+              type="textarea"
+              :rows="3"
+              placeholder="Nhập lý do từ chối..."
+            />
           </el-form-item>
-          <el-form-item v-if="approveData.approved && repairItems.length > 0 && authStore.user?.role === 'admin'" label="Đề nghị sửa chữa">
-            <el-alert type="info" :closable="false" show-icon style="margin-bottom: 12px">
+          <el-form-item
+            v-if="approveData.approved && repairItems.length > 0 && authStore.user?.role === 'admin'"
+            label="Đề nghị sửa chữa"
+          >
+            <el-alert
+              type="info"
+              :closable="false"
+              show-icon
+              style="margin-bottom: 12px"
+            >
               <template #title>
                 <strong>Quyết định sửa chữa hay thanh lý</strong>
               </template>
@@ -349,8 +527,15 @@
                 • <strong>Không chọn</strong> → Từ chối sửa chữa → Chuyển sang thanh lý (coi như hỏng nặng, sửa không được)
               </p>
             </el-alert>
-            <el-checkbox-group v-model="approveData.repair_approved_asset_ids" class="repair-approval-list">
-              <div v-for="d in repairItems" :key="d.id" class="repair-item">
+            <el-checkbox-group
+              v-model="approveData.repair_approved_asset_ids"
+              class="repair-approval-list"
+            >
+              <div
+                v-for="d in repairItems"
+                :key="d.id"
+                class="repair-item"
+              >
                 <el-checkbox :value="d.asset_id">
                   <strong>{{ d.asset?.asset_code }}</strong> - {{ d.asset?.name }}
                   <span style="color: #909399; font-size: 12px; margin-left: 8px">
@@ -363,8 +548,14 @@
         </el-form>
       </div>
       <template #footer>
-        <el-button @click="showApproveDialog = false">Hủy</el-button>
-        <el-button :type="approveData.approved ? 'success' : 'danger'" @click="approveReport" :loading="approving">
+        <el-button @click="showApproveDialog = false">
+          Hủy
+        </el-button>
+        <el-button
+          :type="approveData.approved ? 'success' : 'danger'"
+          :loading="approving"
+          @click="approveReport"
+        >
           {{ approveData.approved ? 'Phê duyệt' : 'Từ chối' }}
         </el-button>
       </template>
@@ -375,7 +566,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { ElMessage } from 'element-plus';
 import { ArrowLeft, Select, Search, Edit } from '@element-plus/icons-vue';
 import { useAuthStore } from '@/stores/auth.store';
 import inventoryService, { type InventoryReport } from '@/services/inventory.service';
@@ -562,7 +753,7 @@ const approveReport = async () => {
 };
 
 // Helpers
-const formatDate = (date: string) => {
+const _formatDate = (date: string) => {
   if (!date) return 'N/A';
   try {
     return new Date(date).toLocaleDateString('vi-VN');

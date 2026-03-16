@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import logger from '../utils/logger';
 import { AuditLog } from '../models';
+import crypto from 'crypto';
 
-type AuthenticatedRequest = Request & { user?: { id: number } };
+type AuthenticatedRequest = Request & { user?: { id: number }; requestId?: string };
 
 // Helper: extract real client IP, stripping IPv4-mapped IPv6 prefix
 const getClientIp = (req: Request): string => {
@@ -11,15 +12,27 @@ const getClientIp = (req: Request): string => {
   return raw.replace(/^::ffff:/, '');
 };
 
-// Logging middleware for HTTP requests
+// Logging middleware for HTTP requests with correlation ID
 export const requestLogger = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
   const start = Date.now();
+
+  // Prefer existing request ID from headers, otherwise generate a new one
+  const headerRequestId =
+    (req.headers['x-request-id'] as string | undefined) ||
+    (req.headers['x-correlation-id'] as string | undefined);
+  const requestId = headerRequestId || crypto.randomUUID();
+
+  // Attach to request object for downstream handlers
+  req.requestId = requestId;
+  // Also expose in response headers so frontend / logs can correlate
+  res.setHeader('x-request-id', requestId);
 
   // Log when response is finished
   res.on('finish', () => {
     const duration = Date.now() - start;
 
     logger.info('HTTP Request', {
+      requestId,
       method: req.method,
       path: req.path,
       statusCode: res.statusCode,

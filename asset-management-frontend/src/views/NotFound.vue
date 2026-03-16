@@ -1,8 +1,17 @@
 <template>
   <div class="not-found">
-    <el-result icon="warning" title="404" sub-title="Page not found">
+    <el-result
+      icon="warning"
+      title="404"
+      sub-title="Page not found"
+    >
       <template #extra>
-        <el-button type="primary" @click="$router.push('/')">Back to home</el-button>
+        <el-button
+          type="primary"
+          @click="$router.push('/')"
+        >
+          Back to home
+        </el-button>
       </template>
     </el-result>
   </div>

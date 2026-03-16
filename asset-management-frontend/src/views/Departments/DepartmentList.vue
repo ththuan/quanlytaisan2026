@@ -4,14 +4,29 @@
       <template #header>
         <div class="card-header">
           <h3>{{ $t('departments.title') }}</h3>
-          <div class="actions" v-if="authStore.isAdmin">
-            <el-button :icon="Download" @click="handleDownloadTemplate">
+          <div
+            v-if="authStore.isAdmin"
+            class="actions"
+          >
+            <el-button
+              :icon="Download"
+              @click="handleDownloadTemplate"
+            >
               Tải mẫu Excel
             </el-button>
-            <el-button type="success" :icon="Upload" :loading="importing" @click="triggerFileInput">
+            <el-button
+              type="success"
+              :icon="Upload"
+              :loading="importing"
+              @click="triggerFileInput"
+            >
               Import Excel
             </el-button>
-            <el-button type="primary" :icon="Plus" @click="handleCreate">
+            <el-button
+              type="primary"
+              :icon="Plus"
+              @click="handleCreate"
+            >
               {{ $t('departments.addDepartment') }}
             </el-button>
           </div>
@@ -24,7 +39,7 @@
         accept=".xlsx,.xls"
         style="display: none"
         @change="handleFileChange"
-      />
+      >
 
       <!-- Search & Filter -->
       <div class="filter-section">
@@ -43,47 +58,116 @@
             </el-input>
           </el-col>
           <el-col :span="6">
-            <el-select v-model="filterType" :placeholder="$t('departments.filterByType')" clearable @change="handleFilter">
-              <el-option v-for="type in departmentTypes" :key="type.value" :label="type.label" :value="type.value" />
+            <el-select
+              v-model="filterType"
+              :placeholder="$t('departments.filterByType')"
+              clearable
+              @change="handleFilter"
+            >
+              <el-option
+                v-for="type in departmentTypes"
+                :key="type.value"
+                :label="type.label"
+                :value="type.value"
+              />
             </el-select>
           </el-col>
           <el-col :span="6">
-            <el-button type="primary" @click="handleSearch">{{ $t('common.search') }}</el-button>
-            <el-button @click="handleReset">{{ $t('common.refresh') }}</el-button>
+            <el-button
+              type="primary"
+              @click="handleSearch"
+            >
+              {{ $t('common.search') }}
+            </el-button>
+            <el-button @click="handleReset">
+              {{ $t('common.refresh') }}
+            </el-button>
           </el-col>
         </el-row>
       </div>
 
       <div class="responsive-table">
-        <el-table :data="paginatedDepartments" :loading="loading" style="width: 100%">
-        <el-table-column prop="name" :label="$t('departments.departmentName')" min-width="200">
-          <template #default="{ row }">
-            <span :style="{ paddingLeft: row.parent_department_id ? '20px' : '0' }">
-              <span v-if="row.parent_department_id">└ </span>
-              {{ row.name }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="type" :label="$t('departments.departmentType')" width="150">
-          <template #default="{ row }">
-            <el-tag :type="getTypeColor(row.type)" size="small">{{ getTypeText(row.type) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="$t('departments.parentDepartment')" width="180">
-          <template #default="{ row }">
-            <span v-if="row.parent_department">{{ row.parent_department.name }}</span>
-            <span v-else style="color: #999">-</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="description" :label="$t('common.description')" min-width="150" show-overflow-tooltip />
-        <el-table-column :label="$t('common.actions')" width="180" align="center">
-          <template #default="{ row }">
-            <el-button size="small" type="primary" @click="handleView(row)">Xem</el-button>
-            <el-button size="small" type="warning" @click="handleEdit(row)" v-if="authStore.isAdmin">Sửa</el-button>
-            <el-button size="small" type="danger" @click="handleDelete(row.id)" v-if="authStore.isAdmin">Xóa</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+        <el-table
+          :data="paginatedDepartments"
+          :loading="loading"
+          style="width: 100%"
+        >
+          <el-table-column
+            prop="name"
+            :label="$t('departments.departmentName')"
+            min-width="200"
+          >
+            <template #default="{ row }">
+              <span :style="{ paddingLeft: row.parent_department_id ? '20px' : '0' }">
+                <span v-if="row.parent_department_id">└ </span>
+                {{ row.name }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="type"
+            :label="$t('departments.departmentType')"
+            width="150"
+          >
+            <template #default="{ row }">
+              <el-tag
+                :type="getTypeColor(row.type)"
+                size="small"
+              >
+                {{ getTypeText(row.type) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            :label="$t('departments.parentDepartment')"
+            width="180"
+          >
+            <template #default="{ row }">
+              <span v-if="row.parent_department">{{ row.parent_department.name }}</span>
+              <span
+                v-else
+                style="color: #999"
+              >-</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="description"
+            :label="$t('common.description')"
+            min-width="150"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            :label="$t('common.actions')"
+            width="180"
+            align="center"
+          >
+            <template #default="{ row }">
+              <el-button
+                size="small"
+                type="primary"
+                @click="handleView(row)"
+              >
+                Xem
+              </el-button>
+              <el-button
+                v-if="authStore.isAdmin"
+                size="small"
+                type="warning"
+                @click="handleEdit(row)"
+              >
+                Sửa
+              </el-button>
+              <el-button
+                v-if="authStore.isAdmin"
+                size="small"
+                type="danger"
+                @click="handleDelete(row.id)"
+              >
+                Xóa
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
       </div>
 
       <!-- Pagination -->
@@ -111,18 +195,36 @@
     />
 
     <!-- View Dialog -->
-    <el-dialog v-model="viewDialogVisible" :title="$t('departments.departmentDetails')" width="600px">
-      <el-descriptions :column="1" border v-if="currentDepartment">
-        <el-descriptions-item :label="$t('departments.departmentName')">{{ currentDepartment.name }}</el-descriptions-item>
+    <el-dialog
+      v-model="viewDialogVisible"
+      :title="$t('departments.departmentDetails')"
+      width="600px"
+    >
+      <el-descriptions
+        v-if="currentDepartment"
+        :column="1"
+        border
+      >
+        <el-descriptions-item :label="$t('departments.departmentName')">
+          {{ currentDepartment.name }}
+        </el-descriptions-item>
         <el-descriptions-item :label="$t('departments.departmentType')">
-          <el-tag :type="getTypeColor(currentDepartment.type || '')">{{ getTypeText(currentDepartment.type || '') }}</el-tag>
+          <el-tag :type="getTypeColor(currentDepartment.type || '')">
+            {{ getTypeText(currentDepartment.type || '') }}
+          </el-tag>
         </el-descriptions-item>
         <el-descriptions-item :label="$t('departments.parentDepartment')">
           {{ currentDepartment.parent_department?.name || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item :label="$t('common.description')">{{ currentDepartment.description || '-' }}</el-descriptions-item>
-        <el-descriptions-item :label="$t('common.createdAt')">{{ formatDate(currentDepartment.created_at) }}</el-descriptions-item>
-        <el-descriptions-item :label="$t('common.updatedAt')">{{ formatDate(currentDepartment.updated_at) }}</el-descriptions-item>
+        <el-descriptions-item :label="$t('common.description')">
+          {{ currentDepartment.description || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="$t('common.createdAt')">
+          {{ formatDate(currentDepartment.created_at) }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="$t('common.updatedAt')">
+          {{ formatDate(currentDepartment.updated_at) }}
+        </el-descriptions-item>
       </el-descriptions>
     </el-dialog>
   </div>

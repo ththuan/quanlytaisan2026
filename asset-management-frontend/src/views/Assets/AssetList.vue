@@ -5,22 +5,54 @@
       <div class="header-content">
         <div class="header-left">
           <h1 class="page-title">
-            <el-icon class="title-icon"><Box /></el-icon>
+            <el-icon class="title-icon">
+              <Box />
+            </el-icon>
             {{ $t('assets.title') }}
           </h1>
-          <p class="page-subtitle">Quản lý và theo dõi tất cả tài sản trong hệ thống</p>
+          <p class="page-subtitle">
+            Quản lý và theo dõi tất cả tài sản trong hệ thống
+          </p>
         </div>
         <div class="header-right">
-          <el-button type="warning" :icon="Download" @click="handleExport" size="default" class="export-btn" :loading="exporting">
+          <el-button
+            type="warning"
+            :icon="Download"
+            size="default"
+            class="export-btn"
+            :loading="exporting"
+            @click="handleExport"
+          >
             Xuất Excel
           </el-button>
-          <el-button v-if="authStore.isAdmin" type="success" :icon="Upload" @click="showImportDialog = true" size="default" class="import-btn">
+          <el-button
+            v-if="authStore.isAdmin"
+            type="success"
+            :icon="Upload"
+            size="default"
+            class="import-btn"
+            @click="showImportDialog = true"
+          >
             Import Excel
           </el-button>
-          <el-button v-if="authStore.isAdmin" type="info" :icon="Sunny" @click="handleGenerateAllQR" size="default" :loading="generatingQR">
+          <el-button
+            v-if="authStore.isAdmin"
+            type="info"
+            :icon="Sunny"
+            size="default"
+            :loading="generatingQR"
+            @click="handleGenerateAllQR"
+          >
             Tạo QR hàng loạt
           </el-button>
-          <el-button v-if="authStore.isAdmin" type="primary" :icon="Plus" @click="handleCreate" size="default" class="add-btn">
+          <el-button
+            v-if="authStore.isAdmin"
+            type="primary"
+            :icon="Plus"
+            size="default"
+            class="add-btn"
+            @click="handleCreate"
+          >
             {{ $t('assets.addAsset') }}
           </el-button>
         </div>
@@ -30,91 +62,187 @@
     <!-- Statistics Cards -->
     <div class="stats-section">
       <el-row :gutter="12">
-        <el-col :xs="8" :sm="8" :md="3">
-          <div class="stat-card total" @click="handleStatClick('')" :class="{ 'is-active': filterStatus === '' }">
+        <el-col
+          :xs="8"
+          :sm="8"
+          :md="3"
+        >
+          <div
+            class="stat-card total"
+            :class="{ 'is-active': filterStatus === '' }"
+            @click="handleStatClick('')"
+          >
             <div class="stat-icon">
               <el-icon><Box /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ statistics.total }}</div>
-              <div class="stat-label">Tổng tài sản</div>
+              <div class="stat-value">
+                {{ statistics.total }}
+              </div>
+              <div class="stat-label">
+                Tổng tài sản
+              </div>
             </div>
           </div>
         </el-col>
-        <el-col :xs="8" :sm="8" :md="3">
-          <div class="stat-card active" @click="handleStatClick('active')" :class="{ 'is-active': filterStatus === 'active' }">
+        <el-col
+          :xs="8"
+          :sm="8"
+          :md="3"
+        >
+          <div
+            class="stat-card active"
+            :class="{ 'is-active': filterStatus === 'active' }"
+            @click="handleStatClick('active')"
+          >
             <div class="stat-icon">
               <el-icon><CircleCheck /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ statistics.active }}</div>
-              <div class="stat-label">Đang sử dụng</div>
+              <div class="stat-value">
+                {{ statistics.active }}
+              </div>
+              <div class="stat-label">
+                Đang sử dụng
+              </div>
             </div>
           </div>
         </el-col>
-        <el-col :xs="8" :sm="8" :md="3">
-          <div class="stat-card inactive" @click="handleStatClick('inactive')" :class="{ 'is-active': filterStatus === 'inactive' }">
+        <el-col
+          :xs="8"
+          :sm="8"
+          :md="3"
+        >
+          <div
+            class="stat-card inactive"
+            :class="{ 'is-active': filterStatus === 'inactive' }"
+            @click="handleStatClick('inactive')"
+          >
             <div class="stat-icon">
               <el-icon><CircleClose /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ statistics.inactive }}</div>
-              <div class="stat-label">Không sử dụng</div>
+              <div class="stat-value">
+                {{ statistics.inactive }}
+              </div>
+              <div class="stat-label">
+                Không sử dụng
+              </div>
             </div>
           </div>
         </el-col>
-        <el-col :xs="8" :sm="8" :md="3">
-          <div class="stat-card damaged" @click="handleStatClick('damaged')" :class="{ 'is-active': filterStatus === 'damaged' }">
+        <el-col
+          :xs="8"
+          :sm="8"
+          :md="3"
+        >
+          <div
+            class="stat-card damaged"
+            :class="{ 'is-active': filterStatus === 'damaged' }"
+            @click="handleStatClick('damaged')"
+          >
             <div class="stat-icon">
               <el-icon><Warning /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ statistics.damaged }}</div>
-              <div class="stat-label">Hỏng</div>
+              <div class="stat-value">
+                {{ statistics.damaged }}
+              </div>
+              <div class="stat-label">
+                Hỏng
+              </div>
             </div>
           </div>
         </el-col>
-        <el-col :xs="8" :sm="8" :md="3">
-          <div class="stat-card maintenance" @click="handleStatClick('pending_repair')" :class="{ 'is-active': filterStatus === 'pending_repair' }">
+        <el-col
+          :xs="8"
+          :sm="8"
+          :md="3"
+        >
+          <div
+            class="stat-card maintenance"
+            :class="{ 'is-active': filterStatus === 'pending_repair' }"
+            @click="handleStatClick('pending_repair')"
+          >
             <div class="stat-icon">
               <el-icon><Setting /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ statistics.pending_repair || 0 }}</div>
-              <div class="stat-label">Sửa chữa</div>
+              <div class="stat-value">
+                {{ statistics.pending_repair || 0 }}
+              </div>
+              <div class="stat-label">
+                Sửa chữa
+              </div>
             </div>
           </div>
         </el-col>
-        <el-col :xs="8" :sm="8" :md="3">
-          <div class="stat-card pending-disposal" @click="handleStatClick('pending_disposal')" :class="{ 'is-active': filterStatus === 'pending_disposal' }">
+        <el-col
+          :xs="8"
+          :sm="8"
+          :md="3"
+        >
+          <div
+            class="stat-card pending-disposal"
+            :class="{ 'is-active': filterStatus === 'pending_disposal' }"
+            @click="handleStatClick('pending_disposal')"
+          >
             <div class="stat-icon">
               <el-icon><Delete /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ statistics.pending_disposal || 0 }}</div>
-              <div class="stat-label">Đề nghị thanh lý</div>
+              <div class="stat-value">
+                {{ statistics.pending_disposal || 0 }}
+              </div>
+              <div class="stat-label">
+                Đề nghị thanh lý
+              </div>
             </div>
           </div>
         </el-col>
-        <el-col :xs="8" :sm="8" :md="3">
-          <div class="stat-card lost" @click="handleStatClick('lost')" :class="{ 'is-active': filterStatus === 'lost' }">
+        <el-col
+          :xs="8"
+          :sm="8"
+          :md="3"
+        >
+          <div
+            class="stat-card lost"
+            :class="{ 'is-active': filterStatus === 'lost' }"
+            @click="handleStatClick('lost')"
+          >
             <div class="stat-icon">
               <el-icon><QuestionFilled /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ statistics.lost }}</div>
-              <div class="stat-label">Mất</div>
+              <div class="stat-value">
+                {{ statistics.lost }}
+              </div>
+              <div class="stat-label">
+                Mất
+              </div>
             </div>
           </div>
         </el-col>
-        <el-col :xs="8" :sm="8" :md="3">
-          <div class="stat-card disposed" @click="handleStatClick('disposed')" :class="{ 'is-active': filterStatus === 'disposed' }">
+        <el-col
+          :xs="8"
+          :sm="8"
+          :md="3"
+        >
+          <div
+            class="stat-card disposed"
+            :class="{ 'is-active': filterStatus === 'disposed' }"
+            @click="handleStatClick('disposed')"
+          >
             <div class="stat-icon">
               <el-icon><DeleteFilled /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ statistics.disposed }}</div>
-              <div class="stat-label">Đã thanh lý</div>
+              <div class="stat-value">
+                {{ statistics.disposed }}
+              </div>
+              <div class="stat-label">
+                Đã thanh lý
+              </div>
             </div>
           </div>
         </el-col>
@@ -122,7 +250,10 @@
     </div>
 
     <!-- Main Content Card -->
-    <el-card class="main-card" shadow="never">
+    <el-card
+      class="main-card"
+      shadow="never"
+    >
       <!-- Search & Filter -->
       <div class="filter-section">
         <div class="filter-row">
@@ -141,21 +272,60 @@
             </el-input>
           </div>
           <div class="filter-item">
-            <el-select v-model="filterCategory" :placeholder="$t('assets.filterByCategory')" clearable size="large" @change="handleFilter" @clear="handleFilter">
-              <el-option v-for="cat in categories" :key="cat.value" :label="cat.label" :value="cat.value" />
+            <el-select
+              v-model="filterCategory"
+              :placeholder="$t('assets.filterByCategory')"
+              clearable
+              size="large"
+              @change="handleFilter"
+              @clear="handleFilter"
+            >
+              <el-option
+                v-for="cat in categories"
+                :key="cat.value"
+                :label="cat.label"
+                :value="cat.value"
+              />
             </el-select>
           </div>
           <div class="filter-item">
-            <el-select v-model="filterDepartment" :placeholder="$t('assets.filterByDepartment')" clearable size="large" @change="handleFilter" @clear="handleFilter" v-if="authStore.isAdmin || authStore.isDirector">
-              <el-option v-for="d in departments" :key="d.id" :label="d.name" :value="d.id" />
+            <el-select
+              v-if="authStore.isAdmin || authStore.isDirector"
+              v-model="filterDepartment"
+              :placeholder="$t('assets.filterByDepartment')"
+              clearable
+              size="large"
+              @change="handleFilter"
+              @clear="handleFilter"
+            >
+              <el-option
+                v-for="d in departments"
+                :key="d.id"
+                :label="d.name"
+                :value="d.id"
+              />
             </el-select>
-            <el-input v-else :value="currentDepartmentName" disabled size="large" />
+            <el-input
+              v-else
+              :value="currentDepartmentName"
+              disabled
+              size="large"
+            />
           </div>
           <div class="filter-actions">
-            <el-button type="primary" :icon="Search" @click="handleSearch" size="default">
+            <el-button
+              type="primary"
+              :icon="Search"
+              size="default"
+              @click="handleSearch"
+            >
               {{ $t('common.search') }}
             </el-button>
-            <el-button :icon="Refresh" @click="handleReset" size="default">
+            <el-button
+              :icon="Refresh"
+              size="default"
+              @click="handleReset"
+            >
               {{ $t('common.refresh') }}
             </el-button>
           </div>
@@ -164,68 +334,114 @@
 
       <!-- Table -->
       <div class="responsive-table">
-        <el-table 
-        :data="assetStore.assets" 
-        :loading="assetStore.loading" 
-        class="asset-table"
-        :row-class-name="tableRowClassName"
-        @row-click="handleRowClick"
-        style="width: 100%"
-      >
-        <el-table-column prop="category_code" label="Mã loại TS" width="115">
-          <template #default="{ row }">
-            <el-tooltip
-              v-if="row.category_code"
-              :content="row.assetCategory?.name ? `${row.category_code} - ${row.assetCategory.name}` : row.category_code"
-              placement="top"
-              :show-after="300"
-            >
-              <span class="category-code">
-                {{ row.category_code }}
-              </span>
-            </el-tooltip>
-            <span v-else class="category-code">-</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="name" :label="$t('assets.assetName')" min-width="280">
-          <template #default="{ row }">
-            <span class="asset-name text-truncate">{{ row.name }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="unit" label="ĐVT" width="70">
-          <template #default="{ row }">
-            <span>{{ row.unit || 'Cái' }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="quantity" label="SL" width="60" align="center">
-          <template #default="{ row }">
-            <span>{{ row.quantity || 1 }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="purchase_price" label="Nguyên giá" width="130" align="right">
-          <template #default="{ row }">
-            <span class="price-value">{{ formatCurrencyDisplay(row.purchase_price) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="residual_value" label="Còn lại" width="130" align="right">
-          <template #default="{ row }">
-            <span class="price-value">{{ formatCurrencyDisplay(row.residual_value) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" :label="$t('common.status')" width="110">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)" effect="dark" size="small">
-              {{ getStatusText(row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="current_department.name" :label="$t('assets.department')" min-width="140">
-          <template #default="{ row }">
-            <span v-if="row.current_department">{{ row.current_department.name }}</span>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-      </el-table>
+        <el-table
+          :data="assetStore.assets"
+          :loading="assetStore.loading"
+          class="asset-table"
+          :row-class-name="tableRowClassName"
+          style="width: 100%"
+          @row-click="handleRowClick"
+        >
+          <el-table-column
+            prop="category_code"
+            label="Mã loại TS"
+            width="120"
+            fixed="left"
+          >
+            <template #default="{ row }">
+              <el-tooltip
+                v-if="row.category_code"
+                :content="row.assetCategory?.name ? `${row.category_code} - ${row.assetCategory.name}` : row.category_code"
+                placement="top"
+                :show-after="300"
+              >
+                <span class="category-code">
+                  {{ row.category_code }}
+                </span>
+              </el-tooltip>
+              <span
+                v-else
+                class="category-code"
+              >-</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="name"
+            :label="$t('assets.assetName')"
+            min-width="320"
+            fixed="left"
+            show-overflow-tooltip
+          >
+            <template #default="{ row }">
+              <span class="asset-name text-truncate">{{ row.name }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="unit"
+            label="ĐVT"
+            width="90"
+            align="center"
+          >
+            <template #default="{ row }">
+              <span>{{ row.unit || 'Cái' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="quantity"
+            label="SL"
+            width="90"
+            align="center"
+          >
+            <template #default="{ row }">
+              <span>{{ row.quantity || 1 }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="purchase_price"
+            label="Nguyên giá"
+            width="160"
+            align="right"
+          >
+            <template #default="{ row }">
+              <span class="price-value">{{ formatCurrencyDisplay(row.purchase_price) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="residual_value"
+            label="Còn lại"
+            width="160"
+            align="right"
+          >
+            <template #default="{ row }">
+              <span class="price-value">{{ formatCurrencyDisplay(row.residual_value) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="status"
+            :label="$t('common.status')"
+            width="130"
+          >
+            <template #default="{ row }">
+              <el-tag
+                :type="getStatusType(row.status)"
+                effect="dark"
+                size="small"
+              >
+                {{ getStatusText(row.status) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="current_department.name"
+            :label="$t('assets.department')"
+            min-width="180"
+          >
+            <template #default="{ row }">
+              <span v-if="row.current_department">{{ row.current_department.name }}</span>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+        </el-table>
       </div>
 
       <!-- Pagination -->
@@ -240,9 +456,9 @@
           :total="assetStore.pagination.total"
           :page-sizes="[10, 20, 50, 100]"
           layout="sizes, prev, pager, next, jumper"
+          background
           @current-change="handlePageChange"
           @size-change="handleSizeChange"
-          background
         />
       </div>
     </el-card>
@@ -283,7 +499,12 @@
         <!-- Download template -->
         <div class="import-section">
           <h4>Bước 1: Tải file mẫu</h4>
-          <el-button type="primary" :icon="Download" @click="handleDownloadTemplate" :loading="downloadingTemplate">
+          <el-button
+            type="primary"
+            :icon="Download"
+            :loading="downloadingTemplate"
+            @click="handleDownloadTemplate"
+          >
             Tải file mẫu Excel
           </el-button>
         </div>
@@ -301,7 +522,9 @@
             drag
             class="import-upload"
           >
-            <el-icon class="el-icon--upload"><Upload /></el-icon>
+            <el-icon class="el-icon--upload">
+              <Upload />
+            </el-icon>
             <div class="el-upload__text">
               Kéo thả file vào đây hoặc <em>click để chọn file</em>
             </div>
@@ -314,7 +537,10 @@
         </div>
 
         <!-- Kết quả kiểm tra / import -->
-        <div v-if="importResult" class="import-result">
+        <div
+          v-if="importResult"
+          class="import-result"
+        >
           <!-- Đang ở bước kiểm tra (chưa ghi DB) -->
           <template v-if="importResult.validatedOnly">
             <el-alert
@@ -356,34 +582,58 @@
           </template>
 
           <!-- Chi tiết lỗi -->
-          <div v-if="importResult.errors.length > 0" class="error-list">
+          <div
+            v-if="importResult.errors.length > 0"
+            class="error-list"
+          >
             <h4>Chi tiết lỗi:</h4>
-            <el-table :data="importResult.errors" max-height="200" size="small">
-              <el-table-column prop="row" label="Dòng" width="60" />
-              <el-table-column prop="assetCode" label="Mã TS" width="120" />
-              <el-table-column prop="field" label="Trường" width="120" />
-              <el-table-column prop="message" label="Lỗi" />
+            <el-table
+              :data="importResult.errors"
+              max-height="200"
+              size="small"
+            >
+              <el-table-column
+                prop="row"
+                label="Dòng"
+                width="60"
+              />
+              <el-table-column
+                prop="assetCode"
+                label="Mã TS"
+                width="120"
+              />
+              <el-table-column
+                prop="field"
+                label="Trường"
+                width="120"
+              />
+              <el-table-column
+                prop="message"
+                label="Lỗi"
+              />
             </el-table>
           </div>
         </div>
       </div>
 
       <template #footer>
-        <el-button @click="closeImportDialog">Đóng</el-button>
+        <el-button @click="closeImportDialog">
+          Đóng
+        </el-button>
         <el-button
           v-if="!importResult || (importResult.validatedOnly && importResult.failed > 0)"
           type="primary"
-          @click="handleValidate"
           :loading="importing"
           :disabled="!selectedFile"
+          @click="handleValidate"
         >
           {{ importResult?.validatedOnly && importResult?.failed > 0 ? 'Kiểm tra lại' : 'Kiểm tra lỗi' }}
         </el-button>
         <el-button
           v-if="importResult?.validatedOnly && importResult?.failed === 0"
           type="primary"
-          @click="handleConfirmImport"
           :loading="importing"
+          @click="handleConfirmImport"
         >
           Xác nhận import
         </el-button>
@@ -397,7 +647,10 @@
       width="460px"
       :close-on-click-modal="false"
     >
-      <el-form label-width="80px" style="margin-top: 8px">
+      <el-form
+        label-width="80px"
+        style="margin-top: 8px"
+      >
         <el-form-item label="Đơn vị">
           <el-select
             v-model="qrExportDeptId"
@@ -406,11 +659,21 @@
             filterable
             clearable
           >
-            <el-option v-for="d in departments" :key="d.id" :label="d.name" :value="d.id" />
+            <el-option
+              v-for="d in departments"
+              :key="d.id"
+              :label="d.name"
+              :value="d.id"
+            />
           </el-select>
         </el-form-item>
       </el-form>
-      <el-alert type="info" :closable="false" show-icon style="margin-top: 4px">
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        style="margin-top: 4px"
+      >
         <template #default>
           <div style="font-size: 13px; line-height: 1.6">
             Mỗi QR kích thước <strong>5cm × 5cm</strong>, xếp <strong>4 cột</strong> trên trang A4.<br>
@@ -419,7 +682,9 @@
         </template>
       </el-alert>
       <template #footer>
-        <el-button @click="showQRExportDialog = false">Hủy</el-button>
+        <el-button @click="showQRExportDialog = false">
+          Hủy
+        </el-button>
         <el-button
           type="primary"
           :loading="exportingQR"
@@ -527,7 +792,7 @@ const fetchCategories = async () => {
   }
 };
 
-const statuses = computed(() => [
+const _statuses = computed(() => [
   { value: 'active', label: t('assets.status.active') },
   { value: 'inactive', label: t('assets.status.inactive') },
   { value: 'damaged', label: t('assets.status.damaged') },
@@ -1210,6 +1475,10 @@ const handleExportQRPDF = async () => {
   padding: 10px 8px;
 }
 
+.asset-table :deep(.cell) {
+  white-space: nowrap;
+}
+
 .asset-code {
   font-family: inherit;
   font-size: 13px;
@@ -1258,6 +1527,11 @@ const handleExportQRPDF = async () => {
 
 .pagination-info strong {
   color: #1f2937;
+}
+
+.responsive-table {
+  width: 100%;
+  overflow-x: auto;
 }
 
 /* Import Dialog */

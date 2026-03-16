@@ -12,7 +12,7 @@ export const consecutiveErrors = ref<number>(0);
  */
 export async function checkBackendConnection(): Promise<boolean> {
   try {
-    const response = await api.get('/health');
+    await api.get('/health');
     connectionStatus.value = 'online';
     consecutiveErrors.value = 0;
     return true;

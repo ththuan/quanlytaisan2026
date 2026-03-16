@@ -3,7 +3,10 @@
     <div class="page-header">
       <div>
         <h2>Chi tiết đợt kiểm kê</h2>
-        <div class="sub" v-if="round">
+        <div
+          v-if="round"
+          class="sub"
+        >
           {{ round.round_name }} ({{ round.round_year }})
         </div>
       </div>
@@ -12,23 +15,35 @@
           v-if="round?.status === 'completed'" 
           type="success" 
           :icon="Download" 
-          @click="exportReport"
           :loading="exporting"
           style="margin-right: 12px"
+          @click="exportReport"
         >
           Xuất báo cáo tổng hợp
         </el-button>
-        <el-button v-if="isAdmin" type="warning" @click="openExtendDialog" style="margin-right: 12px">
+        <el-button
+          v-if="isAdmin"
+          type="warning"
+          style="margin-right: 12px"
+          @click="openExtendDialog"
+        >
           Gia hạn (Bổ sung thời gian)
         </el-button>
-        <el-button @click="goBack">Quay lại</el-button>
+        <el-button @click="goBack">
+          Quay lại
+        </el-button>
       </div>
     </div>
 
     <el-card v-loading="loading">
       <template v-if="round">
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="Năm">{{ round.round_year }}</el-descriptions-item>
+        <el-descriptions
+          :column="2"
+          border
+        >
+          <el-descriptions-item label="Năm">
+            {{ round.round_year }}
+          </el-descriptions-item>
           <el-descriptions-item label="Trạng thái">
             <el-tag :type="round.status === 'completed' ? 'success' : 'warning'">
               {{ round.status === 'completed' ? 'Hoàn thành' : 'Đang thực hiện' }}
@@ -45,59 +60,125 @@
         <el-divider />
 
         <!-- Tổng quan thống kê -->
-        <div class="section-title">Tổng quan báo cáo</div>
+        <div class="section-title">
+          Tổng quan báo cáo
+        </div>
         <div class="summary-stats">
           <el-row :gutter="16">
-            <el-col :xs="12" :sm="6">
+            <el-col
+              :xs="12"
+              :sm="6"
+            >
               <div class="stat-box">
-                <div class="stat-number">{{ summaryStats.total_assets }}</div>
-                <div class="stat-label">Tổng tài sản</div>
+                <div class="stat-number">
+                  {{ summaryStats.total_assets }}
+                </div>
+                <div class="stat-label">
+                  Tổng tài sản
+                </div>
               </div>
             </el-col>
-            <el-col :xs="12" :sm="6">
+            <el-col
+              :xs="12"
+              :sm="6"
+            >
               <div class="stat-box success">
-                <div class="stat-number">{{ summaryStats.matched_assets }}</div>
-                <div class="stat-label">Khớp</div>
-                <div class="stat-percent">{{ getPercent(summaryStats.matched_assets, summaryStats.total_assets) }}%</div>
+                <div class="stat-number">
+                  {{ summaryStats.matched_assets }}
+                </div>
+                <div class="stat-label">
+                  Khớp
+                </div>
+                <div class="stat-percent">
+                  {{ getPercent(summaryStats.matched_assets, summaryStats.total_assets) }}%
+                </div>
               </div>
             </el-col>
-            <el-col :xs="12" :sm="6">
+            <el-col
+              :xs="12"
+              :sm="6"
+            >
               <div class="stat-box danger">
-                <div class="stat-number">{{ summaryStats.missing_assets }}</div>
-                <div class="stat-label">Thiếu/Mất</div>
-                <div class="stat-percent">{{ getPercent(summaryStats.missing_assets, summaryStats.total_assets) }}%</div>
+                <div class="stat-number">
+                  {{ summaryStats.missing_assets }}
+                </div>
+                <div class="stat-label">
+                  Thiếu/Mất
+                </div>
+                <div class="stat-percent">
+                  {{ getPercent(summaryStats.missing_assets, summaryStats.total_assets) }}%
+                </div>
               </div>
             </el-col>
-            <el-col :xs="12" :sm="6">
+            <el-col
+              :xs="12"
+              :sm="6"
+            >
               <div class="stat-box warning">
-                <div class="stat-number">{{ summaryStats.needs_repair_assets }}</div>
-                <div class="stat-label">Cần sửa chữa</div>
-                <div class="stat-percent">{{ getPercent(summaryStats.needs_repair_assets, summaryStats.total_assets) }}%</div>
+                <div class="stat-number">
+                  {{ summaryStats.needs_repair_assets }}
+                </div>
+                <div class="stat-label">
+                  Cần sửa chữa
+                </div>
+                <div class="stat-percent">
+                  {{ getPercent(summaryStats.needs_repair_assets, summaryStats.total_assets) }}%
+                </div>
               </div>
             </el-col>
-            <el-col :xs="12" :sm="6">
+            <el-col
+              :xs="12"
+              :sm="6"
+            >
               <div class="stat-box danger">
-                <div class="stat-number">{{ summaryStats.damaged_assets }}</div>
-                <div class="stat-label">Hỏng/Thanh lý</div>
-                <div class="stat-percent">{{ getPercent(summaryStats.damaged_assets, summaryStats.total_assets) }}%</div>
+                <div class="stat-number">
+                  {{ summaryStats.damaged_assets }}
+                </div>
+                <div class="stat-label">
+                  Hỏng/Thanh lý
+                </div>
+                <div class="stat-percent">
+                  {{ getPercent(summaryStats.damaged_assets, summaryStats.total_assets) }}%
+                </div>
               </div>
             </el-col>
-            <el-col :xs="12" :sm="6">
+            <el-col
+              :xs="12"
+              :sm="6"
+            >
               <div class="stat-box">
-                <div class="stat-number">{{ formatCurrency(summaryStats.total_original_value) }}</div>
-                <div class="stat-label">Tổng nguyên giá</div>
+                <div class="stat-number">
+                  {{ formatCurrency(summaryStats.total_original_value) }}
+                </div>
+                <div class="stat-label">
+                  Tổng nguyên giá
+                </div>
               </div>
             </el-col>
-            <el-col :xs="12" :sm="6">
+            <el-col
+              :xs="12"
+              :sm="6"
+            >
               <div class="stat-box">
-                <div class="stat-number">{{ formatCurrency(summaryStats.total_current_value) }}</div>
-                <div class="stat-label">Tổng giá trị còn lại</div>
+                <div class="stat-number">
+                  {{ formatCurrency(summaryStats.total_current_value) }}
+                </div>
+                <div class="stat-label">
+                  Tổng giá trị còn lại
+                </div>
               </div>
             </el-col>
-            <el-col :xs="12" :sm="6">
+            <el-col
+              :xs="12"
+              :sm="6"
+            >
               <div class="stat-box info">
-                <div class="stat-number">{{ summaryStats.total_departments }}</div>
-                <div class="stat-label">Số phòng ban</div>
+                <div class="stat-number">
+                  {{ summaryStats.total_departments }}
+                </div>
+                <div class="stat-label">
+                  Số phòng ban
+                </div>
               </div>
             </el-col>
           </el-row>
@@ -105,47 +186,100 @@
 
         <el-divider />
 
-        <div class="section-title">Báo cáo theo phòng ban</div>
+        <div class="section-title">
+          Báo cáo theo phòng ban
+        </div>
 
         <div class="responsive-table">
-          <el-table :data="reports" v-loading="reportsLoading" stripe>
-            <el-table-column type="index" label="STT" width="60" align="center" />
-            <el-table-column label="Phòng ban" min-width="200">
+          <el-table
+            v-loading="reportsLoading"
+            :data="reports"
+            stripe
+          >
+            <el-table-column
+              type="index"
+              label="STT"
+              width="60"
+              align="center"
+            />
+            <el-table-column
+              label="Phòng ban"
+              min-width="200"
+            >
               <template #default="scope">
                 {{ scope.row.department?.name || '—' }}
               </template>
             </el-table-column>
-            <el-table-column label="Tổng TS" width="90" align="center">
-              <template #default="scope">{{ scope.row.total_assets || 0 }}</template>
+            <el-table-column
+              label="Tổng TS"
+              width="90"
+              align="center"
+            >
+              <template #default="scope">
+                {{ scope.row.total_assets || 0 }}
+              </template>
             </el-table-column>
-            <el-table-column label="Khớp" width="90" align="center">
+            <el-table-column
+              label="Khớp"
+              width="90"
+              align="center"
+            >
               <template #default="scope">
                 <span style="color: #67c23a; font-weight: bold;">{{ scope.row.matched_assets || 0 }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="Thiếu/Mất" width="110" align="center">
+            <el-table-column
+              label="Thiếu/Mất"
+              width="110"
+              align="center"
+            >
               <template #default="scope">
                 <span style="color: #f56c6c; font-weight: bold;">{{ scope.row.missing_assets || 0 }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="Cần sửa" width="100" align="center">
+            <el-table-column
+              label="Cần sửa"
+              width="100"
+              align="center"
+            >
               <template #default="scope">
                 <span style="color: #e6a23c; font-weight: bold;">{{ scope.row.needs_repair_assets || 0 }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="Hỏng/Thanh lý" width="120" align="center">
+            <el-table-column
+              label="Hỏng/Thanh lý"
+              width="120"
+              align="center"
+            >
               <template #default="scope">
                 <span style="color: #f56c6c; font-weight: bold;">{{ scope.row.damaged_assets || 0 }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="Trạng thái" width="150" align="center">
+            <el-table-column
+              label="Trạng thái"
+              width="150"
+              align="center"
+            >
               <template #default="scope">
-                <el-tag :type="statusType(scope.row.status)">{{ statusLabel(scope.row.status) }}</el-tag>
+                <el-tag :type="statusType(scope.row.status)">
+                  {{ statusLabel(scope.row.status) }}
+                </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="Thao tác" width="120" align="center" fixed="right">
+            <el-table-column
+              label="Thao tác"
+              width="120"
+              align="center"
+              fixed="right"
+            >
               <template #default="scope">
-                <el-button type="primary" link @click="openReport(scope.row.id)">Chi tiết</el-button>
+                <el-button
+                  type="primary"
+                  link
+                  @click="openReport(scope.row.id)"
+                >
+                  Chi tiết
+                </el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -153,20 +287,36 @@
 
         <template v-if="round.unsubmitted_departments?.length || round.incomplete_departments?.length">
           <el-divider />
-          <div class="section-title">Thống kê phòng ban chưa nộp báo cáo</div>
+          <div class="section-title">
+            Thống kê phòng ban chưa nộp báo cáo
+          </div>
           <el-row :gutter="20">
-            <el-col :span="12" v-if="round.unsubmitted_departments?.length">
+            <el-col
+              v-if="round.unsubmitted_departments?.length"
+              :span="12"
+            >
               <div class="dept-status-list text-danger">
                 <h4>Chưa thực hiện ({{ round.unsubmitted_departments.length }})</h4>
-                <div v-for="dept in round.unsubmitted_departments" :key="dept.id" class="dept-item">
+                <div
+                  v-for="dept in round.unsubmitted_departments"
+                  :key="dept.id"
+                  class="dept-item"
+                >
                   {{ dept.name }}
                 </div>
               </div>
             </el-col>
-            <el-col :span="12" v-if="round.incomplete_departments?.length">
+            <el-col
+              v-if="round.incomplete_departments?.length"
+              :span="12"
+            >
               <div class="dept-status-list text-warning">
                 <h4>Đang thực hiện / Chờ duyệt ({{ round.incomplete_departments.length }})</h4>
-                <div v-for="dept in round.incomplete_departments" :key="dept.id" class="dept-item">
+                <div
+                  v-for="dept in round.incomplete_departments"
+                  :key="dept.id"
+                  class="dept-item"
+                >
                   {{ dept.name }}
                 </div>
               </div>
@@ -177,9 +327,16 @@
     </el-card>
 
     <!-- Dialog Gia hạn thời gian -->
-    <el-dialog v-model="extendDialogVisible" title="Gia hạn thời gian kiểm kê" width="500px">
+    <el-dialog
+      v-model="extendDialogVisible"
+      title="Gia hạn thời gian kiểm kê"
+      width="500px"
+    >
       <el-form label-width="120px">
-        <el-form-item label="Hạn chót mới" required>
+        <el-form-item
+          label="Hạn chót mới"
+          required
+        >
           <el-date-picker
             v-model="newEndDate"
             type="date"
@@ -193,7 +350,12 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="extendDialogVisible = false">Hủy</el-button>
-          <el-button type="primary" @click="submitExtend" :loading="extendLoading" :disabled="!newEndDate">
+          <el-button
+            type="primary"
+            :loading="extendLoading"
+            :disabled="!newEndDate"
+            @click="submitExtend"
+          >
             Xác nhận
           </el-button>
         </span>

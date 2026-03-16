@@ -3,28 +3,44 @@
     <!-- Header -->
     <div class="page-header">
       <h2>Kiểm kê tài sản</h2>
-      <el-button v-if="isAdmin" type="primary" @click="showCreateRoundDialog = true">
+      <el-button
+        v-if="isAdmin"
+        type="primary"
+        @click="showCreateRoundDialog = true"
+      >
         <el-icon><Plus /></el-icon>
         Tạo đợt kiểm kê mới
       </el-button>
     </div>
 
     <!-- Active Round Alert - Improved for Staff Users -->
-    <el-card v-if="activeRound" class="active-round-card" :class="{ 'has-report': hasMyReport }">
+    <el-card
+      v-if="activeRound"
+      class="active-round-card"
+      :class="{ 'has-report': hasMyReport }"
+    >
       <div class="round-header">
         <div class="round-title-section">
-          <el-icon class="round-icon" :class="hasMyReport ? 'success' : 'warning'">
+          <el-icon
+            class="round-icon"
+            :class="hasMyReport ? 'success' : 'warning'"
+          >
             <InfoFilled v-if="!hasMyReport" />
             <Check v-else />
           </el-icon>
           <div class="round-info-section">
-            <h3 class="round-title">Đang có đợt kiểm kê: {{ activeRound.round_name }}</h3>
+            <h3 class="round-title">
+              Đang có đợt kiểm kê: {{ activeRound.round_name }}
+            </h3>
             <div class="round-meta">
               <span class="meta-item">
                 <el-icon><Calendar /></el-icon>
                 {{ formatDate(activeRound.start_date) }} - {{ formatDate(activeRound.end_date) }}
               </span>
-              <span v-if="isAdminOrDirector" class="meta-item">
+              <span
+                v-if="isAdminOrDirector"
+                class="meta-item"
+              >
                 <el-icon><TrendCharts /></el-icon>
                 Tiến độ: {{ (activeRound as any).completed_reports || activeRound.completed_departments || 0 }}/{{ activeRound.total_departments || 0 }} phòng ban
               </span>
@@ -32,7 +48,11 @@
           </div>
         </div>
         <div class="round-actions">
-          <el-button v-if="isAdminOrDirector" type="primary" @click="goToActiveRound">
+          <el-button
+            v-if="isAdminOrDirector"
+            type="primary"
+            @click="goToActiveRound"
+          >
             <el-icon><View /></el-icon>
             Xem chi tiết
           </el-button>
@@ -40,8 +60,8 @@
             v-if="canStartInventory && !hasMyReport && activeRound" 
             type="success" 
             size="large"
-            @click="startInventory"
             class="start-inventory-btn"
+            @click="startInventory"
           >
             <el-icon><Plus /></el-icon>
             Bắt đầu kiểm kê đơn vị
@@ -50,8 +70,8 @@
             v-if="canStartInventory && hasMyReport" 
             type="primary" 
             size="large"
-            @click="goToMyReport"
             class="continue-inventory-btn"
+            @click="goToMyReport"
           >
             <el-icon><Document /></el-icon>
             Tiếp tục kiểm kê
@@ -60,19 +80,43 @@
       </div>
       
       <!-- Instructions for Staff Users -->
-      <div v-if="canStartInventory && !hasMyReport" class="instructions-section">
+      <div
+        v-if="canStartInventory && !hasMyReport"
+        class="instructions-section"
+      >
         <el-divider>
           <el-icon><QuestionFilled /></el-icon>
           Hướng dẫn thực hiện kiểm kê
         </el-divider>
-        <el-steps :active="0" finish-status="success" align-center class="inventory-steps">
-          <el-step title="Bắt đầu kiểm kê" description="Nhấn nút 'Bắt đầu kiểm kê đơn vị' ở trên" />
-          <el-step title="Quét mã tài sản" description="Sử dụng camera hoặc nhập mã tài sản để kiểm kê" />
-          <el-step title="Nhập kết quả" description="Điền số lượng thực tế và tình trạng tài sản" />
-          <el-step title="Nộp báo cáo" description="Kiểm tra lại và nộp báo cáo cho trưởng phòng duyệt" />
+        <el-steps
+          :active="0"
+          finish-status="success"
+          align-center
+          class="inventory-steps"
+        >
+          <el-step
+            title="Bắt đầu kiểm kê"
+            description="Nhấn nút 'Bắt đầu kiểm kê đơn vị' ở trên"
+          />
+          <el-step
+            title="Quét mã tài sản"
+            description="Sử dụng camera hoặc nhập mã tài sản để kiểm kê"
+          />
+          <el-step
+            title="Nhập kết quả"
+            description="Điền số lượng thực tế và tình trạng tài sản"
+          />
+          <el-step
+            title="Nộp báo cáo"
+            description="Kiểm tra lại và nộp báo cáo cho trưởng phòng duyệt"
+          />
         </el-steps>
         <div class="instruction-tips">
-          <el-alert type="info" :closable="false" show-icon>
+          <el-alert
+            type="info"
+            :closable="false"
+            show-icon
+          >
             <template #title>
               <strong>Lưu ý quan trọng:</strong>
             </template>
@@ -87,8 +131,15 @@
       </div>
       
       <!-- Status for users who already have report -->
-      <div v-if="canStartInventory && hasMyReport" class="report-status-section">
-        <el-alert type="success" :closable="false" show-icon>
+      <div
+        v-if="canStartInventory && hasMyReport"
+        class="report-status-section"
+      >
+        <el-alert
+          type="success"
+          :closable="false"
+          show-icon
+        >
           <template #title>
             <strong>Bạn đã bắt đầu kiểm kê</strong>
           </template>
@@ -109,50 +160,89 @@
     />
 
     <!-- Tabs -->
-    <el-tabs v-model="activeTab" class="inventory-tabs">
+    <el-tabs
+      v-model="activeTab"
+      class="inventory-tabs"
+    >
       <!-- Tab: Danh sách đợt kiểm kê -->
-      <el-tab-pane label="Đợt kiểm kê" name="rounds">
+      <el-tab-pane
+        label="Đợt kiểm kê"
+        name="rounds"
+      >
         <div class="responsive-table">
-          <el-table :data="rounds" v-loading="loadingRounds" stripe>
-          <el-table-column prop="round_year" label="Năm" width="80" align="center" />
-          <el-table-column prop="round_name" label="Tên đợt kiểm kê" min-width="200" />
-          <el-table-column label="Thời gian" width="220">
-            <template #default="{ row }">
-              {{ formatDate(row.start_date) }} - {{ formatDate(row.end_date) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="Tiến độ" width="150" align="center">
-            <template #default="{ row }">
-              <el-progress 
-                :percentage="calculateProgress(row)" 
-                :status="row.status === 'completed' ? 'success' : ''"
-              />
-              <span class="progress-text">{{ getCompletedCount(row) }}/{{ getTotalCount(row) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="status" label="Trạng thái" width="120" align="center">
-            <template #default="{ row }">
-              <el-tag :type="getStatusTagType(row)">
-                {{ getRoundStatusLabel(row) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="Thao tác" width="150" align="center">
-            <template #default="{ row }">
-              <el-button type="primary" link @click="viewRoundDetail(row)">
-                Chi tiết
-              </el-button>
-              <el-button 
-                v-if="isAdmin && row.status === 'in_progress'" 
-                type="success" 
-                link
-                @click="completeRound(row)"
-              >
-                Hoàn tất
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+          <el-table
+            v-loading="loadingRounds"
+            :data="rounds"
+            stripe
+          >
+            <el-table-column
+              prop="round_year"
+              label="Năm"
+              width="80"
+              align="center"
+            />
+            <el-table-column
+              prop="round_name"
+              label="Tên đợt kiểm kê"
+              min-width="200"
+            />
+            <el-table-column
+              label="Thời gian"
+              width="220"
+            >
+              <template #default="{ row }">
+                {{ formatDate(row.start_date) }} - {{ formatDate(row.end_date) }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Tiến độ"
+              width="150"
+              align="center"
+            >
+              <template #default="{ row }">
+                <el-progress 
+                  :percentage="calculateProgress(row)" 
+                  :status="row.status === 'completed' ? 'success' : ''"
+                />
+                <span class="progress-text">{{ getCompletedCount(row) }}/{{ getTotalCount(row) }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="status"
+              label="Trạng thái"
+              width="120"
+              align="center"
+            >
+              <template #default="{ row }">
+                <el-tag :type="getStatusTagType(row)">
+                  {{ getRoundStatusLabel(row) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Thao tác"
+              width="150"
+              align="center"
+            >
+              <template #default="{ row }">
+                <el-button
+                  type="primary"
+                  link
+                  @click="viewRoundDetail(row)"
+                >
+                  Chi tiết
+                </el-button>
+                <el-button 
+                  v-if="isAdmin && row.status === 'in_progress'" 
+                  type="success" 
+                  link
+                  @click="completeRound(row)"
+                >
+                  Hoàn tất
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
         </div>
 
         <el-pagination
@@ -161,17 +251,25 @@
           :total="roundsTotal"
           :page-sizes="[10, 20, 50]"
           layout="total, sizes, prev, pager, next"
+          class="pagination"
           @size-change="fetchRounds"
           @current-change="fetchRounds"
-          class="pagination"
         />
       </el-tab-pane>
 
       <!-- Tab: Báo cáo kiểm kê -->
-      <el-tab-pane label="Báo cáo kiểm kê" name="reports">
+      <el-tab-pane
+        label="Báo cáo kiểm kê"
+        name="reports"
+      >
         <!-- Filters -->
         <div class="filters">
-          <el-select v-model="reportFilters.round_id" placeholder="Chọn đợt kiểm kê" clearable @change="fetchReports">
+          <el-select
+            v-model="reportFilters.round_id"
+            placeholder="Chọn đợt kiểm kê"
+            clearable
+            @change="fetchReports"
+          >
             <el-option
               v-for="round in rounds"
               :key="round.id"
@@ -179,94 +277,175 @@
               :value="round.id"
             />
           </el-select>
-          <el-select v-model="reportFilters.status" placeholder="Trạng thái" clearable @change="fetchReports">
-            <el-option label="Bản nháp" value="draft" />
-            <el-option label="Chờ duyệt" value="pending" />
-            <el-option label="Trưởng Đơn vị đã duyệt" value="approved_by_head" />
-            <el-option label="Hoàn thành" value="completed" />
-            <el-option label="Trưởng Đơn vị từ chối" value="rejected_by_head" />
-            <el-option label="Quản trị viên từ chối" value="rejected_by_admin" />
+          <el-select
+            v-model="reportFilters.status"
+            placeholder="Trạng thái"
+            clearable
+            @change="fetchReports"
+          >
+            <el-option
+              label="Bản nháp"
+              value="draft"
+            />
+            <el-option
+              label="Chờ duyệt"
+              value="pending"
+            />
+            <el-option
+              label="Trưởng Đơn vị đã duyệt"
+              value="approved_by_head"
+            />
+            <el-option
+              label="Hoàn thành"
+              value="completed"
+            />
+            <el-option
+              label="Trưởng Đơn vị từ chối"
+              value="rejected_by_head"
+            />
+            <el-option
+              label="Quản trị viên từ chối"
+              value="rejected_by_admin"
+            />
           </el-select>
         </div>
 
         <div class="responsive-table">
           <el-table 
-            :data="reports" 
             v-loading="loadingReports" 
+            :data="reports" 
             stripe
             class="reports-table"
           >
-          <el-table-column prop="department.name" label="Phòng ban" min-width="150" />
-          <el-table-column label="Tổng TS" width="80" align="center">
-            <template #default="{ row }">{{ row.total_assets || 0 }}</template>
-          </el-table-column>
-          <el-table-column label="Khớp" width="70" align="center">
-            <template #default="{ row }">
-              <span class="text-success">{{ row.matched_assets || 0 }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="Thiếu" width="70" align="center">
-            <template #default="{ row }">
-              <span class="text-danger">{{ row.missing_assets || 0 }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="Hỏng" width="70" align="center">
-            <template #default="{ row }">
-              <span class="text-danger">{{ row.damaged_assets || 0 }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="status" label="Trạng thái" width="130" align="center">
-            <template #default="{ row }">
-              <el-tag :type="getStatusType(row.status)">
-                {{ getStatusLabel(row.status) }}
-              </el-tag>
-              <div v-if="row.rejection_count && row.rejection_count > 0" class="rejection-info">
-                <el-tag type="danger" size="small" style="margin-top: 4px">
-                  Đã từ chối {{ row.rejection_count }} lần
+            <el-table-column
+              prop="department.name"
+              label="Phòng ban"
+              min-width="150"
+            />
+            <el-table-column
+              label="Tổng TS"
+              width="80"
+              align="center"
+            >
+              <template #default="{ row }">
+                {{ row.total_assets || 0 }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Khớp"
+              width="70"
+              align="center"
+            >
+              <template #default="{ row }">
+                <span class="text-success">{{ row.matched_assets || 0 }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Thiếu"
+              width="70"
+              align="center"
+            >
+              <template #default="{ row }">
+                <span class="text-danger">{{ row.missing_assets || 0 }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Hỏng"
+              width="70"
+              align="center"
+            >
+              <template #default="{ row }">
+                <span class="text-danger">{{ row.damaged_assets || 0 }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="status"
+              label="Trạng thái"
+              width="130"
+              align="center"
+            >
+              <template #default="{ row }">
+                <el-tag :type="getStatusType(row.status)">
+                  {{ getStatusLabel(row.status) }}
                 </el-tag>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column label="Thông tin từ chối" width="200" v-if="isAdminOrDirector">
-            <template #default="{ row }">
-              <div v-if="row.status === 'rejected_by_head' || row.status === 'rejected_by_admin'">
-                <div v-if="row.rejection_reason" class="rejection-reason">
-                  <strong>Lý do:</strong> {{ row.rejection_reason }}
+                <div
+                  v-if="row.rejection_count && row.rejection_count > 0"
+                  class="rejection-info"
+                >
+                  <el-tag
+                    type="danger"
+                    size="small"
+                    style="margin-top: 4px"
+                  >
+                    Đã từ chối {{ row.rejection_count }} lần
+                  </el-tag>
                 </div>
-                <div v-if="row.head_approved_at && row.status === 'rejected_by_head'" class="rejection-time">
-                  <small>{{ formatDateTime(row.head_approved_at) }}</small>
+              </template>
+            </el-table-column>
+            <el-table-column
+              v-if="isAdminOrDirector"
+              label="Thông tin từ chối"
+              width="200"
+            >
+              <template #default="{ row }">
+                <div v-if="row.status === 'rejected_by_head' || row.status === 'rejected_by_admin'">
+                  <div
+                    v-if="row.rejection_reason"
+                    class="rejection-reason"
+                  >
+                    <strong>Lý do:</strong> {{ row.rejection_reason }}
+                  </div>
+                  <div
+                    v-if="row.head_approved_at && row.status === 'rejected_by_head'"
+                    class="rejection-time"
+                  >
+                    <small>{{ formatDateTime(row.head_approved_at) }}</small>
+                  </div>
+                  <div
+                    v-if="row.admin_approved_at && row.status === 'rejected_by_admin'"
+                    class="rejection-time"
+                  >
+                    <small>{{ formatDateTime(row.admin_approved_at) }}</small>
+                  </div>
                 </div>
-                <div v-if="row.admin_approved_at && row.status === 'rejected_by_admin'" class="rejection-time">
-                  <small>{{ formatDateTime(row.admin_approved_at) }}</small>
-                </div>
-              </div>
-              <span v-else class="text-muted">-</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="Thao tác" width="200" align="center">
-            <template #default="{ row }">
-              <el-button type="primary" link @click="viewReportDetail(row)">
-                Chi tiết
-              </el-button>
-              <el-button 
-                v-if="row.status === 'draft'" 
-                type="success" 
-                link
-                @click="editReport(row)"
-              >
-                Tiếp tục
-              </el-button>
-              <el-button 
-                v-if="canApprove(row)" 
-                type="warning" 
-                link
-                @click="openApproveDialog(row)"
-              >
-                Duyệt
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+                <span
+                  v-else
+                  class="text-muted"
+                >-</span>
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Thao tác"
+              width="200"
+              align="center"
+            >
+              <template #default="{ row }">
+                <el-button
+                  type="primary"
+                  link
+                  @click="viewReportDetail(row)"
+                >
+                  Chi tiết
+                </el-button>
+                <el-button 
+                  v-if="row.status === 'draft'" 
+                  type="success" 
+                  link
+                  @click="editReport(row)"
+                >
+                  Tiếp tục
+                </el-button>
+                <el-button 
+                  v-if="canApprove(row)" 
+                  type="warning" 
+                  link
+                  @click="openApproveDialog(row)"
+                >
+                  Duyệt
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
         </div>
 
         <el-pagination
@@ -275,67 +454,147 @@
           :total="reportsTotal"
           :page-sizes="[10, 20, 50]"
           layout="total, sizes, prev, pager, next"
+          class="pagination"
           @size-change="fetchReports"
           @current-change="fetchReports"
-          class="pagination"
         />
       </el-tab-pane>
     </el-tabs>
 
     <!-- Dialog: Tạo đợt kiểm kê -->
-    <el-dialog v-model="showCreateRoundDialog" title="Tạo đợt kiểm kê mới" width="500">
-      <el-form :model="newRound" :rules="roundRules" ref="roundFormRef" label-width="140px">
-        <el-form-item label="Năm kiểm kê" prop="round_year">
-          <el-input-number v-model="newRound.round_year" :min="2020" :max="2100" />
+    <el-dialog
+      v-model="showCreateRoundDialog"
+      title="Tạo đợt kiểm kê mới"
+      width="500"
+    >
+      <el-form
+        ref="roundFormRef"
+        :model="newRound"
+        :rules="roundRules"
+        label-width="140px"
+      >
+        <el-form-item
+          label="Năm kiểm kê"
+          prop="round_year"
+        >
+          <el-input-number
+            v-model="newRound.round_year"
+            :min="2020"
+            :max="2100"
+          />
         </el-form-item>
-        <el-form-item label="Tên đợt kiểm kê" prop="round_name">
-          <el-input v-model="newRound.round_name" placeholder="VD: Kiểm kê tài sản năm 2026" />
+        <el-form-item
+          label="Tên đợt kiểm kê"
+          prop="round_name"
+        >
+          <el-input
+            v-model="newRound.round_name"
+            placeholder="VD: Kiểm kê tài sản năm 2026"
+          />
         </el-form-item>
-        <el-form-item label="Thời gian bắt đầu" prop="start_date">
-          <el-date-picker v-model="newRound.start_date" type="date" placeholder="Chọn ngày" />
+        <el-form-item
+          label="Thời gian bắt đầu"
+          prop="start_date"
+        >
+          <el-date-picker
+            v-model="newRound.start_date"
+            type="date"
+            placeholder="Chọn ngày"
+          />
         </el-form-item>
-        <el-form-item label="Thời gian kết thúc" prop="end_date">
-          <el-date-picker v-model="newRound.end_date" type="date" placeholder="Chọn ngày" />
+        <el-form-item
+          label="Thời gian kết thúc"
+          prop="end_date"
+        >
+          <el-date-picker
+            v-model="newRound.end_date"
+            type="date"
+            placeholder="Chọn ngày"
+          />
         </el-form-item>
         <el-form-item label="Mô tả">
-          <el-input v-model="newRound.description" type="textarea" :rows="3" />
+          <el-input
+            v-model="newRound.description"
+            type="textarea"
+            :rows="3"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showCreateRoundDialog = false">Hủy</el-button>
-        <el-button type="primary" @click="createRound" :loading="creating">Tạo đợt kiểm kê</el-button>
+        <el-button @click="showCreateRoundDialog = false">
+          Hủy
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="creating"
+          @click="createRound"
+        >
+          Tạo đợt kiểm kê
+        </el-button>
       </template>
     </el-dialog>
 
     <!-- Dialog: Duyệt báo cáo -->
-    <el-dialog v-model="showApproveDialog" title="Duyệt báo cáo kiểm kê" width="800">
+    <el-dialog
+      v-model="showApproveDialog"
+      title="Duyệt báo cáo kiểm kê"
+      width="800"
+    >
       <div v-if="selectedReport">
         <div class="approve-header">
           <h3>Phòng ban: <strong>{{ selectedReport.department?.name }}</strong></h3>
           <div class="approve-stats">
             <el-row :gutter="16">
-              <el-col :xs="12" :sm="6">
+              <el-col
+                :xs="12"
+                :sm="6"
+              >
                 <div class="stat-box success">
-                  <div class="stat-number">{{ selectedReport.matched_assets || 0 }}</div>
-                  <div class="stat-text">Khớp (Còn tồn tại)</div>
+                  <div class="stat-number">
+                    {{ selectedReport.matched_assets || 0 }}
+                  </div>
+                  <div class="stat-text">
+                    Khớp (Còn tồn tại)
+                  </div>
                 </div>
               </el-col>
-              <el-col :xs="12" :sm="6">
+              <el-col
+                :xs="12"
+                :sm="6"
+              >
                 <div class="stat-box danger">
-                  <div class="stat-number">{{ selectedReport.missing_assets || 0 }}</div>
-                  <div class="stat-text">Thiếu (Mất)</div>
+                  <div class="stat-number">
+                    {{ selectedReport.missing_assets || 0 }}
+                  </div>
+                  <div class="stat-text">
+                    Thiếu (Mất)
+                  </div>
                 </div>
               </el-col>
-              <el-col :xs="12" :sm="6">
+              <el-col
+                :xs="12"
+                :sm="6"
+              >
                 <div class="stat-box danger">
-                  <div class="stat-number">{{ selectedReport.damaged_assets || 0 }}</div>
-                  <div class="stat-text">Hỏng/Cần xử lý</div>
+                  <div class="stat-number">
+                    {{ selectedReport.damaged_assets || 0 }}
+                  </div>
+                  <div class="stat-text">
+                    Hỏng/Cần xử lý
+                  </div>
                 </div>
               </el-col>
-              <el-col :xs="12" :sm="6">
+              <el-col
+                :xs="12"
+                :sm="6"
+              >
                 <div class="stat-box">
-                  <div class="stat-number">{{ selectedReport.total_assets || 0 }}</div>
-                  <div class="stat-text">Tổng tài sản</div>
+                  <div class="stat-number">
+                    {{ selectedReport.total_assets || 0 }}
+                  </div>
+                  <div class="stat-text">
+                    Tổng tài sản
+                  </div>
                 </div>
               </el-col>
             </el-row>
@@ -382,28 +641,54 @@
           </el-alert>
         </div>
 
-        <el-form :model="approveData" label-width="100px" class="approve-form">
+        <el-form
+          :model="approveData"
+          label-width="100px"
+          class="approve-form"
+        >
           <el-form-item label="Quyết định">
             <el-radio-group v-model="approveData.approved">
-              <el-radio :value="true">Phê duyệt</el-radio>
-              <el-radio :value="false">Từ chối</el-radio>
+              <el-radio :value="true">
+                Phê duyệt
+              </el-radio>
+              <el-radio :value="false">
+                Từ chối
+              </el-radio>
             </el-radio-group>
           </el-form-item>
-          <el-form-item v-if="!approveData.approved" label="Lý do">
-            <el-input v-model="approveData.rejection_reason" type="textarea" :rows="3" placeholder="Nhập lý do từ chối..." />
+          <el-form-item
+            v-if="!approveData.approved"
+            label="Lý do"
+          >
+            <el-input
+              v-model="approveData.rejection_reason"
+              type="textarea"
+              :rows="3"
+              placeholder="Nhập lý do từ chối..."
+            />
           </el-form-item>
         </el-form>
 
         <div class="approve-actions-hint">
-          <el-button type="primary" link @click="viewReportDetail(selectedReport)">
+          <el-button
+            type="primary"
+            link
+            @click="viewReportDetail(selectedReport)"
+          >
             <el-icon><View /></el-icon>
             Xem chi tiết báo cáo để biết danh sách tài sản mất và cần thanh lý
           </el-button>
         </div>
       </div>
       <template #footer>
-        <el-button @click="showApproveDialog = false">Hủy</el-button>
-        <el-button :type="approveData.approved ? 'success' : 'danger'" @click="approveReport" :loading="approving">
+        <el-button @click="showApproveDialog = false">
+          Hủy
+        </el-button>
+        <el-button
+          :type="approveData.approved ? 'success' : 'danger'"
+          :loading="approving"
+          @click="approveReport"
+        >
           {{ approveData.approved ? 'Phê duyệt' : 'Từ chối' }}
         </el-button>
       </template>
@@ -414,6 +699,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus, Document, InfoFilled, Check, Calendar, TrendCharts, View, QuestionFilled } from '@element-plus/icons-vue';
 import { useAuthStore } from '@/stores/auth.store';
@@ -421,6 +707,7 @@ import inventoryService, { type InventoryRound, type InventoryReport } from '@/s
 
 const router = useRouter();
 const authStore = useAuthStore();
+const { t } = useI18n();
 
 const isAdmin = computed(() => authStore.user?.role === 'admin');
 const isAdminOrDirector = computed(() => {
@@ -863,16 +1150,9 @@ const getStatusType = (status: string) => {
 };
 
 const getStatusLabel = (status: string) => {
-  const labels: Record<string, string> = {
-    draft: 'Bản nháp',
-    pending: 'Chờ duyệt',
-    approved_by_head: 'Trưởng Đơn vị đã duyệt',
-    approved_by_admin: 'Quản trị viên đã duyệt',
-    completed: 'Hoàn thành',
-    rejected_by_head: 'Trưởng Đơn vị từ chối',
-    rejected_by_admin: 'Quản trị viên từ chối',
-  };
-  return labels[status] || status;
+  const key = `inventory.reportStatus.${status}`;
+  const v = t(key);
+  return v !== key ? v : status;
 };
 
 onMounted(() => {

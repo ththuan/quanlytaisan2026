@@ -4,8 +4,6 @@ import { MaintenanceRequest, AssetTransfer } from '../models';
 
 type UserPayload = { id: number; role: string; department_id?: number };
 
-type AuthenticatedRequest = Request & { user?: UserPayload };
-
 type RequestWithUser = Request & { user?: UserPayload };
 
 export type UserRole = 'admin' | 'director' | 'department_head' | 'staff';

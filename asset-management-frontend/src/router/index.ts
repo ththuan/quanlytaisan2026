@@ -30,7 +30,7 @@ const routes: RouteRecordRaw[] = [
         path: '/assets/:id',
         name: 'AssetDetail',
         component: () => import('@/views/Assets/AssetDetail.vue'),
-        meta: { titleKey: 'assets.assetDetail' },
+        meta: { titleKey: 'assets.assetDetail', breadcrumbParent: { path: '/assets', titleKey: 'menu.assets' } },
       },
       {
         path: '/departments',
@@ -96,7 +96,7 @@ const routes: RouteRecordRaw[] = [
         path: '/inventory/rounds/:id',
         name: 'InventoryRoundDetail',
         component: () => import('@/views/Inventory/InventoryRoundDetail.vue'),
-        meta: { titleKey: 'inventory.roundDetail' },
+        meta: { titleKey: 'inventory.roundDetail', breadcrumbParent: { path: '/inventory', titleKey: 'inventory.title' } },
       },
       {
         path: '/inventory/conduct',
@@ -108,7 +108,7 @@ const routes: RouteRecordRaw[] = [
         path: '/inventory/reports/:id',
         name: 'InventoryReportDetail',
         component: () => import('@/views/Inventory/InventoryReportDetail.vue'),
-        meta: { titleKey: 'inventory.reportDetail' },
+        meta: { titleKey: 'inventory.reportDetail', breadcrumbParent: { path: '/inventory', titleKey: 'inventory.title' } },
       },
       {
         path: '/asset-disposals',

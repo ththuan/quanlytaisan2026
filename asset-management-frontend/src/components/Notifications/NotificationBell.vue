@@ -8,7 +8,11 @@
       popper-class="notification-popover"
     >
       <template #reference>
-        <el-badge :value="unreadCount" :hidden="unreadCount === 0" :max="99">
+        <el-badge
+          :value="unreadCount"
+          :hidden="unreadCount === 0"
+          :max="99"
+        >
           <el-button
             :icon="Bell"
             circle
@@ -30,9 +34,18 @@
           </el-button>
         </div>
 
-        <div class="notification-list" v-loading="notificationStore.loading">
-          <div v-if="notificationStore.notifications.length === 0" class="empty-notifications">
-            <el-empty description="Không có thông báo mới" :image-size="80" />
+        <div
+          v-loading="notificationStore.loading"
+          class="notification-list"
+        >
+          <div
+            v-if="notificationStore.notifications.length === 0"
+            class="empty-notifications"
+          >
+            <el-empty
+              description="Không có thông báo mới"
+              :image-size="80"
+            />
           </div>
 
           <div
@@ -41,17 +54,36 @@
             class="notification-item"
             @click="handleNotificationClick(notification)"
           >
-            <div class="notification-icon" :class="`icon-${notification.type}`">
-              <el-icon v-if="notification.type === 'transfer'"><Switch /></el-icon>
-              <el-icon v-else-if="notification.type === 'maintenance'"><Tools /></el-icon>
-              <el-icon v-else-if="notification.type === 'inventory'"><List /></el-icon>
-              <el-icon v-else-if="notification.type === 'disposal'"><DeleteFilled /></el-icon>
-              <el-icon v-else><Document /></el-icon>
+            <div
+              class="notification-icon"
+              :class="`icon-${notification.type}`"
+            >
+              <el-icon v-if="notification.type === 'transfer'">
+                <Switch />
+              </el-icon>
+              <el-icon v-else-if="notification.type === 'maintenance'">
+                <Tools />
+              </el-icon>
+              <el-icon v-else-if="notification.type === 'inventory'">
+                <List />
+              </el-icon>
+              <el-icon v-else-if="notification.type === 'disposal'">
+                <DeleteFilled />
+              </el-icon>
+              <el-icon v-else>
+                <Document />
+              </el-icon>
             </div>
             <div class="notification-content">
-              <div class="notification-title">{{ notification.title }}</div>
-              <div class="notification-message">{{ notification.message }}</div>
-              <div class="notification-time">{{ formatTime(notification.created_at) }}</div>
+              <div class="notification-title">
+                {{ notification.title }}
+              </div>
+              <div class="notification-message">
+                {{ notification.message }}
+              </div>
+              <div class="notification-time">
+                {{ formatTime(notification.created_at) }}
+              </div>
             </div>
             <div class="notification-actions">
               <el-button
@@ -64,8 +96,16 @@
           </div>
         </div>
 
-        <div class="notification-footer" v-if="notificationStore.notifications.length > 0">
-          <el-button text @click="viewAll">Xem tất cả</el-button>
+        <div
+          v-if="notificationStore.notifications.length > 0"
+          class="notification-footer"
+        >
+          <el-button
+            text
+            @click="viewAll"
+          >
+            Xem tất cả
+          </el-button>
         </div>
       </div>
     </el-popover>

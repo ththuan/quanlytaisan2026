@@ -1,9 +1,9 @@
 <template>
   <el-dialog
     :model-value="visible"
-    @update:model-value="$emit('update:visible', $event)"
     width="900px"
     :close-on-click-modal="false"
+    @update:model-value="$emit('update:visible', $event)"
   >
     <template #header>
       <div class="dialog-header">
@@ -12,20 +12,30 @@
           :icon="Refresh"
           circle
           size="small"
-          @click="fetchMaintenanceData"
           :loading="loading"
           style="margin-left: 10px;"
           title="Tải lại dữ liệu"
+          @click="fetchMaintenanceData"
         />
       </div>
     </template>
     <div v-loading="loading">
       <!-- Procurement Request Details -->
-      <el-descriptions :column="2" border v-if="maintenanceData && maintenanceData.request_type === 'procurement'">
-        <el-descriptions-item label="Tên thiết bị" :span="2">
+      <el-descriptions
+        v-if="maintenanceData && maintenanceData.request_type === 'procurement'"
+        :column="2"
+        border
+      >
+        <el-descriptions-item
+          label="Tên thiết bị"
+          :span="2"
+        >
           <strong>{{ maintenanceData.device_name || '-' }}</strong>
         </el-descriptions-item>
-        <el-descriptions-item label="Đơn vị sử dụng trực tiếp" :span="2">
+        <el-descriptions-item
+          label="Đơn vị sử dụng trực tiếp"
+          :span="2"
+        >
           {{ maintenanceData.department?.name || '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="Số lượng">
@@ -40,19 +50,40 @@
         <el-descriptions-item label="Thành tiền">
           <strong>{{ maintenanceData.total_price ? formatCurrency(maintenanceData.total_price) : formatCurrency((maintenanceData.quantity || 0) * (maintenanceData.unit_price || 0)) }}</strong>
         </el-descriptions-item>
-        <el-descriptions-item label="Tính năng kỹ thuật" :span="2">
+        <el-descriptions-item
+          label="Tính năng kỹ thuật"
+          :span="2"
+        >
           {{ maintenanceData.technical_specs || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="Thuyết minh nhu cầu" :span="2">
+        <el-descriptions-item
+          label="Thuyết minh nhu cầu"
+          :span="2"
+        >
           {{ maintenanceData.justification || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="Link sản phẩm" :span="2" v-if="maintenanceData.product_link">
-          <el-link :href="maintenanceData.product_link" target="_blank" type="primary">
+        <el-descriptions-item
+          v-if="maintenanceData.product_link"
+          label="Link sản phẩm"
+          :span="2"
+        >
+          <el-link
+            :href="maintenanceData.product_link"
+            target="_blank"
+            type="primary"
+          >
             {{ maintenanceData.product_link }}
-            <i class="el-icon-right" style="margin-left: 4px;"></i>
+            <i
+              class="el-icon-right"
+              style="margin-left: 4px;"
+            />
           </el-link>
         </el-descriptions-item>
-        <el-descriptions-item label="Hình ảnh sản phẩm" :span="2" v-if="maintenanceData.product_image">
+        <el-descriptions-item
+          v-if="maintenanceData.product_image"
+          label="Hình ảnh sản phẩm"
+          :span="2"
+        >
           <el-image
             :src="maintenanceData.product_image"
             :preview-src-list="[maintenanceData.product_image]"
@@ -77,29 +108,54 @@
           {{ formatDate(createdDate) }}
         </el-descriptions-item>
         <!-- Approval dates -->
-        <el-descriptions-item label="Trưởng Đơn vị duyệt" v-if="maintenanceData.head_approved_at">
+        <el-descriptions-item
+          v-if="maintenanceData.head_approved_at"
+          label="Trưởng Đơn vị duyệt"
+        >
           {{ formatDate(maintenanceData.head_approved_at) }}
-          <span v-if="maintenanceData.headApprover" style="color: #909399; margin-left: 8px;">
+          <span
+            v-if="maintenanceData.headApprover"
+            style="color: #909399; margin-left: 8px;"
+          >
             ({{ maintenanceData.headApprover?.fullname || maintenanceData.headApprover?.username }})
           </span>
         </el-descriptions-item>
-        <el-descriptions-item label="Quản trị viên duyệt" v-if="maintenanceData.admin_approved_at">
+        <el-descriptions-item
+          v-if="maintenanceData.admin_approved_at"
+          label="Quản trị viên duyệt"
+        >
           {{ formatDate(maintenanceData.admin_approved_at) }}
-          <span v-if="maintenanceData.adminApprover" style="color: #909399; margin-left: 8px;">
+          <span
+            v-if="maintenanceData.adminApprover"
+            style="color: #909399; margin-left: 8px;"
+          >
             ({{ maintenanceData.adminApprover?.fullname || maintenanceData.adminApprover?.username }})
           </span>
         </el-descriptions-item>
-        <el-descriptions-item label="Giám hiệu duyệt" v-if="maintenanceData.director_approved_at">
+        <el-descriptions-item
+          v-if="maintenanceData.director_approved_at"
+          label="Giám hiệu duyệt"
+        >
           {{ formatDate(maintenanceData.director_approved_at) }}
-          <span v-if="maintenanceData.directorApprover" style="color: #909399; margin-left: 8px;">
+          <span
+            v-if="maintenanceData.directorApprover"
+            style="color: #909399; margin-left: 8px;"
+          >
             ({{ maintenanceData.directorApprover?.fullname || maintenanceData.directorApprover?.username }})
           </span>
         </el-descriptions-item>
       </el-descriptions>
 
       <!-- Repair Request Details (request_type='repair') -->
-      <el-descriptions :column="2" border v-if="maintenanceData && maintenanceData.request_type === 'repair'">
-        <el-descriptions-item label="Tên tài sản" :span="2">
+      <el-descriptions
+        v-if="maintenanceData && maintenanceData.request_type === 'repair'"
+        :column="2"
+        border
+      >
+        <el-descriptions-item
+          label="Tên tài sản"
+          :span="2"
+        >
           <strong>{{ maintenanceData.asset?.name || '-' }}</strong>
         </el-descriptions-item>
         <el-descriptions-item label="Mã tài sản">
@@ -116,14 +172,26 @@
         <el-descriptions-item label="Giá trị còn lại">
           {{ formatCurrency(maintenanceData.asset?.residual_value ?? maintenanceData.asset?.current_value) }}
         </el-descriptions-item>
-        <el-descriptions-item label="Đơn vị sử dụng trực tiếp" :span="2">
+        <el-descriptions-item
+          label="Đơn vị sử dụng trực tiếp"
+          :span="2"
+        >
           {{ maintenanceData.department?.name || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="Thuyết minh nhu cầu sửa chữa" :span="2">
+        <el-descriptions-item
+          label="Thuyết minh nhu cầu sửa chữa"
+          :span="2"
+        >
           {{ maintenanceData.description || maintenanceData.justification || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="Hình ảnh minh họa tình trạng hư hỏng" :span="2">
-          <div v-if="hasDamageImages" class="damage-images-display">
+        <el-descriptions-item
+          label="Hình ảnh minh họa tình trạng hư hỏng"
+          :span="2"
+        >
+          <div
+            v-if="hasDamageImages"
+            class="damage-images-display"
+          >
             <!-- Hiển thị từ association damageImages (ưu tiên) -->
             <template v-if="maintenanceData.damageImages && maintenanceData.damageImages.length > 0">
               <!-- Cảnh báo nếu có ảnh trong DB nhưng file bị mất trên disk -->
@@ -135,7 +203,11 @@
                 show-icon
                 style="margin-bottom: 8px;"
               />
-              <div class="damage-image-wrapper" v-for="image in maintenanceData.damageImages" :key="image.id">
+              <div
+                v-for="image in maintenanceData.damageImages"
+                :key="image.id"
+                class="damage-image-wrapper"
+              >
                 <!-- Ảnh hợp lệ: file tồn tại trên disk -->
                 <el-image
                   v-if="image.file_exists !== false"
@@ -148,14 +220,21 @@
                 >
                   <template #error>
                     <div class="damage-image-error">
-                      <el-icon size="24"><Picture /></el-icon>
+                      <el-icon size="24">
+                        <Picture />
+                      </el-icon>
                       <span>Không tải được ảnh</span>
                     </div>
                   </template>
                 </el-image>
                 <!-- Ảnh bị mất trên disk -->
-                <div v-else class="damage-image-missing">
-                  <el-icon size="24"><Picture /></el-icon>
+                <div
+                  v-else
+                  class="damage-image-missing"
+                >
+                  <el-icon size="24">
+                    <Picture />
+                  </el-icon>
                   <span>File kông tồn tại</span>
                   <span style="font-size:11px;color:#c0c4cc;">(ID {{ image.id }})</span>
                 </div>
@@ -175,7 +254,9 @@
               >
                 <template #error>
                   <div class="damage-image-error">
-                    <el-icon size="24"><Picture /></el-icon>
+                    <el-icon size="24">
+                      <Picture />
+                    </el-icon>
                     <span>Không tải được ảnh</span>
                   </div>
                 </template>
@@ -185,14 +266,20 @@
               ({{ maintenanceData.damageImages?.length || parseImages(maintenanceData.damage_images).length }} hình ảnh hư hỏng)
             </div>
           </div>
-          <div v-else style="color: #909399; padding: 8px; background: #f5f7fa; border-radius: 4px;">
+          <div
+            v-else
+            style="color: #909399; padding: 8px; background: #f5f7fa; border-radius: 4px;"
+          >
             <el-icon><Picture /></el-icon>
             <span style="margin-left: 4px;">Chưa có hình ảnh hư hỏng được upload.</span>
           </div>
         </el-descriptions-item>
         <el-descriptions-item label="Chi phí dự kiến">
           {{ maintenanceData.estimated_cost ? formatCurrency(Number(maintenanceData.estimated_cost)) : '-' }}
-          <div v-if="maintenanceData.asset?.purchase_price && maintenanceData.estimated_cost" style="margin-top: 4px; font-size: 12px; color: #909399;">
+          <div
+            v-if="maintenanceData.asset?.purchase_price && maintenanceData.estimated_cost"
+            style="margin-top: 4px; font-size: 12px; color: #909399;"
+          >
             Tỷ lệ: <strong :style="{ color: (Number(maintenanceData.estimated_cost) / Number(maintenanceData.asset.purchase_price) * 100) > 30 ? '#f56c6c' : '#67c23a' }">
               {{ ((Number(maintenanceData.estimated_cost) / Number(maintenanceData.asset.purchase_price)) * 100).toFixed(2) }}%
             </strong>
@@ -215,29 +302,54 @@
           {{ formatDate(createdDate) }}
         </el-descriptions-item>
         <!-- Approval dates -->
-        <el-descriptions-item label="Trưởng Đơn vị duyệt" v-if="maintenanceData.head_approved_at">
+        <el-descriptions-item
+          v-if="maintenanceData.head_approved_at"
+          label="Trưởng Đơn vị duyệt"
+        >
           {{ formatDate(maintenanceData.head_approved_at) }}
-          <span v-if="maintenanceData.headApprover" style="color: #909399; margin-left: 8px;">
+          <span
+            v-if="maintenanceData.headApprover"
+            style="color: #909399; margin-left: 8px;"
+          >
             ({{ maintenanceData.headApprover?.fullname || maintenanceData.headApprover?.username }})
           </span>
         </el-descriptions-item>
-        <el-descriptions-item label="Quản trị viên duyệt" v-if="maintenanceData.admin_approved_at">
+        <el-descriptions-item
+          v-if="maintenanceData.admin_approved_at"
+          label="Quản trị viên duyệt"
+        >
           {{ formatDate(maintenanceData.admin_approved_at) }}
-          <span v-if="maintenanceData.adminApprover" style="color: #909399; margin-left: 8px;">
+          <span
+            v-if="maintenanceData.adminApprover"
+            style="color: #909399; margin-left: 8px;"
+          >
             ({{ maintenanceData.adminApprover?.fullname || maintenanceData.adminApprover?.username }})
           </span>
         </el-descriptions-item>
-        <el-descriptions-item label="Giám hiệu duyệt" v-if="maintenanceData.director_approved_at">
+        <el-descriptions-item
+          v-if="maintenanceData.director_approved_at"
+          label="Giám hiệu duyệt"
+        >
           {{ formatDate(maintenanceData.director_approved_at) }}
-          <span v-if="maintenanceData.directorApprover" style="color: #909399; margin-left: 8px;">
+          <span
+            v-if="maintenanceData.directorApprover"
+            style="color: #909399; margin-left: 8px;"
+          >
             ({{ maintenanceData.directorApprover?.fullname || maintenanceData.directorApprover?.username }})
           </span>
         </el-descriptions-item>
       </el-descriptions>
 
       <!-- Equipment Repair Details (legacy) -->
-      <el-descriptions :column="2" border v-else-if="maintenanceData && maintenanceData.request_type === 'equipment_repair'">
-        <el-descriptions-item label="Tên thiết bị" :span="2">
+      <el-descriptions
+        v-else-if="maintenanceData && maintenanceData.request_type === 'equipment_repair'"
+        :column="2"
+        border
+      >
+        <el-descriptions-item
+          label="Tên thiết bị"
+          :span="2"
+        >
           <strong>{{ maintenanceData.device_name || maintenanceData.asset?.name || '-' }}</strong>
         </el-descriptions-item>
         <el-descriptions-item label="Mã tài sản">
@@ -255,7 +367,10 @@
         <el-descriptions-item label="Số lượng">
           {{ maintenanceData.quantity || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="Đơn vị sử dụng trực tiếp" :span="2">
+        <el-descriptions-item
+          label="Đơn vị sử dụng trực tiếp"
+          :span="2"
+        >
           {{ maintenanceData.department?.name || '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="Nguyên giá">
@@ -264,14 +379,26 @@
         <el-descriptions-item label="Giá trị còn lại">
           {{ formatCurrency(maintenanceData.asset?.residual_value ?? maintenanceData.asset?.current_value) }}
         </el-descriptions-item>
-        <el-descriptions-item label="Tình trạng hiện tại" :span="2">
+        <el-descriptions-item
+          label="Tình trạng hiện tại"
+          :span="2"
+        >
           {{ maintenanceData.current_condition || maintenanceData.description || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="Thuyết minh nhu cầu sửa chữa" :span="2">
+        <el-descriptions-item
+          label="Thuyết minh nhu cầu sửa chữa"
+          :span="2"
+        >
           {{ maintenanceData.justification || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="Hình ảnh hư hỏng (cho yêu cầu sửa chữa)" :span="2">
-          <div v-if="hasDamageImages" class="damage-images-display">
+        <el-descriptions-item
+          label="Hình ảnh hư hỏng (cho yêu cầu sửa chữa)"
+          :span="2"
+        >
+          <div
+            v-if="hasDamageImages"
+            class="damage-images-display"
+          >
             <el-image
               v-for="image in maintenanceData.damageImages"
               :key="image.id"
@@ -286,13 +413,19 @@
               ({{ maintenanceData.damageImages.length }} hình ảnh hư hỏng của thiết bị)
             </div>
           </div>
-          <div v-else style="color: #909399; padding: 8px; background: #f5f7fa; border-radius: 4px;">
+          <div
+            v-else
+            style="color: #909399; padding: 8px; background: #f5f7fa; border-radius: 4px;"
+          >
             <el-icon><Picture /></el-icon>
             <span style="margin-left: 4px;">Chưa có hình ảnh hư hỏng được upload cho yêu cầu sửa chữa này.</span>
             <div style="margin-top: 4px; font-size: 12px; color: #909399;">
               Hình ảnh hư hỏng (nếu có) sẽ được hiển thị ở đây để mô tả tình trạng thiết bị cần sửa chữa.
-              <br v-if="maintenanceData?.status === 'draft' || maintenanceData?.status === 'new'" />
-              <span v-if="maintenanceData?.status === 'draft' || maintenanceData?.status === 'new'" style="color: #409eff;">
+              <br v-if="maintenanceData?.status === 'draft' || maintenanceData?.status === 'new'">
+              <span
+                v-if="maintenanceData?.status === 'draft' || maintenanceData?.status === 'new'"
+                style="color: #409eff;"
+              >
                 Bạn có thể chỉnh sửa yêu cầu để thêm hình ảnh hư hỏng.
               </span>
             </div>
@@ -318,44 +451,81 @@
           {{ formatDate(createdDate) }}
         </el-descriptions-item>
         <!-- Approval dates -->
-        <el-descriptions-item label="Trưởng Đơn vị duyệt" v-if="maintenanceData.head_approved_at">
+        <el-descriptions-item
+          v-if="maintenanceData.head_approved_at"
+          label="Trưởng Đơn vị duyệt"
+        >
           {{ formatDate(maintenanceData.head_approved_at) }}
-          <span v-if="maintenanceData.headApprover" style="color: #909399; margin-left: 8px;">
+          <span
+            v-if="maintenanceData.headApprover"
+            style="color: #909399; margin-left: 8px;"
+          >
             ({{ maintenanceData.headApprover?.fullname || maintenanceData.headApprover?.username }})
           </span>
         </el-descriptions-item>
-        <el-descriptions-item label="Quản trị viên duyệt" v-if="maintenanceData.admin_approved_at">
+        <el-descriptions-item
+          v-if="maintenanceData.admin_approved_at"
+          label="Quản trị viên duyệt"
+        >
           {{ formatDate(maintenanceData.admin_approved_at) }}
-          <span v-if="maintenanceData.adminApprover" style="color: #909399; margin-left: 8px;">
+          <span
+            v-if="maintenanceData.adminApprover"
+            style="color: #909399; margin-left: 8px;"
+          >
             ({{ maintenanceData.adminApprover?.fullname || maintenanceData.adminApprover?.username }})
           </span>
         </el-descriptions-item>
-        <el-descriptions-item label="Giám hiệu duyệt" v-if="maintenanceData.director_approved_at">
+        <el-descriptions-item
+          v-if="maintenanceData.director_approved_at"
+          label="Giám hiệu duyệt"
+        >
           {{ formatDate(maintenanceData.director_approved_at) }}
-          <span v-if="maintenanceData.directorApprover" style="color: #909399; margin-left: 8px;">
+          <span
+            v-if="maintenanceData.directorApprover"
+            style="color: #909399; margin-left: 8px;"
+          >
             ({{ maintenanceData.directorApprover?.fullname || maintenanceData.directorApprover?.username }})
           </span>
         </el-descriptions-item>
       </el-descriptions>
 
       <!-- Facility Repair Details -->
-      <el-descriptions :column="2" border v-else-if="maintenanceData && maintenanceData.request_type === 'facility_repair'">
-        <el-descriptions-item label="Tên cơ sở vật chất" :span="2">
+      <el-descriptions
+        v-else-if="maintenanceData && maintenanceData.request_type === 'facility_repair'"
+        :column="2"
+        border
+      >
+        <el-descriptions-item
+          label="Tên cơ sở vật chất"
+          :span="2"
+        >
           <strong>{{ maintenanceData.facility_name || '-' }}</strong>
         </el-descriptions-item>
-        <el-descriptions-item label="Đơn vị sử dụng trực tiếp" :span="2">
+        <el-descriptions-item
+          label="Đơn vị sử dụng trực tiếp"
+          :span="2"
+        >
           {{ maintenanceData.department?.name || '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="Ngày sửa chữa lần cuối">
           {{ maintenanceData.last_repair_date ? formatDate(maintenanceData.last_repair_date) : '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="Nội dung sửa chữa" :span="2">
+        <el-descriptions-item
+          label="Nội dung sửa chữa"
+          :span="2"
+        >
           {{ maintenanceData.repair_content || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="Tình trạng hiện tại" :span="2">
+        <el-descriptions-item
+          label="Tình trạng hiện tại"
+          :span="2"
+        >
           {{ maintenanceData.current_condition || maintenanceData.description || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="Thuyết minh nhu cầu sửa chữa" :span="2">
+        <el-descriptions-item
+          label="Thuyết minh nhu cầu sửa chữa"
+          :span="2"
+        >
           {{ maintenanceData.justification || '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="Chi phí dự kiến">
@@ -380,9 +550,16 @@
       </el-descriptions>
 
       <!-- Current Approval Status -->
-      <div class="approval-status" v-if="maintenanceData">
+      <div
+        v-if="maintenanceData"
+        class="approval-status"
+      >
         <h4>Trạng thái phê duyệt hiện tại</h4>
-        <el-steps :active="getApprovalStep(maintenanceData.status)" :finish-status="isRejected ? 'error' : 'success'" align-center>
+        <el-steps
+          :active="getApprovalStep(maintenanceData.status)"
+          :finish-status="isRejected ? 'error' : 'success'"
+          align-center
+        >
           <el-step
             :title="stepInfo.head.title"
             description="Trưởng Đơn vị"
@@ -401,13 +578,20 @@
             :status="stepInfo.director.status"
             :icon="stepInfo.director.icon"
           />
-          <el-step v-if="maintenanceData.status === 'repair_completed' || maintenanceData.status === 'repair_approved'" title="Chờ duyệt hoàn thành" description="Quản trị viên" />
+          <el-step
+            v-if="maintenanceData.status === 'repair_completed' || maintenanceData.status === 'repair_approved'"
+            title="Chờ duyệt hoàn thành"
+            description="Quản trị viên"
+          />
         </el-steps>
       </div>
     </div>
 
     <!-- Tiến trình xử lý (Processing Timeline) -->
-    <div class="status-timeline" v-if="maintenanceData && processTimeline.length > 0">
+    <div
+      v-if="maintenanceData && processTimeline.length > 0"
+      class="status-timeline"
+    >
       <h4>Tiến trình xử lý</h4>
       <el-timeline>
         <el-timeline-item
@@ -419,8 +603,14 @@
         >
           <div>
             <span>{{ item.label }}</span>
-            <span v-if="item.actor" style="color: #606266;"> bởi {{ item.actor }}</span>
-            <div v-if="item.reason" style="margin-top: 4px; color: #f56c6c; font-size: 13px;">
+            <span
+              v-if="item.actor"
+              style="color: #606266;"
+            > bởi {{ item.actor }}</span>
+            <div
+              v-if="item.reason"
+              style="margin-top: 4px; color: #f56c6c; font-size: 13px;"
+            >
               Lý do: {{ item.reason }}
             </div>
           </div>
@@ -432,10 +622,16 @@
       <div class="dialog-footer">
         <!-- Approval buttons based on current level -->
         <template v-if="canApprove">
-          <el-button type="success" @click="handleApprove">
+          <el-button
+            type="success"
+            @click="handleApprove"
+          >
             {{ getApproveButtonText }}
           </el-button>
-          <el-button type="danger" @click="handleReject">
+          <el-button
+            type="danger"
+            @click="handleReject"
+          >
             Từ chối
           </el-button>
         </template>
@@ -461,7 +657,11 @@
           >
             Chuyển sang Thanh lý/Tiêu hủy
           </el-button>
-          <el-button type="success" @click="handleComplete" v-if="maintenanceData?.status === 'in_progress'">
+          <el-button
+            v-if="maintenanceData?.status === 'in_progress'"
+            type="success"
+            @click="handleComplete"
+          >
             Đánh dấu hoàn thành sửa chữa
           </el-button>
         </template>
@@ -481,7 +681,9 @@
         >
           Xem phiếu Tăng tài sản
         </el-button>
-        <el-button @click="$emit('update:visible', false)">{{ $t('common.close') }}</el-button>
+        <el-button @click="$emit('update:visible', false)">
+          {{ $t('common.close') }}
+        </el-button>
       </div>
     </template>
   </el-dialog>

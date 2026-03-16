@@ -3,7 +3,12 @@
     <!-- Header with create button -->
     <div class="list-header">
       <h4>Đề nghị sửa chữa</h4>
-      <el-button type="primary" :icon="Plus" @click="handleCreate" v-if="!authStore.isDirector">
+      <el-button
+        v-if="!authStore.isDirector"
+        type="primary"
+        :icon="Plus"
+        @click="handleCreate"
+      >
         Tạo đề nghị sửa chữa
       </el-button>
     </div>
@@ -12,119 +17,199 @@
     <div class="filter-section">
       <el-row :gutter="16">
         <el-col :span="6">
-          <el-select v-model="filterStatus" placeholder="Lọc theo trạng thái" clearable @change="handleFilter">
-            <el-option v-for="s in statuses" :key="s.value" :label="s.label" :value="s.value" />
+          <el-select
+            v-model="filterStatus"
+            placeholder="Lọc theo trạng thái"
+            clearable
+            @change="handleFilter"
+          >
+            <el-option
+              v-for="s in statuses"
+              :key="s.value"
+              :label="s.label"
+              :value="s.value"
+            />
           </el-select>
         </el-col>
         <el-col :span="6">
-          <el-select v-model="filterDepartment" placeholder="Lọc theo đơn vị" clearable @change="handleFilter">
-            <el-option v-for="d in departments" :key="d.id" :label="d.name" :value="d.id" />
+          <el-select
+            v-model="filterDepartment"
+            placeholder="Lọc theo đơn vị"
+            clearable
+            @change="handleFilter"
+          >
+            <el-option
+              v-for="d in departments"
+              :key="d.id"
+              :label="d.name"
+              :value="d.id"
+            />
           </el-select>
         </el-col>
         <el-col :span="6">
-          <el-button type="primary" @click="handleFilter">{{ $t('common.search') }}</el-button>
-          <el-button @click="handleReset">{{ $t('common.refresh') }}</el-button>
+          <el-button
+            type="primary"
+            @click="handleFilter"
+          >
+            {{ $t('common.search') }}
+          </el-button>
+          <el-button @click="handleReset">
+            {{ $t('common.refresh') }}
+          </el-button>
         </el-col>
       </el-row>
     </div>
 
     <!-- Table -->
     <div class="responsive-table">
-      <el-table :data="requests" v-loading="loading" border stripe>
-      <el-table-column type="index" width="50" label="TT" />
-      <el-table-column label="Mã tài sản" width="120">
-        <template #default="{ row }">
-          {{ row.asset?.asset_code || '-' }}
-        </template>
-      </el-table-column>
-      <el-table-column label="Tên tài sản" min-width="200">
-        <template #default="{ row }">
-          {{ row.asset?.name || '-' }}
-        </template>
-      </el-table-column>
-      <el-table-column label="Nguyên giá" width="150" align="right">
-        <template #default="{ row }">
-          {{ row.asset?.purchase_price ? formatCurrency(Number(row.asset.purchase_price)) : '-' }}
-        </template>
-      </el-table-column>
-      <el-table-column label="Chi phí dự kiến" width="150" align="right">
-        <template #default="{ row }">
-          {{ row.estimated_cost ? formatCurrency(Number(row.estimated_cost)) : '-' }}
-        </template>
-      </el-table-column>
-      <el-table-column label="Tỷ lệ" width="100" align="center">
-        <template #default="{ row }">
-          <span v-if="row.asset?.purchase_price && row.estimated_cost" 
-                :style="{ color: (Number(row.estimated_cost) / Number(row.asset.purchase_price) * 100) > 30 ? '#f56c6c' : '#67c23a' }">
-            {{ ((Number(row.estimated_cost) / Number(row.asset.purchase_price)) * 100).toFixed(1) }}%
-          </span>
-          <span v-else>-</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="department.name" label="Đơn vị" min-width="150" />
-      <el-table-column prop="status" label="Trạng thái" width="120">
-        <template #default="{ row }">
-          <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="Thao tác" min-width="320" fixed="right">
-        <template #default="{ row }">
-          <el-button size="small" @click="handleView(row)">{{ $t('common.view') }}</el-button>
-          <el-button size="small" type="warning" @click="handleEdit(row)" v-if="canEdit(row)">
-            {{ $t('common.edit') }}
-          </el-button>
-          <el-button 
-            v-if="canDelete(row)"
-            size="small" 
-            type="danger" 
-            @click="handleDelete(row)"
-          >
-            {{ $t('common.delete') }}
-          </el-button>
-          <el-button 
-            v-if="(row.status === 'draft' || row.status === 'rejected' || row.status?.startsWith('rejected_by')) && row.requested_by === authStore.user?.id"
-            size="small" 
-            type="success" 
-            @click="handleSubmitForApproval(row)"
-          >
-            Gửi phê duyệt
-          </el-button>
-          <el-button 
-            v-if="canApproveAtCurrentLevel(row)"
-            size="small" 
-            type="success" 
-            @click="handleApprove(row)"
-          >
-            {{ getApproveButtonText(row) }}
-          </el-button>
-          <el-button
-            v-if="canCompleteRepair(row)"
-            size="small"
-            type="warning"
-            @click="handleCompleteRepair(row.id)"
-          >
-            Hoàn thành sửa chữa
-          </el-button>
-          <el-button
-            v-if="authStore.isAdmin && row.status === 'in_progress' && !row.linked_disposal_case_id"
-            size="small"
-            type="danger"
-            :loading="toDisposalLoading"
-            @click="handleToDisposal(row)"
-          >
-            Chuyển sang Thanh lý/Tiêu hủy
-          </el-button>
-          <el-button
-            v-if="authStore.isAdmin && row.linked_disposal_case_id"
-            size="small"
-            type="warning"
-            @click="router.push({ path: '/asset-disposals', query: { openId: String(row.linked_disposal_case_id) } })"
-          >
-            Xem hồ sơ Thanh lý/Tiêu hủy
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+      <el-table
+        v-loading="loading"
+        :data="requests"
+        border
+        stripe
+      >
+        <el-table-column
+          type="index"
+          width="50"
+          label="TT"
+        />
+        <el-table-column
+          label="Mã tài sản"
+          width="120"
+        >
+          <template #default="{ row }">
+            {{ row.asset?.asset_code || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="Tên tài sản"
+          min-width="200"
+        >
+          <template #default="{ row }">
+            {{ row.asset?.name || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="Nguyên giá"
+          width="150"
+          align="right"
+        >
+          <template #default="{ row }">
+            {{ row.asset?.purchase_price ? formatCurrency(Number(row.asset.purchase_price)) : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="Chi phí dự kiến"
+          width="150"
+          align="right"
+        >
+          <template #default="{ row }">
+            {{ row.estimated_cost ? formatCurrency(Number(row.estimated_cost)) : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="Tỷ lệ"
+          width="100"
+          align="center"
+        >
+          <template #default="{ row }">
+            <span
+              v-if="row.asset?.purchase_price && row.estimated_cost" 
+              :style="{ color: (Number(row.estimated_cost) / Number(row.asset.purchase_price) * 100) > 30 ? '#f56c6c' : '#67c23a' }"
+            >
+              {{ ((Number(row.estimated_cost) / Number(row.asset.purchase_price)) * 100).toFixed(1) }}%
+            </span>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="department.name"
+          label="Đơn vị"
+          min-width="150"
+        />
+        <el-table-column
+          prop="status"
+          label="Trạng thái"
+          width="120"
+        >
+          <template #default="{ row }">
+            <el-tag :type="getStatusType(row.status)">
+              {{ getStatusText(row.status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="Thao tác"
+          min-width="320"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <el-button
+              size="small"
+              @click="handleView(row)"
+            >
+              {{ $t('common.view') }}
+            </el-button>
+            <el-button
+              v-if="canEdit(row)"
+              size="small"
+              type="warning"
+              @click="handleEdit(row)"
+            >
+              {{ $t('common.edit') }}
+            </el-button>
+            <el-button 
+              v-if="canDelete(row)"
+              size="small" 
+              type="danger" 
+              @click="handleDelete(row)"
+            >
+              {{ $t('common.delete') }}
+            </el-button>
+            <el-button 
+              v-if="(row.status === 'draft' || row.status === 'rejected' || row.status?.startsWith('rejected_by')) && row.requested_by === authStore.user?.id"
+              size="small" 
+              type="success" 
+              @click="handleSubmitForApproval(row)"
+            >
+              Gửi phê duyệt
+            </el-button>
+            <el-button 
+              v-if="canApproveAtCurrentLevel(row)"
+              size="small" 
+              type="success" 
+              @click="handleApprove(row)"
+            >
+              {{ getApproveButtonText(row) }}
+            </el-button>
+            <el-button
+              v-if="canCompleteRepair(row)"
+              size="small"
+              type="warning"
+              @click="handleCompleteRepair(row.id)"
+            >
+              Hoàn thành sửa chữa
+            </el-button>
+            <el-button
+              v-if="authStore.isAdmin && row.status === 'in_progress' && !row.linked_disposal_case_id"
+              size="small"
+              type="danger"
+              :loading="toDisposalLoading"
+              @click="handleToDisposal(row)"
+            >
+              Chuyển sang Thanh lý/Tiêu hủy
+            </el-button>
+            <el-button
+              v-if="authStore.isAdmin && row.linked_disposal_case_id"
+              size="small"
+              type="warning"
+              @click="router.push({ path: '/asset-disposals', query: { openId: String(row.linked_disposal_case_id) } })"
+            >
+              Xem hồ sơ Thanh lý/Tiêu hủy
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
     </div>
 
     <!-- Pagination -->
@@ -161,7 +246,12 @@
       :close-on-click-modal="false"
     >
       <div v-if="adminApprovalRow">
-        <el-descriptions :column="1" border size="small" class="cost-info-table">
+        <el-descriptions
+          :column="1"
+          border
+          size="small"
+          class="cost-info-table"
+        >
           <el-descriptions-item label="Tên tài sản">
             {{ adminApprovalRow.asset?.name || '-' }}
           </el-descriptions-item>
@@ -177,10 +267,19 @@
             />
           </el-descriptions-item>
           <el-descriptions-item label="Nguyên giá tài sản">
-            <span v-if="adminApprovalRow.asset?.purchase_price" style="font-weight:600">
+            <span
+              v-if="adminApprovalRow.asset?.purchase_price"
+              style="font-weight:600"
+            >
               {{ formatCurrency(Number(adminApprovalRow.asset.purchase_price)) }}
             </span>
-            <el-tag v-else type="warning" size="small">Chưa xác minh</el-tag>
+            <el-tag
+              v-else
+              type="warning"
+              size="small"
+            >
+              Chưa xác minh
+            </el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="Tỷ lệ chi phí / nguyên giá">
             <template v-if="adminApprovalRow.asset?.purchase_price && adminEstimatedCost">
@@ -197,12 +296,20 @@
                 ⚠️ Vượt ngưỡng 30% — cần thông báo rõ lên Giám hiệu
               </span>
             </template>
-            <el-tag v-else type="info" size="small">Không tính được</el-tag>
+            <el-tag
+              v-else
+              type="info"
+              size="small"
+            >
+              Không tính được
+            </el-tag>
           </el-descriptions-item>
         </el-descriptions>
 
         <div style="margin-top:16px">
-          <div style="margin-bottom:6px; font-weight:500">Ghi chú cho Giám hiệu (sẽ lưu vào lịch sử phê duyệt):</div>
+          <div style="margin-bottom:6px; font-weight:500">
+            Ghi chú cho Giám hiệu (sẽ lưu vào lịch sử phê duyệt):
+          </div>
           <el-input
             v-model="adminApprovalNotes"
             type="textarea"
@@ -213,8 +320,14 @@
       </div>
 
       <template #footer>
-        <el-button @click="adminApprovalVisible = false">Hủy</el-button>
-        <el-button type="success" :loading="approvalLoading" @click="submitAdminApproval">
+        <el-button @click="adminApprovalVisible = false">
+          Hủy
+        </el-button>
+        <el-button
+          type="success"
+          :loading="approvalLoading"
+          @click="submitAdminApproval"
+        >
           Phê duyệt và gửi Giám hiệu
         </el-button>
       </template>

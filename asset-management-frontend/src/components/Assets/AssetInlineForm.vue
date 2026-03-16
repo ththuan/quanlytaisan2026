@@ -1,10 +1,10 @@
 <template>
   <el-form
     ref="formRef"
+    v-loading="loading"
     :model="formData"
     :rules="rules"
     label-position="top"
-    v-loading="loading"
   >
     <!-- Phân loại tài sản -->
     <el-divider content-position="left">
@@ -13,34 +13,48 @@
 
     <el-row :gutter="20">
       <el-col :span="12">
-        <el-form-item label="Loại tài sản" prop="category_id">
+        <el-form-item
+          label="Loại tài sản"
+          prop="category_id"
+        >
           <el-cascader
             v-model="selectedCategory"
+            v-loading="loadingCategories"
             :options="categoryTree"
             :props="cascaderProps"
             placeholder="Chọn loại tài sản (ví dụ: Nhà cấp I, Máy vi tính, Xe ô tô...)"
             style="width: 100%"
             filterable
             clearable
-            v-loading="loadingCategories"
             @change="handleCategoryChange"
           />
         </el-form-item>
       </el-col>
       <el-col :span="6">
         <el-form-item label="Mã loại tài sản">
-          <el-input v-model="formData.category_code" disabled placeholder="Tự động" />
+          <el-input
+            v-model="formData.category_code"
+            disabled
+            placeholder="Tự động"
+          />
         </el-form-item>
       </el-col>
       <el-col :span="6">
         <el-form-item label="Đơn vị tính">
-          <el-input v-model="formData.unit" disabled placeholder="Tự động" />
+          <el-input
+            v-model="formData.unit"
+            disabled
+            placeholder="Tự động"
+          />
         </el-form-item>
       </el-col>
     </el-row>
 
-    <!-- Hiển thị thông tin khấu hao ngay khi chọn loại tài sản -->
-    <el-row :gutter="20" v-if="formData.category_id">
+    <!-- Hiển thị thông tin hao mòn ngay khi chọn loại tài sản -->
+    <el-row
+      v-if="formData.category_id"
+      :gutter="20"
+    >
       <el-col :span="8">
         <el-form-item label="Thời gian sử dụng (năm)">
           <el-input
@@ -52,7 +66,7 @@
         </el-form-item>
       </el-col>
       <el-col :span="8">
-        <el-form-item label="Tỷ lệ khấu hao (%/năm)">
+        <el-form-item :label="$t('assets.depreciationRateLabel')">
           <el-input
             :value="formData.depreciation_rate != null ? `${formData.depreciation_rate}%` : 'Chưa có'"
             disabled
@@ -62,7 +76,7 @@
         </el-form-item>
       </el-col>
       <el-col :span="8">
-        <el-form-item label="Có khấu hao">
+        <el-form-item :label="$t('assets.hasDepreciation')">
           <el-input
             :value="formData.is_depreciable ? 'Có' : 'Không'"
             disabled
@@ -80,20 +94,35 @@
 
     <el-row :gutter="20">
       <el-col :span="8">
-        <el-form-item :label="$t('assets.assetCode')" prop="asset_code">
-          <el-input :model-value="'Tự động'" disabled />
+        <el-form-item
+          :label="$t('assets.assetCode')"
+          prop="asset_code"
+        >
+          <el-input
+            :model-value="'Tự động'"
+            disabled
+          />
         </el-form-item>
       </el-col>
       <el-col :span="16">
-        <el-form-item :label="$t('assets.assetName')" prop="name">
-          <el-input v-model="formData.name" :placeholder="$t('assets.assetName')" />
+        <el-form-item
+          :label="$t('assets.assetName')"
+          prop="name"
+        >
+          <el-input
+            v-model="formData.name"
+            :placeholder="$t('assets.assetName')"
+          />
         </el-form-item>
       </el-col>
     </el-row>
 
     <el-row :gutter="20">
       <el-col :span="8">
-        <el-form-item label="Ngày mua" prop="purchase_date">
+        <el-form-item
+          label="Ngày mua"
+          prop="purchase_date"
+        >
           <el-date-picker
             v-model="formData.purchase_date"
             type="date"
@@ -106,7 +135,10 @@
         </el-form-item>
       </el-col>
       <el-col :span="8">
-        <el-form-item label="Năm đưa vào sử dụng" prop="year_in_use">
+        <el-form-item
+          label="Năm đưa vào sử dụng"
+          prop="year_in_use"
+        >
           <el-tooltip
             :content="formData.purchase_date ? 'Tự động từ ngày mua' : 'Nhập năm hoặc chọn ngày mua để tự động'"
             placement="top"
@@ -125,7 +157,10 @@
         </el-form-item>
       </el-col>
       <el-col :span="8">
-        <el-form-item label="Số lượng" prop="quantity">
+        <el-form-item
+          label="Số lượng"
+          prop="quantity"
+        >
           <el-input-number
             v-model="formData.quantity"
             :min="1"
@@ -135,10 +170,16 @@
             style="width: 100%"
             controls-position="right"
           />
-          <div v-if="isAreaUnit" style="margin-top: 4px; font-size: 12px; color: #909399;">
+          <div
+            v-if="isAreaUnit"
+            style="margin-top: 4px; font-size: 12px; color: #909399;"
+          >
             Đơn vị tính là m², vui lòng nhập diện tích cụ thể.
           </div>
-          <div v-else style="margin-top: 4px; font-size: 12px; color: #909399;">
+          <div
+            v-else
+            style="margin-top: 4px; font-size: 12px; color: #909399;"
+          >
             Đơn vị tính theo cái/bộ, số lượng mặc định là 1.
           </div>
         </el-form-item>
@@ -147,8 +188,15 @@
 
     <el-row :gutter="20">
       <el-col :span="8">
-        <el-form-item :label="$t('common.status')" prop="status">
-          <el-select v-model="formData.status" :placeholder="$t('common.status')" style="width: 100%">
+        <el-form-item
+          :label="$t('common.status')"
+          prop="status"
+        >
+          <el-select
+            v-model="formData.status"
+            :placeholder="$t('common.status')"
+            style="width: 100%"
+          >
             <el-option
               v-for="s in statuses"
               :key="s.value"
@@ -162,14 +210,17 @@
 
     <el-row :gutter="20">
       <el-col :span="12">
-        <el-form-item :label="$t('assets.department')" prop="current_department_id">
+        <el-form-item
+          :label="$t('assets.department')"
+          prop="current_department_id"
+        >
           <el-select
             v-model="formData.current_department_id"
+            v-loading="departmentsLoading"
             :placeholder="$t('assets.department')"
             style="width: 100%"
             clearable
             filterable
-            v-loading="departmentsLoading"
           >
             <el-option
               v-for="dept in departments"
@@ -181,8 +232,14 @@
         </el-form-item>
       </el-col>
       <el-col :span="12">
-        <el-form-item :label="$t('assets.location')" prop="location">
-          <el-input v-model="formData.location" :placeholder="$t('assets.locationPlaceholder')" />
+        <el-form-item
+          :label="$t('assets.location')"
+          prop="location"
+        >
+          <el-input
+            v-model="formData.location"
+            :placeholder="$t('assets.locationPlaceholder')"
+          />
         </el-form-item>
       </el-col>
     </el-row>
@@ -210,7 +267,10 @@
       </el-col>
       <el-col :span="8">
         <el-form-item label="Giá trị còn lại (đồng)">
-          <el-tooltip content="Tự động tính từ nguyên giá" placement="top">
+          <el-tooltip
+            content="Tự động tính từ nguyên giá"
+            placement="top"
+          >
             <el-input-number
               v-model="formData.residual_value"
               :min="0"
@@ -224,8 +284,15 @@
         </el-form-item>
       </el-col>
       <el-col :span="8">
-        <el-form-item label="Tình trạng tài sản" prop="asset_condition">
-          <el-select v-model="formData.asset_condition" placeholder="Chọn tình trạng" style="width: 100%">
+        <el-form-item
+          label="Tình trạng tài sản"
+          prop="asset_condition"
+        >
+          <el-select
+            v-model="formData.asset_condition"
+            placeholder="Chọn tình trạng"
+            style="width: 100%"
+          >
             <el-option
               v-for="opt in assetConditionOptions"
               :key="opt.value"
@@ -239,12 +306,21 @@
 
     <el-row :gutter="20">
       <el-col :span="12">
-        <el-form-item :label="$t('assets.serialNumber')" prop="serial_number">
-          <el-input v-model="formData.serial_number" :placeholder="$t('assets.serialNumber')" />
+        <el-form-item
+          :label="$t('assets.serialNumber')"
+          prop="serial_number"
+        >
+          <el-input
+            v-model="formData.serial_number"
+            :placeholder="$t('assets.serialNumber')"
+          />
         </el-form-item>
       </el-col>
       <el-col :span="12">
-        <el-form-item label="Tài sản trên đất (số lô)" prop="land_parcel_id">
+        <el-form-item
+          label="Tài sản trên đất (số lô)"
+          prop="land_parcel_id"
+        >
           <el-input-number
             v-model="formData.land_parcel_id"
             :min="0"
@@ -256,7 +332,10 @@
       </el-col>
     </el-row>
 
-    <el-form-item label="Ghi chú" prop="description">
+    <el-form-item
+      label="Ghi chú"
+      prop="description"
+    >
       <el-input
         v-model="formData.description"
         type="textarea"
@@ -265,9 +344,20 @@
       />
     </el-form-item>
 
-    <div class="inline-actions" v-if="showActions">
-      <el-button @click="handleCancel">Hủy</el-button>
-      <el-button type="primary" :loading="loading" @click="handleSave">Lưu tài sản</el-button>
+    <div
+      v-if="showActions"
+      class="inline-actions"
+    >
+      <el-button @click="handleCancel">
+        Hủy
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="loading"
+        @click="handleSave"
+      >
+        Lưu tài sản
+      </el-button>
     </div>
   </el-form>
 </template>

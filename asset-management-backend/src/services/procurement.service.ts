@@ -222,7 +222,10 @@ class ProcurementService {
     }
 
     const departmentId = (maintenance as any).department_id;
-    const dept = departmentId ? await Department.findByPk(departmentId) : null;
+    if (departmentId) {
+      const dept = await Department.findByPk(departmentId);
+      if (!dept) throw new NotFoundError('Department not found');
+    }
 
     const transaction = await sequelize.transaction();
     try {

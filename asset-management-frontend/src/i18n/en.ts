@@ -34,6 +34,14 @@ export default {
     all: 'All',
     noData: 'No data',
     refresh: 'Refresh',
+    apiErrors: {
+      network: 'Cannot connect to server. Please check your network.',
+      sessionExpired: 'Session expired. Please login again.',
+      forbidden: 'You do not have permission to perform this action.',
+      notFound: 'Data not found.',
+      rateLimit: 'Too many requests. Please try again later.',
+      serverError: 'Server error. Please try again later.',
+    },
     export: 'Export',
     import: 'Import',
     print: 'Print',
@@ -59,6 +67,28 @@ export default {
     stock: 'Stock',
     assetDisposals: 'Asset Disposals',
     systemAdmin: 'System Admin',
+  },
+
+  inventory: {
+    title: 'Inventory',
+    roundDetail: 'Round detail',
+    conduct: 'Conduct inventory',
+    reportDetail: 'Report detail',
+    roundStatus: {
+      not_started: 'Not started',
+      in_progress: 'In progress',
+      completed: 'Completed',
+      awaiting_approval: 'Awaiting approval',
+    },
+    reportStatus: {
+      draft: 'Draft',
+      pending: 'Pending',
+      approved_by_head: 'Approved by Head',
+      approved_by_admin: 'Approved by Admin',
+      completed: 'Completed',
+      rejected_by_head: 'Rejected by Head',
+      rejected_by_admin: 'Rejected by Admin',
+    },
   },
 
   // Auth
@@ -121,7 +151,7 @@ export default {
     warrantyDate: 'Warranty Date',
     warrantyExpired: 'Warranty Expired',
     warrantyValid: 'Warranty Valid',
-    depreciation: 'Depreciation',
+    depreciation: 'Wear and tear',
     location: 'Location',
     detailLocation: 'Detail Location',
     description: 'Description',
@@ -132,19 +162,21 @@ export default {
     locationInfo: 'Location & Department',
     financialInfo: 'Financial Information',
     locationPlaceholder: 'e.g: Room 301, Floor 3, Building A',
-    // Depreciation info
-    depreciationInfo: 'Depreciation Information',
+    // Wear and tear info (equipment, fixed assets)
+    depreciationInfo: 'Wear and tear information',
     usefulLife: 'Useful Life',
-    annualDepreciationRate: 'Annual Depreciation Rate',
+    annualDepreciationRate: 'Annual wear rate',
     yearsUsed: 'Years Used',
     remainingUsefulLife: 'Remaining Useful Life',
-    depreciationProgress: 'Depreciation Progress',
-    annualDepreciation: 'Annual Depreciation',
-    accumulatedDepreciation: 'Accumulated Depreciation',
-    calculatedCurrentValue: 'Calculated Current Value',
-    fullyDepreciated: 'Fully Depreciated',
-    nonDepreciable: 'Non-Depreciable',
-    nonDepreciableDesc: 'Tools & Supplies category does not calculate depreciation due to low value or short-term use. Asset value remains at original cost.',
+    depreciationProgress: 'Wear progress',
+    annualDepreciation: 'Annual wear amount',
+    accumulatedDepreciation: 'Accumulated wear',
+    calculatedCurrentValue: 'Calculated current value',
+    fullyDepreciated: 'Fully worn',
+    nonDepreciable: 'No wear calculation',
+    nonDepreciableDesc: 'Tools & Supplies category does not calculate wear due to low value or short-term use. Asset value remains at original cost.',
+    depreciationRateLabel: 'Wear rate (%/year)',
+    hasDepreciation: 'Has wear calculation',
     status: {
       active: 'Active',
       inactive: 'Inactive',
@@ -490,5 +522,25 @@ export default {
     filterByYear: 'Filter by year',
     filterByStatus: 'Filter by status',
     filterByDepartment: 'Filter by department',
+  },
+
+  procurement: {
+    status: {
+      draft: 'Draft',
+      fulfilled: 'Fulfilled',
+      cancelled: 'Cancelled',
+    },
+  },
+
+  assetDisposals: {
+    subtitle: 'Disposal / destruction cases',
+    createCase: 'Create disposal case',
+    searchPlaceholder: 'Search by case code',
+    caseCode: 'Case code',
+    status: {
+      pending: 'Pending',
+      completed: 'Completed',
+      cancelled: 'Cancelled',
+    },
   },
 };

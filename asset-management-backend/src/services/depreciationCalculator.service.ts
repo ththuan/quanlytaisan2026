@@ -388,7 +388,6 @@ class DepreciationCalculatorService {
 
         // Lịch khấu hao bắt đầu từ năm sau năm đưa vào sử dụng
         const startDepreciationYear = input.yearInUse + 1;
-        const currentYear = new Date().getFullYear();
         const schedule: any[] = [];
         let accumulated = 0;
 

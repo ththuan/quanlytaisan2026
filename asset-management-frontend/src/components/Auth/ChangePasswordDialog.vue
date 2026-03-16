@@ -12,7 +12,10 @@
       :rules="rules"
       label-position="top"
     >
-      <el-form-item label="Mật khẩu hiện tại" prop="old_password">
+      <el-form-item
+        label="Mật khẩu hiện tại"
+        prop="old_password"
+      >
         <el-input
           v-model="form.old_password"
           type="password"
@@ -22,7 +25,10 @@
         />
       </el-form-item>
 
-      <el-form-item label="Mật khẩu mới" prop="new_password">
+      <el-form-item
+        label="Mật khẩu mới"
+        prop="new_password"
+      >
         <el-input
           v-model="form.new_password"
           type="password"
@@ -32,7 +38,10 @@
         />
       </el-form-item>
 
-      <el-form-item label="Xác nhận mật khẩu mới" prop="confirm_password">
+      <el-form-item
+        label="Xác nhận mật khẩu mới"
+        prop="confirm_password"
+      >
         <el-input
           v-model="form.confirm_password"
           type="password"
@@ -45,8 +54,14 @@
     </el-form>
 
     <template #footer>
-      <el-button @click="visible = false">Huỷ</el-button>
-      <el-button type="primary" :loading="loading" @click="handleSubmit">
+      <el-button @click="visible = false">
+        Huỷ
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="loading"
+        @click="handleSubmit"
+      >
         Đổi mật khẩu
       </el-button>
     </template>

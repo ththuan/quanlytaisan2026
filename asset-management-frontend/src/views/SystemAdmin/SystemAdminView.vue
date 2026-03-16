@@ -3,10 +3,17 @@
     <div class="page-header">
       <div class="header-left">
         <h1>Quản trị hệ thống</h1>
-        <p class="subtitle">Quản lý Docker, Database, Backup và cấu hình hệ thống</p>
+        <p class="subtitle">
+          Quản lý Docker, Database, Backup và cấu hình hệ thống
+        </p>
       </div>
       <div class="header-right">
-        <el-button type="primary" :icon="Refresh" @click="refreshAll" :loading="loading">
+        <el-button
+          type="primary"
+          :icon="Refresh"
+          :loading="loading"
+          @click="refreshAll"
+        >
           Làm mới
         </el-button>
       </div>
@@ -23,55 +30,110 @@
     />
 
     <!-- Health Overview -->
-    <el-row :gutter="16" class="health-cards">
-      <el-col :xs="12" :sm="6" :md="6">
-        <el-card class="stat-card" :class="healthData?.status === 'healthy' ? 'success' : 'danger'">
+    <el-row
+      :gutter="16"
+      class="health-cards"
+    >
+      <el-col
+        :xs="12"
+        :sm="6"
+        :md="6"
+      >
+        <el-card
+          class="stat-card"
+          :class="healthData?.status === 'healthy' ? 'success' : 'danger'"
+        >
           <div class="stat-icon">
-            <el-icon :size="32"><Monitor /></el-icon>
+            <el-icon :size="32">
+              <Monitor />
+            </el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">{{ healthData?.status === 'healthy' ? 'Hoạt động' : 'Lỗi' }}</div>
-            <div class="stat-label">Trạng thái hệ thống</div>
+            <div class="stat-value">
+              {{ healthData?.status === 'healthy' ? 'Hoạt động' : 'Lỗi' }}
+            </div>
+            <div class="stat-label">
+              Trạng thái hệ thống
+            </div>
           </div>
         </el-card>
       </el-col>
-      <el-col :xs="12" :sm="6" :md="6">
-        <el-card class="stat-card" :class="healthData?.database ? 'success' : 'danger'">
+      <el-col
+        :xs="12"
+        :sm="6"
+        :md="6"
+      >
+        <el-card
+          class="stat-card"
+          :class="healthData?.database ? 'success' : 'danger'"
+        >
           <div class="stat-icon">
-            <el-icon :size="32"><Coin /></el-icon>
+            <el-icon :size="32">
+              <Coin />
+            </el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">{{ healthData?.database ? 'Kết nối' : 'Mất kết nối' }}</div>
-            <div class="stat-label">Database</div>
+            <div class="stat-value">
+              {{ healthData?.database ? 'Kết nối' : 'Mất kết nối' }}
+            </div>
+            <div class="stat-label">
+              Database
+            </div>
           </div>
         </el-card>
       </el-col>
-      <el-col :xs="12" :sm="6" :md="6">
-        <el-card class="stat-card" :class="healthData?.docker ? 'success' : 'warning'">
+      <el-col
+        :xs="12"
+        :sm="6"
+        :md="6"
+      >
+        <el-card
+          class="stat-card"
+          :class="healthData?.docker ? 'success' : 'warning'"
+        >
           <div class="stat-icon">
-            <el-icon :size="32"><Box /></el-icon>
+            <el-icon :size="32">
+              <Box />
+            </el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">{{ healthData?.docker ? 'Khả dụng' : 'Không có' }}</div>
-            <div class="stat-label">Docker</div>
+            <div class="stat-value">
+              {{ healthData?.docker ? 'Khả dụng' : 'Không có' }}
+            </div>
+            <div class="stat-label">
+              Docker
+            </div>
           </div>
         </el-card>
       </el-col>
-      <el-col :xs="12" :sm="6" :md="6">
+      <el-col
+        :xs="12"
+        :sm="6"
+        :md="6"
+      >
         <el-card class="stat-card info">
           <div class="stat-icon">
-            <el-icon :size="32"><Timer /></el-icon>
+            <el-icon :size="32">
+              <Timer />
+            </el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">{{ healthData?.uptime || '-' }}</div>
-            <div class="stat-label">Uptime</div>
+            <div class="stat-value">
+              {{ healthData?.uptime || '-' }}
+            </div>
+            <div class="stat-label">
+              Uptime
+            </div>
           </div>
         </el-card>
       </el-col>
     </el-row>
 
     <!-- Memory Usage -->
-    <el-card class="memory-card" v-if="healthData?.memory">
+    <el-card
+      v-if="healthData?.memory"
+      class="memory-card"
+    >
       <template #header>
         <div class="card-header">
           <span>Bộ nhớ hệ thống</span>
@@ -87,45 +149,92 @@
 
     <el-row :gutter="16">
       <!-- System Info -->
-      <el-col :xs="24" :md="12">
+      <el-col
+        :xs="24"
+        :md="12"
+      >
         <el-card class="info-card">
           <template #header>
             <div class="card-header">
               <span><el-icon><Monitor /></el-icon> Thông tin hệ thống</span>
             </div>
           </template>
-          <el-descriptions :column="1" border v-if="systemInfo">
-            <el-descriptions-item label="Hostname">{{ systemInfo.hostname }}</el-descriptions-item>
-            <el-descriptions-item label="Platform">{{ systemInfo.platform }}</el-descriptions-item>
-            <el-descriptions-item label="Architecture">{{ systemInfo.arch }}</el-descriptions-item>
-            <el-descriptions-item label="CPU Cores">{{ systemInfo.cpus }}</el-descriptions-item>
-            <el-descriptions-item label="Total Memory">{{ systemInfo.totalMemory }}</el-descriptions-item>
-            <el-descriptions-item label="Free Memory">{{ systemInfo.freeMemory }}</el-descriptions-item>
-            <el-descriptions-item label="Node.js">{{ systemInfo.nodeVersion }}</el-descriptions-item>
+          <el-descriptions
+            v-if="systemInfo"
+            :column="1"
+            border
+          >
+            <el-descriptions-item label="Hostname">
+              {{ systemInfo.hostname }}
+            </el-descriptions-item>
+            <el-descriptions-item label="Platform">
+              {{ systemInfo.platform }}
+            </el-descriptions-item>
+            <el-descriptions-item label="Architecture">
+              {{ systemInfo.arch }}
+            </el-descriptions-item>
+            <el-descriptions-item label="CPU Cores">
+              {{ systemInfo.cpus }}
+            </el-descriptions-item>
+            <el-descriptions-item label="Total Memory">
+              {{ systemInfo.totalMemory }}
+            </el-descriptions-item>
+            <el-descriptions-item label="Free Memory">
+              {{ systemInfo.freeMemory }}
+            </el-descriptions-item>
+            <el-descriptions-item label="Node.js">
+              {{ systemInfo.nodeVersion }}
+            </el-descriptions-item>
           </el-descriptions>
-          <el-empty v-else description="Không có dữ liệu" />
+          <el-empty
+            v-else
+            description="Không có dữ liệu"
+          />
         </el-card>
       </el-col>
 
       <!-- Database Info -->
-      <el-col :xs="24" :md="12">
+      <el-col
+        :xs="24"
+        :md="12"
+      >
         <el-card class="info-card">
           <template #header>
             <div class="card-header">
               <span><el-icon><Coin /></el-icon> Thông tin Database</span>
             </div>
           </template>
-          <el-descriptions :column="1" border v-if="databaseInfo?.connected">
+          <el-descriptions
+            v-if="databaseInfo?.connected"
+            :column="1"
+            border
+          >
             <el-descriptions-item label="Trạng thái">
-              <el-tag type="success">Đã kết nối</el-tag>
+              <el-tag type="success">
+                Đã kết nối
+              </el-tag>
             </el-descriptions-item>
-            <el-descriptions-item label="Database">{{ databaseInfo.database }}</el-descriptions-item>
-            <el-descriptions-item label="Host">{{ databaseInfo.host }}:{{ databaseInfo.port }}</el-descriptions-item>
-            <el-descriptions-item label="Số bảng">{{ databaseInfo.tables }}</el-descriptions-item>
-            <el-descriptions-item label="Kích thước">{{ databaseInfo.size }}</el-descriptions-item>
-            <el-descriptions-item label="Version">{{ databaseInfo.version?.split(' ')[0] }}</el-descriptions-item>
+            <el-descriptions-item label="Database">
+              {{ databaseInfo.database }}
+            </el-descriptions-item>
+            <el-descriptions-item label="Host">
+              {{ databaseInfo.host }}:{{ databaseInfo.port }}
+            </el-descriptions-item>
+            <el-descriptions-item label="Số bảng">
+              {{ databaseInfo.tables }}
+            </el-descriptions-item>
+            <el-descriptions-item label="Kích thước">
+              {{ databaseInfo.size }}
+            </el-descriptions-item>
+            <el-descriptions-item label="Version">
+              {{ databaseInfo.version?.split(' ')[0] }}
+            </el-descriptions-item>
           </el-descriptions>
-          <el-alert v-else type="error" :closable="false">
+          <el-alert
+            v-else
+            type="error"
+            :closable="false"
+          >
             {{ databaseInfo?.error || 'Không thể kết nối database' }}
           </el-alert>
         </el-card>
@@ -133,35 +242,66 @@
     </el-row>
 
     <!-- Docker Containers -->
-    <el-card class="docker-card" v-if="dockerInfo?.available">
+    <el-card
+      v-if="dockerInfo?.available"
+      class="docker-card"
+    >
       <template #header>
         <div class="card-header">
           <span><el-icon><Box /></el-icon> Docker Containers</span>
-          <el-tag size="small">{{ dockerInfo.version }}</el-tag>
+          <el-tag size="small">
+            {{ dockerInfo.version }}
+          </el-tag>
         </div>
       </template>
       <div class="responsive-table">
-        <el-table :data="dockerInfo.containers" stripe>
-          <el-table-column prop="name" label="Tên Container" min-width="180" />
-          <el-table-column prop="image" label="Image" min-width="200" />
-          <el-table-column prop="state" label="Trạng thái" width="120">
+        <el-table
+          :data="dockerInfo.containers"
+          stripe
+        >
+          <el-table-column
+            prop="name"
+            label="Tên Container"
+            min-width="180"
+          />
+          <el-table-column
+            prop="image"
+            label="Image"
+            min-width="200"
+          />
+          <el-table-column
+            prop="state"
+            label="Trạng thái"
+            width="120"
+          >
             <template #default="{ row }">
-              <el-tag :type="row.state === 'running' ? 'success' : 'danger'" size="small">
+              <el-tag
+                :type="row.state === 'running' ? 'success' : 'danger'"
+                size="small"
+              >
                 {{ row.state }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="status" label="Chi tiết" min-width="150" />
-          <el-table-column label="Thao tác" width="280" fixed="right">
+          <el-table-column
+            prop="status"
+            label="Chi tiết"
+            min-width="150"
+          />
+          <el-table-column
+            label="Thao tác"
+            width="280"
+            fixed="right"
+          >
             <template #default="{ row }">
               <el-button-group>
                 <el-button
                   size="small"
                   type="success"
                   :icon="VideoPlay"
-                  @click="startContainer(row.name)"
                   :disabled="row.state === 'running'"
                   :loading="containerLoading[row.name]"
+                  @click="startContainer(row.name)"
                 >
                   Start
                 </el-button>
@@ -169,8 +309,8 @@
                   size="small"
                   type="warning"
                   :icon="RefreshRight"
-                  @click="restartContainer(row.name)"
                   :loading="containerLoading[row.name]"
+                  @click="restartContainer(row.name)"
                 >
                   Restart
                 </el-button>
@@ -178,9 +318,9 @@
                   size="small"
                   type="danger"
                   :icon="VideoPause"
-                  @click="stopContainer(row.name)"
                   :disabled="row.state !== 'running'"
                   :loading="containerLoading[row.name]"
+                  @click="stopContainer(row.name)"
                 >
                   Stop
                 </el-button>
@@ -191,8 +331,15 @@
       </div>
     </el-card>
 
-    <el-alert v-else-if="dockerInfo && !dockerInfo.available" type="warning" :closable="false" class="docker-alert">
-      <template #title>Docker không khả dụng</template>
+    <el-alert
+      v-else-if="dockerInfo && !dockerInfo.available"
+      type="warning"
+      :closable="false"
+      class="docker-alert"
+    >
+      <template #title>
+        Docker không khả dụng
+      </template>
       {{ dockerInfo.error }}
     </el-alert>
 
@@ -203,58 +350,114 @@
           <span><el-icon><Warning /></el-icon> Thao tác nguy hiểm</span>
         </div>
       </template>
-      <el-alert type="warning" :closable="false" style="margin-bottom: 20px">
+      <el-alert
+        type="warning"
+        :closable="false"
+        style="margin-bottom: 20px"
+      >
         Các thao tác dưới đây có thể ảnh hưởng đến dữ liệu hệ thống. Hãy cẩn thận!
       </el-alert>
 
       <el-row :gutter="16">
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card shadow="hover" class="action-card">
+        <el-col
+          :xs="24"
+          :sm="12"
+          :md="6"
+        >
+          <el-card
+            shadow="hover"
+            class="action-card"
+          >
             <div class="action-icon backup">
-              <el-icon :size="40"><FolderAdd /></el-icon>
+              <el-icon :size="40">
+                <FolderAdd />
+              </el-icon>
             </div>
             <h4>Backup Database</h4>
             <p>Tạo bản sao lưu database hiện tại</p>
-            <el-button type="primary" @click="createBackup" :loading="actionLoading.backup">
+            <el-button
+              type="primary"
+              :loading="actionLoading.backup"
+              @click="createBackup"
+            >
               Tạo Backup
             </el-button>
           </el-card>
         </el-col>
 
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card shadow="hover" class="action-card">
+        <el-col
+          :xs="24"
+          :sm="12"
+          :md="6"
+        >
+          <el-card
+            shadow="hover"
+            class="action-card"
+          >
             <div class="action-icon migrate">
-              <el-icon :size="40"><Upload /></el-icon>
+              <el-icon :size="40">
+                <Upload />
+              </el-icon>
             </div>
             <h4>Run Migrations</h4>
             <p>Chạy database migrations</p>
-            <el-button type="info" @click="runMigrations" :loading="actionLoading.migrate">
+            <el-button
+              type="info"
+              :loading="actionLoading.migrate"
+              @click="runMigrations"
+            >
               Chạy Migrations
             </el-button>
           </el-card>
         </el-col>
 
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card shadow="hover" class="action-card">
+        <el-col
+          :xs="24"
+          :sm="12"
+          :md="6"
+        >
+          <el-card
+            shadow="hover"
+            class="action-card"
+          >
             <div class="action-icon seed">
-              <el-icon :size="40"><Document /></el-icon>
+              <el-icon :size="40">
+                <Document />
+              </el-icon>
             </div>
             <h4>Seed Database</h4>
             <p>Thêm dữ liệu mẫu vào database</p>
-            <el-button type="success" @click="seedDatabase" :loading="actionLoading.seed">
+            <el-button
+              type="success"
+              :loading="actionLoading.seed"
+              @click="seedDatabase"
+            >
               Seed Data
             </el-button>
           </el-card>
         </el-col>
 
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card shadow="hover" class="action-card danger">
+        <el-col
+          :xs="24"
+          :sm="12"
+          :md="6"
+        >
+          <el-card
+            shadow="hover"
+            class="action-card danger"
+          >
             <div class="action-icon reset">
-              <el-icon :size="40"><Delete /></el-icon>
+              <el-icon :size="40">
+                <Delete />
+              </el-icon>
             </div>
             <h4>Reset Data</h4>
             <p>Xóa toàn bộ dữ liệu nghiệp vụ và phòng ban</p>
-            <el-button type="danger" @click="showResetDialog = true" :loading="actionLoading.reset">
+            <el-button
+              type="danger"
+              :loading="actionLoading.reset"
+              @click="showResetDialog = true"
+            >
               Reset Data
             </el-button>
           </el-card>
@@ -263,39 +466,71 @@
     </el-card>
 
     <!-- Backups List -->
-    <el-card class="backups-card" v-if="backups.length > 0">
+    <el-card
+      v-if="backups.length > 0"
+      class="backups-card"
+    >
       <template #header>
         <div class="card-header">
           <span><el-icon><Folder /></el-icon> Danh sách Backup</span>
         </div>
       </template>
-      <el-table :data="backups" stripe>
-        <el-table-column prop="name" label="Tên file" />
-        <el-table-column prop="size" label="Kích thước" width="120" />
-        <el-table-column prop="created" label="Ngày tạo" width="200" />
+      <el-table
+        :data="backups"
+        stripe
+      >
+        <el-table-column
+          prop="name"
+          label="Tên file"
+        />
+        <el-table-column
+          prop="size"
+          label="Kích thước"
+          width="120"
+        />
+        <el-table-column
+          prop="created"
+          label="Ngày tạo"
+          width="200"
+        />
       </el-table>
     </el-card>
 
     <!-- Reset Confirmation Dialog -->
-    <el-dialog v-model="showResetDialog" title="Xác nhận Reset Data" width="500px">
-      <el-alert type="error" :closable="false" style="margin-bottom: 20px">
-        <template #title>CẢNH BÁO: Thao tác này không thể hoàn tác!</template>
+    <el-dialog
+      v-model="showResetDialog"
+      title="Xác nhận Reset Data"
+      width="500px"
+    >
+      <el-alert
+        type="error"
+        :closable="false"
+        style="margin-bottom: 20px"
+      >
+        <template #title>
+          CẢNH BÁO: Thao tác này không thể hoàn tác!
+        </template>
         Tất cả dữ liệu nghiệp vụ sẽ bị xóa bao gồm: <strong>phòng ban</strong>, tài sản, bảo trì, điều chuyển, kiểm kê, thanh lý, v.v.
-        <br /><br />
+        <br><br>
         <strong>GIỮ NGUYÊN:</strong> users, asset_categories
       </el-alert>
       <el-form>
         <el-form-item label="Nhập 'RESET_DATA' để xác nhận:">
-          <el-input v-model="resetConfirmText" placeholder="RESET_DATA" />
+          <el-input
+            v-model="resetConfirmText"
+            placeholder="RESET_DATA"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showResetDialog = false">Hủy</el-button>
+        <el-button @click="showResetDialog = false">
+          Hủy
+        </el-button>
         <el-button
           type="danger"
-          @click="resetBusinessData"
           :disabled="resetConfirmText !== 'RESET_DATA'"
           :loading="actionLoading.reset"
+          @click="resetBusinessData"
         >
           Xác nhận Reset
         </el-button>
@@ -303,10 +538,16 @@
     </el-dialog>
 
     <!-- Container Logs Dialog -->
-    <el-dialog v-model="showLogsDialog" :title="`Logs: ${selectedContainer}`" width="80%">
+    <el-dialog
+      v-model="showLogsDialog"
+      :title="`Logs: ${selectedContainer}`"
+      width="80%"
+    >
       <pre class="logs-content">{{ containerLogs }}</pre>
       <template #footer>
-        <el-button @click="showLogsDialog = false">Đóng</el-button>
+        <el-button @click="showLogsDialog = false">
+          Đóng
+        </el-button>
       </template>
     </el-dialog>
   </div>

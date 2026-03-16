@@ -8,10 +8,10 @@
   >
     <el-form
       ref="formRef"
+      v-loading="loading"
       :model="formData"
       :rules="rules"
       label-position="top"
-      v-loading="loading"
     >
       <!-- Phân loại tài sản -->
       <el-divider content-position="left">
@@ -20,34 +20,48 @@
       
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item label="Loại tài sản" prop="category_id">
+          <el-form-item
+            label="Loại tài sản"
+            prop="category_id"
+          >
             <el-cascader
               v-model="selectedCategory"
+              v-loading="loadingCategories"
               :options="categoryTree"
               :props="cascaderProps"
               placeholder="Chọn loại tài sản (ví dụ: Nhà cấp I, Máy vi tính, Xe ô tô...)"
               style="width: 100%"
               filterable
               clearable
-              v-loading="loadingCategories"
               @change="handleCategoryChange"
             />
           </el-form-item>
         </el-col>
         <el-col :span="6">
           <el-form-item label="Mã loại tài sản">
-            <el-input v-model="formData.category_code" disabled placeholder="Tự động" />
+            <el-input
+              v-model="formData.category_code"
+              disabled
+              placeholder="Tự động"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="6">
           <el-form-item label="Đơn vị tính">
-            <el-input v-model="formData.unit" disabled placeholder="Tự động" />
+            <el-input
+              v-model="formData.unit"
+              disabled
+              placeholder="Tự động"
+            />
           </el-form-item>
         </el-col>
       </el-row>
 
-      <!-- Hiển thị thông tin khấu hao ngay khi chọn loại tài sản -->
-      <el-row :gutter="20" v-if="formData.category_id">
+      <!-- Hiển thị thông tin hao mòn ngay khi chọn loại tài sản -->
+      <el-row
+        v-if="formData.category_id"
+        :gutter="20"
+      >
         <el-col :span="8">
           <el-form-item label="Thời gian sử dụng (năm)">
             <el-input 
@@ -59,7 +73,7 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="Tỷ lệ khấu hao (%/năm)">
+          <el-form-item :label="$t('assets.depreciationRateLabel')">
             <el-input 
               :value="formData.depreciation_rate != null ? `${formData.depreciation_rate}%` : 'Chưa có'" 
               disabled 
@@ -69,7 +83,7 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="Có khấu hao">
+          <el-form-item :label="$t('assets.hasDepreciation')">
             <el-input 
               :value="formData.is_depreciable ? 'Có' : 'Không'" 
               disabled 
@@ -87,24 +101,44 @@
 
       <el-row :gutter="20">
         <el-col :span="8">
-          <el-form-item :label="$t('assets.assetCode')" prop="asset_code">
-            <el-input v-model="formData.asset_code" placeholder="Tự động sinh hoặc nhập tay">
+          <el-form-item
+            :label="$t('assets.assetCode')"
+            prop="asset_code"
+          >
+            <el-input
+              v-model="formData.asset_code"
+              placeholder="Tự động sinh hoặc nhập tay"
+            >
               <template #append>
-                <el-button :icon="Refresh" @click="generateAssetCode" :disabled="!formData.category_code" title="Sinh mã tự động" />
+                <el-button
+                  :icon="Refresh"
+                  :disabled="!formData.category_code"
+                  title="Sinh mã tự động"
+                  @click="generateAssetCode"
+                />
               </template>
             </el-input>
           </el-form-item>
         </el-col>
         <el-col :span="16">
-          <el-form-item :label="$t('assets.assetName')" prop="name">
-            <el-input v-model="formData.name" :placeholder="$t('assets.assetName')" />
+          <el-form-item
+            :label="$t('assets.assetName')"
+            prop="name"
+          >
+            <el-input
+              v-model="formData.name"
+              :placeholder="$t('assets.assetName')"
+            />
           </el-form-item>
         </el-col>
       </el-row>
 
       <el-row :gutter="20">
         <el-col :span="8">
-          <el-form-item label="Ngày mua" prop="purchase_date">
+          <el-form-item
+            label="Ngày mua"
+            prop="purchase_date"
+          >
             <el-date-picker
               v-model="formData.purchase_date"
               type="date"
@@ -117,7 +151,10 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="Năm đưa vào sử dụng" prop="year_in_use">
+          <el-form-item
+            label="Năm đưa vào sử dụng"
+            prop="year_in_use"
+          >
             <el-tooltip 
               :content="formData.purchase_date ? 'Tự động từ ngày mua' : 'Nhập năm hoặc chọn ngày mua để tự động'"
               placement="top"
@@ -136,7 +173,10 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="Số lượng" prop="quantity">
+          <el-form-item
+            label="Số lượng"
+            prop="quantity"
+          >
             <el-input-number
               v-model="formData.quantity"
               :min="1"
@@ -146,10 +186,16 @@
               style="width: 100%"
               controls-position="right"
             />
-            <div v-if="isAreaUnit" style="margin-top: 4px; font-size: 12px; color: #909399;">
+            <div
+              v-if="isAreaUnit"
+              style="margin-top: 4px; font-size: 12px; color: #909399;"
+            >
               Đơn vị tính là m², vui lòng nhập diện tích cụ thể.
             </div>
-            <div v-else style="margin-top: 4px; font-size: 12px; color: #909399;">
+            <div
+              v-else
+              style="margin-top: 4px; font-size: 12px; color: #909399;"
+            >
               Đơn vị tính theo cái/bộ, số lượng mặc định là 1.
             </div>
           </el-form-item>
@@ -158,8 +204,15 @@
 
       <el-row :gutter="20">
         <el-col :span="8">
-          <el-form-item :label="$t('common.status')" prop="status">
-            <el-select v-model="formData.status" :placeholder="$t('common.status')" style="width: 100%">
+          <el-form-item
+            :label="$t('common.status')"
+            prop="status"
+          >
+            <el-select
+              v-model="formData.status"
+              :placeholder="$t('common.status')"
+              style="width: 100%"
+            >
               <el-option
                 v-for="s in statuses"
                 :key="s.value"
@@ -173,14 +226,17 @@
 
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item :label="$t('assets.department')" prop="current_department_id">
+          <el-form-item
+            :label="$t('assets.department')"
+            prop="current_department_id"
+          >
             <el-select 
               v-model="formData.current_department_id" 
+              v-loading="departmentsLoading" 
               :placeholder="$t('assets.department')" 
-              style="width: 100%" 
+              style="width: 100%"
               clearable
               filterable
-              v-loading="departmentsLoading"
             >
               <el-option
                 v-for="dept in departments"
@@ -192,8 +248,14 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item :label="$t('assets.location')" prop="location">
-            <el-input v-model="formData.location" :placeholder="$t('assets.locationPlaceholder')" />
+          <el-form-item
+            :label="$t('assets.location')"
+            prop="location"
+          >
+            <el-input
+              v-model="formData.location"
+              :placeholder="$t('assets.locationPlaceholder')"
+            />
           </el-form-item>
         </el-col>
       </el-row>
@@ -221,7 +283,10 @@
         </el-col>
         <el-col :span="8">
           <el-form-item label="Giá trị còn lại (đồng)">
-            <el-tooltip content="Tự động tính từ nguyên giá" placement="top">
+            <el-tooltip
+              content="Tự động tính từ nguyên giá"
+              placement="top"
+            >
               <el-input-number
                 v-model="formData.residual_value"
                 :min="0"
@@ -235,8 +300,15 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="Tình trạng tài sản" prop="asset_condition">
-            <el-select v-model="formData.asset_condition" placeholder="Chọn tình trạng" style="width: 100%">
+          <el-form-item
+            label="Tình trạng tài sản"
+            prop="asset_condition"
+          >
+            <el-select
+              v-model="formData.asset_condition"
+              placeholder="Chọn tình trạng"
+              style="width: 100%"
+            >
               <el-option
                 v-for="opt in assetConditionOptions"
                 :key="opt.value"
@@ -250,12 +322,21 @@
 
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item :label="$t('assets.serialNumber')" prop="serial_number">
-            <el-input v-model="formData.serial_number" :placeholder="$t('assets.serialNumber')" />
+          <el-form-item
+            :label="$t('assets.serialNumber')"
+            prop="serial_number"
+          >
+            <el-input
+              v-model="formData.serial_number"
+              :placeholder="$t('assets.serialNumber')"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="Tài sản trên đất (số lô)" prop="land_parcel_id">
+          <el-form-item
+            label="Tài sản trên đất (số lô)"
+            prop="land_parcel_id"
+          >
             <el-input-number
               v-model="formData.land_parcel_id"
               :min="0"
@@ -267,7 +348,10 @@
         </el-col>
       </el-row>
 
-      <el-form-item label="Ghi chú" prop="description">
+      <el-form-item
+        label="Ghi chú"
+        prop="description"
+      >
         <el-input
           v-model="formData.description"
           type="textarea"
@@ -277,16 +361,29 @@
       </el-form-item>
 
       <!-- QR Code Section (chỉ hiển thị khi edit) -->
-      <el-divider content-position="left" v-if="isEdit && props.asset?.id">
+      <el-divider
+        v-if="isEdit && props.asset?.id"
+        content-position="left"
+      >
         <el-icon><Document /></el-icon> Mã QR Code
       </el-divider>
 
-      <div v-if="isEdit && props.asset?.id" class="qrcode-section">
+      <div
+        v-if="isEdit && props.asset?.id"
+        class="qrcode-section"
+      >
         <el-row :gutter="20">
           <el-col :span="12">
             <div class="qrcode-display">
-              <div v-if="qrCodeImage" class="qrcode-image-container">
-                <img :src="qrCodeImage" alt="QR Code" class="qrcode-image" />
+              <div
+                v-if="qrCodeImage"
+                class="qrcode-image-container"
+              >
+                <img
+                  :src="qrCodeImage"
+                  alt="QR Code"
+                  class="qrcode-image"
+                >
                 <div class="qrcode-info">
                   <p><strong>Mã tài sản:</strong> {{ formData.asset_code }}</p>
                   <p><strong>Tên:</strong> {{ formData.name }}</p>
@@ -297,10 +394,20 @@
                   </p>
                 </div>
               </div>
-              <div v-else class="qrcode-placeholder">
-                <el-icon class="qrcode-icon"><Document /></el-icon>
+              <div
+                v-else
+                class="qrcode-placeholder"
+              >
+                <el-icon class="qrcode-icon">
+                  <Document />
+                </el-icon>
                 <p>Chưa có QR code</p>
-                <el-button type="primary" @click="generateQRCode" :loading="generatingQR" size="small">
+                <el-button
+                  type="primary"
+                  :loading="generatingQR"
+                  size="small"
+                  @click="generateQRCode"
+                >
                   <el-icon><Refresh /></el-icon>
                   Tạo QR Code
                 </el-button>
@@ -309,10 +416,22 @@
           </el-col>
           <el-col :span="12">
             <div class="qrcode-actions">
-              <el-button v-if="qrCodeImage" type="success" @click="downloadQRCode" :icon="Download" block>
+              <el-button
+                v-if="qrCodeImage"
+                type="success"
+                :icon="Download"
+                block
+                @click="downloadQRCode"
+              >
                 Tải QR Code
               </el-button>
-              <el-button type="primary" @click="generateQRCode" :loading="generatingQR" :icon="Refresh" block>
+              <el-button
+                type="primary"
+                :loading="generatingQR"
+                :icon="Refresh"
+                block
+                @click="generateQRCode"
+              >
                 {{ qrCodeImage ? 'Tạo lại QR Code' : 'Tạo QR Code' }}
               </el-button>
               <el-alert
@@ -322,10 +441,10 @@
                 style="margin-top: 12px"
               >
                 <template #default>
-                    <div style="font-size: 12px">
-                      QR code chứa thông tin: mã tài sản, tên, loại, đơn vị tính và số lượng.
-                      Sử dụng để quét nhanh khi kiểm kê.
-                    </div>
+                  <div style="font-size: 12px">
+                    QR code chứa thông tin: mã tài sản, tên, loại, đơn vị tính và số lượng.
+                    Sử dụng để quét nhanh khi kiểm kê.
+                  </div>
                 </template>
               </el-alert>
             </div>
@@ -336,8 +455,14 @@
 
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">{{ $t('common.cancel') }}</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="loading">
+        <el-button @click="handleClose">
+          {{ $t('common.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="loading"
+          @click="handleSubmit"
+        >
           {{ $t('common.save') }}
         </el-button>
       </div>
@@ -629,8 +754,8 @@ const handleCategoryChange = async (value: string[]) => {
     formData.unit = category.unit;
     formData.is_depreciable = category.is_depreciable;
 
-    // Chỉ auto-fill thông tin khấu hao khi loại tài sản có khấu hao.
-    // Với nhóm không khấu hao (ví dụ: Công cụ dụng cụ), giữ rate/useful_life = null để UI không bị “mặc định cách tính khấu hao”.
+    // Chỉ auto-fill thông tin hao mòn khi loại tài sản có hao mòn.
+    // Với nhóm không hao mòn (ví dụ: Công cụ dụng cụ), giữ rate/useful_life = null để UI không bị “mặc định cách tính hao mòn”.
     if (category.is_depreciable) {
       formData.depreciation_rate = category.depreciation_rate ?? null;
       formData.useful_life = category.useful_life_years ?? null;
@@ -657,7 +782,7 @@ const handleCategoryChange = async (value: string[]) => {
   }
 };
 
-// Tự động tính giá trị còn lại dựa trên khấu hao
+// Tự động tính giá trị còn lại dựa trên hao mòn
 // Công thức theo Thông tư 141/2025/TT-BTC:
 // - Mức hao mòn hằng năm = Nguyên giá / Thời gian sử dụng (năm)
 // - Số hao mòn lũy kế = Mức hao mòn hằng năm × Số năm đã sử dụng
@@ -700,7 +825,7 @@ const calculateResidualValue = () => {
 };
 
 // Tự động tính giá trị còn lại từ nguyên giá
-const handlePurchasePriceChange = (value: number | null) => {
+const handlePurchasePriceChange = (_value: number | null) => {
   calculateResidualValue();
 };
 
@@ -1004,7 +1129,7 @@ watch(() => formData.year_in_use, () => {
   calculateResidualValue();
 });
 
-// Watch để tự động tính lại khi thay đổi tỷ lệ khấu hao (từ category)
+// Watch để tự động tính lại khi thay đổi tỷ lệ hao mòn (từ category)
 watch(() => formData.depreciation_rate, () => {
   calculateResidualValue();
 });

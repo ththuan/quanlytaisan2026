@@ -1,5 +1,11 @@
 <template>
-  <el-dialog :model-value="modelValue" :title="editId ? 'Sửa phiếu' : 'Tạo phiếu'" width="980px" class="procurement-dialog" @close="emit('update:modelValue', false)">
+  <el-dialog
+    :model-value="modelValue"
+    :title="editId ? 'Sửa phiếu' : 'Tạo phiếu'"
+    width="980px"
+    class="procurement-dialog"
+    @close="emit('update:modelValue', false)"
+  >
     <!-- Banner: phiếu được chuyển từ đề nghị mua sắm -->
     <el-alert
       v-if="sourceRequest"
@@ -14,46 +20,109 @@
       </template>
     </el-alert>
 
-    <el-form :model="form" label-width="160px">
+    <el-form
+      :model="form"
+      label-width="160px"
+    >
       <el-form-item label="Nội dung">
-        <el-input v-model="form.title" size="large" />
+        <el-input
+          v-model="form.title"
+          size="large"
+        />
       </el-form-item>
       <el-form-item label="Mô tả">
-        <el-input v-model="form.description" type="textarea" :rows="2" size="large" />
+        <el-input
+          v-model="form.description"
+          type="textarea"
+          :rows="2"
+          size="large"
+        />
       </el-form-item>
       <el-form-item label="">
-        <el-checkbox v-model="autoFulfill">Lưu và tạo tài sản ngay</el-checkbox>
+        <el-checkbox v-model="autoFulfill">
+          Lưu và tạo tài sản ngay
+        </el-checkbox>
       </el-form-item>
 
-      <el-divider content-position="left">Pháp lý mua sắm</el-divider>
+      <el-divider content-position="left">
+        Pháp lý mua sắm
+      </el-divider>
       <el-form-item label="Nhà cung cấp">
-        <el-input v-model="form.supplier_name" placeholder="Nhập tên nhà cung cấp" size="large" />
+        <el-input
+          v-model="form.supplier_name"
+          placeholder="Nhập tên nhà cung cấp"
+          size="large"
+        />
       </el-form-item>
       <el-form-item label="Hình thức chứng từ">
-        <el-radio-group v-model="form.purchase_doc_type" size="large">
-          <el-radio-button label="invoice">Hóa đơn</el-radio-button>
-          <el-radio-button label="contract">Hợp đồng</el-radio-button>
-          <el-radio-button label="online">Mua online</el-radio-button>
+        <el-radio-group
+          v-model="form.purchase_doc_type"
+          size="large"
+        >
+          <el-radio-button label="invoice">
+            Hóa đơn
+          </el-radio-button>
+          <el-radio-button label="contract">
+            Hợp đồng
+          </el-radio-button>
+          <el-radio-button label="online">
+            Mua online
+          </el-radio-button>
         </el-radio-group>
       </el-form-item>
-      <el-form-item v-if="form.purchase_doc_type === 'contract'" label="Số hợp đồng">
-        <el-input v-model="form.contract_no" placeholder="Nhập số hợp đồng" size="large" />
+      <el-form-item
+        v-if="form.purchase_doc_type === 'contract'"
+        label="Số hợp đồng"
+      >
+        <el-input
+          v-model="form.contract_no"
+          placeholder="Nhập số hợp đồng"
+          size="large"
+        />
       </el-form-item>
-      <el-form-item v-else-if="form.purchase_doc_type === 'invoice'" label="Số hóa đơn">
-        <el-input v-model="form.invoice_no" placeholder="Nhập số hóa đơn" size="large" />
+      <el-form-item
+        v-else-if="form.purchase_doc_type === 'invoice'"
+        label="Số hóa đơn"
+      >
+        <el-input
+          v-model="form.invoice_no"
+          placeholder="Nhập số hóa đơn"
+          size="large"
+        />
       </el-form-item>
-      <el-form-item v-else label="Mã đơn hàng">
-        <el-input v-model="form.order_code" placeholder="Nhập mã đơn hàng" size="large" />
+      <el-form-item
+        v-else
+        label="Mã đơn hàng"
+      >
+        <el-input
+          v-model="form.order_code"
+          placeholder="Nhập mã đơn hàng"
+          size="large"
+        />
       </el-form-item>
 
-      <el-divider content-position="left">Thêm tài sản</el-divider>
+      <el-divider content-position="left">
+        Thêm tài sản
+      </el-divider>
       <div class="procurement-items-header">
-        <div class="procurement-items-title">Thêm tài sản</div>
-        <el-button type="primary" size="large" @click="openAddAsset">Thêm tài sản</el-button>
+        <div class="procurement-items-title">
+          Thêm tài sản
+        </div>
+        <el-button
+          type="primary"
+          size="large"
+          @click="openAddAsset"
+        >
+          Thêm tài sản
+        </el-button>
       </div>
 
       <div class="procurement-items-list">
-        <div v-for="(row, idx) in form.items" :key="idx" class="procurement-item-row">
+        <div
+          v-for="(row, idx) in form.items"
+          :key="idx"
+          class="procurement-item-row"
+        >
           <div class="procurement-item-summary">
             <div class="summary-main">
               <div class="summary-title">
@@ -71,14 +140,30 @@
             </div>
 
             <div class="procurement-item-actions">
-              <el-button size="large" @click="openEditAsset(idx)">Sửa</el-button>
-              <el-button type="danger" plain size="large" @click="removeLine(idx)">Xóa</el-button>
+              <el-button
+                size="large"
+                @click="openEditAsset(idx)"
+              >
+                Sửa
+              </el-button>
+              <el-button
+                type="danger"
+                plain
+                size="large"
+                @click="removeLine(idx)"
+              >
+                Xóa
+              </el-button>
             </div>
           </div>
         </div>
       </div>
 
-      <el-card v-if="showInlineForm" shadow="never" class="inline-asset-card">
+      <el-card
+        v-if="showInlineForm"
+        shadow="never"
+        class="inline-asset-card"
+      >
         <AssetInlineForm
           v-model="editingAssetModel"
           :show-actions="true"
@@ -89,8 +174,16 @@
     </el-form>
 
     <template #footer>
-      <el-button @click="emit('update:modelValue', false)">Hủy</el-button>
-      <el-button type="primary" :loading="loading" @click="submit">Lưu</el-button>
+      <el-button @click="emit('update:modelValue', false)">
+        Hủy
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="loading"
+        @click="submit"
+      >
+        Lưu
+      </el-button>
     </template>
   </el-dialog>
 </template>
