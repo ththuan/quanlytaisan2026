@@ -40,6 +40,11 @@ COPY package*.json ./
 RUN npm ci --only=production
 
 COPY --from=builder /app/dist ./dist
+# Cần cho sequelize-cli migrate/seed
+COPY --from=builder /app/.sequelizerc ./
+COPY --from=builder /app/sequelize-cli-config.js ./
+COPY --from=builder /app/src/migrations ./src/migrations
+COPY --from=builder /app/seeders ./seeders
 
 EXPOSE 5000
 

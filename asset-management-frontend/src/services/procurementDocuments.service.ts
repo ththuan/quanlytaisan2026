@@ -32,7 +32,7 @@ class ProcurementDocumentsService {
   }
 
   getDownloadUrl(procurementId: number, docId: number) {
-    const base = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:5000/api';
+    const base = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
     const token = localStorage.getItem('accessToken');
     const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
     return `${base}/procurements/${procurementId}/documents/${docId}/download${tokenParam}`;

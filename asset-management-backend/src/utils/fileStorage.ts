@@ -152,12 +152,15 @@ export function deleteMaintenanceImages(maintenanceId: number): void {
 }
 
 /**
- * Get full URL for an image path
+ * Get URL for an image path (relative nếu không set API_BASE_URL → tránh mixed content khi frontend dùng HTTPS)
  * @param imagePath - Relative path to the image
- * @returns Full URL
+ * @returns Full URL hoặc relative path /storage/...
  */
 export function getImageUrl(imagePath: string): string {
-  const baseUrl = process.env.API_BASE_URL || 'http://localhost:8000';
   const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
-  return `${baseUrl}/storage/${cleanPath}`;
+  const baseUrl = process.env.API_BASE_URL;
+  if (!baseUrl) {
+    return `/storage/${cleanPath}`;
+  }
+  return `${baseUrl.replace(/\/$/, '')}/storage/${cleanPath}`;
 }
