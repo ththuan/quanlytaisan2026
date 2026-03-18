@@ -1,0 +1,517 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Asset Management System API",
+    "description": "Comprehensive API documentation for the Asset Management System\n\n## Authentication\n\nAll protected endpoints require a JWT token in the Authorization header:\n```\nAuthorization: Bearer <your-jwt-token>\n```\n\n## User Roles\n\n- **admin**: Full system access\n- **director**: Department-level management\n- **staff**: Basic operations\n- **department_head**: Manage own department assets",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local Development Server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "User login, registration, and token management"
+    },
+    {
+      "name": "Assets",
+      "description": "Asset management operations"
+    },
+    {
+      "name": "Departments",
+      "description": "Department management"
+    },
+    {
+      "name": "Users",
+      "description": "User management"
+    },
+    {
+      "name": "Inventory",
+      "description": "Inventory and stock management"
+    },
+    {
+      "name": "Reports",
+      "description": "Reports and analytics"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your JWT token"
+      }
+    },
+    "schemas": {
+      "Asset": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "asset_code": { "type": "string" },
+          "name": { "type": "string" },
+          "category": { "type": "string" },
+          "status": { "type": "string", "enum": ["available", "in_use", "maintenance", "retired"] },
+          "location": { "type": "string" },
+          "purchase_date": { "type": "string", "format": "date" },
+          "purchase_price": { "type": "number" },
+          "department_id": { "type": "integer" },
+          "assigned_to": { "type": "integer" },
+          "qr_code_url": { "type": "string" }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "username": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "full_name": { "type": "string" },
+          "role": { "type": "string", "enum": ["admin", "director", "staff", "department_head"] },
+          "department_id": { "type": "integer" }
+        }
+      },
+      "Department": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "code": { "type": "string" },
+          "manager_id": { "type": "integer" },
+          "parent_id": { "type": "integer" }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "message": { "type": "string" },
+          "error": { "type": "string" }
+        }
+      },
+      "Success": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string" },
+          "data": { "type": "object" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "User login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password"],
+                "properties": {
+                  "username": { "type": "string", "example": "admin" },
+                  "password": { "type": "string", "example": "password123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "token": { "type": "string" },
+                        "user": { "$ref": "#/components/schemas/User" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Register new user",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "email", "password", "full_name"],
+                "properties": {
+                  "username": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" },
+                  "full_name": { "type": "string" },
+                  "role": { "type": "string", "enum": ["admin", "director", "staff", "department_head"] },
+                  "department_id": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Success" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assets": {
+      "get": {
+        "tags": ["Assets"],
+        "summary": "Get all assets with pagination and filters",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["available", "in_use", "maintenance", "retired"] } },
+          { "name": "category", "in": "query", "schema": { "type": "string" } },
+          { "name": "department_id", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of assets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "assets": { "type": "array", "items": { "$ref": "#/components/schemas/Asset" } },
+                        "total": { "type": "integer" },
+                        "page": { "type": "integer" },
+                        "pages": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Assets"],
+        "summary": "Create new asset",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "category"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "category": { "type": "string" },
+                  "location": { "type": "string" },
+                  "purchase_date": { "type": "string", "format": "date" },
+                  "purchase_price": { "type": "number" },
+                  "department_id": { "type": "integer" },
+                  "description": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Asset created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Success" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assets/{id}": {
+      "get": {
+        "tags": ["Assets"],
+        "summary": "Get asset by ID",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Asset details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/Asset" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Assets"],
+        "summary": "Update asset",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "category": { "type": "string" },
+                  "status": { "type": "string" },
+                  "location": { "type": "string" },
+                  "department_id": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Asset updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Success" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Assets"],
+        "summary": "Delete asset",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Asset deleted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Success" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assets/{id}/transfer": {
+      "post": {
+        "tags": ["Assets"],
+        "summary": "Transfer asset to another department/user",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["new_department_id", "reason"],
+                "properties": {
+                  "new_department_id": { "type": "integer" },
+                  "assigned_to": { "type": "integer" },
+                  "reason": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Asset transferred",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Success" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assets/{id}/qr": {
+      "get": {
+        "tags": ["Assets"],
+        "summary": "Get QR code for asset",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "QR code image",
+            "content": {
+              "image/png": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/departments": {
+      "get": {
+        "tags": ["Departments"],
+        "summary": "Get all departments",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of departments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Department" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get all users",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } },
+          { "name": "role", "in": "query", "schema": { "type": "string" } },
+          { "name": "department_id", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "users": { "type": "array", "items": { "$ref": "#/components/schemas/User" } },
+                        "total": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reports/asset-summary": {
+      "get": {
+        "tags": ["Reports"],
+        "summary": "Get asset summary statistics",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Asset summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "total_assets": { "type": "integer" },
+                        "by_status": { "type": "object" },
+                        "by_category": { "type": "object" },
+                        "total_value": { "type": "number" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check endpoint",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" },
+                    "timestamp": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

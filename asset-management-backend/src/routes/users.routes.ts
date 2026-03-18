@@ -4,6 +4,7 @@ import { authenticateToken } from '../middleware/auth.middleware';
 import { requireRole } from '../middleware/authorization.middleware';
 import { validateRequest } from '../middleware/validation';
 import { createUserSchema, updateUserSchema } from '../utils/validators';
+import { invalidateCache } from '../middleware/caching';
 
 const router = Router();
 
@@ -14,7 +15,7 @@ router.use(authenticateToken);
 router.get('/profile', usersController.getProfile);
 
 // Update current user profile
-router.put('/profile', validateRequest(updateUserSchema), usersController.updateProfile);
+router.put('/profile', validateRequest(updateUserSchema), invalidateCache('users'), usersController.updateProfile);
 
 // Admin only routes
 router.get(
@@ -33,6 +34,7 @@ router.post(
   '/import',
   requireRole('admin'),
   uploadUserImport,
+  invalidateCache('users'),
   usersController.importUsers
 );
 
@@ -46,6 +48,7 @@ router.post(
   '/',
   requireRole('admin'),
   validateRequest(createUserSchema),
+  invalidateCache('users'),
   usersController.createUser
 );
 
@@ -53,12 +56,14 @@ router.put(
   '/:id',
   requireRole('admin'),
   validateRequest(updateUserSchema),
+  invalidateCache('users'),
   usersController.updateUser
 );
 
 router.delete(
   '/:id',
   requireRole('admin'),
+  invalidateCache('users'),
   usersController.deleteUser
 );
 
@@ -66,6 +71,7 @@ router.delete(
 router.post(
   '/:id/reset-password',
   requireRole('admin'),
+  invalidateCache('users'),
   usersController.resetPassword
 );
 

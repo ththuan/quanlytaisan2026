@@ -5,6 +5,7 @@ import { requireRole } from '../middleware/authorization.middleware';
 import { validateRequest } from '../middleware/validation';
 import { createDepartmentSchema, updateDepartmentSchema } from '../utils/validators';
 import multer from 'multer';
+import { invalidateCache } from '../middleware/caching';
 
 // Cấu hình multer để xử lý file upload
 const storage = multer.memoryStorage();
@@ -44,6 +45,7 @@ router.post(
   '/',
   requireRole('admin'),
   validateRequest(createDepartmentSchema),
+  invalidateCache('departments'),
   departmentsController.createDepartment
 );
 
@@ -51,12 +53,14 @@ router.put(
   '/:id',
   requireRole('admin'),
   validateRequest(updateDepartmentSchema),
+  invalidateCache('departments'),
   departmentsController.updateDepartment
 );
 
 router.delete(
   '/:id',
   requireRole('admin'),
+  invalidateCache('departments'),
   departmentsController.deleteDepartment
 );
 
@@ -71,6 +75,7 @@ router.post(
   '/import',
   requireRole('admin'),
   uploadMiddleware,
+  invalidateCache('departments'),
   departmentsController.importExcel
 );
 

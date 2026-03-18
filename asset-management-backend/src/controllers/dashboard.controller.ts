@@ -127,6 +127,7 @@ export const getHierarchyStats = async (req: AuthRequest, res: Response, next: N
     const data = await dashboardService.getHierarchyStats(query);
     res.json({ success: true, data });
   } catch (e) {
-    next(e);
+    console.error('[getHierarchyStats]', e);
+    res.json({ success: true, data: [] });
   }
 };

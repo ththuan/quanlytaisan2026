@@ -1,4 +1,4 @@
-import express, { Application } from 'express';
+import express, { Application, Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -8,6 +8,7 @@ import envConfig from './config/env';
 import routes from './routes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/logging';
+import { cachingMiddleware } from './middleware/caching';
 
 const app: Application = express();
 
@@ -19,48 +20,53 @@ app.disable('etag');
 // Security middleware
 app.use(helmet());
 
-// CORS - Allow multiple origins for development
-const allowedOrigins = [
+// Caching middleware - applied after security, before routes
+app.use(cachingMiddleware);
+
+// CORS - Production: chỉ cho phép CORS_ORIGIN. Development: cho phép localhost + CORS_ORIGIN
+const devOrigins = [
   'http://localhost:3000',
   'https://localhost:3000',
   'http://127.0.0.1:3000',
   'https://127.0.0.1:3000',
   'http://localhost:5173',
   'https://localhost:5173',
-  envConfig.corsOrigin,
 ];
+const productionOrigins = envConfig.corsOrigin === '*'
+  ? []
+  : envConfig.corsOrigin.split(',').map((o) => o.trim()).filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      
-      // In development, allow localhost (all variants) and any IP
+
+      if (envConfig.corsOrigin === '*') {
+        return callback(null, true);
+      }
+
       if (envConfig.nodeEnv === 'development') {
         if (
-          origin.startsWith('http://localhost') || 
-          origin.startsWith('https://localhost') || 
-          origin.startsWith('http://127.0.0.1') || 
+          devOrigins.includes(origin) ||
+          origin.startsWith('http://localhost') ||
+          origin.startsWith('https://localhost') ||
+          origin.startsWith('http://127.0.0.1') ||
           origin.startsWith('https://127.0.0.1') ||
-          /^https?:\/\/192\.168\./.test(origin) || // Local network IP
-          /^https?:\/\/172\./.test(origin)      || // Docker network IP
-          /^https?:\/\/10\./.test(origin)             // Private network IP
+          /^https?:\/\/192\.168\./.test(origin) ||
+          /^https?:\/\/172\./.test(origin) ||
+          /^https?:\/\/10\./.test(origin)
         ) {
           return callback(null, true);
         }
       }
 
-      if (allowedOrigins.includes(origin) || envConfig.corsOrigin === '*') {
-        callback(null, true);
-      } else {
-        // Fallback to allowing everything in development if not explicitly denied
-        if (envConfig.nodeEnv === 'development') {
-          callback(null, true);
-        } else {
-          callback(new Error('Not allowed by CORS'));
-        }
+      if (productionOrigins.includes(origin) || devOrigins.includes(origin)) {
+        return callback(null, true);
       }
+      if (envConfig.nodeEnv === 'development') {
+        return callback(null, true);
+      }
+      callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -98,10 +104,10 @@ app.use(
   })
 );
 
-// Body parser - Increased limit to handle large base64 images in damage_images field
-// Base64 images can be quite large (1.8MB+), so we need a higher limit
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// Body parser - Limit configurable (default 10MB). Large base64 images: set BODY_LIMIT=50mb in .env
+const bodyLimit = process.env.BODY_LIMIT || '10mb';
+app.use(express.json({ limit: bodyLimit }));
+app.use(express.urlencoded({ extended: true, limit: bodyLimit }));
 
 // Request logging
 app.use(requestLogger);
@@ -144,6 +150,11 @@ app.use('/api', limiter);
 
 // API Routes
 app.use('/api', routes);
+
+// Swagger API Documentation (tùy chọn - bỏ qua nếu thiếu module)
+import('./swagger')
+  .then(({ setupSwagger }) => setupSwagger(app as Express))
+  .catch((e: any) => console.warn('[swagger] Bỏ qua (thiếu swagger-ui-express/swagger-jsdoc):', e?.message));
 
 // Serve static files from storage/public with compression and caching
 const storagePath = path.join(__dirname, '../storage/public');

@@ -133,6 +133,7 @@
               size="small"
               type="primary"
               plain
+              :loading="openingDocId === row.id"
               @click="openPdf(row)"
             >
               Xem
@@ -376,12 +377,18 @@ const handleFileChange = async (uploadFile: any) => {
   }
 };
 
-const openPdf = (doc: any) => {
+const openingDocId = ref<number | null>(null);
+const openPdf = async (doc: any) => {
   const procurementId = props.item?.id;
   if (!procurementId || !doc?.id) return;
-
-  const url = procurementDocumentsService.getDownloadUrl(procurementId, doc.id);
-  window.open(url, '_blank');
+  openingDocId.value = doc.id;
+  try {
+    await procurementDocumentsService.openDocument(procurementId, doc.id);
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || e?.message || 'Không thể mở file');
+  } finally {
+    openingDocId.value = null;
+  }
 };
 
 const formatCurrency = (value?: number | string | null) => {

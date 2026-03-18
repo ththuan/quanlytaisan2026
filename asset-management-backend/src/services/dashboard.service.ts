@@ -394,69 +394,78 @@ class DashboardService {
   }
 
   async getHierarchyStats(query: any): Promise<any[]> {
-    const departmentId = parseIntSafe(query?.departmentId);
-    const rootId = parseIntSafe(query?.rootDepartmentId);
-    const whereAsset = buildScopeWhere(query, 'created_at', 'current_department_id');
-    
-    if (departmentId || rootId) {
-      const targetDeptId = departmentId || rootId;
-      const childDepts = await Department.findAll({
-        where: { parent_department_id: targetDeptId },
-        attributes: ['id']
+    try {
+      const departmentId = parseIntSafe(query?.departmentId);
+      const rootId = parseIntSafe(query?.rootDepartmentId);
+      const range = String(query?.range ?? '').toLowerCase();
+      const days = parseIntSafe(query?.days);
+      const year = parseIntSafe(query?.year);
+
+      let dateCondition = '';
+      if (range === 'currentyear' || (year && year >= 1990 && year <= 2100)) {
+        const y = year && year >= 1990 && year <= 2100 ? year! : new Date().getFullYear();
+        const start = new Date(y, 0, 1).toISOString();
+        const end = new Date(y, 11, 31, 23, 59, 59).toISOString();
+        dateCondition = `AND a.created_at BETWEEN '${start}' AND '${end}'`;
+      } else {
+        const d = range === 'last30days' ? 30 : days && days > 0 ? days : 30;
+        const end = new Date();
+        const start = new Date();
+        start.setDate(start.getDate() - d);
+        dateCondition = `AND a.created_at BETWEEN '${start.toISOString()}' AND '${end.toISOString()}'`;
+      }
+
+      const replacements: Record<string, unknown> = {};
+      let deptCondition = '';
+      if (departmentId || rootId) {
+        const targetDeptId = departmentId || rootId;
+        const childDepts = await Department.findAll({
+          where: { parent_department_id: targetDeptId },
+          attributes: ['id'],
+        });
+        const deptIds = [targetDeptId, ...childDepts.map((d: any) => d.id)];
+        deptIds.forEach((id, i) => { replacements[`deptId${i}`] = id; });
+        deptCondition = `AND a.current_department_id IN (${deptIds.map((_, i) => `:deptId${i}`).join(', ')})`;
+      }
+
+      const sql = `
+      SELECT
+        a.current_department_id,
+        a.category_code,
+        TRIM(COALESCE(a.category, '')) AS asset_category_field,
+        d.name AS department_name,
+        ac.name AS category_table_name,
+        COUNT(a.id)::int AS count
+      FROM assets a
+      LEFT JOIN departments d ON d.id = a.current_department_id
+      LEFT JOIN asset_categories ac ON ac.id = a.category_id
+      WHERE 1=1 ${dateCondition} ${deptCondition}
+      GROUP BY a.current_department_id, a.category_code, a.category, d.name, ac.name
+    `;
+
+      const rows = (await sequelize.query(sql, {
+        type: QueryTypes.SELECT,
+        replacements,
+      })) as any[];
+
+      return rows.map((r) => {
+        const nameFromAsset = r.asset_category_field;
+        const nameFromTable = r.category_table_name;
+        const code = r.category_code;
+        let finalName = nameFromAsset || nameFromTable || code || 'Khác';
+        finalName = String(finalName).trim();
+        return {
+          department_id: r.current_department_id,
+          department_name: r.department_name || 'Chưa phân phối',
+          category_code: code,
+          category_name: finalName,
+          count: Number(r.count || 0),
+        };
       });
-      const deptIds = [targetDeptId, ...childDepts.map((d: any) => d.id)];
-      whereAsset.current_department_id = { [Op.in]: deptIds };
+    } catch (err) {
+      console.error('[getHierarchyStats]', err);
+      return [];
     }
-
-    const rows = await Asset.findAll({
-      attributes: [
-        'current_department_id',
-        'category_code',
-        [col('Asset.category'), 'asset_category_field'],
-        [col('current_department.name'), 'department_name'],
-        [col('assetCategory.name'), 'category_table_name'],
-        [fn('COUNT', col('Asset.id')), 'count'],
-      ],
-      where: whereAsset,
-      include: [
-        {
-          model: Department,
-          as: 'current_department',
-          attributes: [],
-          required: false,
-        },
-        {
-          model: AssetCategory,
-          as: 'assetCategory',
-          attributes: [],
-          required: false,
-        },
-      ],
-      group: ['Asset.current_department_id', 'Asset.category_code', 'Asset.category', 'current_department.name', 'assetCategory.name'],
-      raw: true,
-    });
-
-    return (rows as any[]).map(r => {
-      const nameFromAsset = r.asset_category_field;
-      const nameFromTable = r.category_table_name;
-      const code = r.category_code;
-      
-      // Ưu tiên tuyệt đối tên từ trường category của Asset vì nó chứa tên đầy đủ/chi tiết (denormalized)
-      // Nếu không có mới lấy từ bảng danh mục
-      let finalName = nameFromAsset || nameFromTable || code || 'Khác';
-      
-      // Không tự ý split/cắt chuỗi để đảm bảo hiển thị đúng tên chuyên ngành đầy đủ
-      // Chỉ trim khoảng trắng dư thừa
-      finalName = String(finalName).trim();
-
-      return {
-        department_id: r.current_department_id,
-        department_name: r.department_name || 'Chưa phân phối',
-        category_code: code,
-        category_name: finalName,
-        count: Number(r.count || 0)
-      };
-    });
   }
 }
 

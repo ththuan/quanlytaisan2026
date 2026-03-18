@@ -130,6 +130,7 @@
               class="sidebar-toggle"
               @click="toggleSidebar"
             />
+            <GlobalSearch />
             <div class="breadcrumb">
               <el-breadcrumb separator="/">
                 <el-breadcrumb-item :to="{ path: '/' }">
@@ -213,6 +214,7 @@ import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
 import { House, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting } from '@element-plus/icons-vue';
+import GlobalSearch from '@/components/Layout/GlobalSearch.vue';
 import NotificationBell from '@/components/Notifications/NotificationBell.vue';
 import TotpSetupDialog from '@/components/Auth/TotpSetupDialog.vue';
 import ChangePasswordDialog from '@/components/Auth/ChangePasswordDialog.vue';
@@ -434,7 +436,17 @@ const toggleSidebar = () => {
 .header-left {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.header-left .global-search {
+  flex-shrink: 0;
+}
+
+.header-left .breadcrumb {
+  min-width: 0;
 }
 
 .sidebar-toggle {

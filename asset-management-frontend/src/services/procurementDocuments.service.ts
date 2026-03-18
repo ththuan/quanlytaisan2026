@@ -31,11 +31,17 @@ class ProcurementDocumentsService {
     return res;
   }
 
-  getDownloadUrl(procurementId: number, docId: number) {
-    const base = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
-    const token = localStorage.getItem('accessToken');
-    const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
-    return `${base}/procurements/${procurementId}/documents/${docId}/download${tokenParam}`;
+  /**
+   * Mở tài liệu trong tab mới (dùng Authorization header, không truyền token qua URL)
+   */
+  async openDocument(procurementId: number, docId: number): Promise<void> {
+    const data = await api.get(`/procurements/${procurementId}/documents/${docId}/download`, {
+      responseType: 'blob',
+    });
+    const blob = new Blob([data as unknown as BlobPart]);
+    const url = window.URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(() => window.URL.revokeObjectURL(url), 10000);
   }
 }
 

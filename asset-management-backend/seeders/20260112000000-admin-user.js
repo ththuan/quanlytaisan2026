@@ -1,8 +1,15 @@
 'use strict';
 
+const path = require('path');
 const bcrypt = require('bcryptjs');
 
-/** Chỉ tạo tài khoản admin nếu chưa có (idempotent). Mỗi lần chạy hệ thống chỉ cần admin, dữ liệu khác user tự import. */
+// Load .env từ thư mục backend (khi chạy từ backend) hoặc root project
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+
+const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || 'Admin@123';
+
+/** Chỉ tạo tài khoản admin nếu chưa có (idempotent). Mật khẩu lấy từ DEFAULT_PASSWORD trong .env. */
 module.exports = {
   async up(queryInterface) {
     const [existing] = await queryInterface.sequelize.query(
@@ -11,7 +18,7 @@ module.exports = {
     if (existing && existing.length > 0) {
       return; // Admin đã tồn tại, không ghi đè
     }
-    const passwordHash = await bcrypt.hash('Admin@123', 10);
+    const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
     await queryInterface.bulkInsert(
       'users',
       [

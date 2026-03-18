@@ -15,7 +15,7 @@ export interface UserImportResult {
 }
 
 const ROLES = ['admin', 'director', 'department_head', 'staff'] as const;
-const DEFAULT_PASSWORD = 'Ctec@123';
+const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || 'Ctec@123';
 
 /** Tạo file Excel mẫu import người dùng */
 export async function generateUserImportTemplate(): Promise<Buffer> {
@@ -41,7 +41,7 @@ export async function generateUserImportTemplate(): Promise<Buffer> {
   dataSheet.addRow({
     username: 'nguyenvana',
     email: 'nguyenvana@school.edu.vn',
-    password: 'Ctec@123',
+    password: 'MậtKhau@123',
     fullname: 'Nguyễn Văn A',
     role: 'staff',
     department: 'Phòng Công nghệ thông tin',
@@ -55,7 +55,7 @@ export async function generateUserImportTemplate(): Promise<Buffer> {
     'BẮT BUỘC (*):',
     '- Tên đăng nhập (*): 3–100 ký tự, chỉ chữ và số (a-z, 0-9), không trùng trong hệ thống',
     '- Email (*): Đúng định dạng email, không trùng trong hệ thống',
-    '- Mật khẩu (*): Tối thiểu 8 ký tự, có chữ hoa, chữ thường và số. Để trống sẽ dùng mật khẩu mặc định Ctec@123',
+    '- Mật khẩu (*): Tối thiểu 8 ký tự, có chữ hoa, chữ thường và số. Để trống sẽ dùng mật khẩu mặc định (cấu hình trong hệ thống)',
     '- Vai trò (*): admin | director | department_head | staff',
     '',
     'KHÔNG BẮT BUỘC:',

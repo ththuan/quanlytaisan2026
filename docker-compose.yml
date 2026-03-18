@@ -41,6 +41,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
       JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      DEFAULT_PASSWORD: ${DEFAULT_PASSWORD:-Ctec@123}
+      BODY_LIMIT: ${BODY_LIMIT:-10mb}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       FRONTEND_PORT: ${FRONTEND_PORT:-3000}
     depends_on:

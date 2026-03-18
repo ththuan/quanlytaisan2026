@@ -12,8 +12,6 @@ function t(key: string): string {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
-console.log('🔌 API Base URL:', API_BASE_URL);
-
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
@@ -29,13 +27,9 @@ api.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log('📤 API Request:', config.method?.toUpperCase(), config.url);
     return config;
   },
-  (error: AxiosError) => {
-    console.error('❌ Request Error:', error);
-    return Promise.reject(error);
-  }
+  (error: AxiosError) => Promise.reject(error)
 );
 
 // Biến để theo dõi lỗi liên tiếp
@@ -45,8 +39,7 @@ let lastNetworkErrorTime = 0;
 // Response interceptor với xử lý lỗi mạng thông minh
 api.interceptors.response.use(
   (response: AxiosResponse) => {
-    console.log('✅ API Response:', response.config.url, response.status);
-    consecutiveNetworkErrors = 0; // Reset khi thành công
+    consecutiveNetworkErrors = 0;
     return response.data;
   },
   (error: AxiosError) => {
@@ -56,9 +49,6 @@ api.interceptors.response.use(
     if (!error.response) {
       consecutiveNetworkErrors++;
       lastNetworkErrorTime = now;
-      
-      console.error('🔴 Network Error:', error.message);
-      
       // Chỉ hiện thông báo nếu lỗi liên tiếp hoặc đã lâu không có lỗi
       if (consecutiveNetworkErrors === 1 || (now - lastNetworkErrorTime > 10000)) {
         ElNotification.error({
@@ -77,19 +67,23 @@ api.interceptors.response.use(
 
     // Handle unauthorized
     if (error.response?.status === 401) {
-      // Clear BOTH Pinia reactive state and localStorage so the navigation guard
-      // correctly sees isAuthenticated=false and allows the redirect to /login.
-      try {
-        const authStore = useAuthStore();
-        authStore.clearAuth();
-      } catch {
-        // Pinia not ready yet (very early requests) — clear localStorage manually
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
+      const isAuthRequest =
+        error.config?.url?.includes('/auth/login') ||
+        error.config?.url?.includes('/auth/register') ||
+        error.config?.url?.includes('/auth/2fa/validate-login');
+      // Đừng clear auth / redirect khi 401 từ chính request đăng nhập/đăng ký — component sẽ hiển thị lỗi (sai mật khẩu, v.v.)
+      if (!isAuthRequest) {
+        try {
+          const authStore = useAuthStore();
+          authStore.clearAuth();
+        } catch {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+        }
+        router.replace('/login');
+        ElMessage.error(t('common.apiErrors.sessionExpired'));
       }
-      router.replace('/login');
-      ElMessage.error(t('common.apiErrors.sessionExpired'));
     } else if (error.response?.status === 403) {
       ElMessage.error(t('common.apiErrors.forbidden'));
     } else if (error.response?.status === 400) {

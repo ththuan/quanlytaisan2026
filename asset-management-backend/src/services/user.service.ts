@@ -21,8 +21,8 @@ export interface UpdateUserInput {
   is_active?: boolean;
 }
 
-// Default password for new users
-const DEFAULT_PASSWORD = 'Ctec@123';
+// Default password for new users (configurable via env)
+const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || 'Ctec@123';
 
 class UserService {
   async getAllUsers(query: any): Promise<PaginationResult<User>> {

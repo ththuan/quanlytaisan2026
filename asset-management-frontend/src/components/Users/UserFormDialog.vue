@@ -84,7 +84,7 @@
             <el-input
               v-model="formData.password"
               type="password"
-              placeholder="Mật khẩu (Để trống sẽ dùng mặc định: Ctec@123)"
+              placeholder="Mật khẩu (để trống sẽ dùng mật khẩu mặc định)"
               show-password
             />
           </el-form-item>
@@ -224,7 +224,7 @@ const userRoles = computed(() => [
 ]);
 
 const validatePassword = (_rule: any, value: string, callback: any) => {
-  // Password is optional - if not provided, will use default password Ctec@123
+  // Password is optional - if not provided, will use default password from backend config
   if (!isEdit.value && value && value.length < 6) {
     callback(new Error(t('validation.minLength', { min: 6 })));
   } else {
@@ -327,7 +327,7 @@ const handleSubmit = async () => {
           fullname: formData.fullname,
           role: formData.role,
         };
-        // Only include password if provided, otherwise backend will use default Ctec@123
+        // Only include password if provided, otherwise backend will use default
         if (formData.password && formData.password.trim()) {
           createData.password = formData.password;
         }

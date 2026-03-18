@@ -6,6 +6,7 @@ import { isAdminOrManager } from '../middleware/authorization.middleware';
 import { validateBody } from '../middleware/validation';
 import { createAssetSchema, updateAssetSchema } from '../utils/validators';
 import { auditLog } from '../middleware/logging';
+import { invalidateCache } from '../middleware/caching';
 
 const router = Router();
 
@@ -50,6 +51,7 @@ router.post(
   upload.single('image'),
   validateBody(createAssetSchema),
   auditLog('create'),
+  invalidateCache('assets'),
   assetsController.createAsset
 );
 
@@ -60,6 +62,7 @@ router.put(
   upload.single('image'),
   validateBody(updateAssetSchema),
   auditLog('update'),
+  invalidateCache('assets'),
   assetsController.updateAsset
 );
 
@@ -68,11 +71,12 @@ router.post(
   '/:id/image',
   upload.single('image'),
   auditLog('update'),
+  invalidateCache('assets'),
   assetsController.uploadAssetImage
 );
 
 // DELETE /api/assets/:id - Delete asset (Admin/Manager only)
-router.delete('/:id', isAdminOrManager, auditLog('delete'), assetsController.deleteAsset);
+router.delete('/:id', isAdminOrManager, auditLog('delete'), invalidateCache('assets'), assetsController.deleteAsset);
 
 // GET /api/assets/:id/history - Get asset transfer history
 router.get('/:id/history', assetsController.getAssetHistory);
@@ -84,10 +88,10 @@ router.get('/:id/repair-history', assetsController.getRepairHistory);
 router.get('/:id/depreciation', assetsController.getDepreciationHistory);
 
 // POST /api/assets/:id/recalculate - Recalculate current value based on depreciation
-router.post('/:id/recalculate', isAdminOrManager, assetsController.recalculateCurrentValue);
+router.post('/:id/recalculate', isAdminOrManager, invalidateCache('assets'), assetsController.recalculateCurrentValue);
 
 // POST /api/assets/:id/calculate-depreciation - Calculate depreciation theo Thông tư 141/2025/TT-BTC
-router.post('/:id/calculate-depreciation', isAdminOrManager, assetsController.calculateAssetDepreciation);
+router.post('/:id/calculate-depreciation', isAdminOrManager, invalidateCache('assets'), assetsController.calculateAssetDepreciation);
 
 // POST /api/assets/depreciation/schedule - Get depreciation schedule
 router.post('/depreciation/schedule', assetsController.getDepreciationSchedule);
@@ -100,11 +104,11 @@ router.post('/depreciation/validate', assetsController.validateDepreciation);
 router.post('/qrcode/decode', assetsController.decodeQRCode);
 
 // POST /api/assets/qrcode/generate-all - Generate QR code cho tất cả tài sản chưa có
-router.post('/qrcode/generate-all', isAdminOrManager, assetsController.generateAllQRCodes);
+router.post('/qrcode/generate-all', isAdminOrManager, invalidateCache('assets'), assetsController.generateAllQRCodes);
 
 // GET /api/assets/:id/qrcode - Lấy QR code của tài sản
 router.get('/:id/qrcode', assetsController.getQRCode);
 
 // POST /api/assets/:id/qrcode/generate - Generate QR code cho tài sản
-router.post('/:id/qrcode/generate', isAdminOrManager, assetsController.generateQRCode);
+router.post('/:id/qrcode/generate', isAdminOrManager, invalidateCache('assets'), assetsController.generateQRCode);
 export default router;

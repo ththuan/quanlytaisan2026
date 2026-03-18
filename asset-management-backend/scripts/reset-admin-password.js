@@ -1,5 +1,10 @@
+const path = require('path');
 const bcrypt = require('bcryptjs');
 const { Sequelize } = require('sequelize');
+
+// Load .env từ thư mục backend hoặc root project
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
 const sequelize = new Sequelize(
   process.env.DB_NAME || 'asset_management',
@@ -7,23 +12,29 @@ const sequelize = new Sequelize(
   process.env.DB_PASSWORD || 'postgres',
   {
     host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
+    port: parseInt(process.env.DB_PORT || '5432', 10),
     dialect: 'postgres',
   }
 );
 
-async function resetPassword() {
-  const newPassword = 'Admin@123';
-  const hash = await bcrypt.hash(newPassword, 10);
+const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || 'Admin@123';
 
-  await sequelize.query(
-    'UPDATE users SET password_hash = :hash WHERE username = :username',
+async function resetPassword() {
+  const hash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+
+  const [rows] = await sequelize.query(
+    'UPDATE users SET password_hash = :hash WHERE username = :username RETURNING id',
     {
       replacements: { hash, username: 'admin' },
     }
   );
 
-  console.log('Password reset successfully. Use: admin / Admin@123');
+  if (!rows || rows.length === 0) {
+    console.error('Không tìm thấy user admin. Chạy: npm run seed:admin');
+    process.exit(1);
+  }
+
+  console.log('Đã đặt lại mật khẩu admin. Đăng nhập: admin / ' + DEFAULT_PASSWORD);
   process.exit(0);
 }
 

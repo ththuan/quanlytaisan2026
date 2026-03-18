@@ -69,7 +69,7 @@ cd quanlytaisan
 
 # Cấu hình
 cp .env.example .env
-# Chỉnh .env nếu cần (DB, JWT_SECRET, port...)
+# Chỉnh .env nếu cần (DB, JWT_SECRET, CORS_ORIGIN, port...)
 
 # Tạo volume cho PostgreSQL (bắt buộc lần đầu)
 docker volume create quanlytaisan_postgres_data
@@ -138,16 +138,37 @@ quanlytaisan/
 │   │   ├── stores/
 │   │   └── styles/
 │   └── Dockerfile
-├── scripts/                    # PowerShell: backup, restore, reset
+├── scripts/                    # PowerShell: backup, restore, reset; Node: generate-secrets
 │   ├── backup-db.ps1
 │   ├── list-backups.ps1
 │   ├── restore-db.ps1
 │   ├── reset-data.ps1
+│   ├── generate-secrets.js     # Tạo JWT_SECRET, DEFAULT_PASSWORD cho production
 │   └── README.md
 ├── docker-compose.yml
 ├── .env.example
 └── README.md
 ```
+
+---
+
+## ⚙️ Cấu hình (.env)
+
+| Biến | Mô tả | Mặc định |
+|------|-------|----------|
+| `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT` | Kết nối PostgreSQL | postgres / postgres / asset_management / 5432 |
+| `JWT_SECRET` | Secret ký JWT. **Production**: dùng secret mạnh | `your-secret-key-change-in-production` |
+| `DEFAULT_PASSWORD` | Mật khẩu mặc định cho user mới / reset | `Ctec@123` |
+| `CORS_ORIGIN` | Origin cho phép. **Production**: domain cụ thể (vd: `https://yourdomain.com`) | `*` |
+| `BODY_LIMIT` | Giới hạn kích thước body request | `10mb` (nếu cần ảnh base64 lớn: `50mb`) |
+| `VITE_HTTPS` | Frontend chạy HTTPS local | `false` |
+| `VITE_PROXY_TARGET` | URL backend khi dev | `http://localhost:5000` |
+
+**Tạo secret cho production:**
+```bash
+node scripts/generate-secrets.js
+```
+Copy `JWT_SECRET` và `DEFAULT_PASSWORD` vào `.env`.
 
 ---
 
@@ -158,15 +179,16 @@ Mỗi lần khởi động, hệ thống **chỉ tạo tài khoản admin** nế
 | | |
 |---|---|
 | **Username** | `admin` |
-| **Password** | `Admin@123` |
+| **Password** | Biến `DEFAULT_PASSWORD` trong `.env` (thư mục backend hoặc root). Nếu không có thì mặc định `Admin@123`. |
 
-- **Docker**: Backend tự chạy `migrate` + `seed:admin`. Tạo lại admin thủ công:  
+- **Docker**: Backend tự chạy `migrate` + `seed:admin`. Tạo lại admin:  
   `docker compose exec backend npm run seed:admin`
 - **Không Docker**: Sau `npm run migrate` chạy `npm run seed:admin`.
+- **Không đăng nhập được?** Trong thư mục `asset-management-backend` chạy **`npm run reset-admin`** để đặt lại mật khẩu admin theo `DEFAULT_PASSWORD` trong `.env`, rồi thử đăng nhập lại (admin / mật khẩu đó).
 
 ---
 
-## 📜 Scripts (PowerShell)
+## 📜 Scripts
 
 Trong thư mục `scripts/`:
 
@@ -176,17 +198,52 @@ Trong thư mục `scripts/`:
 | **list-backups.ps1** | Liệt kê file backup |
 | **restore-db.ps1** | Khôi phục từ file backup |
 | **reset-data.ps1** | Reset dữ liệu nghiệp vụ (cẩn thận) |
+| **generate-secrets.js** | Tạo `JWT_SECRET`, `DEFAULT_PASSWORD` ngẫu nhiên cho production |
 
 Chi tiết: [scripts/README.md](./scripts/README.md).
 
 ---
 
+## 🔒 Bảo mật & Triển khai production
+
+**Trước khi triển khai production, cần:**
+
+1. Chạy `node scripts/generate-secrets.js` và cập nhật `JWT_SECRET`, `DEFAULT_PASSWORD` trong `.env`
+2. Cấu hình `CORS_ORIGIN` đúng domain (vd: `https://yourdomain.com`)
+3. Đổi `DB_PASSWORD` mạnh
+4. Dùng HTTPS (SSL/TLS)
+5. Nếu cần upload ảnh base64 lớn: đặt `BODY_LIMIT=50mb` trong `.env`
+
+**Đã có sẵn:** Helmet, rate limiting, JWT, phân quyền theo role, 2FA (TOTP), bcrypt, CORS, SQL parameterized. Token không truyền qua URL (download chứng từ dùng Authorization header). Docker: `docker-compose.yml` truyền `DEFAULT_PASSWORD`, `BODY_LIMIT` vào backend.
+
+**Lưu ý:** Một số dependency (vd: xlsx, minimatch) có báo audit; chạy `npm audit fix` trong backend. Token lưu trong localStorage (cân nhắc cookie HttpOnly sau).
+
+---
+
 ## 📌 Cập nhật gần đây
 
+- **Bảo mật**: JWT_SECRET/DEFAULT_PASSWORD cấu hình qua `.env`; token không truyền qua URL; CORS production; body limit cấu hình được; script `generate-secrets.js`; Docker truyền đủ biến env cho backend.
+- **Backend**: Sửa lỗi build TypeScript (`setupSwagger`); thêm `tests/setup.test.ts` để Jest chạy được; `test_e2e_images.js` đọc mật khẩu từ `E2E_PASSWORD`/`DEFAULT_PASSWORD`.
 - **Khởi động**: Chỉ seed tài khoản admin (`seed:admin`), không dữ liệu mẫu; dữ liệu khác tự import.
 - **Admin**: Toàn quyền; đăng nhập mặc định `admin` / `Admin@123`.
 - **Phòng ban**: Admin có thể xóa phòng ban đang có người dùng/tài sản qua "Gỡ phòng ban rồi xóa".
 - **Frontend**: `tsconfig.json` dùng đường dẫn tương đối cho `@vue/tsconfig` (tránh lỗi khi mở workspace gốc). Cần chạy `npm install` trong `asset-management-frontend` để không lỗi type.
+
+---
+
+## 💡 Tính năng có thể bổ sung (đề xuất)
+
+Các tính năng sau **chưa có** hoặc mới có một phần, **khả thi** và **rất hữu ích** nếu bổ sung:
+
+| Ưu tiên | Tính năng | Lý do |
+|--------|------------|--------|
+| **1** | **Quên mật khẩu qua email** | Trang đăng nhập có link "Quên mật khẩu?" nhưng chưa có luồng gửi link đặt lại qua email. Hiện chỉ Admin mới reset được. Người dùng quên mật khẩu cần tự liên hệ admin. |
+| **2** | **Gửi email thông báo** | Backend có biến SMTP trong `.env.example` nhưng chưa dùng. Nên gửi email khi: có việc cần phê duyệt (điều chuyển, sửa chữa, thanh lý…), đã phê duyệt/từ chối, hoặc nhắc bảo trì đến hạn. |
+| **3** | **Tìm kiếm toàn cục** | ✅ Đã có: ô tìm trên header (Tài sản, Người dùng, Phiếu mua sắm), debounce, phân quyền theo role. |
+| **4** | **Refresh token rotation** | Đã có refresh token; nên rotate: mỗi lần dùng refresh token thì vô hiệu hóa token cũ và cấp cặp token mới, giảm rủi ro token bị lộ dùng lâu dài. |
+| **5** | **Xuất báo cáo định kỳ (lưu lịch sử)** | Đã có backup DB và xuất Excel theo yêu cầu. Có thể thêm: lập lịch xuất báo cáo theo tháng/năm (tài sản, điều chuyển, bảo trì) lưu file hoặc gửi email cho lãnh đạo. |
+
+Hệ thống **đã có**: audit log, thông báo in-app (chuông), workflow phê duyệt nhiều cấp, 2FA, phân quyền, dashboard tổng quan.
 
 ---
 
@@ -198,4 +255,4 @@ Chi tiết: [scripts/README.md](./scripts/README.md).
 ---
 
 **Version**: 1.0.0  
-**Cập nhật**: 2026-03-15
+**Cập nhật**: 2026-03-17

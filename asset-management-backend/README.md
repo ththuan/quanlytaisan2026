@@ -93,14 +93,103 @@ src/
 └── server.ts        # Entry point
 ```
 
-## 🔐 API Endpoints
+## 📚 API Documentation
 
-### Authentication
-- `POST /api/auth/register` - Đăng ký người dùng
-- `POST /api/auth/login` - Đăng nhập
-- `POST /api/auth/logout` - Đăng xuất
-- `GET /api/auth/me` - Lấy thông tin user hiện tại
-- `POST /api/auth/change-password` - Đổi mật khẩu
+### Swagger UI
+Truy cập vào: `http://localhost:5000/api-docs`
+
+Đây là giao diện Swagger UI với đầy đủ các endpoint, tham số và ví dụ request/response.
+
+### Các tính năng của Swagger
+- **Interactive API Testing**: Test trực tiếp các endpoint từ trình duyệt
+- **Authentication**: Thêm JWT token vào request headers
+- **Schema Documentation**: Xem chi tiết request/response schemas
+- **Try it out**: Thử nghiệm API với dữ liệu thực tế
+
+### Cài đặt Swagger
+Swagger đã được tích hợp sẵn. Chỉ cần chạy server và truy cập `/api-docs`.
+
+```bash
+npm run dev
+# Truy cập http://localhost:5000/api-docs
+```
+
+## ⚡ Performance Optimization
+
+### Caching System
+Hệ thống sử dụng caching để cải thiện hiệu suất:
+
+- **Memory Cache**: Cache trong bộ nhớ với TTL configurable
+- **Cache Keys**: Phân loại cache theo resource (assets, users, departments, etc.)
+- **Auto Invalidate**: Tự động invalidate cache khi có thay đổi dữ liệu
+
+#### Cache Configuration
+```env
+CACHE_TTL=60000  # 60 seconds default cache
+```
+
+#### Cache Strategy
+- **GET requests**: Được cache để giảm tải database
+- **POST/PUT/DELETE**: Tự động invalidate cache liên quan
+- **Statistics endpoints**: Cache 60 giây để balance giữa performance và freshness
+
+#### Cache Headers
+```
+X-Cache: HIT    # Response từ cache
+X-Cache: MISS   # Response từ database
+```
+
+### Pagination
+Các endpoint danh sách hỗ trợ pagination:
+```
+GET /api/assets?page=1&limit=20
+```
+
+### Compression
+Response được tự động nén với gzip để giảm bandwidth.
+
+## 📈 Monitoring & Logging
+
+### Logging
+Sử dụng Winston cho logging:
+- Request/response logging
+- Error logging
+- Audit logging cho các hành động quan trọng
+
+### Health Check
+- `GET /health` - Kiểm tra trạng thái server
+- `GET /health/db` - Kiểm tra kết nối database
+- `GET /health/cache` - Kiểm tra trạng thái cache
+
+### Metrics
+- `GET /metrics` - Expose metrics cho Prometheus
+- Các metric bao gồm: request count, response time, cache hit rate
+
+## 🚀 Deployment
+
+### Using PM2
+
+```bash
+npm run build
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup
+```
+
+### Using Docker
+
+```bash
+docker-compose up -d
+```
+
+### CI/CD
+Có thể tích hợp với GitHub Actions:
+- Chạy tests tự động khi push
+- Build image và push lên registry
+- Deploy tự động lên server
+
+### Load Balancing
+Hỗ trợ chạy nhiều instance backend. Sử dụng Redis hoặc memory cache với shared state để đảm bảo consistency.
 
 ### Users
 - `GET /api/users` - Danh sách người dùng

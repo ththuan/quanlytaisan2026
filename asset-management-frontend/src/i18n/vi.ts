@@ -272,7 +272,7 @@ export default {
     filterByStatus: 'Lọc theo trạng thái',
     toggleStatusConfirm: 'Bạn có chắc chắn muốn {action} người dùng này?',
     resetPassword: 'Đặt lại mật khẩu',
-    resetPasswordConfirm: 'Bạn có chắc chắn muốn đặt lại mật khẩu về mặc định (Ctec@123) cho người dùng này?',
+    resetPasswordConfirm: 'Bạn có chắc chắn muốn đặt lại mật khẩu về mặc định cho người dùng này?',
     resetPasswordSuccess: 'Đặt lại mật khẩu thành công',
   },
 

@@ -19,6 +19,7 @@ import assetDisposalUploadRoutes from './assetDisposalUpload.routes';
 import assetImagesRoutes from './assetImages.routes';
 import notificationsRoutes from './notifications.routes';
 import systemAdminRoutes from './systemAdmin.routes';
+import searchRoutes from './search.routes';
 
 const router = Router();
 
@@ -43,6 +44,7 @@ router.use('/asset-disposals', assetDisposalRoutes);
 router.use('/asset-disposals', assetDisposalUploadRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/notifications', notificationsRoutes);
+router.use('/search', searchRoutes);
 router.use('/system-admin', systemAdminRoutes);
 
 // Health check route

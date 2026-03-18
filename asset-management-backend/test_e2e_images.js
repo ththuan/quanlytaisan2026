@@ -29,9 +29,10 @@ function makeRequest(method, path, data, token) {
 }
 
 async function main() {
-  // Login as staff user khtc with default password
+  // Login: password from E2E_PASSWORD env or default (chỉ dùng cho test, không deploy production)
+  const testPassword = process.env.E2E_PASSWORD || process.env.DEFAULT_PASSWORD || 'Ctec@123';
   console.log('=== Login ===');
-  const loginRes = await makeRequest('POST', '/auth/login', { username: 'khtc', password: 'Ctec@123' });
+  const loginRes = await makeRequest('POST', '/auth/login', { username: 'khtc', password: testPassword });
   
   if (loginRes.status !== 200 || !loginRes.data.data || !loginRes.data.data.accessToken) {
     console.log('Login failed:', loginRes.status, JSON.stringify(loginRes.data).substring(0, 300));

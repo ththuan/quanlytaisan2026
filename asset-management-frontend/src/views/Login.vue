@@ -90,9 +90,6 @@
               <el-checkbox v-model="rememberMe">
                 Ghi nhớ
               </el-checkbox>
-              <el-link class="forgot-link">
-                Quên mật khẩu?
-              </el-link>
             </div>
 
             <el-button
@@ -445,13 +442,6 @@ const handleVerify2FA = async () => {
   justify-content: space-between;
   align-items: center;
   margin: -5px 0 35px 0;
-}
-
-.forgot-link {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #3b82f6;
-  cursor: pointer;
 }
 
 .premium-submit-btn {

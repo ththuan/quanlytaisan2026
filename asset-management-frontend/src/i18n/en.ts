@@ -259,7 +259,7 @@ export default {
     filterByStatus: 'Filter by status',
     toggleStatusConfirm: 'Are you sure you want to {action} this user?',
     resetPassword: 'Reset Password',
-    resetPasswordConfirm: 'Are you sure you want to reset password to default (Ctec@123) for this user?',
+    resetPasswordConfirm: 'Are you sure you want to reset password to default for this user?',
     resetPasswordSuccess: 'Password reset successfully',
   },
 

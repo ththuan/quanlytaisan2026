@@ -126,7 +126,7 @@ class UsersController {
 
       return res.json({
         success: true,
-        message: 'Password has been reset to default (Ctec@123)',
+        message: 'Password has been reset to default',
         data: user,
       });
     } catch (error) {
