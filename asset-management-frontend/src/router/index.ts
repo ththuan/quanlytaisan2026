@@ -21,6 +21,24 @@ const routes: RouteRecordRaw[] = [
         meta: { titleKey: 'menu.dashboard' },
       },
       {
+        path: '/documentation',
+        name: 'Documentation',
+        component: () => import('@/views/Help/DocumentationView.vue'),
+        meta: {
+          titleKey: 'menu.documentation',
+          breadcrumbParent: { path: '/', titleKey: 'menu.dashboard' },
+        },
+      },
+      {
+        path: '/support',
+        name: 'Support',
+        component: () => import('@/views/Help/SupportView.vue'),
+        meta: {
+          titleKey: 'menu.support',
+          breadcrumbParent: { path: '/', titleKey: 'menu.dashboard' },
+        },
+      },
+      {
         path: '/assets',
         name: 'Assets',
         component: () => import('@/views/Assets/AssetList.vue'),

@@ -71,6 +71,177 @@ export default {
     stock: 'Kho vật tư',
     assetDisposals: 'Giảm tài sản',
     systemAdmin: 'Quản trị hệ thống',
+    documentation: 'Tài liệu',
+    support: 'Hỗ trợ',
+  },
+
+  helpDocs: {
+    title: 'Tài liệu hướng dẫn',
+    subtitle:
+      'Hướng dẫn sử dụng theo vai trò: viên chức, trưởng đơn vị và giám hiệu — tập trung vào quy trình và thao tác thực tế trên phần mềm.',
+    rolesLead:
+      'Ưu tiên đọc tab đúng với vai trò của bạn. Phần “Tổng quan chức năng” phía dưới là bản rút gọn cho mọi vai trò; quản trị viên có thêm thao tác cấp hệ thống (người dùng, phòng ban, nhật ký…).',
+    tabStaff: 'Viên chức',
+    tabHead: 'Trưởng đơn vị',
+    tabDirector: 'Giám hiệu',
+    overviewTitle: 'Tổng quan chức năng hệ thống',
+    overviewLead:
+      'Bảng sau giúp định vị nhanh các module. Chi tiết cách làm việc từng bước nằm ở các tab Viên chức / Trưởng đơn vị / Giám hiệu phía trên.',
+
+    staff: {
+      intro:
+        'Viên chức thao tác trên tài sản và các đề nghị thuộc phạm vi đơn vị được gán. Bạn chỉ thấy dữ liệu và phiếu liên quan đến mình hoặc đơn vị mình (trừ khi được cấp quyền khác).',
+      sec1Title: 'Đăng nhập, bảo mật và phạm vi dữ liệu',
+      sec1Body: `1. Đăng nhập bằng tên đăng nhập và mật khẩu do quản trị cấp. Nên bật xác thực hai bước (2FA) nếu đơn vị yêu cầu (menu người dùng góc phải).
+2. Sau khi đăng nhập, kiểm tra tên đơn vị hiển thị trên giao diện; mọi danh sách “Tài sản đơn vị” thường đã được lọc theo đơn vị của bạn.
+3. Không chia sẻ tài khoản. Nếu nghi ngờ lộ mật khẩu, đổi mật khẩu ngay và báo quản trị.`,
+
+      sec2Title: 'Tra cứu tài sản đơn vị (menu Tài sản)',
+      sec2Body: `1. Vào menu “Tài sản” (hoặc “Tài sản đơn vị”). Dùng ô tìm kiếm/lọc theo mã, tên, danh mục, trạng thái để tìm nhanh.
+2. Nhấp một dòng để mở chi tiết: xem thông tin định danh, phòng ban hiện tại, giá trị, khấu hao (nếu có), lịch sử thay đổi.
+3. Nếu tài sản có mã QR: có thể dùng chức năng quét (trên trình duyệt/thiết bị hỗ trợ) hoặc tra cứu bằng mã in trên nhãn.
+4. Viên chức thường không thêm/sửa/xóa hàng loạt trừ khi đơn vị giao nhiệm vụ; thao tác “Thêm tài sản”, import Excel thường dành cho quản trị.`,
+
+      sec3Title: 'Đề nghị điều chuyển tài sản (menu Điều chuyển)',
+      sec3Body: `1. Khi cần chuyển tài sản sang phòng ban khác: vào “Điều chuyển” → tạo yêu cầu mới, chọn tài sản, đơn vị đi, đơn vị đến, ghi rõ lý do và thời gian bàn giao dự kiến (theo biểu mẫu trên màn hình).
+2. Gửi yêu cầu. Trạng thái sẽ hiển thị dạng “chờ xử lý” cho đến khi Trưởng đơn vị nơi xuất tài sản xử lý.
+3. Trong hệ thống: chỉ Trưởng đơn vị của phòng ban đang giữ tài sản (đơn vị xuất) mới được phê duyệt hoặc từ chối. Nếu bị từ chối, đọc lý do và chỉnh lại hồ sơ hoặc liên hệ trưởng đơn vị.
+4. Sau khi được duyệt, phần mềm cập nhật phòng ban hiện tại của tài sản; bạn có thể kiểm tra lại trong chi tiết tài sản.`,
+
+      sec4Title: 'Đề nghị mua sắm (menu Đề nghị mua sắm)',
+      sec4Body: `1. Dùng khi đơn vị cần mua thiết bị/vật tư theo quy trình nội bộ: tạo phiếu đề nghị, điền nội dung, số lượng, dự toán (nếu có), lý do.
+2. Theo dõi trạng thái phiếu trên danh sách; các bước duyệt tiếp theo do Trưởng đơn vị và/hoặc cấp trường/quản trị thực hiện tùy cấu hình đơn vị.
+3. Lưu số phiếu hoặc mã tham chiếu để đối chiếu khi nhận hàng hoặc khi kế toán hỏi.`,
+
+      sec5Title: 'Bảo trì / sửa chữa (menu Theo dõi sửa chữa hoặc tương đương)',
+      sec5Body: `1. Khi tài sản hư hỏng hoặc cần bảo dưỡng: tạo “yêu cầu sửa chữa”, mô tả hiện trạng, đính kèm ảnh nếu được phép, ghi mức độ ưu tiên nếu có.
+2. Luồng điển hình: Trưởng đơn vị duyệt cấp 1 → quản trị (hoặc giám hiệu, tùy quy định) duyệt cấp 2 trước khi thực hiện.
+3. Theo dõi trạng thái (chờ duyệt, đang xử lý, hoàn thành…). Khi có yêu cầu bổ sung thông tin, cập nhật đúng trường dữ liệu để tránh chậm xử lý.`,
+
+      sec6Title: 'Kiểm kê tài sản (menu Kiểm kê)',
+      sec6Body: `1. Khi đơn vị phát động đợt kiểm kê: bạn sẽ thấy đợt/phiếu được giao trong phần kiểm kê. Mở đợt để xem danh sách tài sản cần kiểm.
+2. Thực hiện kiểm đếm thực tế; nếu có quét QR, quét mã từng tài sản để ghi nhận đúng vị trí và trạng thái hiện trường.
+3. Ghi nhận lệch (nếu có): tài sản thiếu, thừa, sai vị trí — theo đúng biểu mẫu trên màn hình. Không tự ý xóa tài sản; mọi sai lệch cần được trưởng đơn vị/giám hiệu xem xét theo quy trình.
+4. Sau khi hoàn thành nhập liệu, báo cáo có thể ở trạng thái chờ Trưởng đơn vị duyệt trước khi gửi lên cấp trên.`,
+
+      sec7Title: 'Thanh lý / giảm tài sản (menu Thanh lý hoặc Giảm tài sản)',
+      sec7Body: `1. Chỉ khởi tạo khi có quyết định hoặc chủ trương nội bộ; tạo hồ sơ đề nghị, đính kèm lý do, tình trạng tài sản, giá trị còn lại (nếu hệ thống yêu cầu).
+2. Theo dõi các bước phê duyệt. Không chuyển trạng thái tài sản sang thanh lý ngoài luồng phần mềm nếu đơn vị quy định dùng hệ thống làm sổ theo dõi chính.
+3. Sau khi hoàn tất, tài sản có thể ở trạng thái chờ thanh lý/đã xử lý theo cấu hình — kiểm tra lại trên chi tiết tài sản.`,
+
+      sec8Title: 'Thông báo và liên hệ khi vướng quy trình',
+      sec8Body: `1. Theo dõi biểu tượng thông báo (nếu bật) để biết phiếu được duyệt/từ chối hoặc có yêu cầu bổ sung.
+2. Nếu không thấy menu hoặc không gửi được phiếu: kiểm tra lại vai trò tài khoản; liên hệ Trưởng đơn vị hoặc quản trị để được gán quyền/đơn vị đúng.
+3. Chi tiết quy định số hóa đơn, mẫu biên bản giấy, hội đồng thanh lý… do nhà trường ban hành — phần mềm hỗ trợ theo dõi trạng thái và hồ sơ điện tử.`,
+
+    },
+
+    head: {
+      intro:
+        'Trưởng đơn vị chịu trách nhiệm phê duyệt cấp đơn vị, đảm bảo số liệu tài sản khớp thực tế và các đề nghị xuất phát từ đơn vị hợp lệ trước khi chuyển lên cấp trường hoặc quản trị.',
+      sec1Title: 'Vai trò và trách nhiệm chung',
+      sec1Body: `1. Bạn thấy các phiếu có liên quan đến đơn vị mình: điều chuyển có đơn vị xuất hoặc đơn vị nhận là đơn vị bạn quản lý; đề nghị mua sắm/sửa chữa/thanh lý/kiểm kê do đơn vị khởi tạo.
+2. Trước khi duyệt: đối chiếu hiện trường, chứng từ giấy (nếu có) và quy định nội bộ. Từ chối phải ghi rõ lý do để viên chức chỉnh sửa.
+3. Không duyệt hộ người khác bằng tài khoản của mình; mọi quyết định gắn với nhật ký hệ thống.`,
+
+      sec2Title: 'Phê duyệt điều chuyển tài sản',
+      sec2Body: `1. Vào “Điều chuyển”, lọc phiếu trạng thái “chờ xử lý” (hoặc tương đương). Hệ thống chỉ cho phép bạn duyệt các phiếu mà đơn vị xuất tài sản là đơn vị bạn làm Trưởng đơn vị.
+2. Mở chi tiết phiếu: kiểm tra tài sản, đơn vị đến, lý do. Nếu đồng ý → Phê duyệt; nếu không đạt → Từ chối và nhập lý do bắt buộc.
+3. Sau khi phê duyệt, hệ thống cập nhật phòng ban hiện tại của tài sản sang đơn vị nhận và hoàn tất phiếu. Thông báo cho bên nhận để bàn giao thực tế và cập nhật sổ sách (nếu có).`,
+
+      sec3Title: 'Phê duyệt yêu cầu sửa chữa / bảo trì (cấp đơn vị)',
+      sec3Body: `1. Vào mục theo dõi sửa chữa, xem các yêu cầu do viên chức đơn vị tạo ở trạng thái chờ Trưởng đơn vị.
+2. Đánh giá mức độ cần thiết, khả năng kinh phí sửa chữa theo quy định đơn vị. Duyệt cấp 1 để chuyển sang vòng quản trị/giám hiệu (tùy cấu hình).
+3. Nếu từ chối: nêu rõ lý do (ví dụ: chưa đủ hồ sơ, dùng sai biểu mẫu) để người tạo bổ sung.`,
+
+      sec4Title: 'Đề nghị mua sắm và theo dõi tiến độ đơn vị',
+      sec4Body: `1. Rà soát các phiếu đề nghị mua sắm phát sinh từ đơn vị: đảm bảo nội dung khớp kế hoạch được duyệt (nếu có).
+2. Thực hiện bước phê duyệt cấp đơn vị (nếu được cấu hình) trước khi phiếu lên cấp trường.
+3. Theo dõi trạng thái đến khi hoàn tất; phối hợp kế toán/vật tư khi có nhập kho hoặc bàn giao tài sản mới.`,
+
+      sec5Title: 'Kiểm kê: tổ chức thực hiện và duyệt báo cáo đơn vị',
+      sec5Body: `1. Khi có đợt kiểm kê: phân công viên chức quét mã/kiểm đếm theo danh sách; đối chiếu tồn sổ với thực tế.
+2. Sau khi dữ liệu kiểm kê được nhập, kiểm tra báo cáo lệch; xác nhận hoặc yêu cầu làm lại phần sai sót rõ ràng.
+3. Thực hiện bước “duyệt cấp Trưởng đơn vị” trên báo cáo (nếu có) trước khi báo cáo được gửi lên quản trị/giám hiệu.`,
+
+      sec6Title: 'Thanh lý / giảm tài sản phát sinh từ đơn vị',
+      sec6Body: `1. Xem xét hồ sơ đề nghị thanh lý do viên chức khởi tạo: tình trạng tài sản, căn cứ quyết định, tính đầy đủ minh chứng.
+2. Nếu đồng ý chuyển tiếp quy trình, thực hiện thao tác phê duyệt theo từng bước trên hệ thống; nếu chưa đạt, trả lại và yêu cầu bổ sung.
+3. Đảm bảo sau khi hoàn tất, số liệu tài sản đơn vị phản ánh đúng thực tế pháp lý và sổ kế toán (ngoài hệ thống).`,
+
+      sec7Title: 'Báo cáo phạm vi đơn vị và phối hợp cấp trên',
+      sec7Body: `1. Sử dụng các báo cáo/thống kê được phép với vai trò của bạn (nếu menu Báo cáo hiển thị) để đối chiếu tồn tại đơn vị.
+2. Chuẩn bị số liệu khi giám hiệu hoặc quản trị yêu cầu làm rõ biến động tài sản theo kỳ.
+3. Mọi thắc mắc về quyền hạn trên phần mềm: liên hệ quản trị hệ thống; thắc mắc về quy chế tài sản: làm việc với phòng chức năng của nhà trường.`,
+
+    },
+
+    director: {
+      intro:
+        'Giám hiệu có tầm nhìn toàn trường: xem các luồng phê duyệt cấp cao (tùy cấu hình), báo cáo tổng hợp, và các module mua sắm/kho khi được gán quyền tương đương giám đốc trong hệ thống.',
+      sec1Title: 'Phạm vi quyền và dữ liệu toàn trường',
+      sec1Body: `1. Tài khoản giám hiệu thường xem được tài sản, điều chuyển và báo cáo trên phạm vi toàn trường (trừ khi cấu hình hạn chế).
+2. Dùng dữ liệu tổng hợp để chỉ đạo: tồn kho tài sản theo đơn vị, tình hình đề nghị mua sắm/sửa chữa, tiến độ kiểm kê.
+3. Không thay thế chữ ký pháp lý trên văn bản giấy; phần mềm là công cụ theo dõi và phối hợp với hồ sơ giấy theo quy định.`,
+
+      sec2Title: 'Phê duyệt cấp trường (sửa chữa, mua sắm, các phiếu cấp 2)',
+      sec2Body: `1. Đối với yêu cầu sửa chữa/bảo trì: sau khi Trưởng đơn vị duyệt cấp 1, các yêu cầu có thể chuyển đến bước quản trị hoặc giám hiệu (cấp 2). Vào danh sách yêu cầu, lọc trạng thái “chờ cấp trên” hoặc tương đương.
+2. Xem xét mức chi phí, tính cấp thiết, khả năng ngân sách; phê duyệt hoặc từ chối có lý do.
+3. Với đề nghị mua sắm lớn hoặc nhiều tài sản: đối chiếu kế hoạch năm/quý của nhà trường trước khi đồng ý chuyển tiếp thực hiện.`,
+
+      sec3Title: 'Theo dõi điều chuyển và cân đối tài sản giữa các đơn vị',
+      sec3Body: `1. Vào “Điều chuyển” để xem toàn bộ phiếu; hỗ trợ giải quyết vướng mắc khi hai đơn vị chưa thống nhất hoặc phiếu chờ quá lâu.
+2. Khuyến khích Trưởng đơn vị duyệt đúng thẩm quyền nơi xuất tài sản; giám hiệu can thiệp khi cần chỉ đạo hiệu lực nội bộ.
+3. Định kỳ rà soát tài sản “ít sử dụng” tại một đơn vị để điều chuyển hợp lý (trên cơ sở quyết định nội bộ).`,
+
+      sec4Title: 'Kiểm kê và thanh lý cấp trường',
+      sec4Body: `1. Theo dõi tiến độ các đợt kiểm kê; yêu cầu đơn vị hoàn thành đúng hạn. Xem báo cáo lệch tổng hợp trước khi phê duyệt khóa sổ kỳ kiểm kê (nếu có bước này trên hệ thống).
+2. Với thanh lý: đảm bảo hồ sơ điện tử khớp quyết định thanh lý/hội đồng theo quy chế nhà trường.
+3. Chỉ đạo xử lý các trường hợp sai lệch lớn (mất mát, hư hỏng nặng) theo quy trình kỷ luật và báo cáo cấp trên nếu cần.`,
+
+      sec5Title: 'Báo cáo, mua sắm / kho vật tư (khi có quyền truy cập menu)',
+      sec5Body: `1. Menu “Báo cáo”: dùng để xuất/xem thống kê theo phòng ban, danh mục, giá trị — phục vụ họp giao ban hoặc báo cáo Sở/đoàn thanh tra.
+2. Menu “Mua sắm / Tăng giảm tài sản”, “Kho vật tư” (nếu hiển thị): theo dõi phiếu nhập xuất, tồn kho vật tư gắn với hoạt động trường.
+3. Giao quản trị viên hỗ trợ cấu hình danh mục, phòng ban và quyền nếu cần điều chỉnh cho sát thực tế năm học.`,
+
+      sec6Title: 'Phối hợp quản trị hệ thống và an toàn dữ liệu',
+      sec6Body: `1. Yêu cầu quản trị duy trì tài khoản theo đúng biến động nhân sự; tắt tài khoản khi nghỉ việc/chuyển công tác.
+2. Khuyến khích bật xác thực hai bước cho cán bộ chủ chốt; sao lưu và khôi phục dữ liệu theo quy trình IT của trường.
+3. Khi đổi quy trình nội bộ (ví dụ thêm bước duyệt giấy): cập nhật lại hướng dẫn đơn vị và thông báo cho Trưởng đơn vị/viên chức để thao tác thống nhất trên phần mềm.`,
+
+    },
+
+    block1Title: 'Tài sản & mã QR',
+    block1a: 'Thêm, sửa, tra cứu tài sản; lọc theo phòng ban, danh mục, trạng thái.',
+    block1b: 'Xuất / nhập Excel (quyền quản trị); tạo và in mã QR gắn tài sản.',
+    block1c: 'Xem lịch sử thay đổi và thông tin khấu hao trên từng tài sản.',
+    block2Title: 'Điều chuyển & luân chuyển',
+    block2a: 'Tạo đề nghị điều chuyển, theo dõi trạng thái phê duyệt.',
+    block2b: 'Danh sách tài sản cập nhật theo phòng ban hiện tại sau khi hoàn tất.',
+    block3Title: 'Kiểm kê & thanh lý',
+    block3a: 'Tạo đợt kiểm kê, quét QR khi kiểm đếm, xem báo cáo lệch.',
+    block3b: 'Luồng đề nghị thanh lý / tiêu hủy theo quy định đơn vị.',
+    block4Title: 'Báo cáo & phân quyền',
+    block4a: 'Báo cáo tổng hợp theo phòng ban, danh mục; xuất file khi được phép.',
+    block4b: 'Quản trị viên: người dùng, phòng ban, cấu hình hệ thống và nhật ký thao tác.',
+    tip: 'Quy trình giấy tờ, hội đồng, ngưỡng giá trị phê duyệt và biểu mẫu riêng của trường có thể chi tiết hơn quy định trên phần mềm — vui lòng bổ sung trong quy chế nội bộ và đào tạo thêm tại đơn vị. Liên hệ IT khi cần chỉnh quyền hoặc cấu hình.',
+  },
+
+  helpSupport: {
+    title: 'Hỗ trợ sử dụng',
+    subtitle: 'Kênh liên hệ và một số câu hỏi thường gặp. Thông tin dưới đây có thể được quản trị viên cập nhật theo đơn vị.',
+    contactTitle: 'Liên hệ kỹ thuật',
+    contactLabel: 'Bộ phận IT / Quản trị hệ thống',
+    contactHint: 'Giờ làm việc: theo lịch hành chính đơn vị. Ưu tiên gửi email kèm mô tả lỗi và ảnh chụp màn hình.',
+    emailLabel: 'Email:',
+    phoneLabel: 'Điện thoại:',
+    faqTitle: 'Câu hỏi thường gặp',
+    faq1q: 'Quên mật khẩu thì làm sao?',
+    faq1a: 'Liên hệ quản trị viên hệ thống để được cấp lại hoặc đặt mật khẩu mới. Không chia sẻ mật khẩu qua kênh không bảo mật.',
+    faq2q: 'Không thấy menu hoặc tài sản của phòng ban khác?',
+    faq2a: 'Phần mềm giới hạn dữ liệu theo vai trò và phòng ban. Nếu cần quyền xem thêm, trưởng đơn vị hoặc quản trị viên sẽ điều chỉnh phân quyền.',
+    faq3q: 'Lỗi khi tải trang hoặc lưu dữ liệu?',
+    faq3a: 'Thử tải lại trang, xóa cache trình duyệt hoặc dùng trình duyệt khác. Nếu vẫn lỗi, gửi email hỗ trợ kèm thời gian xảy ra và tài khoản đăng nhập (không gửi mật khẩu).',
   },
 
   // Stock

@@ -130,7 +130,6 @@
               class="sidebar-toggle"
               @click="toggleSidebar"
             />
-            <GlobalSearch />
             <div class="breadcrumb">
               <el-breadcrumb separator="/">
                 <el-breadcrumb-item :to="{ path: '/' }">
@@ -154,6 +153,36 @@
             </div>
           </div>
           <div class="header-right">
+            <div class="header-help-links">
+              <el-button
+                text
+                bg
+                class="header-help-btn"
+                :title="$t('menu.documentation')"
+                @click="router.push('/documentation')"
+              >
+                <el-icon class="header-help-ic">
+                  <Document />
+                </el-icon>
+                <span v-if="!isMobile">{{ $t('menu.documentation') }}</span>
+              </el-button>
+              <span
+                class="header-help-divider"
+                aria-hidden="true"
+              />
+              <el-button
+                text
+                bg
+                class="header-help-btn"
+                :title="$t('menu.support')"
+                @click="router.push('/support')"
+              >
+                <el-icon class="header-help-ic">
+                  <QuestionFilled />
+                </el-icon>
+                <span v-if="!isMobile">{{ $t('menu.support') }}</span>
+              </el-button>
+            </div>
             <NotificationBell />
 
             <el-dropdown class="user-dropdown">
@@ -213,8 +242,7 @@ import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
-import { House, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting } from '@element-plus/icons-vue';
-import GlobalSearch from '@/components/Layout/GlobalSearch.vue';
+import { House, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, QuestionFilled } from '@element-plus/icons-vue';
 import NotificationBell from '@/components/Notifications/NotificationBell.vue';
 import TotpSetupDialog from '@/components/Auth/TotpSetupDialog.vue';
 import ChangePasswordDialog from '@/components/Auth/ChangePasswordDialog.vue';
@@ -441,10 +469,6 @@ const toggleSidebar = () => {
   min-width: 0;
 }
 
-.header-left .global-search {
-  flex-shrink: 0;
-}
-
 .header-left .breadcrumb {
   min-width: 0;
 }
@@ -476,7 +500,44 @@ const toggleSidebar = () => {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
+}
+
+.header-help-links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 8px;
+  margin-right: 4px;
+  border-right: 1px solid #e2e8f0;
+}
+
+.header-help-btn {
+  font-weight: 600;
+  color: #475569 !important;
+  padding: 6px 10px !important;
+}
+
+.header-help-btn:hover {
+  color: #0f172a !important;
+}
+
+.header-help-ic {
+  margin-right: 6px;
+  font-size: 16px;
+}
+
+.header-help-divider {
+  width: 1px;
+  height: 18px;
+  background: #e2e8f0;
+  margin: 0 2px;
+}
+
+@media (max-width: 768px) {
+  .header-help-ic {
+    margin-right: 0;
+  }
 }
 
 .user-info {
