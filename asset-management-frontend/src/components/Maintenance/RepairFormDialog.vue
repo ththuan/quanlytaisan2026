@@ -323,15 +323,16 @@ import { useDepartmentStore } from '@/stores/department.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus, Document, Promotion, Check } from '@element-plus/icons-vue';
-import type { FormInstance, FormRules, UploadFile } from 'element-plus';
+import type { FormInstance, FormRules, UploadFile } from '@/types/element-plus';
 import api from '@/services/api';
-import { useAssets } from '@/composables/useAssets';
 
 interface Asset {
   id: number;
   asset_code: string;
   name: string;
   purchase_price?: number;
+  current_value?: number;
+  current_department_id?: number | null;
   status: string;
 }
 
@@ -348,7 +349,6 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const departmentStore = useDepartmentStore();
 const authStore = useAuthStore();
-const { searchAssets: _searchAssetsComposable } = useAssets();
 
 const formRef = ref<FormInstance>();
 const loading = ref(false);
@@ -413,11 +413,11 @@ const urgencies = computed(() => [
 ]);
 
 const rules = computed<FormRules>(() => {
-  const baseRules: FormRules = {
+  const baseRules = {
     asset_id: [{ required: true, message: 'Vui lòng chọn tài sản', trigger: 'change' }],
     urgency: [{ required: true, message: t('validation.required'), trigger: 'change' }],
     justification: [{ required: true, message: 'Vui lòng nhập thuyết minh nhu cầu sửa chữa', trigger: 'blur' }],
-  };
+  } as FormRules;
   
   // Chi phí dự kiến chỉ bắt buộc với admin
   if (canEditEstimatedCost.value) {
@@ -483,7 +483,8 @@ const handleAssetChange = async (assetId: number | number[] | null) => {
     const response: any = await api.get(`/assets/${normalizedId}`);
     if (response?.data) {
       selectedAsset.value = response.data;
-      formData.department_id = selectedAsset.value.current_department_id || authStore.userDepartmentId;
+      formData.department_id =
+        selectedAsset.value?.current_department_id ?? authStore.userDepartmentId ?? null;
     }
   } catch (error) {
     console.error('Error fetching asset:', error);
@@ -498,7 +499,7 @@ const handleImageChange = async (file: UploadFile) => {
     reader.onload = (e: any) => {
       // Lưu base64 vào url của file
       if (file.uid) {
-        const fileInList = damageImageList.value.find(f => f.uid === file.uid);
+        const fileInList = damageImageList.value.find((f: UploadFile) => f.uid === file.uid);
         if (fileInList) {
           fileInList.url = e.target.result;
         }
@@ -521,8 +522,8 @@ const handleRemove = async () => {
   await new Promise(resolve => setTimeout(resolve, 100)); // Đợi một chút để list được cập nhật
   
   const images = damageImageList.value
-    .filter(f => f.url && f.url.startsWith('data:image'))
-    .map(f => f.url as string);
+    .filter((f: UploadFile) => f.url && f.url.startsWith('data:image'))
+    .map((f: UploadFile) => f.url as string);
   
   formData.damage_images = images.length > 0 ? JSON.stringify(images) : null;
   console.log('🗑️ After remove, remaining images:', images.length);
@@ -772,7 +773,7 @@ const handleSaveRequest = async (status: string) => {
   // CRITICAL: Convert images trước khi save để đảm bảo damage_images được set
   console.log('🔄 Before convert - damageImageList:', {
     length: damageImageList.value.length,
-    files: damageImageList.value.map(f => ({
+    files: damageImageList.value.map((f: UploadFile) => ({
       uid: f.uid,
       name: f.name,
       hasUrl: !!f.url,
@@ -834,7 +835,7 @@ const handleSaveRequest = async (status: string) => {
   } else if (isEdit.value) {
     // Edit mode: nếu không có ảnh base64 mới, kiểm tra xem user có xóa hết ảnh không
     const hasExistingServerImages = damageImageList.value.some(
-      f => f.url && !f.url.startsWith('data:image')
+      (f: UploadFile) => f.url && !f.url.startsWith('data:image')
     );
     if (hasExistingServerImages || damageImageList.value.length > 0) {
       // Vẫn còn ảnh trong list (server images) → không gửi damage_images để giữ nguyên
@@ -904,7 +905,7 @@ const convertAllImagesToBase64 = async (): Promise<void> => {
   
   try {
     // Lấy tất cả images từ url (đã được convert) hoặc convert raw files
-    const imagePromises = damageImageList.value.map(async (f) => {
+    const imagePromises = damageImageList.value.map(async (f: UploadFile) => {
       // Nếu đã có url là base64, dùng luôn
       if (f.url && f.url.startsWith('data:image')) {
         return f.url;
@@ -920,7 +921,7 @@ const convertAllImagesToBase64 = async (): Promise<void> => {
           reader.onload = (e: any) => {
             // Lưu vào url của file để dùng lại
             if (f.uid) {
-              const fileInList = damageImageList.value.find(file => file.uid === f.uid);
+              const fileInList = damageImageList.value.find((file: UploadFile) => file.uid === f.uid);
               if (fileInList) {
                 fileInList.url = e.target.result;
               }
@@ -928,7 +929,8 @@ const convertAllImagesToBase64 = async (): Promise<void> => {
             resolve(e.target.result);
           };
           reader.onerror = reject;
-          reader.readAsDataURL(f.raw);
+          if (f.raw) reader.readAsDataURL(f.raw);
+          else reject(new Error('Missing file'));
         });
       }
       return null;
@@ -938,7 +940,7 @@ const convertAllImagesToBase64 = async (): Promise<void> => {
     
     // Filter out null values và lưu vào formData
     // CẢI TIẾN: Giữ lại cả base64 và các đường dẫn /storage/... để backend biết ảnh nào cần giữ lại
-    const validImages = images.filter((img): img is string => 
+    const validImages = images.filter((img: string | null): img is string => 
       img !== null && 
       img !== undefined && 
       typeof img === 'string' && 

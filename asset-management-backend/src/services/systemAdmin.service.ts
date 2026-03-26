@@ -2,7 +2,9 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import os from 'os';
 import { sequelize } from '../config/database';
+import { SYSTEM_ADMIN_PASSWORD, SYSTEM_ADMIN_USERNAME } from '../config/adminCredentials';
 import logger from '../utils/logger';
+import { ensureDefaultAdminAccount } from '../utils/ensureDefaultAdminAccount';
 
 const execAsync = promisify(exec);
 
@@ -281,17 +283,23 @@ class SystemAdminService {
         'assets',
       ];
 
-      await sequelize.query(`TRUNCATE TABLE ${tables.join(', ')} RESTART IDENTITY CASCADE`);
+      // Một transaction: gỡ FK users → departments, rồi truncate mọi bảng nghiệp vụ + departments (PostgreSQL tự sắp thứ tự FK)
+      await sequelize.transaction(async (t) => {
+        await sequelize.query('UPDATE users SET department_id = NULL', { transaction: t });
+        await sequelize.query(
+          `TRUNCATE TABLE ${tables.join(', ')}, departments RESTART IDENTITY CASCADE`,
+          { transaction: t }
+        );
+      });
 
-      // Gỡ tham chiếu phòng ban khỏi users rồi xóa toàn bộ phòng ban
-      await sequelize.query('UPDATE users SET department_id = NULL');
-      await sequelize.query('TRUNCATE TABLE departments RESTART IDENTITY CASCADE');
-
-      logger.info('Business data reset successfully (including departments)');
+      await ensureDefaultAdminAccount();
+      logger.info(
+        `Business data reset OK; admin reset to ${SYSTEM_ADMIN_USERNAME} / fixed password`
+      );
 
       return {
         success: true,
-        message: 'Dữ liệu nghiệp vụ và phòng ban đã được xóa. Giữ nguyên: users, asset_categories',
+        message: `Dữ liệu nghiệp vụ và phòng ban đã xóa. Đăng nhập: ${SYSTEM_ADMIN_USERNAME} / ${SYSTEM_ADMIN_PASSWORD} (đã đặt lại mật khẩu admin, tắt 2FA). Users khác và asset_categories giữ nguyên.`,
       };
     } catch (error) {
       logger.error('Reset business data failed:', error);
@@ -323,9 +331,10 @@ class SystemAdminService {
     try {
       const { stdout } = await execAsync('npm run seed');
       logger.info('Seeding completed:', stdout);
+      await ensureDefaultAdminAccount();
       return {
         success: true,
-        message: 'Seed data đã được thêm thành công',
+        message: `Seed data đã được thêm. Tài khoản ${SYSTEM_ADMIN_USERNAME} đã đặt lại mật khẩu ${SYSTEM_ADMIN_PASSWORD}.`,
       };
     } catch (error) {
       logger.error('Seeding failed:', error);

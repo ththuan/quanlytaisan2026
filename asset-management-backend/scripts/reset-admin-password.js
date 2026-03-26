@@ -17,13 +17,15 @@ const sequelize = new Sequelize(
   }
 );
 
-const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || 'Admin@123';
+/** Đồng bộ với src/config/adminCredentials.ts — luôn Admin@123 (không đọc .env). */
+const ADMIN_PASSWORD = 'Admin@123';
 
 async function resetPassword() {
-  const hash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  const hash = await bcrypt.hash(ADMIN_PASSWORD, 10);
 
   const [rows] = await sequelize.query(
-    'UPDATE users SET password_hash = :hash WHERE username = :username RETURNING id',
+    `UPDATE users SET password_hash = :hash, totp_enabled = false, totp_secret = NULL, updated_at = NOW()
+     WHERE username = :username RETURNING id`,
     {
       replacements: { hash, username: 'admin' },
     }
@@ -34,7 +36,7 @@ async function resetPassword() {
     process.exit(1);
   }
 
-  console.log('Đã đặt lại mật khẩu admin. Đăng nhập: admin / ' + DEFAULT_PASSWORD);
+  console.log('Đã đặt lại mật khẩu admin. Đăng nhập: admin / ' + ADMIN_PASSWORD);
   process.exit(0);
 }
 

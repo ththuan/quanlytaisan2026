@@ -8,8 +8,9 @@
  * - Tỷ lệ hao mòn = 100% / Thời gian sử dụng (năm)
  * - Giá trị còn lại = Nguyên giá - Số hao mòn lũy kế
  * 
- * QUAN TRỌNG: Công cụ dụng cụ (tools) KHÔNG tính khấu hao
+ * QUAN TRỌNG: Công cụ dụng cụ — năm dương lịch: đến hết năm (năm SD + 3) giữ nguyên giá; từ năm (năm SD + 4) GTCL = 0 (vd. SD 2023 → từ 2027).
  */
+const TOOLS_FULL_VALUE_MAX_YEARS = 3;
 
 // ===== PHÂN LOẠI TÀI SẢN THEO THÔNG TƯ 141/2025/TT-BTC =====
 
@@ -630,18 +631,24 @@ class DepreciationService {
       ? isDepreciableFlag 
       : this.isDepreciable(category);
     
-    // Nếu không tính khấu hao (công cụ dụng cụ)
+    // Công cụ dụng cụ: không khấu hao tuyến tính; quá N năm (năm hiện tại − năm đưa vào SD) → GTCL = 0
     if (!isDepreciable) {
+      const currentYear = new Date().getFullYear();
+      const yearsUsed =
+        yearInUse && yearInUse > 0
+          ? Math.max(0, currentYear - yearInUse)
+          : this.calculateYearsUsed(purchaseDate, yearInUse);
+      const overLimit = yearsUsed > TOOLS_FULL_VALUE_MAX_YEARS;
       return {
         originalValue,
         usefulLife: 0,
         annualDepreciationRate: 0,
         annualDepreciationAmount: 0,
-        yearsUsed: this.calculateYearsUsed(purchaseDate, yearInUse),
-        accumulatedDepreciation: 0,
-        currentValue: originalValue, // Giữ nguyên giá trị
+        yearsUsed,
+        accumulatedDepreciation: overLimit && originalValue > 0 ? originalValue : 0,
+        currentValue: overLimit ? 0 : originalValue,
         remainingUsefulLife: 0,
-        isFullyDepreciated: false,
+        isFullyDepreciated: overLimit,
         isDepreciable: false,
       };
     }

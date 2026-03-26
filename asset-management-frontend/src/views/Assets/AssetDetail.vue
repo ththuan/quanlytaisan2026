@@ -78,7 +78,7 @@
                 size="large"
                 effect="dark"
               >
-                {{ $t(`assets.status.${assetStore.currentAsset.status}`) }}
+                {{ assetStatusLabel(assetStore.currentAsset.status) }}
               </el-tag>
               <!-- chỉ giữ một tag hiển thị mã loại + tên -->
               <el-tag
@@ -333,20 +333,31 @@
                 v-if="assetStore.currentAsset.depreciation_info.isDepreciable === false"
                 class="non-depreciable-notice"
               >
-                <el-alert
-                  :title="$t('assets.nonDepreciable')"
-                  type="info"
-                  :description="$t('assets.nonDepreciableDesc')"
-                  show-icon
-                  :closable="false"
-                />
-                <div
-                  class="depreciation-values"
-                  style="margin-top: 20px;"
-                >
+                <div class="depreciation-values">
                   <div class="value-box primary">
                     <div class="value-label">
                       {{ $t('assets.currentValue') }}
+                    </div>
+                    <div class="value-amount">
+                      {{
+                        formatCurrency(
+                          toolsRemainingValue(
+                            assetStore.currentAsset.depreciation_info
+                          )
+                        )
+                      }}
+                    </div>
+                  </div>
+                  <div
+                    v-if="
+                      toolsRemainingValue(assetStore.currentAsset.depreciation_info) !==
+                        Number(assetStore.currentAsset.depreciation_info?.originalValue)
+                    "
+                    class="value-box"
+                    style="margin-top: 12px;"
+                  >
+                    <div class="value-label text-muted">
+                      {{ $t('assets.purchasePrice') }}
                     </div>
                     <div class="value-amount">
                       {{ formatCurrency(assetStore.currentAsset.depreciation_info.originalValue) }}
@@ -676,6 +687,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useAssetStore } from '@/stores/asset.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useTransferStore } from '@/stores/transfer.store';
@@ -685,8 +697,13 @@ import ReportDamageDialog from '@/components/Assets/ReportDamageDialog.vue';
 import { assetService } from '@/services/asset.service';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import moment from 'moment';
+import { formatI18nOrRaw } from '@/utils/assetDisplay';
 
 const route = useRoute();
+const { t, te } = useI18n();
+
+const assetStatusLabel = (status: string | null | undefined) =>
+  formatI18nOrRaw('assets.status', status, t, te);
 const router = useRouter();
 const assetStore = useAssetStore();
 const authStore = useAuthStore();
@@ -756,6 +773,14 @@ const isBuildingAsset = computed(() => {
 const canRegenerateQRCode = computed(() => {
   return authStore.isAdmin || authStore.isDirector;
 });
+
+/** Công cụ dụng cụ: hiển thị remainingValue (GTCL), không nhầm với originalValue (nguyên giá). */
+function toolsRemainingValue(info: Record<string, unknown> | null | undefined): number {
+  if (!info) return 0;
+  const rv = info.remainingValue;
+  if (rv !== undefined && rv !== null) return Number(rv);
+  return Number(info.originalValue ?? 0);
+}
 
 const depreciationPercent = computed(() => {
   const info = assetStore.currentAsset?.depreciation_info;
@@ -1285,6 +1310,11 @@ const downloadQRCode = () => {
 }
 
 /* Depreciation Card */
+.value-label.text-muted {
+  color: #909399;
+  font-size: 12px;
+}
+
 .depreciation-card {
   margin-top: 20px;
 }

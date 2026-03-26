@@ -17,7 +17,8 @@
     "reset-admin": "node scripts/reset-admin-password.js",
     "reset:business": "ALLOW_DATA_RESET=true ts-node src/scripts/reset-business-data.ts",
     "cleanup:test-data": "ALLOW_DATA_CLEANUP=true ts-node src/scripts/cleanup-test-data.ts",
-    "lint": "eslint . --ext .ts",
+    "lint": "eslint . --ext .ts --max-warnings 0",
+    "typecheck": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.ts\"",
     "docs": "echo 'Swagger docs available at http://localhost:5000/api-docs'"
   },

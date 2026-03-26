@@ -579,6 +579,10 @@ import systemAdminService, {
   type BackupInfo,
   type HealthCheck,
 } from '@/services/systemAdmin.service';
+import { invalidateGlobalDepartmentCache } from '@/composables/useDepartments';
+import { useDepartmentStore } from '@/stores/department.store';
+
+const departmentStore = useDepartmentStore();
 
 const loading = ref(false);
 const healthData = ref<HealthCheck | null>(null);
@@ -777,6 +781,14 @@ const seedDatabase = async () => {
     const result = await systemAdminService.seedDatabase();
     if (result.success) {
       ElMessage.success(result.message);
+      invalidateGlobalDepartmentCache();
+      departmentStore.$patch({ departments: [], departmentTree: [], currentDepartment: null });
+      try {
+        await departmentStore.fetchDepartments({ limit: 1000 });
+        await departmentStore.fetchDepartmentTree();
+      } catch {
+        /* ignore */
+      }
     } else {
       ElMessage.error(result.message);
     }
@@ -793,6 +805,14 @@ const resetBusinessData = async () => {
     const result = await systemAdminService.resetBusinessData();
     if (result.success) {
       ElMessage.success(result.message);
+      invalidateGlobalDepartmentCache();
+      departmentStore.$patch({ departments: [], departmentTree: [], currentDepartment: null });
+      try {
+        await departmentStore.fetchDepartments({ limit: 1000 });
+        await departmentStore.fetchDepartmentTree();
+      } catch {
+        /* ignore */
+      }
       showResetDialog.value = false;
       resetConfirmText.value = '';
     } else {

@@ -16,6 +16,12 @@ router.get('/statistics', reportsController.getStatistics);
 // Procurement annual summary (all authenticated users can view)
 router.get('/procurement', reportsController.getProcurementSummary);
 
+router.post(
+  '/bulk-approve',
+  requireRole('admin', 'director'),
+  reportsController.bulkApproveReports
+);
+
 // All authenticated users can view reports
 router.get('/', reportsController.getAllReports);
 router.get('/:id', reportsController.getReportById);
@@ -42,16 +48,16 @@ router.post(
   reportsController.submitReport
 );
 
-// Approve/Reject reports (Admin only)
+// Approve/Reject reports (Admin + Giám hiệu — khớp quyền trên giao diện)
 router.post(
   '/:id/approve',
-  requireRole('admin'),
+  requireRole('admin', 'director'),
   reportsController.approveReport
 );
 
 router.post(
   '/:id/reject',
-  requireRole('admin'),
+  requireRole('admin', 'director'),
   reportsController.rejectReport
 );
 

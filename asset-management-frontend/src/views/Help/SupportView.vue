@@ -30,7 +30,9 @@
             </p>
             <el-divider />
             <p>
-              <el-icon class="support-contact__ic"><Message /></el-icon>
+              <el-icon class="support-contact__ic">
+                <Message />
+              </el-icon>
               {{ $t('helpSupport.emailLabel') }}
               <a
                 class="support-contact__link"
@@ -38,7 +40,9 @@
               >{{ supportEmail }}</a>
             </p>
             <p>
-              <el-icon class="support-contact__ic"><Phone /></el-icon>
+              <el-icon class="support-contact__ic">
+                <Phone />
+              </el-icon>
               {{ $t('helpSupport.phoneLabel') }}
               <span class="support-contact__strong">{{ supportPhone }}</span>
             </p>

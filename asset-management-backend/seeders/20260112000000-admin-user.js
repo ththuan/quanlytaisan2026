@@ -7,9 +7,10 @@ const bcrypt = require('bcryptjs');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
-const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || 'Admin@123';
+/** Đồng bộ với src/config/adminCredentials.ts */
+const ADMIN_PASSWORD = 'Admin@123';
 
-/** Chỉ tạo tài khoản admin nếu chưa có (idempotent). Mật khẩu lấy từ DEFAULT_PASSWORD trong .env. */
+/** Chỉ tạo tài khoản admin nếu chưa có (idempotent). Mật khẩu cố định Admin@123. */
 module.exports = {
   async up(queryInterface) {
     const [existing] = await queryInterface.sequelize.query(
@@ -18,7 +19,7 @@ module.exports = {
     if (existing && existing.length > 0) {
       return; // Admin đã tồn tại, không ghi đè
     }
-    const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+    const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
     await queryInterface.bulkInsert(
       'users',
       [

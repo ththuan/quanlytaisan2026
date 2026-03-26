@@ -239,6 +239,7 @@ import { ElMessageBox, ElMessage } from 'element-plus';
 import api from '@/services/api';
 import DepartmentFormDialog from '@/components/Departments/DepartmentFormDialog.vue';
 import departmentService from '@/services/department.service';
+import { invalidateGlobalDepartmentCache } from '@/composables/useDepartments';
 
 interface Department {
   id: number;
@@ -366,6 +367,7 @@ const handleView = (department: Department) => {
 };
 
 const handleFormSuccess = () => {
+  invalidateGlobalDepartmentCache();
   fetchDepartments();
 };
 
@@ -380,6 +382,7 @@ const handleDelete = async (id: number, reassignAndDelete = false) => {
     }
     await departmentService.delete(id, reassignAndDelete);
     ElMessage.success(t('departments.deleteSuccess'));
+    invalidateGlobalDepartmentCache();
     fetchDepartments();
   } catch (error: any) {
     if (error === 'cancel') return;
@@ -456,6 +459,7 @@ const handleFileChange = async (event: Event) => {
       });
     }
 
+    invalidateGlobalDepartmentCache();
     await fetchDepartments();
   } catch (error) {
     console.error('Error importing departments:', error);

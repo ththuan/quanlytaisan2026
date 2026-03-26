@@ -18,21 +18,13 @@
         :label="$t('transfers.fromDepartment')"
         prop="from_department_id"
       >
-        <el-select
+        <DepartmentTreeSelect
           v-model="formData.from_department_id"
           :placeholder="$t('transfers.selectSourceDepartment')"
-          style="width: 100%"
-          filterable
           :disabled="!!userDepartmentId"
+          :restrict-to-ids="sourceRestrictIds"
           @change="handleSourceDepartmentChange"
-        >
-          <el-option
-            v-for="dept in sourceDepartments"
-            :key="dept.id"
-            :label="dept.name"
-            :value="dept.id"
-          />
-        </el-select>
+        />
       </el-form-item>
 
       <!-- Step 2: Chọn tài sản từ phòng ban đã chọn -->
@@ -62,7 +54,7 @@
                 size="small"
                 :type="getStatusType(asset.status)"
               >
-                {{ $t(`assets.status.${asset.status}`) }}
+                {{ assetStatusLabel(asset.status) }}
               </el-tag>
             </div>
           </el-option>
@@ -96,11 +88,11 @@
             {{ selectedAsset.name }}
           </el-descriptions-item>
           <el-descriptions-item :label="$t('assets.category')">
-            {{ $t(`categories.${selectedAsset.category}`) }}
+            {{ selectedCategoryDisplay }}
           </el-descriptions-item>
           <el-descriptions-item :label="$t('common.status')">
             <el-tag :type="getStatusType(selectedAsset.status)">
-              {{ $t(`assets.status.${selectedAsset.status}`) }}
+              {{ assetStatusLabel(selectedAsset.status) }}
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item
@@ -117,19 +109,11 @@
         :label="$t('transfers.toDepartment')"
         prop="to_department_id"
       >
-        <el-select
+        <DepartmentTreeSelect
           v-model="formData.to_department_id"
           :placeholder="$t('transfers.selectTargetDepartment')"
-          style="width: 100%"
-          filterable
-        >
-          <el-option
-            v-for="dept in availableTargetDepartments"
-            :key="dept.id"
-            :label="dept.name"
-            :value="dept.id"
-          />
-        </el-select>
+          :exclude-ids="toExcludeDepartmentIds"
+        />
       </el-form-item>
 
       <!-- Lý do điều chuyển -->
@@ -189,8 +173,10 @@ import { useTransferStore } from '@/stores/transfer.store';
 import { useDepartmentStore } from '@/stores/department.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { ElMessage } from 'element-plus';
-import type { FormInstance, FormRules } from 'element-plus';
+import type { FormInstance, FormRules } from '@/types/element-plus';
 import api from '@/services/api';
+import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
+import { formatAssetCategoryLabel, formatI18nOrRaw } from '@/utils/assetDisplay';
 
 const props = defineProps<{
   visible: boolean;
@@ -201,7 +187,14 @@ const emit = defineEmits<{
   success: [];
 }>();
 
-const { t } = useI18n();
+const { t, te } = useI18n();
+
+const selectedCategoryDisplay = computed(() =>
+  formatAssetCategoryLabel(selectedAsset.value as Record<string, unknown> | null, t, te),
+);
+
+const assetStatusLabel = (status: string | null | undefined) =>
+  formatI18nOrRaw('assets.status', status, t, te);
 const transferStore = useTransferStore();
 const departmentStore = useDepartmentStore();
 const authStore = useAuthStore();
@@ -227,10 +220,15 @@ const sourceDepartments = computed(() => {
   return departments.value.filter((d: any) => d.id === userDepartmentId.value);
 });
 
-// Lọc ra các phòng ban khác với phòng ban nguồn
-const availableTargetDepartments = computed(() => {
-  return departments.value.filter((d: any) => d.id !== formData.from_department_id);
+/** Trưởng đơn vị: chỉ được chọn đơn vị mình làm nguồn; admin: toàn bộ cây. */
+const sourceRestrictIds = computed((): number[] | undefined => {
+  if (!userDepartmentId.value) return undefined;
+  return sourceDepartments.value.map((d: any) => d.id);
 });
+
+const toExcludeDepartmentIds = computed((): number[] =>
+  formData.from_department_id ? [formData.from_department_id] : []
+);
 
 const rules = computed<FormRules>(() => ({
   from_department_id: [{ required: true, message: t('validation.required'), trigger: 'change' }],
@@ -238,11 +236,12 @@ const rules = computed<FormRules>(() => ({
   to_department_id: [
     { required: true, message: t('validation.required'), trigger: 'change' },
     {
-      validator: (_rule: any, value: number) => {
+      validator: (_rule: any, value: number, callback: (e?: Error) => void) => {
         if (value === formData.from_department_id) {
-          return Promise.reject(new Error(t('transfers.sameDepartmentError')));
+          callback(new Error(t('transfers.sameDepartmentError')));
+        } else {
+          callback();
         }
-        return Promise.resolve();
       },
       trigger: 'change',
     },
@@ -252,7 +251,7 @@ const rules = computed<FormRules>(() => ({
 
 watch(() => props.visible, (val) => {
   if (val) {
-    departmentStore.fetchDepartments();
+    departmentStore.fetchDepartments({ limit: 1000 });
     resetForm();
 
     // Nếu user có phòng ban, tự động set phòng ban nguồn = phòng ban của user và khóa lại
@@ -275,13 +274,13 @@ const resetForm = () => {
 };
 
 // Khi chọn phòng ban nguồn, load danh sách tài sản của phòng ban đó
-const handleSourceDepartmentChange = async (departmentId: number) => {
+const handleSourceDepartmentChange = async (departmentId: number | null | undefined) => {
   formData.asset_id = null;
   formData.to_department_id = null;
   selectedAsset.value = null;
   departmentAssets.value = [];
-  
-  if (!departmentId) return;
+
+  if (departmentId == null || !Number.isFinite(Number(departmentId))) return;
   
   assetLoading.value = true;
   try {

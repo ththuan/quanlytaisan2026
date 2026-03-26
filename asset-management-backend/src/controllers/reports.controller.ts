@@ -3,9 +3,12 @@ import reportService from '../services/report.service';
 import { AuthRequest } from '../middleware/auth.middleware';
 
 class ReportsController {
-  async getAllReports(req: Request, res: Response, next: NextFunction) {
+  async getAllReports(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const result = await reportService.getAllReports(req.query);
+      const viewer = req.user
+        ? { role: req.user.role, department_id: req.user.department_id }
+        : undefined;
+      const result = await reportService.getAllReports(req.query, viewer);
 
       return res.json({
         success: true,
@@ -20,11 +23,11 @@ class ReportsController {
   async getReportById(req: Request, res: Response, next: NextFunction) {
     try {
       const id = parseInt(req.params.id);
-      const report = await reportService.getReportById(id);
+      const data = await reportService.getReportDetailPayload(id);
 
       return res.json({
         success: true,
-        data: report,
+        data,
       });
     } catch (error) {
       next(error);
@@ -87,6 +90,25 @@ class ReportsController {
         success: true,
         message: 'Report approved successfully',
         data: report,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async bulkApproveReports(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const raw = req.body?.ids;
+      const ids = Array.isArray(raw) ? raw.map((x: unknown) => Number(x)).filter((n) => Number.isFinite(n) && n > 0) : [];
+      if (ids.length === 0) {
+        return res.status(400).json({ success: false, message: 'Danh sách ids không hợp lệ' });
+      }
+      const userId = req.user!.id;
+      const summary = await reportService.bulkApproveReports(ids, userId);
+      return res.json({
+        success: true,
+        message: 'Xử lý duyệt hàng loạt hoàn tất',
+        data: summary,
       });
     } catch (error) {
       next(error);

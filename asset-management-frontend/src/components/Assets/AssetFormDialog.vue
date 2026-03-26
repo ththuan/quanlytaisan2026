@@ -230,21 +230,10 @@
             :label="$t('assets.department')"
             prop="current_department_id"
           >
-            <el-select 
-              v-model="formData.current_department_id" 
-              v-loading="departmentsLoading" 
-              :placeholder="$t('assets.department')" 
-              style="width: 100%"
-              clearable
-              filterable
-            >
-              <el-option
-                v-for="dept in departments"
-                :key="dept.id"
-                :label="dept.name"
-                :value="dept.id"
-              />
-            </el-select>
+            <DepartmentTreeSelect
+              v-model="formData.current_department_id"
+              :placeholder="$t('assets.department')"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -473,12 +462,13 @@
 <script setup lang="ts">
 import { ref, reactive, watch, computed, onMounted, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { FormInstance, FormRules, CascaderProps } from 'element-plus';
+import type { FormInstance, FormRules, CascaderProps } from '@/types/element-plus';
 import { ElMessage } from 'element-plus';
 import { Files, Document, Money, Refresh, Download } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import { assetCategoryService, type AssetCategory } from '@/services/assetCategory.service';
 import { useDepartments } from '@/composables/useDepartments';
+import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 import { assetService } from '@/services/asset.service';
 import { useAssetConditionOptions } from '@/composables/useAssetConditions';
 
@@ -499,12 +489,7 @@ const formRef = ref<FormInstance>();
 const loading = ref(false);
 
 // Sử dụng composable cho departments - tự động load và cache
-const { activeDepartments: departments, isLoading: departmentsLoading } = useDepartments();
-
-// Debug: Log departments để kiểm tra
-watch(departments, (newVal) => {
-  console.log('🏢 Departments loaded:', newVal?.length || 0, newVal);
-}, { immediate: true });
+useDepartments();
 
 const categories = ref<AssetCategory[]>([]);
 const { assetConditionOptions } = useAssetConditionOptions();
@@ -718,8 +703,6 @@ const findCategoryByCode = (code: string): AssetCategory | undefined => {
 
 // Handle category selection
 const handleCategoryChange = async (value: string[]) => {
-  console.log('🔄 Category change triggered:', value);
-  
   if (!value || value.length === 0) {
     formData.category_id = null;
     formData.category_code = '';
@@ -727,26 +710,14 @@ const handleCategoryChange = async (value: string[]) => {
     formData.is_depreciable = true;
     formData.depreciation_rate = null;
     formData.useful_life = null;
-    console.log('❌ Category cleared');
     return;
   }
 
   const selectedCode = value[value.length - 1];
-  console.log('🔍 Looking for category with code:', selectedCode);
-  console.log('📚 Available categories:', categories.value.length);
-  
+
   const category = findCategoryByCode(selectedCode);
-  
+
   if (category) {
-    console.log('✅ Found category:', {
-      id: category.id,
-      code: category.code,
-      name: category.name,
-      depreciation_rate: category.depreciation_rate,
-      useful_life_years: category.useful_life_years,
-      is_depreciable: category.is_depreciable,
-    });
-    
     // Cập nhật formData
     formData.category_id = category.id;
     formData.category_code = category.code;
@@ -764,21 +735,13 @@ const handleCategoryChange = async (value: string[]) => {
       formData.useful_life = null;
     }
     
-    console.log('💰 FormData updated:', {
-      category_id: formData.category_id,
-      depreciation_rate: formData.depreciation_rate,
-      useful_life: formData.useful_life,
-      is_depreciable: formData.is_depreciable,
-    });
-    
     // Force reactivity - trigger update
     await nextTick();
     
     // Tự động tính lại giá trị còn lại khi thay đổi loại tài sản
     calculateResidualValue();
   } else {
-    console.error('❌ Category not found for code:', selectedCode);
-    console.log('Available category codes:', categories.value.map(c => c.code).slice(0, 10));
+    ElMessage.warning(`Không tìm thấy loại tài sản (mã: ${selectedCode}). Vui lòng tải lại trang hoặc chọn lại.`);
   }
 };
 
@@ -834,7 +797,6 @@ const handlePurchaseDateChange = (value: string | null) => {
   if (value) {
     const year = new Date(value).getFullYear();
     formData.year_in_use = year;
-    console.log('📅 Purchase date changed:', value, '→ Year:', year);
   } else {
     // Nếu xóa ngày mua, cho phép nhập năm thủ công
     // Không tự động xóa năm đã nhập
@@ -867,12 +829,9 @@ const fetchCategories = async () => {
     try {
       const treeResponse = await assetCategoryService.getTree();
       if (treeResponse.data && treeResponse.data.length > 0) {
-        console.log('🌳 Tree API response:', treeResponse.data);
-        
         // Flatten tree để lưu vào categories.value
         categories.value = flattenTree(treeResponse.data);
-        console.log('📋 Flattened categories:', categories.value.length, 'items');
-        
+
         // Chuyển đổi format từ API tree sang format của cascader
         const transformTree = (nodes: any[]): any[] => {
           return nodes.map(node => ({
@@ -886,9 +845,8 @@ const fetchCategories = async () => {
       } else {
         throw new Error('Tree API returned empty');
       }
-    } catch (treeError) {
+    } catch {
       // Fallback: sử dụng danh sách phẳng và tự build tree
-      console.warn('Tree API failed, using flat list:', treeError);
       const response = await assetCategoryService.getAll();
       categories.value = response.data;
       categoryTree.value = buildCategoryTree(response.data);
@@ -938,7 +896,7 @@ const handleClose = () => {
 const handleSubmit = async () => {
   if (!formRef.value) return;
 
-  await formRef.value.validate(async (valid) => {
+  await formRef.value.validate(async (valid: boolean) => {
     if (!valid) return;
 
     loading.value = true;
@@ -988,7 +946,7 @@ const loadQRCode = async () => {
 
   try {
     const response = await assetService.getQRCode(props.asset.id);
-    qrCodeImage.value = response.data.qr_code_image || null;
+    qrCodeImage.value = response.data?.qr_code_image ?? null;
   } catch (error) {
     console.error('Error loading QR code:', error);
     qrCodeImage.value = null;
@@ -1005,7 +963,7 @@ const generateQRCode = async () => {
   generatingQR.value = true;
   try {
     const response = await assetService.generateQRCode(props.asset.id);
-    qrCodeImage.value = response.data.qr_code_image;
+    qrCodeImage.value = response.data?.qr_code_image ?? null;
     ElMessage.success('Đã tạo QR code thành công');
   } catch (error: any) {
     ElMessage.error(error.response?.data?.message || 'Không thể tạo QR code');

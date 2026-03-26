@@ -37,6 +37,15 @@ class SimpleCache {
   clear(): void {
     this.cache.clear();
   }
+
+  /** Xóa mọi entry có key chứa chuỗi (vd. '/departments' khớp GET:/api/departments?...) */
+  clearKeyContains(substring: string): void {
+    for (const key of this.cache.keys()) {
+      if (key.includes(substring)) {
+        this.cache.delete(key);
+      }
+    }
+  }
 }
 
 const cache = new SimpleCache();
@@ -69,11 +78,25 @@ export const cachingMiddleware = (req: Request, res: Response, next: NextFunctio
 };
 
 // Function to invalidate cache - returns middleware
+// Xóa cache khi controller gọi res.json (sau khi ghi DB xong), tránh GET xen vào lúc import mà cache lại bản cũ.
 export const invalidateCache = (pattern: string) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (pattern === 'assets:*' || pattern === 'users:*' || pattern === 'departments:*') {
-      cache.clear();
-    }
+    const runClear = () => {
+      if (pattern === 'assets:*' || pattern === 'users:*' || pattern === 'departments:*') {
+        cache.clear();
+      } else if (pattern === 'departments') {
+        cache.clearKeyContains('/departments');
+      } else if (pattern === 'users') {
+        cache.clearKeyContains('/users');
+      } else if (pattern === 'assets') {
+        cache.clearKeyContains('/assets');
+      }
+    };
+    const originalJson = res.json.bind(res);
+    res.json = (body: any) => {
+      runClear();
+      return originalJson(body);
+    };
     next();
   };
 };

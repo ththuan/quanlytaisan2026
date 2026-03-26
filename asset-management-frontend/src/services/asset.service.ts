@@ -10,6 +10,8 @@ export interface AssetQueryParams {
   asset_type?: string;
   status?: string;
   current_department_id?: number | string;
+  /** Lọc theo phòng ban cha + tất cả phòng ban con (backend) */
+  include_children?: string | boolean;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
 }

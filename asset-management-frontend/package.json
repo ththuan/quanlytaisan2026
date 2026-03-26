@@ -9,6 +9,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.js,.jsx,.ts,.tsx --fix",
+    "lint:ci": "eslint . --ext .vue,.js,.jsx,.ts,.tsx --max-warnings 0",
+    "typecheck": "vue-tsc --noEmit",
     "format": "prettier --write \"src/**/*.{js,ts,vue,css,scss}\""
   },
   "dependencies": {

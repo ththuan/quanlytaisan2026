@@ -45,20 +45,11 @@
         :label="$t('departments.parentDepartment')"
         prop="parent_department_id"
       >
-        <el-select 
-          v-model="formData.parent_department_id" 
-          :placeholder="$t('departments.parentDepartment')" 
-          style="width: 100%"
-          clearable
-          filterable
-        >
-          <el-option
-            v-for="dept in availableParentDepartments"
-            :key="dept.id"
-            :label="dept.name"
-            :value="dept.id"
-          />
-        </el-select>
+        <DepartmentTreeSelect
+          v-model="formData.parent_department_id"
+          :placeholder="$t('departments.parentDepartment')"
+          :restrict-to-ids="parentChoiceRestrictIds"
+        />
       </el-form-item>
 
       <el-form-item
@@ -94,9 +85,11 @@
 <script setup lang="ts">
 import { ref, reactive, watch, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { FormInstance, FormRules } from 'element-plus';
+import type { FormInstance, FormRules } from '@/types/element-plus';
 import { ElMessage } from 'element-plus';
 import api from '@/services/api';
+import { useDepartmentStore } from '@/stores/department.store';
+import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 
 interface Department {
   id: number;
@@ -117,9 +110,9 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const departmentStore = useDepartmentStore();
 const formRef = ref<FormInstance>();
 const loading = ref(false);
-const allDepartments = ref<Department[]>([]);
 
 const dialogVisible = computed({
   get: () => props.visible,
@@ -146,10 +139,14 @@ const departmentTypes = computed(() => [
 ]);
 
 const availableParentDepartments = computed(() => {
-  if (!isEdit.value) return allDepartments.value;
-  // Exclude current department from parent options
-  return allDepartments.value.filter(d => d.id !== props.department?.id);
+  const list = departmentStore.departments as Department[];
+  if (!isEdit.value) return list;
+  return list.filter((d) => d.id !== props.department?.id);
 });
+
+const parentChoiceRestrictIds = computed(() =>
+  availableParentDepartments.value.map((d) => d.id)
+);
 
 const rules = computed<FormRules>(() => ({
   name: [
@@ -163,12 +160,7 @@ const rules = computed<FormRules>(() => ({
 
 const fetchDepartments = async () => {
   try {
-    const response: any = await api.get('/departments');
-    if (response && response.data) {
-      allDepartments.value = response.data;
-    } else if (Array.isArray(response)) {
-      allDepartments.value = response;
-    }
+    await departmentStore.fetchDepartments({ limit: 1000 });
   } catch (error) {
     console.error('Error fetching departments:', error);
   }
@@ -190,7 +182,7 @@ const handleClose = () => {
 const handleSubmit = async () => {
   if (!formRef.value) return;
 
-  await formRef.value.validate(async (valid) => {
+  await formRef.value.validate(async (valid: boolean) => {
     if (!valid) return;
 
     loading.value = true;

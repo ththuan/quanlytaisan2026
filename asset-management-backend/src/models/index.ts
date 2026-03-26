@@ -148,6 +148,11 @@ Department.hasMany(AnnualReport, {
 });
 
 AnnualReport.belongsTo(User, {
+  foreignKey: 'created_by',
+  as: 'creator',
+});
+
+AnnualReport.belongsTo(User, {
   foreignKey: 'submitted_by',
   as: 'submitter',
 });

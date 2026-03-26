@@ -753,15 +753,6 @@ const approveReport = async () => {
 };
 
 // Helpers
-const _formatDate = (date: string) => {
-  if (!date) return 'N/A';
-  try {
-    return new Date(date).toLocaleDateString('vi-VN');
-  } catch (error) {
-    return 'N/A';
-  }
-};
-
 const formatDateTime = (date: string | Date) => {
   if (!date) return 'N/A';
   try {

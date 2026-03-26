@@ -1,240 +1,245 @@
 <template>
-  <el-container class="main-layout">
-    <div
-      v-if="isMobile && !isHidden"
-      class="sidebar-backdrop"
-      @click="closeSidebar"
-    />
+  <!-- Một root duy nhất để <Transition name="app-view"> trong App.vue hoạt động (Vue không animate fragment) -->
+  <div class="main-layout-root">
+    <el-container class="main-layout">
+      <transition name="backdrop-fade">
+        <div
+          v-if="isMobile && !isHidden"
+          class="sidebar-backdrop"
+          @click="closeSidebar"
+        />
+      </transition>
 
-    <el-aside
-      v-show="!isHidden"
-      width="250px"
-      class="sidebar"
-      :class="{ 'sidebar--mobile': isMobile, 'sidebar--open': isMobile && !isHidden }"
-    >
-      <div class="logo">
-        <h3>Quản lý tài sản</h3>
-      </div>
-      <el-menu
-        :default-active="$route.path"
-        router
-        background-color="#304156"
-        text-color="#bfcbd9"
-        active-text-color="#409EFF"
-        :collapse-transition="false"
-        :unique-opened="true"
-        @select="handleMenuSelect"
+      <el-aside
+        v-show="!isHidden"
+        width="250px"
+        class="sidebar"
+        :class="{ 'sidebar--mobile': isMobile, 'sidebar--open': isMobile && !isHidden }"
       >
-        <el-menu-item index="/">
-          <el-icon><House /></el-icon>
-          <span>{{ $t('menu.dashboard') }}</span>
-        </el-menu-item>
-
-        <el-menu-item index="/assets">
-          <el-icon><Box /></el-icon>
-          <span>Tài sản{{ isStaffOrHead ? ' đơn vị' : '' }}</span>
-        </el-menu-item>
-
-        <el-menu-item index="/transfers">
-          <el-icon><Switch /></el-icon>
-          <span>{{ isStaffOrHead ? 'Đề nghị điều chuyển' : $t('menu.transfers') }}</span>
-        </el-menu-item>
-
-        <!-- Mua sắm thiết bị -->
-        <el-menu-item index="/purchase-requests">
-          <el-icon><ShoppingCart /></el-icon>
-          <span>{{ $t('menu.purchaseRequests') }}</span>
-        </el-menu-item>
-
-        <!-- Bảo trì / Sửa chữa -->
-        <el-menu-item index="/maintenance">
-          <el-icon><Tools /></el-icon>
-          <span>{{ $t('menu.repairTracking') }}</span>
-        </el-menu-item>
-
-        <!-- Mua sắm/Cấp phát: admin + director -->
-        <el-menu-item
-          v-if="isAdminOrDirector"
-          index="/procurements"
-        >
-          <el-icon><Document /></el-icon>
-          <span>{{ $t('menu.procurements') }}</span>
-        </el-menu-item>
-
-        <!-- Kho vật tư: admin + director -->
-        <el-menu-item
-          v-if="isAdminOrDirector"
-          index="/stock"
-        >
-          <el-icon><Box /></el-icon>
-          <span>Kho vật tư</span>
-        </el-menu-item>
-
-        <el-menu-item index="/inventory">
-          <el-icon><Notebook /></el-icon>
-          <span>Kiểm kê tài sản</span>
-        </el-menu-item>
-
-        <!-- Thanh lý / Tiêu hủy -->
-        <el-menu-item index="/asset-disposals">
-          <el-icon><DeleteFilled /></el-icon>
-          <span>Thanh lý tài sản</span>
-        </el-menu-item>
-
-        <!-- Báo cáo: admin + director -->
-        <el-menu-item
-          v-if="isAdminOrDirector"
-          index="/reports"
-        >
-          <el-icon><DataAnalysis /></el-icon>
-          <span>Báo cáo</span>
-        </el-menu-item>
-
-        <el-divider class="sidebar-divider" />
-
-        <!-- Admin-only modules moved to bottom for nicer visual order -->
-        <el-menu-item
-          v-if="isAdminOrDirector"
-          index="/departments"
-        >
-          <el-icon><OfficeBuilding /></el-icon>
-          <span>{{ $t('menu.departments') }}</span>
-        </el-menu-item>
-
-        <el-menu-item
-          v-if="authStore.user?.role === 'admin'"
-          index="/users"
-        >
-          <el-icon><UserFilled /></el-icon>
-          <span>{{ $t('menu.users') }}</span>
-        </el-menu-item>
-
-        <el-menu-item
-          v-if="authStore.user?.role === 'admin'"
-          index="/system-admin"
-        >
-          <el-icon><Setting /></el-icon>
-          <span>Quản trị hệ thống</span>
-        </el-menu-item>
-      </el-menu>
-    </el-aside>
-
-    <el-container>
-      <el-header>
-        <div class="header-content">
-          <div class="header-left">
-            <el-button
-              :icon="isHidden ? Expand : Fold"
-              circle
-              size="small"
-              class="sidebar-toggle"
-              @click="toggleSidebar"
-            />
-            <div class="breadcrumb">
-              <el-breadcrumb separator="/">
-                <el-breadcrumb-item :to="{ path: '/' }">
-                  {{ $t('common.home') }}
-                </el-breadcrumb-item>
-                <template
-                  v-for="(item, idx) in breadcrumbItems"
-                  :key="idx"
-                >
-                  <el-breadcrumb-item
-                    v-if="item.path"
-                    :to="item.path"
-                  >
-                    {{ item.label }}
-                  </el-breadcrumb-item>
-                  <el-breadcrumb-item v-else>
-                    {{ item.label }}
-                  </el-breadcrumb-item>
-                </template>
-              </el-breadcrumb>
-            </div>
-          </div>
-          <div class="header-right">
-            <div class="header-help-links">
-              <el-button
-                text
-                bg
-                class="header-help-btn"
-                :title="$t('menu.documentation')"
-                @click="router.push('/documentation')"
-              >
-                <el-icon class="header-help-ic">
-                  <Document />
-                </el-icon>
-                <span v-if="!isMobile">{{ $t('menu.documentation') }}</span>
-              </el-button>
-              <span
-                class="header-help-divider"
-                aria-hidden="true"
-              />
-              <el-button
-                text
-                bg
-                class="header-help-btn"
-                :title="$t('menu.support')"
-                @click="router.push('/support')"
-              >
-                <el-icon class="header-help-ic">
-                  <QuestionFilled />
-                </el-icon>
-                <span v-if="!isMobile">{{ $t('menu.support') }}</span>
-              </el-button>
-            </div>
-            <NotificationBell />
-
-            <el-dropdown class="user-dropdown">
-              <span class="user-info">
-                <el-icon><User /></el-icon>
-                {{ authStore.user?.fullname || authStore.user?.username }}
-                <el-tag
-                  size="small"
-                  type="info"
-                  style="margin-left: 8px"
-                >{{ getRoleName }}</el-tag>
-                <el-icon class="el-icon--right"><ArrowDown /></el-icon>
-              </span>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item disabled>
-                    <span style="color: #909399">{{ authStore.user?.department?.name || 'Chưa phân đơn vị' }}</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item @click="showChangePasswordDialog = true">
-                    🔑 Đổi mật khẩu
-                  </el-dropdown-item>
-                  <el-dropdown-item @click="showTotpDialog = true">
-                    🔐 Xác thực 2 bước
-                  </el-dropdown-item>
-                  <el-dropdown-item
-                    divided
-                    @click="handleLogout"
-                  >
-                    {{ $t('auth.logout') }}
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </div>
+        <div class="logo">
+          <h3>Quản lý tài sản</h3>
         </div>
-      </el-header>
+        <el-menu
+          :default-active="$route.path"
+          router
+          background-color="#304156"
+          text-color="#bfcbd9"
+          active-text-color="#409EFF"
+          :collapse-transition="false"
+          :unique-opened="true"
+          @select="handleMenuSelect"
+        >
+          <el-menu-item index="/">
+            <el-icon><House /></el-icon>
+            <span>{{ $t('menu.dashboard') }}</span>
+          </el-menu-item>
 
-      <el-main>
-        <router-view v-slot="{ Component }">
-          <transition
-            name="route"
-            mode="out-in"
+          <el-menu-item index="/assets">
+            <el-icon><Box /></el-icon>
+            <span>Tài sản{{ isStaffOrHead ? ' đơn vị' : '' }}</span>
+          </el-menu-item>
+
+          <el-menu-item index="/transfers">
+            <el-icon><Switch /></el-icon>
+            <span>{{ isStaffOrHead ? 'Đề nghị điều chuyển' : $t('menu.transfers') }}</span>
+          </el-menu-item>
+
+          <!-- Mua sắm thiết bị -->
+          <el-menu-item index="/purchase-requests">
+            <el-icon><ShoppingCart /></el-icon>
+            <span>{{ $t('menu.purchaseRequests') }}</span>
+          </el-menu-item>
+
+          <!-- Bảo trì / Sửa chữa -->
+          <el-menu-item index="/maintenance">
+            <el-icon><Tools /></el-icon>
+            <span>{{ $t('menu.repairTracking') }}</span>
+          </el-menu-item>
+
+          <!-- Mua sắm/Cấp phát: admin + director -->
+          <el-menu-item
+            v-if="isAdminOrDirector"
+            index="/procurements"
           >
-            <component :is="Component" />
-          </transition>
-        </router-view>
-      </el-main>
-    </el-container>
-  </el-container>
+            <el-icon><Document /></el-icon>
+            <span>{{ $t('menu.procurements') }}</span>
+          </el-menu-item>
 
-  <TotpSetupDialog v-model="showTotpDialog" />
-  <ChangePasswordDialog v-model="showChangePasswordDialog" />
+          <!-- Kho vật tư: admin + director -->
+          <el-menu-item
+            v-if="isAdminOrDirector"
+            index="/stock"
+          >
+            <el-icon><Box /></el-icon>
+            <span>Kho vật tư</span>
+          </el-menu-item>
+
+          <el-menu-item index="/inventory">
+            <el-icon><Notebook /></el-icon>
+            <span>Kiểm kê tài sản</span>
+          </el-menu-item>
+
+          <!-- Thanh lý / Tiêu hủy -->
+          <el-menu-item index="/asset-disposals">
+            <el-icon><DeleteFilled /></el-icon>
+            <span>Thanh lý tài sản</span>
+          </el-menu-item>
+
+          <!-- Báo cáo: admin + director -->
+          <el-menu-item
+            v-if="isAdminOrDirector"
+            index="/reports"
+          >
+            <el-icon><DataAnalysis /></el-icon>
+            <span>Báo cáo</span>
+          </el-menu-item>
+
+          <el-divider class="sidebar-divider" />
+
+          <!-- Admin-only modules moved to bottom for nicer visual order -->
+          <el-menu-item
+            v-if="isAdminOrDirector"
+            index="/departments"
+          >
+            <el-icon><OfficeBuilding /></el-icon>
+            <span>{{ $t('menu.departments') }}</span>
+          </el-menu-item>
+
+          <el-menu-item
+            v-if="authStore.user?.role === 'admin'"
+            index="/users"
+          >
+            <el-icon><UserFilled /></el-icon>
+            <span>{{ $t('menu.users') }}</span>
+          </el-menu-item>
+
+          <el-menu-item
+            v-if="authStore.user?.role === 'admin'"
+            index="/system-admin"
+          >
+            <el-icon><Setting /></el-icon>
+            <span>Quản trị hệ thống</span>
+          </el-menu-item>
+        </el-menu>
+      </el-aside>
+
+      <el-container>
+        <el-header>
+          <div class="header-content">
+            <div class="header-left">
+              <el-button
+                :icon="isHidden ? Expand : Fold"
+                circle
+                size="small"
+                class="sidebar-toggle"
+                @click="toggleSidebar"
+              />
+              <div class="breadcrumb">
+                <el-breadcrumb separator="/">
+                  <el-breadcrumb-item :to="{ path: '/' }">
+                    {{ $t('common.home') }}
+                  </el-breadcrumb-item>
+                  <template
+                    v-for="(item, idx) in breadcrumbItems"
+                    :key="idx"
+                  >
+                    <el-breadcrumb-item
+                      v-if="item.path"
+                      :to="item.path"
+                    >
+                      {{ item.label }}
+                    </el-breadcrumb-item>
+                    <el-breadcrumb-item v-else>
+                      {{ item.label }}
+                    </el-breadcrumb-item>
+                  </template>
+                </el-breadcrumb>
+              </div>
+            </div>
+            <div class="header-right">
+              <div class="header-help-links">
+                <el-button
+                  text
+                  bg
+                  class="header-help-btn"
+                  :title="$t('menu.documentation')"
+                  @click="router.push('/documentation')"
+                >
+                  <el-icon class="header-help-ic">
+                    <Document />
+                  </el-icon>
+                  <span v-if="!isMobile">{{ $t('menu.documentation') }}</span>
+                </el-button>
+                <span
+                  class="header-help-divider"
+                  aria-hidden="true"
+                />
+                <el-button
+                  text
+                  bg
+                  class="header-help-btn"
+                  :title="$t('menu.support')"
+                  @click="router.push('/support')"
+                >
+                  <el-icon class="header-help-ic">
+                    <QuestionFilled />
+                  </el-icon>
+                  <span v-if="!isMobile">{{ $t('menu.support') }}</span>
+                </el-button>
+              </div>
+              <NotificationBell />
+
+              <el-dropdown class="user-dropdown">
+                <span class="user-info">
+                  <el-icon><User /></el-icon>
+                  {{ authStore.user?.fullname || authStore.user?.username }}
+                  <el-tag
+                    size="small"
+                    type="info"
+                    style="margin-left: 8px"
+                  >{{ getRoleName }}</el-tag>
+                  <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                </span>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item disabled>
+                      <span style="color: #909399">{{ authStore.user?.department?.name || 'Chưa phân đơn vị' }}</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="showChangePasswordDialog = true">
+                      🔑 Đổi mật khẩu
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="showTotpDialog = true">
+                      🔐 Xác thực 2 bước
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      divided
+                      @click="handleLogout"
+                    >
+                      {{ $t('auth.logout') }}
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
+          </div>
+        </el-header>
+
+        <el-main>
+          <router-view v-slot="{ Component }">
+            <transition
+              name="route"
+              mode="out-in"
+            >
+              <component :is="Component" />
+            </transition>
+          </router-view>
+        </el-main>
+      </el-container>
+    </el-container>
+
+    <TotpSetupDialog v-model="showTotpDialog" />
+    <ChangePasswordDialog v-model="showChangePasswordDialog" />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -342,6 +347,13 @@ const toggleSidebar = () => {
 
 <style scoped>
 
+.main-layout-root {
+  min-height: 100vh;
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
 .main-layout {
   height: 100vh;
   position: relative;
@@ -362,7 +374,9 @@ const toggleSidebar = () => {
   border-right: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    transform 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.38s cubic-bezier(0.22, 1, 0.36, 1);
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.1);
 }
 
@@ -373,10 +387,12 @@ const toggleSidebar = () => {
   height: 100vh;
   z-index: 2000;
   transform: translateX(-100%);
+  will-change: transform;
 }
 
 .sidebar.sidebar--open {
   transform: translateX(0);
+  box-shadow: 12px 0 40px rgba(0, 0, 0, 0.18);
 }
 
 .logo {
@@ -414,7 +430,15 @@ const toggleSidebar = () => {
   color: #94a3b8 !important;
   font-size: 0.9rem;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition:
+    background-color 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:deep(.el-menu-item:active) {
+  transform: scale(0.98);
 }
 
 :deep(.el-menu-item:hover) {
@@ -562,18 +586,5 @@ const toggleSidebar = () => {
   padding: 24px;
 }
 
-.route-enter-active,
-.route-leave-active {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.route-enter-from {
-  opacity: 0;
-  transform: translateY(10px);
-}
-
-.route-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
-}
+/* .route-* transitions: src/styles/motion.scss */
 </style>

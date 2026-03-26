@@ -178,13 +178,14 @@ Mỗi lần khởi động, hệ thống **chỉ tạo tài khoản admin** nế
 
 | | |
 |---|---|
-| **Username** | `admin` |
-| **Password** | Biến `DEFAULT_PASSWORD` trong `.env` (thư mục backend hoặc root). Nếu không có thì mặc định `Admin@123`. |
+| **Username** | `admin` (cố định) |
+| **Password** | **`Admin@123`** (cố định trong mã nguồn — không phụ thuộc `DEFAULT_PASSWORD` trong `.env`) |
 
-- **Docker**: Backend tự chạy `migrate` + `seed:admin`. Tạo lại admin:  
-  `docker compose exec backend npm run seed:admin`
+- **`DEFAULT_PASSWORD` trong `.env`** chỉ dùng cho **tạo user mới / import user** (không áp dụng cho tài khoản `admin`).
+- **Sau “Reset dữ liệu nghiệp vụ”** (trong System Admin hoặc API): hệ thống **tự đặt lại** `admin` / `Admin@123` và **tắt 2FA** cho admin.
+- **Docker**: Backend tự chạy `migrate` + `seed:admin`. Tạo admin lần đầu: `docker compose exec backend npm run seed:admin`
 - **Không Docker**: Sau `npm run migrate` chạy `npm run seed:admin`.
-- **Không đăng nhập được?** Trong thư mục `asset-management-backend` chạy **`npm run reset-admin`** để đặt lại mật khẩu admin theo `DEFAULT_PASSWORD` trong `.env`, rồi thử đăng nhập lại (admin / mật khẩu đó).
+- **Không đăng nhập được?** Trong `asset-management-backend` chạy **`npm run reset-admin`** → luôn về **`admin` / `Admin@123`**.
 
 ---
 

@@ -42,6 +42,8 @@ export interface UpdateMaintenanceData {
     | 'in_progress' | 'repair_completed' | 'completed';
   cost?: number;
   assigned_to?: number;
+  start_date?: string;
+  completion_date?: string;
   notes?: string;
 }
 

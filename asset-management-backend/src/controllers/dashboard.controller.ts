@@ -117,7 +117,7 @@ export const getMaintenanceStats = async (req: AuthRequest, res: Response, next:
   }
 };
 
-export const getHierarchyStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const getHierarchyStats = async (req: AuthRequest, res: Response, _next: NextFunction) => {
   try {
     const query = { ...req.query };
     if (!['admin', 'director'].includes(req.user?.role || '')) {

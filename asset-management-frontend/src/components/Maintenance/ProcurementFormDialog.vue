@@ -384,7 +384,7 @@ import { useDepartmentStore } from '@/stores/department.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus, Delete, Link, Picture, Check, Document, Promotion } from '@element-plus/icons-vue';
-import type { FormInstance, FormRules } from 'element-plus';
+import type { FormInstance, FormRules } from '@/types/element-plus';
 import api from '@/services/api';
 
 interface ProcurementItem {
@@ -523,7 +523,7 @@ const calculateTotal = () => {
 const getSummaries = (param: any) => {
   const { columns, data } = param;
   const sums: string[] = [];
-  columns.forEach((column: any, index: number) => {
+  columns.forEach((_column: any, index: number) => {
     if (index === 0) {
       sums[index] = '';
       return;

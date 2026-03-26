@@ -40,18 +40,10 @@
         v-if="!isEdit"
         :label="$t('maintenance.department')"
       >
-        <el-select
+        <DepartmentTreeSelect
           v-model="formData.department_id"
           :placeholder="$t('maintenance.selectDepartment')"
-          style="width: 100%"
-        >
-          <el-option
-            v-for="d in departments"
-            :key="d.id"
-            :label="d.name"
-            :value="d.id"
-          />
-        </el-select>
+        />
       </el-form-item>
 
       <el-form-item
@@ -195,8 +187,10 @@ import { useDepartmentStore } from '@/stores/department.store';
 import { useUserStore } from '@/stores/user.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { ElMessage } from 'element-plus';
-import type { FormInstance, FormRules } from 'element-plus';
+import type { FormInstance, FormRules } from '@/types/element-plus';
+import type { UpdateMaintenanceData } from '@/services/maintenance.service';
 import api from '@/services/api';
+import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 
 const props = defineProps<{
   visible: boolean;
@@ -234,7 +228,6 @@ const formData = reactive({
   notes: '',
 });
 
-const departments = computed(() => departmentStore.departments);
 const users = computed(() => userStore.users);
 
 const urgencies = computed(() => [
@@ -299,6 +292,12 @@ const resetForm = () => {
   assets.value = [];
 };
 
+const toDateString = (d: Date | string | null | undefined): string | undefined => {
+  if (d == null) return undefined;
+  if (d instanceof Date) return d.toISOString().split('T')[0];
+  return String(d);
+};
+
 const searchAssets = async (query: string) => {
   if (query.length < 2) {
     assets.value = [];
@@ -326,19 +325,19 @@ const handleSubmit = async () => {
   loading.value = true;
   try {
     if (isEdit.value) {
-      await maintenanceStore.updateRequest(props.maintenance.id, {
+      await maintenanceStore.updateMaintenance(props.maintenance.id, {
         description: formData.description,
         urgency: formData.urgency,
-        status: formData.status,
+        status: formData.status as UpdateMaintenanceData['status'],
         cost: formData.cost || undefined,
         assigned_to: formData.assigned_to || undefined,
-        start_date: formData.start_date || undefined,
-        completion_date: formData.completion_date || undefined,
+        start_date: toDateString(formData.start_date),
+        completion_date: toDateString(formData.completion_date),
         notes: formData.notes,
       });
       ElMessage.success(t('maintenance.updateSuccess'));
     } else {
-      await maintenanceStore.createRequest({
+      await maintenanceStore.createMaintenance({
         asset_id: formData.asset_id!,
         department_id: formData.department_id || undefined,
         description: formData.description,

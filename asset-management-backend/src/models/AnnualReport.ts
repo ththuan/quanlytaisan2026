@@ -16,6 +16,7 @@ export interface AnnualReportAttributes {
   approved_date?: Date;
   status: 'draft' | 'submitted' | 'approved' | 'rejected';
   notes?: string;
+  created_by?: number;
   created_at?: Date;
   updated_at?: Date;
 }
@@ -37,6 +38,7 @@ class AnnualReport extends Model<AnnualReportAttributes, AnnualReportCreationAtt
   public approved_date?: Date;
   public status!: 'draft' | 'submitted' | 'approved' | 'rejected';
   public notes?: string;
+  public created_by?: number;
   public readonly created_at!: Date;
   public readonly updated_at!: Date;
 }
@@ -112,6 +114,14 @@ AnnualReport.init(
     notes: {
       type: DataTypes.TEXT,
       allowNull: true,
+    },
+    created_by: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'users',
+        key: 'id',
+      },
     },
   },
   {

@@ -17,6 +17,8 @@ export interface AnnualReport {
   approved_date?: string;
   created_at: string;
   updated_at: string;
+  /** Chi tiết GET /reports/:id — tổng hợp đa module theo phòng ban & năm */
+  year_summary?: Record<string, unknown>;
 }
 
 export interface CreateReportData {
@@ -67,6 +69,11 @@ class ReportService {
 
   async approve(id: number) {
     const response: any = await api.post(`/reports/${id}/approve`);
+    return response;
+  }
+
+  async bulkApprove(ids: number[]) {
+    const response: any = await api.post('/reports/bulk-approve', { ids });
     return response;
   }
 

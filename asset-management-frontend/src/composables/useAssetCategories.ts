@@ -1,6 +1,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useAssetCategoryStore } from '@/stores/assetCategory.store';
 import { ElMessage } from 'element-plus';
+import type { AssetCategory } from '@/services/assetCategory.service';
 
 const cachedCategories = ref<any[]>([]);
 const lastFetchTime = ref<number>(0);
@@ -30,11 +31,11 @@ export function useAssetCategories(options: {
   });
 
   const activeCategories = computed(() =>
-    categories.value.filter(c => c.is_active !== false)
+    categories.value.filter((c: AssetCategory) => c.is_active !== false)
   );
 
   const categoryOptions = computed(() =>
-    activeCategories.value.map(c => ({
+    activeCategories.value.map((c: AssetCategory) => ({
       label: c.name,
       value: c.id,
       code: c.code
@@ -66,7 +67,7 @@ export function useAssetCategories(options: {
   };
 
   const getCategoryById = (id: number) => {
-    return categories.value.find(c => c.id === id);
+    return categories.value.find((c: AssetCategory) => c.id === id);
   };
 
   const getCategoryName = (id: number) => {

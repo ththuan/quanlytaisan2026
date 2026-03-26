@@ -263,6 +263,7 @@
               placeholder="Tìm kiếm theo tên tài sản..."
               clearable
               size="large"
+              @input="onSearchInput"
               @clear="handleSearch"
               @keyup.enter="handleSearch"
             >
@@ -288,23 +289,15 @@
               />
             </el-select>
           </div>
-          <div class="filter-item">
-            <el-select
+          <div class="filter-item filter-item--dept">
+            <DepartmentTreeSelect
               v-if="authStore.isAdmin || authStore.isDirector"
               v-model="filterDepartment"
               :placeholder="$t('assets.filterByDepartment')"
-              clearable
               size="large"
               @change="handleFilter"
               @clear="handleFilter"
-            >
-              <el-option
-                v-for="d in departments"
-                :key="d.id"
-                :label="d.name"
-                :value="d.id"
-              />
-            </el-select>
+            />
             <el-input
               v-else
               :value="currentDepartmentName"
@@ -652,20 +645,10 @@
         style="margin-top: 8px"
       >
         <el-form-item label="Đơn vị">
-          <el-select
+          <DepartmentTreeSelect
             v-model="qrExportDeptId"
             placeholder="Chọn đơn vị cần xuất QR"
-            style="width: 100%"
-            filterable
-            clearable
-          >
-            <el-option
-              v-for="d in departments"
-              :key="d.id"
-              :label="d.name"
-              :value="d.id"
-            />
-          </el-select>
+          />
         </el-form-item>
       </el-form>
       <el-alert
@@ -699,7 +682,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { debounce } from 'lodash-es';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAssetStore } from '@/stores/asset.store';
@@ -708,9 +692,10 @@ import { useDepartments } from '@/composables/useDepartments';
 import { Plus, Search, Delete, Box, CircleCheck, Warning, Refresh, Upload, Download, CircleClose, QuestionFilled, Sunny, Setting, DeleteFilled } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import AssetFormDialog from '@/components/Assets/AssetFormDialog.vue';
+import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 import importService, { type ImportResult } from '@/services/import.service';
 import exportService from '@/services/export.service';
-import { assetService } from '@/services/asset.service';
+import { assetService, type AssetQueryParams } from '@/services/asset.service';
 
 const router = useRouter();
 const route = useRoute();
@@ -727,7 +712,7 @@ const { activeDepartments: departments } = useDepartments({
 const searchQuery = ref('');
 const filterCategory = ref('');
 const filterStatus = ref('');
-const filterDepartment = ref<number | ''>('');
+const filterDepartment = ref<number | null>(null);
 const formDialogVisible = ref(false);
 const currentAsset = ref<any>(null);
 
@@ -792,56 +777,6 @@ const fetchCategories = async () => {
   }
 };
 
-const _statuses = computed(() => [
-  { value: 'active', label: t('assets.status.active') },
-  { value: 'inactive', label: t('assets.status.inactive') },
-  { value: 'damaged', label: t('assets.status.damaged') },
-  { value: 'pending_repair', label: t('assets.status.pending_repair') },
-  { value: 'pending_disposal', label: t('assets.status.pending_disposal') },
-  { value: 'lost', label: t('assets.status.lost') },
-  { value: 'disposed', label: t('assets.status.disposed') },
-]);
-
-onMounted(async () => {
-  // Áp filter từ query params (khi điều hướng từ Dashboard)
-  const q: any = route.query || {};
-
-  if (typeof q.status === 'string' && q.status) {
-    filterStatus.value = q.status;
-  }
-
-  // Dashboard truyền current_department_id
-  if (typeof q.current_department_id === 'string' && q.current_department_id) {
-    const deptId = Number(q.current_department_id);
-    if (!Number.isNaN(deptId)) {
-      filterDepartment.value = deptId;
-    }
-  }
-
-  // Dashboard có thể truyền category_code
-  if (typeof q.category_code === 'string' && q.category_code) {
-    filterCategory.value = q.category_code;
-  }
-
-  // Nếu không phải admin hay director, luôn khóa theo phòng ban mình
-  if (!authStore.isAdmin && !authStore.isDirector && authStore.userDepartmentId) {
-    filterDepartment.value = authStore.userDepartmentId;
-  }
-
-  // Fetch theo filter hiện tại
-  const departmentId = (authStore.isAdmin || authStore.isDirector) ? (filterDepartment.value || undefined) : authStore.userDepartmentId;
-  await assetStore.fetchAssets({
-    search: searchQuery.value,
-    category_code: filterCategory.value,
-    status: filterStatus.value,
-    current_department_id: departmentId,
-  });
-
-  // Departments đã tự động load qua composable useDepartments
-  await fetchCategories();
-  await fetchStatistics();
-});
-
 const fetchStatistics = async () => {
   try {
     const departmentId = (authStore.isAdmin || authStore.isDirector) ? (filterDepartment.value || undefined) : authStore.userDepartmentId;
@@ -858,62 +793,101 @@ const fetchStatistics = async () => {
   }
 };
 
-const handleSearch = async () => {
-  // Nếu không phải admin hoặc director, luôn lọc theo phòng ban
-  const departmentId = (authStore.isAdmin || authStore.isDirector) ? (filterDepartment.value || undefined) : authStore.userDepartmentId;
-  await assetStore.fetchAssets({
+const getListFetchParams = (overrides: Partial<AssetQueryParams> = {}): AssetQueryParams => {
+  const departmentId = (authStore.isAdmin || authStore.isDirector)
+    ? (filterDepartment.value ?? undefined)
+    : authStore.userDepartmentId;
+  return {
     search: searchQuery.value,
     category_code: filterCategory.value,
     status: filterStatus.value,
     current_department_id: departmentId,
-  });
+    ...overrides,
+  };
+};
+
+const runListRefresh = async (overrides: Partial<AssetQueryParams> = {}) => {
+  await assetStore.fetchAssets(getListFetchParams(overrides));
   await fetchStatistics();
 };
 
+const debouncedSearch = debounce(() => {
+  void runListRefresh({ page: 1 });
+}, 380);
+
+const onSearchInput = () => {
+  debouncedSearch();
+};
+
+onUnmounted(() => {
+  debouncedSearch.cancel();
+});
+
+onMounted(async () => {
+  const q: any = route.query || {};
+
+  if (typeof q.status === 'string' && q.status) {
+    filterStatus.value = q.status;
+  }
+
+  if (typeof q.current_department_id === 'string' && q.current_department_id) {
+    const deptId = Number(q.current_department_id);
+    if (!Number.isNaN(deptId)) {
+      filterDepartment.value = deptId;
+    }
+  }
+
+  if (typeof q.category_code === 'string' && q.category_code) {
+    filterCategory.value = q.category_code;
+  }
+
+  if (!authStore.isAdmin && !authStore.isDirector && authStore.userDepartmentId) {
+    filterDepartment.value = authStore.userDepartmentId;
+  }
+
+  await Promise.all([
+    assetStore.fetchAssets(getListFetchParams()),
+    fetchCategories(),
+    fetchStatistics(),
+  ]);
+});
+
+const handleSearch = async () => {
+  debouncedSearch.cancel();
+  await runListRefresh({ page: 1 });
+};
+
 const handleFilter = () => {
-  handleSearch();
+  debouncedSearch.cancel();
+  void handleSearch();
 };
 
 const handleStatClick = (status: string) => {
   filterStatus.value = status;
-  handleSearch();
+  void handleSearch();
 };
 
 const handleReset = async () => {
+  debouncedSearch.cancel();
   searchQuery.value = '';
   filterCategory.value = '';
   filterStatus.value = '';
-  // Nếu không phải admin hay director, giữ lại filter phòng ban
   if (authStore.isAdmin || authStore.isDirector) {
-    filterDepartment.value = '';
-    await assetStore.fetchAssets();
+    filterDepartment.value = null;
   } else {
-    filterDepartment.value = authStore.userDepartmentId || '';
-    await assetStore.fetchAssets({ current_department_id: authStore.userDepartmentId });
+    filterDepartment.value = authStore.userDepartmentId ?? null;
   }
-  await fetchStatistics();
+  await runListRefresh();
 };
 
 const handlePageChange = (page: number) => {
-  const departmentId = (authStore.isAdmin || authStore.isDirector) ? (filterDepartment.value || undefined) : authStore.userDepartmentId;
-  assetStore.fetchAssets({
-    page,
-    search: searchQuery.value,
-    category_code: filterCategory.value,
-    status: filterStatus.value,
-    current_department_id: departmentId,
-  });
+  debouncedSearch.cancel();
+  assetStore.fetchAssets(getListFetchParams({ page }));
 };
 
 const handleSizeChange = (size: number) => {
-  const departmentId = (authStore.isAdmin || authStore.isDirector) ? (filterDepartment.value || undefined) : authStore.userDepartmentId;
-  assetStore.fetchAssets({
-    limit: size,
-    search: searchQuery.value,
-    category_code: filterCategory.value,
-    status: filterStatus.value,
-    current_department_id: departmentId,
-  });
+  debouncedSearch.cancel();
+  assetStore.fetchAssets(getListFetchParams({ limit: size }));
 };
 
 const handleRowClick = (row: any) => {
@@ -926,8 +900,8 @@ const handleCreate = () => {
 };
 
 const handleFormSuccess = async () => {
-  await assetStore.fetchAssets();
-  await fetchStatistics();
+  debouncedSearch.cancel();
+  await runListRefresh({ page: 1 });
 };
 
 const getStatusType = (status: string) => {
@@ -1016,10 +990,14 @@ const handleConfirmImport = async () => {
     importResult.value = { ...result.data, success: result.success };
     if (result.success) {
       ElMessage.success(result.message);
-      assetStore.fetchAssets();
+      debouncedSearch.cancel();
+      await runListRefresh({ page: 1 });
     } else {
       ElMessage.warning(result.message);
-      if (result.data?.imported > 0) assetStore.fetchAssets();
+      if (result.data?.imported > 0) {
+        debouncedSearch.cancel();
+        await runListRefresh({ page: 1 });
+      }
     }
   } catch (error: any) {
     ElMessage.error(error.response?.data?.message || 'Có lỗi xảy ra khi import');

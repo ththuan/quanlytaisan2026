@@ -32,19 +32,11 @@
           </el-select>
         </el-col>
         <el-col :span="6">
-          <el-select
+          <DepartmentTreeSelect
             v-model="filterDepartment"
             placeholder="Lọc theo đơn vị"
-            clearable
             @change="handleFilter"
-          >
-            <el-option
-              v-for="d in departments"
-              :key="d.id"
-              :label="d.name"
-              :value="d.id"
-            />
-          </el-select>
+          />
         </el-col>
         <el-col :span="6">
           <el-button
@@ -345,6 +337,7 @@ import { Plus } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import RepairFormDialog from './RepairFormDialog.vue';
 import MaintenanceDetailDialog from './MaintenanceDetailDialog.vue';
+import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 import api from '@/services/api';
 import assetDisposalService from '@/services/assetDisposal.service';
 
@@ -369,8 +362,6 @@ const adminApprovalRow = ref<any>(null);
 const adminEstimatedCost = ref<number | null>(null);
 const approvalLoading = ref(false);
 const toDisposalLoading = ref(false);
-
-const departments = computed(() => departmentStore.departments);
 
 const statuses = computed(() => [
   { value: 'draft', label: 'Nháp' },

@@ -40,7 +40,20 @@ export const useReportStore = defineStore('report', {
       this.loading = true;
       this.error = null;
       try {
-        const response = await reportService.getAll(params);
+        const clean: Record<string, unknown> = {
+          page: params?.page ?? this.pagination.page,
+          limit: params?.limit ?? 50,
+        };
+        if (params?.year != null && params.year !== '') {
+          clean.year = params.year;
+        }
+        if (params?.status) {
+          clean.status = params.status;
+        }
+        if (params?.department_id != null && params.department_id !== '') {
+          clean.department_id = params.department_id;
+        }
+        const response = await reportService.getAll(clean);
         this.reports = response.data;
         this.pagination = response.pagination;
       } catch (error: any) {
@@ -51,8 +64,8 @@ export const useReportStore = defineStore('report', {
       }
     },
 
+    /** Không set `loading` — tránh phủ loading cả bảng danh sách khi mở chi tiết. */
     async fetchReportById(id: number) {
-      this.loading = true;
       this.error = null;
       try {
         const response = await reportService.getById(id);
@@ -61,8 +74,6 @@ export const useReportStore = defineStore('report', {
       } catch (error: any) {
         this.error = error.response?.data?.message || 'Failed to fetch report';
         throw error;
-      } finally {
-        this.loading = false;
       }
     },
 
@@ -131,6 +142,24 @@ export const useReportStore = defineStore('report', {
         return response.data;
       } catch (error: any) {
         this.error = error.response?.data?.message || 'Failed to approve report';
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async bulkApproveReports(ids: number[]) {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await reportService.bulkApprove(ids);
+        return response.data as {
+          approved: number[];
+          skipped: number[];
+          failed: { id: number; reason: string }[];
+        };
+      } catch (error: any) {
+        this.error = error.response?.data?.message || 'Failed to bulk approve';
         throw error;
       } finally {
         this.loading = false;

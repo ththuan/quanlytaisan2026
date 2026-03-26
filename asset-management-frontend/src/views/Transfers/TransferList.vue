@@ -58,19 +58,11 @@
             :sm="7"
             :md="6"
           >
-            <el-select
+            <DepartmentTreeSelect
               v-model="filterDepartment"
               :placeholder="$t('transfers.filterByDepartment')"
-              clearable
               @change="handleFilterImmediate"
-            >
-              <el-option
-                v-for="d in departments"
-                :key="d.id"
-                :label="d.name"
-                :value="d.id"
-              />
-            </el-select>
+            />
           </el-col>
           <el-col
             :xs="24"
@@ -223,19 +215,19 @@ import { Plus } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import TransferFormDialog from '@/components/Transfers/TransferFormDialog.vue';
 import TransferDetailDialog from '@/components/Transfers/TransferDetailDialog.vue';
+import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 import moment from 'moment';
-import { debounce } from '@/services/apiHelper';
 
 const { t } = useI18n();
 const transferStore = useTransferStore();
 const authStore = useAuthStore();
 
 // Sử dụng composable mới với caching tự động
-const { activeDepartments: departments, isLoading: _departmentsLoading } = useDepartments();
+useDepartments();
 
 const searchQuery = ref('');
 const filterStatus = ref('');
-const filterDepartment = ref('');
+const filterDepartment = ref<number | null>(null);
 const formDialogVisible = ref(false);
 const detailDialogVisible = ref(false);
 const currentTransfer = ref<any>(null);
@@ -256,7 +248,7 @@ const applyFilters = () => {
   transferStore.fetchTransfers({
     search: searchQuery.value || undefined,
     status: filterStatus.value || undefined,
-    to_department_id: filterDepartment.value || undefined,
+    to_department_id: filterDepartment.value ?? undefined,
   });
 };
 
@@ -264,12 +256,10 @@ const handleFilterImmediate = () => {
   applyFilters();
 };
 
-const _handleFilter = debounce(applyFilters, 400);
-
 const handleReset = () => {
   searchQuery.value = '';
   filterStatus.value = '';
-  filterDepartment.value = '';
+  filterDepartment.value = null;
   transferStore.fetchTransfers();
 };
 
@@ -278,7 +268,7 @@ const handlePageChange = (page: number) => {
     page,
     search: searchQuery.value || undefined,
     status: filterStatus.value || undefined,
-    to_department_id: filterDepartment.value || undefined,
+    to_department_id: filterDepartment.value ?? undefined,
   });
 };
 

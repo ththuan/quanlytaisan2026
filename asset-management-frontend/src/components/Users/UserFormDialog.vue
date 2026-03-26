@@ -110,20 +110,10 @@
             :label="$t('users.department')"
             prop="department_id"
           >
-            <el-select 
-              v-model="formData.department_id" 
-              :placeholder="$t('users.department')" 
-              style="width: 100%"
-              clearable
-              filterable
-            >
-              <el-option
-                v-for="dept in departments"
-                :key="dept.id"
-                :label="dept.name"
-                :value="dept.id"
-              />
-            </el-select>
+            <DepartmentTreeSelect
+              v-model="formData.department_id"
+              :placeholder="$t('users.department')"
+            />
           </el-form-item>
         </el-col>
         <el-col
@@ -162,11 +152,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, computed, onMounted } from 'vue';
+import { ref, reactive, watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { FormInstance, FormRules } from 'element-plus';
+import type { FormInstance, FormRules } from '@/types/element-plus';
 import { ElMessage } from 'element-plus';
 import api from '@/services/api';
+import { useDepartmentStore } from '@/stores/department.store';
+import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 
 interface User {
   id: number;
@@ -176,11 +168,6 @@ interface User {
   role: string;
   department_id?: number;
   is_active: boolean;
-}
-
-interface Department {
-  id: number;
-  name: string;
 }
 
 const props = defineProps<{
@@ -194,9 +181,9 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const departmentStore = useDepartmentStore();
 const formRef = ref<FormInstance>();
 const loading = ref(false);
-const departments = ref<Department[]>([]);
 
 const dialogVisible = computed({
   get: () => props.visible,
@@ -261,28 +248,6 @@ const rules = computed<FormRules>(() => ({
   ],
 }));
 
-const fetchDepartments = async () => {
-  try {
-    // Request all departments without pagination
-    const response: any = await api.get('/departments', { params: { limit: 'all' } });
-    if (response && response.data) {
-      // Handle both paginated and non-paginated responses
-      if (Array.isArray(response.data)) {
-        departments.value = response.data;
-      } else if (response.data.data && Array.isArray(response.data.data)) {
-        departments.value = response.data.data;
-      } else if (Array.isArray(response)) {
-        departments.value = response;
-      }
-    } else if (Array.isArray(response)) {
-      departments.value = response;
-    }
-  } catch (error) {
-    console.error('Error fetching departments:', error);
-    ElMessage.error('Không thể tải danh sách phòng ban');
-  }
-};
-
 const resetForm = () => {
   formData.username = '';
   formData.email = '';
@@ -303,7 +268,7 @@ const handleClose = () => {
 const handleSubmit = async () => {
   if (!formRef.value) return;
 
-  await formRef.value.validate(async (valid) => {
+  await formRef.value.validate(async (valid: boolean) => {
     if (!valid) return;
 
     loading.value = true;
@@ -348,9 +313,11 @@ const handleSubmit = async () => {
   });
 };
 
-watch(() => props.visible, (newVal) => {
+watch(() => props.visible, async (newVal) => {
   if (newVal) {
-    fetchDepartments();
+    if (!departmentStore.departments.length) {
+      await departmentStore.fetchDepartments({ limit: 1000 });
+    }
     if (props.user) {
       formData.username = props.user.username;
       formData.email = props.user.email;
@@ -364,10 +331,6 @@ watch(() => props.visible, (newVal) => {
       resetForm();
     }
   }
-});
-
-onMounted(() => {
-  fetchDepartments();
 });
 </script>
 

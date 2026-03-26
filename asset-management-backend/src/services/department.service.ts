@@ -442,6 +442,15 @@ class DepartmentService {
       const transaction = await sequelize.transaction();
 
       try {
+        const existingRows = await Department.findAll({
+          attributes: ['id', 'name'],
+          transaction,
+        });
+        const nameToId = new Map<string, number>();
+        for (const d of existingRows) {
+          nameToId.set(d.name, d.id);
+        }
+
         for (let i = 0; i < rows.length; i++) {
           const row = rows[i];
           const rowNumber = i + 2; // +2 because Excel starts at row 1 and row 1 is header
@@ -484,13 +493,7 @@ class DepartmentService {
               continue;
             }
 
-            // Check if department already exists
-            const existingDept = await Department.findOne({
-              where: { name },
-              transaction,
-            });
-
-            if (existingDept) {
+            if (nameToId.has(name)) {
               errors.push({
                 row: rowNumber,
                 field: 'Tên phòng ban',
@@ -499,17 +502,11 @@ class DepartmentService {
               continue;
             }
 
-            // Find or create parent department
             let parentDepartmentId: number | null = null;
             if (parentName) {
-              let parentDept = await Department.findOne({
-                where: { name: parentName },
-                transaction,
-              });
-
-              // If parent doesn't exist, create it (type = department để khớp DB)
-              if (!parentDept) {
-                parentDept = await Department.create(
+              let parentId = nameToId.get(parentName);
+              if (parentId === undefined) {
+                const parentDept = await Department.create(
                   {
                     name: parentName,
                     type: 'department',
@@ -517,13 +514,13 @@ class DepartmentService {
                   },
                   { transaction }
                 );
+                parentId = parentDept.id;
+                nameToId.set(parentName, parentId);
               }
-
-              parentDepartmentId = parentDept.id;
+              parentDepartmentId = parentId;
             }
 
-            // Create department
-            await Department.create(
+            const created = await Department.create(
               {
                 name,
                 type: normalizedType,
@@ -532,6 +529,7 @@ class DepartmentService {
               },
               { transaction }
             );
+            nameToId.set(name, created.id);
 
             imported++;
           } catch (rowError: any) {

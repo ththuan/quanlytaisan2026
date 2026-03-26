@@ -6,7 +6,10 @@ import { NotFoundError, ConflictError } from '../utils/errorHandler';
 import { Op, QueryTypes } from 'sequelize';
 import sequelize from '../config/database';
 import { getPaginationParams, buildPaginationResult, getOffset, PaginationResult } from '../utils/pagination';
-import depreciationCalculatorService, { DepreciationCalculationResult } from './depreciationCalculator.service';
+import depreciationCalculatorService, {
+  type DepreciationCalculationResult,
+  type DepreciationPrecachedCategory,
+} from './depreciationCalculator.service';
 
 export interface CreateAssetInput {
   asset_code: string;
@@ -109,7 +112,17 @@ class AssetService {
           model: AssetCategory,
           as: 'assetCategory',
           required: false,
-          attributes: ['id', 'code', 'name', 'category_group', 'unit'],
+          attributes: [
+            'id',
+            'code',
+            'name',
+            'category_group',
+            'unit',
+            'is_depreciable',
+            'useful_life_years',
+            'depreciation_rate',
+            'description',
+          ],
         },
         {
           model: Department,
@@ -133,52 +146,87 @@ class AssetService {
       return assetData;
     });
 
-    // Đồng bộ "giá trị còn lại" trả về cho frontend:
-    // - Nhiều màn hình (danh sách, kiểm kê, bảo trì...) đang lấy residual_value/current_value trực tiếp từ API list
-    // - Trong khi getAssetById đã tính depreciation_info.remainingValue (chuẩn) nhưng DB field residual_value/current_value
-    //   có thể chưa được chạy tác vụ "recalculate", gây hiển thị sai.
-    const assetsWithCalculatedValues = await Promise.all(
-      assetsWithYearInUse.map(async (assetData: any) => {
-        try {
-          const depreciation = await depreciationCalculatorService.calculateDepreciation({
-            assetId: assetData.id,
-            categoryCode: assetData.category_code || undefined,
-            originalValue: Number(assetData.purchase_price) || 0,
-            yearInUse: assetData.year_in_use || undefined,
-            customUsefulLife: assetData.useful_life || undefined,
-            customDepreciationRate: assetData.depreciation_rate ? Number(assetData.depreciation_rate) : undefined,
-            isDepreciable: assetData.is_depreciable !== undefined ? assetData.is_depreciable : undefined,
-          });
+    // Đồng bộ "giá trị còn lại" — tính khấu hao đồng bộ (không Promise/async theo từng dòng) + 1 query bổ sung cho danh mục thiếu JOIN
+    const codesMissingJoin = [
+      ...new Set(
+        assetsWithYearInUse
+          .filter((a: any) => a.category_code && !(a.assetCategory && a.assetCategory.code))
+          .map((a: any) => String(a.category_code))
+      ),
+    ];
+    let supplementalByCode = new Map<string, InstanceType<typeof AssetCategory>>();
+    if (codesMissingJoin.length > 0) {
+      const extra = await AssetCategory.findAll({
+        where: { code: { [Op.in]: codesMissingJoin }, is_active: true },
+        attributes: [
+          'code',
+          'name',
+          'category_group',
+          'is_depreciable',
+          'useful_life_years',
+          'depreciation_rate',
+          'description',
+        ],
+      });
+      supplementalByCode = new Map(extra.map((row) => [row.code, row]));
+    }
 
-          // Chỉ override giá trị trả về (KHÔNG update DB ở endpoint list)
-          assetData.current_value = depreciation.remainingValue;
-          assetData.residual_value = depreciation.remainingValue;
-          assetData.accumulated_depreciation = depreciation.accumulatedDepreciation;
+    const toPrecached = (ac: any): DepreciationPrecachedCategory | undefined => {
+      if (!ac?.code) return undefined;
+      return {
+        code: ac.code,
+        name: ac.name,
+        category_group: ac.category_group,
+        is_depreciable: ac.is_depreciable !== false,
+        useful_life_years: ac.useful_life_years ?? null,
+        depreciation_rate: ac.depreciation_rate != null ? Number(ac.depreciation_rate) : null,
+        description: ac.description ?? null,
+      };
+    };
 
-          // Fallback tên danh mục theo kết quả tính toán nếu assetCategory null (thường do thiếu category_id)
-          if (!assetData.assetCategory && depreciation.categoryInfo) {
-            assetData.assetCategory = {
-              code: depreciation.categoryInfo.code,
-              name: depreciation.categoryInfo.name,
-              category_group: depreciation.categoryInfo.categoryGroup,
-              unit: assetData.unit,
-            };
-          }
-
-          // Nếu DB thiếu useful_life/depreciation_rate thì trả về theo kết quả tính toán để UI hiển thị đúng
-          if (!assetData.useful_life && depreciation.usefulLifeYears) {
-            assetData.useful_life = depreciation.usefulLifeYears;
-          }
-          if (!assetData.depreciation_rate && depreciation.depreciationRate) {
-            assetData.depreciation_rate = depreciation.depreciationRate;
-          }
-        } catch (error) {
-          // Nếu lỗi tính khấu hao, fallback giữ nguyên dữ liệu từ DB
-          // (tránh làm hỏng API list)
+    const assetsWithCalculatedValues = assetsWithYearInUse.map((assetData: any) => {
+      try {
+        const ac = assetData.assetCategory;
+        let precachedCategory = toPrecached(ac);
+        if (!precachedCategory && assetData.category_code) {
+          precachedCategory = toPrecached(supplementalByCode.get(String(assetData.category_code)));
         }
-        return assetData;
-      })
-    );
+
+        const depreciation = depreciationCalculatorService.calculateDepreciationSync({
+          assetId: assetData.id,
+          categoryCode: assetData.category_code || ac?.code || undefined,
+          originalValue: Number(assetData.purchase_price) || 0,
+          yearInUse: assetData.year_in_use || undefined,
+          precachedCategory,
+          customUsefulLife: assetData.useful_life || undefined,
+          customDepreciationRate: assetData.depreciation_rate ? Number(assetData.depreciation_rate) : undefined,
+          isDepreciable: assetData.is_depreciable !== undefined ? assetData.is_depreciable : undefined,
+        });
+
+        assetData.current_value = depreciation.remainingValue;
+        assetData.residual_value = depreciation.remainingValue;
+        assetData.accumulated_depreciation = depreciation.accumulatedDepreciation;
+
+        if (!assetData.assetCategory && depreciation.categoryInfo) {
+          assetData.assetCategory = {
+            code: depreciation.categoryInfo.code,
+            name: depreciation.categoryInfo.name,
+            category_group: depreciation.categoryInfo.categoryGroup,
+            unit: assetData.unit,
+          };
+        }
+
+        if (!assetData.useful_life && depreciation.usefulLifeYears) {
+          assetData.useful_life = depreciation.usefulLifeYears;
+        }
+        if (!assetData.depreciation_rate && depreciation.depreciationRate) {
+          assetData.depreciation_rate = depreciation.depreciationRate;
+        }
+      } catch {
+        // Giữ dữ liệu DB nếu tính toán lỗi (vd. 0504 thiếu thông tin)
+      }
+      return assetData;
+    });
 
     return buildPaginationResult(assetsWithCalculatedValues as any, count, page, limit);
   }
@@ -221,6 +269,10 @@ class AssetService {
     // Ưu tiên sử dụng dữ liệu từ database (depreciation_rate, useful_life, is_depreciable)
     let depreciationInfo;
     try {
+      const ac = assetWithCategory.assetCategory as
+        | { code: string; name: string; category_group: string; is_depreciable: boolean; useful_life_years?: number | null; depreciation_rate?: number | null; description?: string | null }
+        | null
+        | undefined;
       depreciationInfo = await depreciationCalculatorService.calculateDepreciation({
         assetId: asset.id,
         categoryCode: categoryCode,
@@ -228,7 +280,18 @@ class AssetService {
         yearInUse: asset.year_in_use || assetData.year_in_use || undefined, // CHỈ DÙNG year_in_use
         customUsefulLife: asset.useful_life || undefined,
         customDepreciationRate: asset.depreciation_rate ? Number(asset.depreciation_rate) : undefined,
-        isDepreciable: asset.is_depreciable !== undefined ? asset.is_depreciable : undefined
+        isDepreciable: asset.is_depreciable !== undefined ? asset.is_depreciable : undefined,
+        precachedCategory: ac
+          ? {
+              code: ac.code,
+              name: ac.name,
+              category_group: ac.category_group,
+              is_depreciable: ac.is_depreciable,
+              useful_life_years: ac.useful_life_years ?? null,
+              depreciation_rate: ac.depreciation_rate != null ? Number(ac.depreciation_rate) : null,
+              description: ac.description ?? null,
+            }
+          : undefined,
       });
     } catch (error: any) {
       console.error('Error calculating depreciation:', error);
@@ -278,6 +341,9 @@ class AssetService {
 
     return {
       ...assetData,
+      current_value: depreciationInfo.remainingValue,
+      residual_value: depreciationInfo.remainingValue,
+      accumulated_depreciation: depreciationInfo.accumulatedDepreciation,
       depreciation_info: depreciationInfo,
     };
   }
@@ -516,9 +582,16 @@ class AssetService {
   async getStatistics(query: any): Promise<any> {
     const where: any = {};
 
-    // Áp dụng filter theo department nếu có
+    // Áp dụng filter theo department (đồng bộ getAllAssets; include_children=true = cả nhánh — vd. từ Dashboard)
     if (query.current_department_id) {
-      where.current_department_id = parseInt(query.current_department_id);
+      const deptId = parseInt(String(query.current_department_id), 10);
+      const includeChildren = String(query.include_children ?? '').toLowerCase() === 'true';
+      if (includeChildren && Number.isFinite(deptId)) {
+        const ids = await this.getDescendantDepartmentIds(deptId);
+        where.current_department_id = { [Op.in]: ids.length ? ids : [deptId] };
+      } else {
+        where.current_department_id = deptId;
+      }
     }
 
     // Áp dụng filter theo category nếu có

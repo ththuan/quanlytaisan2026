@@ -214,21 +214,10 @@
           :label="$t('assets.department')"
           prop="current_department_id"
         >
-          <el-select
+          <DepartmentTreeSelect
             v-model="formData.current_department_id"
-            v-loading="departmentsLoading"
             :placeholder="$t('assets.department')"
-            style="width: 100%"
-            clearable
-            filterable
-          >
-            <el-option
-              v-for="dept in departments"
-              :key="dept.id"
-              :label="dept.name"
-              :value="dept.id"
-            />
-          </el-select>
+          />
         </el-form-item>
       </el-col>
       <el-col :span="12">
@@ -365,11 +354,12 @@
 <script setup lang="ts">
 import { ref, reactive, watch, computed, onMounted, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { FormInstance, FormRules, CascaderProps } from 'element-plus';
+import type { FormInstance, FormRules, CascaderProps } from '@/types/element-plus';
 import { ElMessage } from 'element-plus';
 import { Files, Document, Money } from '@element-plus/icons-vue';
 import { assetCategoryService, type AssetCategory } from '@/services/assetCategory.service';
 import { useDepartments } from '@/composables/useDepartments';
+import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 import { useAssetConditionOptions } from '@/composables/useAssetConditions';
 
 const props = defineProps<{
@@ -389,7 +379,7 @@ const { t } = useI18n();
 const formRef = ref<FormInstance>();
 const loading = computed(() => !!props.loading);
 
-const { activeDepartments: departments, isLoading: departmentsLoading } = useDepartments();
+useDepartments();
 const { assetConditionOptions } = useAssetConditionOptions();
 
 const categories = ref<AssetCategory[]>([]);
@@ -681,7 +671,7 @@ const fetchCategories = async () => {
 
 const handleSave = async () => {
   if (!formRef.value) return;
-  await formRef.value.validate((valid) => {
+  await formRef.value.validate((valid: boolean) => {
     if (!valid) return;
     emit('save', { ...formData });
   });

@@ -326,7 +326,7 @@ const newProcurementItem = () => ({
   year_in_use: null,
 });
 
-const removeLine = (idx:number) => form.items.splice(idx, 1);
+const removeLine = (idx: number | string) => form.items.splice(Number(idx), 1);
 
 const openAddAsset = () => {
   editingAssetIndex.value = null;
@@ -357,9 +357,10 @@ const openAddAsset = () => {
   showInlineForm.value = true;
 };
 
-const openEditAsset = (idx: number) => {
-  editingAssetIndex.value = idx;
-  const row = form.items[idx] || {};
+const openEditAsset = (idx: number | string) => {
+  const i = Number(idx);
+  editingAssetIndex.value = i;
+  const row = form.items[i] || {};
   editingAssetModel.value = {
     name: row.name || '',
     category: row.category || '',

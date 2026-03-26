@@ -32,19 +32,11 @@
           </el-select>
         </el-col>
         <el-col :span="6">
-          <el-select
+          <DepartmentTreeSelect
             v-model="filterDepartment"
             :placeholder="$t('maintenance.filterByDepartment')"
-            clearable
             @change="handleFilter"
-          >
-            <el-option
-              v-for="d in departments"
-              :key="d.id"
-              :label="d.name"
-              :value="d.id"
-            />
-          </el-select>
+          />
         </el-col>
         <el-col :span="6">
           <el-button
@@ -233,6 +225,7 @@ import { Plus } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import ProcurementFormDialog from './ProcurementFormDialog.vue';
 import MaintenanceDetailDialog from './MaintenanceDetailDialog.vue';
+import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 import api from '@/services/api';
 import procurementService from '@/services/procurement.service';
 
@@ -250,8 +243,6 @@ const formDialogVisible = ref(false);
 const detailDialogVisible = ref(false);
 const currentItem = ref<any>(null);
 const fulfillLoading = ref(false);
-
-const departments = computed(() => departmentStore.departments);
 
 const statuses = computed(() => [
   { value: 'draft', label: 'Nháp' },

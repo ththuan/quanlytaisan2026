@@ -19,19 +19,11 @@
             :label="$t('reports.department')"
             prop="department_id"
           >
-            <el-select
+            <DepartmentTreeSelect
               v-model="formData.department_id"
               :placeholder="$t('reports.selectDepartment')"
-              style="width: 100%"
               :disabled="isEdit"
-            >
-              <el-option
-                v-for="d in departments"
-                :key="d.id"
-                :label="d.name"
-                :value="d.id"
-              />
-            </el-select>
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -155,8 +147,9 @@ import { ref, reactive, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useReportStore } from '@/stores/report.store';
 import { useDepartmentStore } from '@/stores/department.store';
+import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 import { ElMessage } from 'element-plus';
-import type { FormInstance, FormRules } from 'element-plus';
+import type { FormInstance, FormRules } from '@/types/element-plus';
 import api from '@/services/api';
 
 const props = defineProps<{
@@ -166,7 +159,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:visible': [value: boolean];
-  success: [];
+  success: [payload?: { year?: number; department_id?: number }];
 }>();
 
 const { t } = useI18n();
@@ -198,8 +191,6 @@ const formData = reactive({
   total_value: 0,
   notes: '',
 });
-
-const departments = computed(() => departmentStore.departments);
 
 const rules = computed<FormRules>(() => ({
   department_id: [{ required: true, message: t('validation.required'), trigger: 'change' }],
@@ -292,14 +283,12 @@ const handleSubmit = async () => {
       await reportStore.createReport({
         department_id: formData.department_id!,
         year: formData.year,
-        total_assets: formData.total_assets,
-        active_assets: formData.active_assets,
-        damaged_assets: formData.damaged_assets,
-        lost_assets: formData.lost_assets,
-        total_value: formData.total_value,
-        notes: formData.notes,
+        notes: formData.notes || undefined,
       });
       ElMessage.success(t('reports.createSuccess'));
+      emit('success', { year: formData.year, department_id: formData.department_id! });
+      emit('update:visible', false);
+      return;
     }
     emit('success');
     emit('update:visible', false);

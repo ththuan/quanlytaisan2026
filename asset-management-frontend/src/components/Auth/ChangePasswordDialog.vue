@@ -70,7 +70,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue';
-import type { FormInstance, FormRules } from 'element-plus';
+import type { FormInstance, FormRules } from '@/types/element-plus';
 import { ElMessage } from 'element-plus';
 import { authService } from '@/services/auth.service';
 

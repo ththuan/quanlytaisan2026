@@ -89,17 +89,17 @@ const systemAdminService = {
 
   async restartContainer(containerName: string): Promise<{ success: boolean; message: string }> {
     const response = await api.post(`/system-admin/docker/${containerName}/restart`);
-    return response;
+    return unwrap<{ success: boolean; message: string }>(response);
   },
 
   async stopContainer(containerName: string): Promise<{ success: boolean; message: string }> {
     const response = await api.post(`/system-admin/docker/${containerName}/stop`);
-    return response;
+    return unwrap<{ success: boolean; message: string }>(response);
   },
 
   async startContainer(containerName: string): Promise<{ success: boolean; message: string }> {
     const response = await api.post(`/system-admin/docker/${containerName}/start`);
-    return response;
+    return unwrap<{ success: boolean; message: string }>(response);
   },
 
   async getContainerLogs(
@@ -109,12 +109,12 @@ const systemAdminService = {
     const response = await api.get(`/system-admin/docker/${containerName}/logs`, {
       params: { lines },
     });
-    return response;
+    return unwrap<{ success: boolean; logs?: string; error?: string }>(response);
   },
 
   async createBackup(): Promise<{ success: boolean; message: string; filename?: string }> {
     const response = await api.post('/system-admin/backup');
-    return response;
+    return unwrap<{ success: boolean; message: string; filename?: string }>(response);
   },
 
   async listBackups(): Promise<BackupInfo[]> {
@@ -124,17 +124,17 @@ const systemAdminService = {
 
   async resetBusinessData(): Promise<{ success: boolean; message: string }> {
     const response = await api.post('/system-admin/reset-data', { confirm: 'RESET_DATA' });
-    return response;
+    return unwrap<{ success: boolean; message: string }>(response);
   },
 
   async runMigrations(): Promise<{ success: boolean; message: string }> {
     const response = await api.post('/system-admin/migrate');
-    return response;
+    return unwrap<{ success: boolean; message: string }>(response);
   },
 
   async seedDatabase(): Promise<{ success: boolean; message: string }> {
     const response = await api.post('/system-admin/seed');
-    return response;
+    return unwrap<{ success: boolean; message: string }>(response);
   },
 };
 

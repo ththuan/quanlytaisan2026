@@ -1,3 +1,4 @@
+import { Server } from 'http';
 import app from './app';
 import envConfig from './config/env';
 import { testConnection } from './config/database';
@@ -6,13 +7,33 @@ import logger from './utils/logger';
 const PORT = envConfig.port;
 const HOST = envConfig.host;
 
+let server: Server | undefined;
+
+const shutdown = (signal: string) => {
+  logger.info(`${signal} received. Shutting down gracefully...`);
+  if (!server) {
+    process.exit(0);
+    return;
+  }
+  server.close((err) => {
+    if (err) {
+      logger.error('Error during HTTP server close:', err);
+      process.exit(1);
+      return;
+    }
+    logger.info('HTTP server closed');
+    process.exit(0);
+  });
+  setTimeout(() => {
+    logger.error('Forced shutdown after timeout');
+    process.exit(1);
+  }, 15000).unref();
+};
+
 const startServer = async () => {
   try {
-    // Test database connection
     await testConnection();
-
-    // Start server
-    app.listen(PORT, HOST, () => {
+    server = app.listen(PORT, HOST, () => {
       logger.info(`Server is running on http://${HOST}:${PORT}`);
       logger.info(`Environment: ${envConfig.nodeEnv}`);
       logger.info(`API Documentation: http://${HOST}:${PORT}/api/docs`);
@@ -23,29 +44,17 @@ const startServer = async () => {
   }
 };
 
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (reason: any) => {
+process.on('unhandledRejection', (reason: unknown) => {
   logger.error('Unhandled Rejection:', reason);
   process.exit(1);
 });
 
-// Handle uncaught exceptions
 process.on('uncaughtException', (error: Error) => {
   logger.error('Uncaught Exception:', error);
   process.exit(1);
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received. Shutting down gracefully...');
-  process.exit(0);
-});
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
-process.on('SIGINT', () => {
-  logger.info('SIGINT received. Shutting down gracefully...');
-  process.exit(0);
-});
-
-// Trigger restart to apply dashboard permission changes
 startServer();
-

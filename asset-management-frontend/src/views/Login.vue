@@ -161,7 +161,7 @@ import { reactive, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { User, Lock, ArrowRight } from '@element-plus/icons-vue';
 import { useAuthStore } from '@/stores/auth.store';
-import type { FormInstance, FormRules } from 'element-plus';
+import type { FormInstance, FormRules } from '@/types/element-plus';
 
 // Import assets
 import logoUrl from '@/login/logo-truong.jpg';

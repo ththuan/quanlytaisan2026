@@ -9,6 +9,15 @@ const isLoading = ref(false);
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 
 /**
+ * Xóa cache phòng ban (gọi sau reset DB / seed từ Quản trị hệ thống).
+ * Nếu không gọi, UI có thể vẫn hiện danh sách cũ tới 5 phút.
+ */
+export function invalidateGlobalDepartmentCache() {
+  cachedDepartments.value = [];
+  lastFetchTime.value = 0;
+}
+
+/**
  * Composable thông minh để quản lý departments với caching tự động
  * - Tự động load departments khi component mount
  * - Cache departments trong 5 phút để tránh gọi API nhiều lần

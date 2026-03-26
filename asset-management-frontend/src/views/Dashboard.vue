@@ -344,6 +344,7 @@ const isAdminOrDirector = computed(() => {
   const role = authStore.user?.role;
   return role === 'admin' || role === 'director';
 });
+
 const timeRange = ref<TimeRange>('last30days');
 const timeRangeOptions = [
   { label: '30 ngày gần nhất', value: 'last30days' },
@@ -534,13 +535,27 @@ const formatNumber = (num: number) => {
   return num.toString();
 };
 
+const goToAssets = (query: Record<string, any>) => {
+  router.push({ path: '/assets', query });
+};
+
 const graphOption = computed(() => {
-  const centerName = isAdminOrDirector.value ? 'Trường' : (authStore.user?.department?.name || 'Đơn vị');
+  const centerName = isAdminOrDirector.value
+    ? 'Trường'
+    : authStore.user?.department?.name || 'Đơn vị';
   const centerColor = '#409eff';
-  
+
   const palette = [
-    '#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399',
-    '#17c3b2', '#6c5ce7', '#fd79a8', '#00b894', '#fdcb6e',
+    '#409eff',
+    '#67c23a',
+    '#e6a23c',
+    '#f56c6c',
+    '#909399',
+    '#17c3b2',
+    '#6c5ce7',
+    '#fd79a8',
+    '#00b894',
+    '#fdcb6e',
   ];
 
   const nodes: any[] = [
@@ -550,15 +565,14 @@ const graphOption = computed(() => {
       value: stats.assetsTotal,
       symbolSize: 60,
       itemStyle: { color: centerColor, shadowBlur: 20, shadowColor: centerColor },
-      label: { show: true, position: 'inside', color: '#fff', fontWeight: 'bold' }
-    }
+      label: { show: true, position: 'inside', color: '#fff', fontWeight: 'bold' },
+    },
   ];
 
   const links: any[] = [];
-  
-  // Group hierarchy data by department
+
   const deptsMap = new Map<number, any[]>();
-  assetsHierarchy.value.forEach(item => {
+  assetsHierarchy.value.forEach((item) => {
     const dId = item.department_id || 0;
     if (!deptsMap.has(dId)) deptsMap.set(dId, []);
     deptsMap.get(dId)?.push(item);
@@ -568,13 +582,12 @@ const graphOption = computed(() => {
 
   let deptIdx = 0;
   deptsMap.forEach((items, deptId) => {
-    const isCenterDept = (deptId === userDeptId);
+    const isCenterDept = deptId === userDeptId;
     const deptName = items[0]?.department_name || 'Khác';
     const deptTotal = items.reduce((sum, i) => sum + i.count, 0);
     const deptNodeId = `dept_${deptId}`;
     const deptColor = palette[deptIdx % palette.length];
 
-    // Tạo Department Node chỉ khi đây KHÔNG PHẢI là trung tâm
     if (!isCenterDept) {
       nodes.push({
         id: deptNodeId,
@@ -584,40 +597,40 @@ const graphOption = computed(() => {
         originalId: deptId,
         symbolSize: Math.max(25, Math.min(45, (deptTotal / (stats.assetsTotal || 1)) * 100)),
         itemStyle: { color: deptColor, borderColor: '#fff', borderWidth: 2 },
-        label: { show: true, position: 'top', color: '#475569', fontSize: 11, fontWeight: 'bold' }
+        label: { show: true, position: 'top', color: '#475569', fontSize: 11, fontWeight: 'bold' },
       });
 
       links.push({
         source: 'center',
         target: deptNodeId,
-        lineStyle: { width: 0.8, color: '#cbd5e1', curveness: 0.1 }
+        lineStyle: { width: 2, color: '#cbd5e1', curveness: 0.1 },
       });
     }
 
     const sourceNodeId = isCenterDept ? 'center' : deptNodeId;
 
-    // Phân loại danh mục
     const groupedItems = new Map<string, any>();
-    items.forEach(item => {
-      const name = item.category_name;
+    items.forEach((item) => {
+      const name = item.category_name ?? 'Khác';
+      const code = item.category_code ?? '';
       if (!groupedItems.has(name)) {
-        groupedItems.set(name, { ...item, codes: [item.category_code], count: 0 });
+        groupedItems.set(name, { ...item, codes: [code], count: 0 });
       }
-      const existing = groupedItems.get(name);
+      const existing = groupedItems.get(name)!;
       existing.count += item.count;
-      if (!existing.codes.includes(item.category_code)) {
-        existing.codes.push(item.category_code);
+      if (!existing.codes.includes(code)) {
+        existing.codes.push(code);
       }
     });
 
     const sortedCats = Array.from(groupedItems.values()).sort((a, b) => b.count - a.count);
-    const topCats = sortedCats.slice(0, 8); 
+    const topCats = sortedCats.slice(0, 8);
     const otherCats = sortedCats.slice(8);
 
     topCats.forEach((cat) => {
       const catNodeId = `cat_${deptId}_${cat.category_name}`;
       const displayCodes = cat.codes.join(', ');
-      
+
       nodes.push({
         id: catNodeId,
         name: cat.category_name,
@@ -628,18 +641,13 @@ const graphOption = computed(() => {
         deptId: deptId,
         symbolSize: Math.max(12, Math.min(25, (cat.count / (deptTotal || 1)) * 40)),
         itemStyle: { color: deptColor, opacity: 0.75 },
-        label: { show: false }
+        label: { show: false },
       });
 
       links.push({
         source: sourceNodeId,
         target: catNodeId,
-        lineStyle: {
-          width: 0.6,
-          color: '#e2e8f0',
-          opacity: 0.9,
-          curveness: 0.3
-        }
+        lineStyle: { width: 1, color: '#e2e8f0', curveness: 0.3, type: 'dashed' },
       });
     });
 
@@ -654,13 +662,9 @@ const graphOption = computed(() => {
         deptId: deptId,
         symbolSize: 10,
         itemStyle: { color: '#94a3b8', opacity: 0.5 },
-        label: { show: false }
+        label: { show: false },
       });
-      links.push({
-        source: sourceNodeId,
-        target: otherNodeId,
-        lineStyle: { width: 0.6, color: '#e2e8f0', opacity: 0.85, curveness: 0.2 }
-      });
+      links.push({ source: sourceNodeId, target: otherNodeId });
     }
 
     if (!isCenterDept) deptIdx++;
@@ -674,7 +678,7 @@ const graphOption = computed(() => {
         if (p.dataType !== 'node') return '';
         const name = p.data.fullName || p.data.name;
         return `<b>${name}</b><br/>Số lượng: ${formatNumber(p.data.value)}`;
-      }
+      },
     },
     series: [
       {
@@ -682,24 +686,19 @@ const graphOption = computed(() => {
         layout: 'force',
         data: nodes,
         links: links,
-        lineStyle: {
-          color: '#cbd5e1',
-          width: 0.7,
-          opacity: 0.85
-        },
         roam: true,
         draggable: true,
         force: {
           repulsion: 200,
           edgeLength: [50, 200],
-          gravity: 0.1
+          gravity: 0.1,
         },
         emphasis: {
           focus: 'descendant',
-          label: { show: true, fontSize: 12, fontWeight: 'bold' }
-        }
-      }
-    ]
+          label: { show: true, fontSize: 12, fontWeight: 'bold' },
+        },
+      },
+    ],
   };
 });
 
@@ -710,14 +709,9 @@ const onGraphClick = (params: any) => {
   if (data.type === 'department') {
     goToAssets({ current_department_id: String(data.originalId), include_children: 'true' });
   } else if (data.type === 'category') {
-    // If multiple codes were grouped, we use the first one or pass as array if supported
     const code = Array.isArray(data.originalCodes) ? data.originalCodes[0] : data.originalId;
     goToAssets({ current_department_id: String(data.deptId), category_code: String(code) });
   }
-};
-
-const goToAssets = (query: Record<string, any>) => {
-  router.push({ path: '/assets', query });
 };
 
 const getRoleTagType = (role: string | undefined): 'success' | 'warning' | 'danger' | 'info' => {

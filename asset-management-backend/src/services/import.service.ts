@@ -612,60 +612,92 @@ export const importAssetsFromExcel = async (
     // Tạo map theo tên loại tài sản (lowercase) để tìm kiếm
     const catNameMap = new Map(categories.map(c => [c.name.toLowerCase(), c]));
     
-    // Lấy danh sách mã tài sản đã tồn tại
+    // Mã đã tồn tại (dùng khi sinh mã mới; raw giảm overhead Sequelize)
     const existingCodes = await Asset.findAll({
       attributes: ['asset_code'],
+      raw: true,
     });
-    const existingCodeSet = new Set(existingCodes.map(a => a.asset_code.toLowerCase()));
-    
+    const existingCodeSet = new Set(
+      (existingCodes as { asset_code: string }[]).map((a) => String(a.asset_code).toLowerCase())
+    );
+
     // Bộ đếm cho mã tài sản tự sinh theo từng loại và năm
     const assetCodeCounters: Map<string, number> = new Map();
-    
-    // Hàm tự sinh mã tài sản
+
+    const preloadPrefixCounters = async (
+      pending: Array<{ categoryCode: string; year: number }>
+    ): Promise<void> => {
+      const seen = new Set<string>();
+      const pairs: Array<{ categoryCode: string; year: number }> = [];
+      for (const p of pending) {
+        const k = `${p.categoryCode}\0${p.year}`;
+        if (seen.has(k)) continue;
+        seen.add(k);
+        pairs.push({ categoryCode: p.categoryCode, year: p.year });
+      }
+      await Promise.all(
+        pairs.map(async ({ categoryCode, year }) => {
+          const prefix = `${categoryCode}-${year}`;
+          if (assetCodeCounters.has(prefix)) return;
+          const existingAssets = await Asset.findAll({
+            where: { asset_code: { [Op.like]: `${prefix}-%` } },
+            attributes: ['asset_code'],
+            order: [['asset_code', 'DESC']],
+            limit: 1,
+          });
+          let maxNum = 0;
+          if (existingAssets.length > 0) {
+            const lastCode = existingAssets[0].asset_code;
+            const parts = lastCode.split('-');
+            const lastNum = parseInt(parts[parts.length - 1], 10);
+            if (!isNaN(lastNum)) maxNum = lastNum;
+          }
+          assetCodeCounters.set(prefix, maxNum);
+        })
+      );
+    };
+
+    // Hàm tự sinh mã (sau preloadPrefixCounters: không còn query DB theo từng prefix lần đầu)
     const generateAssetCode = async (categoryCode: string, year: number): Promise<string> => {
       const prefix = `${categoryCode}-${year}`;
-      
-      // Kiểm tra counter hiện tại
+
       if (!assetCodeCounters.has(prefix)) {
-        // Tìm mã lớn nhất trong database cho prefix này
         const existingAssets = await Asset.findAll({
-          where: {
-            asset_code: {
-              [Op.like]: `${prefix}-%`,
-            },
-          },
+          where: { asset_code: { [Op.like]: `${prefix}-%` } },
           attributes: ['asset_code'],
           order: [['asset_code', 'DESC']],
           limit: 1,
         });
-        
         let maxNum = 0;
         if (existingAssets.length > 0) {
           const lastCode = existingAssets[0].asset_code;
           const parts = lastCode.split('-');
           const lastNum = parseInt(parts[parts.length - 1], 10);
-          if (!isNaN(lastNum)) {
-            maxNum = lastNum;
-          }
+          if (!isNaN(lastNum)) maxNum = lastNum;
         }
         assetCodeCounters.set(prefix, maxNum);
       }
-      
-      // Tăng counter và tạo mã mới
+
       const currentCount = assetCodeCounters.get(prefix)! + 1;
       assetCodeCounters.set(prefix, currentCount);
-      
+
       const newCode = `${prefix}-${String(currentCount).padStart(3, '0')}`;
-      
-      // Đảm bảo mã không trùng
+
       if (existingCodeSet.has(newCode.toLowerCase())) {
-        return generateAssetCode(categoryCode, year); // Đệ quy nếu trùng
+        return generateAssetCode(categoryCode, year);
       }
-      
+
       existingCodeSet.add(newCode.toLowerCase());
       return newCode;
     };
-    
+
+    const pendingImports: Array<{
+      rowNum: number;
+      categoryCode: string;
+      year: number;
+      record: Record<string, unknown>;
+    }> = [];
+
     // Xử lý từng dòng
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
@@ -733,6 +765,12 @@ export const importAssetsFromExcel = async (
           const annualDepreciation = originalVal * (depreciationRate / 100);
           accumulatedDepreciation = Math.min(annualDepreciation * yearsUsed, originalVal);
         }
+      } else if (!isDepreciable && hasYearOfUse && hasOriginalValue) {
+        // Công cụ dụng cụ: quá 3 năm đưa vào sử dụng → giá trị còn lại 0 (đồng bộ depreciationCalculator)
+        const yearsUsed = Math.max(0, currentYear - year);
+        if (yearsUsed > 3) {
+          accumulatedDepreciation = originalVal;
+        }
       }
       const quantity = Math.max(1, toInteger(row['Số lượng'], 1));
       const yearInUseForDb = yearOfUse != null && yearOfUse !== '' ? year : null;
@@ -743,15 +781,15 @@ export const importAssetsFromExcel = async (
         continue;
       }
 
-      // Tạo tài sản mới (import thật)
-      try {
-        const generatedAssetCode = await generateAssetCode(categoryCode, year);
-        const mappedCondition = mapCondition(row['Tình trạng']?.toString());
-        const mappedStatus = mappedCondition === 'damaged' ? 'damaged' : 'active';
-        const currentValue = originalVal - Math.round(accumulatedDepreciation);
+      const mappedCondition = mapCondition(row['Tình trạng']?.toString());
+      const mappedStatus = mappedCondition === 'damaged' ? 'damaged' : 'active';
+      const currentValue = originalVal - Math.round(accumulatedDepreciation);
 
-        await Asset.create({
-          asset_code: generatedAssetCode,
+      pendingImports.push({
+        rowNum,
+        categoryCode,
+        year,
+        record: {
           name: assetName!,
           description: row['Mô tả']?.toString() || '',
           category_id: category!.id,
@@ -771,18 +809,57 @@ export const importAssetsFromExcel = async (
           useful_life: usefulLife,
           accumulated_depreciation: Math.round(accumulatedDepreciation),
           year_in_use: yearInUseForDb,
-        });
-        result.imported++;
-      } catch (error: any) {
-        result.errors.push({
-          row: rowNum,
-          field: 'database',
-          message: `Lỗi lưu vào database: ${error.message}`,
-        });
-        result.failed++;
+        },
+      });
+    }
+
+    // Ghi DB hàng loạt: preload mã theo từng prefix song song + bulkCreate theo lô
+    if (!validateOnly && pendingImports.length > 0) {
+      await preloadPrefixCounters(pendingImports);
+
+      const rowsToInsert: Array<{ rowNum: number; data: Record<string, unknown> }> = [];
+      for (const p of pendingImports) {
+        try {
+          const generatedAssetCode = await generateAssetCode(p.categoryCode, p.year);
+          rowsToInsert.push({
+            rowNum: p.rowNum,
+            data: { ...p.record, asset_code: generatedAssetCode },
+          });
+        } catch (error: any) {
+          result.errors.push({
+            row: p.rowNum,
+            field: 'database',
+            message: `Lỗi sinh mã / lưu: ${error.message}`,
+          });
+          result.failed++;
+        }
+      }
+
+      const CHUNK = 200;
+      for (let i = 0; i < rowsToInsert.length; i += CHUNK) {
+        const slice = rowsToInsert.slice(i, i + CHUNK);
+        const payloads = slice.map((s) => s.data);
+        try {
+          await Asset.bulkCreate(payloads as any[]);
+          result.imported += slice.length;
+        } catch {
+          for (const item of slice) {
+            try {
+              await Asset.create(item.data as any);
+              result.imported++;
+            } catch (error: any) {
+              result.errors.push({
+                row: item.rowNum,
+                field: 'database',
+                message: `Lỗi lưu vào database: ${error.message}`,
+              });
+              result.failed++;
+            }
+          }
+        }
       }
     }
-    
+
     result.success = result.failed === 0;
   } catch (error: any) {
     result.success = false;

@@ -4,14 +4,28 @@
       <template #header>
         <div class="card-header">
           <h3>{{ $t('reports.title') }}</h3>
-          <el-button
-            v-if="authStore.isManager"
-            type="primary"
-            :icon="Plus"
-            @click="handleCreate"
-          >
-            {{ $t('reports.createReport') }}
-          </el-button>
+          <div class="card-header__actions">
+            <el-button
+              v-if="canBulkApprove"
+              type="success"
+              :disabled="selectedSubmittableCount === 0"
+              :loading="reportStore.loading"
+              @click="handleBulkApprove"
+            >
+              {{ $t('reports.bulkApprove') }}
+              <template v-if="selectedSubmittableCount">
+                ({{ selectedSubmittableCount }})
+              </template>
+            </el-button>
+            <el-button
+              v-if="authStore.isManager"
+              type="primary"
+              :icon="Plus"
+              @click="handleCreate"
+            >
+              {{ $t('reports.createReport') }}
+            </el-button>
+          </div>
         </div>
       </template>
 
@@ -48,22 +62,17 @@
               />
             </el-select>
           </el-col>
-          <el-col :span="6">
-            <el-select
+          <el-col
+            v-if="canFilterByDepartment"
+            :span="6"
+          >
+            <DepartmentTreeSelect
               v-model="filterDepartment"
               :placeholder="$t('reports.filterByDepartment')"
-              clearable
               @change="handleFilter"
-            >
-              <el-option
-                v-for="d in departments"
-                :key="d.id"
-                :label="d.name"
-                :value="d.id"
-              />
-            </el-select>
+            />
           </el-col>
-          <el-col :span="6">
+          <el-col :span="canFilterByDepartment ? 6 : 12">
             <el-button
               type="primary"
               @click="handleFilter"
@@ -83,17 +92,27 @@
           :data="reportStore.reports"
           border
           stripe
+          @selection-change="onSelectionChange"
         >
+          <el-table-column
+            v-if="canBulkApprove"
+            type="selection"
+            width="48"
+            :selectable="selectableRow"
+          />
           <el-table-column
             type="index"
             width="50"
             label="#"
           />
           <el-table-column
-            prop="department.name"
             :label="$t('reports.department')"
             min-width="180"
-          />
+          >
+            <template #default="{ row }">
+              {{ row.department?.name || '—' }}
+            </template>
+          </el-table-column>
           <el-table-column
             prop="year"
             :label="$t('reports.year')"
@@ -147,6 +166,7 @@
             <template #default="{ row }">
               <el-button
                 size="small"
+                :loading="detailLoading"
                 @click="handleView(row)"
               >
                 {{ $t('common.view') }}
@@ -205,13 +225,14 @@
     <ReportFormDialog
       v-model:visible="formDialogVisible"
       :report="currentReport"
-      @success="handleFormSuccess"
+      @success="handleFormSuccess($event)"
     />
 
     <!-- Report Detail Dialog -->
     <ReportDetailDialog
       v-model:visible="detailDialogVisible"
       :report="currentReport"
+      @report-updated="handleDetailReportUpdated"
     />
   </div>
 </template>
@@ -226,13 +247,29 @@ import { Plus } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import ReportFormDialog from '@/components/Reports/ReportFormDialog.vue';
 import ReportDetailDialog from '@/components/Reports/ReportDetailDialog.vue';
+import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 
 const { t } = useI18n();
 const reportStore = useReportStore();
 const authStore = useAuthStore();
 
+const canBulkApprove = computed(() => authStore.isAdmin || authStore.isDirector);
+const canFilterByDepartment = computed(() => authStore.isAdmin || authStore.isDirector);
+
+const selectedRows = ref<any[]>([]);
+const onSelectionChange = (rows: any[]) => {
+  selectedRows.value = rows;
+};
+const selectableRow = (row: any) => row?.status === 'submitted';
+const selectedSubmittableCount = computed(
+  () => selectedRows.value.filter((r) => r?.status === 'submitted').length
+);
+
+const apiErr = (e: any) =>
+  e?.response?.data?.message || e?.response?.data?.error || e?.message || t('common.error');
+
 // Sử dụng composable với caching tự động
-const { activeDepartments: departments, isLoading: _departmentsLoading } = useDepartments();
+useDepartments();
 
 const filterYear = ref<number | null>(null);
 const filterStatus = ref('');
@@ -264,6 +301,7 @@ onMounted(async () => {
 
 const handleFilter = () => {
   reportStore.fetchReports({
+    page: 1,
     year: filterYear.value,
     status: filterStatus.value,
     department_id: filterDepartment.value,
@@ -274,7 +312,7 @@ const handleReset = () => {
   filterYear.value = null;
   filterStatus.value = '';
   filterDepartment.value = null;
-  reportStore.fetchReports();
+  reportStore.fetchReports({ page: 1 });
 };
 
 const handlePageChange = (page: number) => {
@@ -296,9 +334,19 @@ const handleEdit = (report: any) => {
   formDialogVisible.value = true;
 };
 
-const handleView = (report: any) => {
-  currentReport.value = report;
-  detailDialogVisible.value = true;
+const detailLoading = ref(false);
+
+const handleView = async (report: any) => {
+  detailLoading.value = true;
+  try {
+    await reportStore.fetchReportById(report.id);
+    currentReport.value = reportStore.currentReport;
+    detailDialogVisible.value = true;
+  } catch (error: any) {
+    ElMessage.error(apiErr(error));
+  } finally {
+    detailLoading.value = false;
+  }
 };
 
 const canEdit = (report: any) => {
@@ -312,10 +360,10 @@ const handleSubmit = async (id: number) => {
     });
     await reportStore.submitReport(id);
     ElMessage.success(t('reports.submitSuccess'));
-    reportStore.fetchReports();
+    await reportStore.fetchReports(listQueryParams());
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error(error.message || t('common.error'));
+      ElMessage.error(apiErr(error));
     }
   }
 };
@@ -327,10 +375,40 @@ const handleApprove = async (id: number) => {
     });
     await reportStore.approveReport(id);
     ElMessage.success(t('reports.approveSuccess'));
-    reportStore.fetchReports();
+    selectedRows.value = [];
+    await reportStore.fetchReports(listQueryParams());
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error(error.message || t('common.error'));
+      ElMessage.error(apiErr(error));
+    }
+  }
+};
+
+const handleBulkApprove = async () => {
+  const ids = selectedRows.value.filter((r) => r?.status === 'submitted').map((r) => r.id);
+  if (!ids.length) {
+    ElMessage.warning(t('reports.bulkApproveNoSelection'));
+    return;
+  }
+  try {
+    await ElMessageBox.confirm(t('reports.bulkApproveConfirm'), t('common.confirm'), {
+      type: 'warning',
+    });
+    const summary = await reportStore.bulkApproveReports(ids);
+    const ok = summary.approved?.length ?? 0;
+    const skip = summary.skipped?.length ?? 0;
+    const fail = summary.failed?.length ?? 0;
+    ElMessage.success(
+      t('reports.bulkApproveDetail', { ok, skip, fail })
+    );
+    if (fail > 0) {
+      ElMessage.warning(t('reports.bulkApproveFailedHint'));
+    }
+    selectedRows.value = [];
+    await reportStore.fetchReports(listQueryParams());
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(apiErr(error));
     }
   }
 };
@@ -343,23 +421,65 @@ const handleReject = async (id: number) => {
       {
         confirmButtonText: t('reports.reject'),
         cancelButtonText: t('common.cancel'),
-        inputPlaceholder: 'Nhập lý do từ chối...',
+        inputPlaceholder: t('reports.rejectReasonHint'),
         type: 'warning',
       }
     );
     await reportStore.rejectReport(id, notes || '');
     ElMessage.success(t('reports.rejectSuccess'));
-    reportStore.fetchReports();
+    selectedRows.value = [];
+    await reportStore.fetchReports(listQueryParams());
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error(error.message || t('common.error'));
+      ElMessage.error(apiErr(error));
     }
   }
 };
 
-const handleFormSuccess = () => {
+function listQueryParams(page?: number) {
+  return {
+    page: page ?? reportStore.pagination.page,
+    year: filterYear.value,
+    status: filterStatus.value,
+    department_id: filterDepartment.value,
+  };
+}
+
+/**
+ * Sau tạo mới (có payload): về trang 1, bỏ lọc trạng thái, khớp năm & phòng ban để thấy bản nháp vừa tạo.
+ * Sau chỉnh sửa: chỉ làm mới danh sách với bộ lọc hiện tại.
+ */
+const handleFormSuccess = async (payload?: { year?: number; department_id?: number }) => {
   formDialogVisible.value = false;
-  reportStore.fetchReports();
+  const isCreate = payload != null && (payload.year != null || payload.department_id != null);
+  if (isCreate) {
+    if (payload!.year != null) filterYear.value = payload!.year;
+    if (payload!.department_id != null && canFilterByDepartment.value) {
+      filterDepartment.value = payload!.department_id;
+    }
+    filterStatus.value = '';
+    await reportStore.fetchReports({
+      page: 1,
+      year: filterYear.value,
+      status: '',
+      department_id: filterDepartment.value,
+    });
+    return;
+  }
+  await reportStore.fetchReports(listQueryParams());
+};
+
+const handleDetailReportUpdated = async () => {
+  const id = currentReport.value?.id;
+  if (id) {
+    try {
+      await reportStore.fetchReportById(id);
+      currentReport.value = reportStore.currentReport;
+    } catch {
+      /* giữ báo cáo cũ nếu refetch lỗi */
+    }
+  }
+  await reportStore.fetchReports(listQueryParams());
 };
 
 const getStatusType = (status: string) => {
@@ -390,10 +510,19 @@ const formatCurrency = (value: number) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .card-header h3 {
   margin: 0;
+}
+
+.card-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 
 .filter-section {

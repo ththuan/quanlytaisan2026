@@ -1,0 +1,196 @@
+/* ═══════════════════════════════════════════════════════════
+   Motion system — easing, duration, Element Plus polish
+   Import after element-plus/dist/index.css
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  --motion-duration-instant: 0.1s;
+  --motion-duration-fast: 0.18s;
+  --motion-duration-md: 0.32s;
+  --motion-duration-slow: 0.48s;
+  /* Smooth deceleration — feels more “premium” than linear ease */
+  --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-ease-emphasized: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* ─── In-layout route (MainLayout <router-view>) ─── */
+.route-enter-active {
+  transition:
+    opacity var(--motion-duration-md) var(--motion-ease-out),
+    transform var(--motion-duration-md) var(--motion-ease-out);
+}
+
+.route-leave-active {
+  transition:
+    opacity var(--motion-duration-fast) var(--motion-ease-in-out),
+    transform var(--motion-duration-fast) var(--motion-ease-in-out);
+}
+
+.route-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.route-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+/* Mobile sidebar overlay */
+.backdrop-fade-enter-active,
+.backdrop-fade-leave-active {
+  transition: opacity var(--motion-duration-md) var(--motion-ease-out);
+}
+
+.backdrop-fade-enter-from,
+.backdrop-fade-leave-to {
+  opacity: 0;
+}
+
+/* ─── App shell: login ↔ layout ─── */
+.app-view-enter-active {
+  transition:
+    opacity var(--motion-duration-md) var(--motion-ease-out),
+    transform var(--motion-duration-md) var(--motion-ease-out);
+}
+
+.app-view-leave-active {
+  transition:
+    opacity var(--motion-duration-fast) var(--motion-ease-in-out),
+    transform var(--motion-duration-fast) var(--motion-ease-in-out);
+}
+
+.app-view-enter-from {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.app-view-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* ─── Element Plus: dialogs / drawer overlay ─── */
+.el-overlay {
+  transition: background-color var(--motion-duration-md) var(--motion-ease-out) !important;
+}
+
+.el-fade-in-linear-enter-active,
+.el-fade-in-linear-leave-active {
+  transition: opacity var(--motion-duration-md) var(--motion-ease-out) !important;
+}
+
+/* Message / notification */
+.el-message,
+.el-notification {
+  transition:
+    opacity var(--motion-duration-fast) var(--motion-ease-out),
+    transform var(--motion-duration-fast) var(--motion-ease-out) !important;
+}
+
+/* Dropdown / popper */
+.el-popper {
+  transition:
+    opacity var(--motion-duration-fast) var(--motion-ease-out),
+    transform var(--motion-duration-fast) var(--motion-ease-out) !important;
+}
+
+/* Cards: subtle shadow on hover (admin lists) */
+.el-card {
+  transition: box-shadow var(--motion-duration-md) var(--motion-ease-out);
+}
+
+.el-card:hover {
+  box-shadow:
+    0 4px 6px -1px rgba(15, 23, 42, 0.06),
+    0 12px 28px -8px rgba(15, 23, 42, 0.08);
+}
+
+/* Buttons */
+.el-button {
+  transition:
+    background-color var(--motion-duration-fast) var(--motion-ease-in-out),
+    border-color var(--motion-duration-fast) var(--motion-ease-in-out),
+    color var(--motion-duration-fast) var(--motion-ease-in-out),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-in-out),
+    transform var(--motion-duration-instant) var(--motion-ease-out) !important;
+}
+
+.el-button:active:not(.is-disabled):not(.is-loading) {
+  transform: scale(0.98);
+}
+
+/* Table row hover — Element default is abrupt */
+.el-table tbody tr {
+  transition: background-color var(--motion-duration-fast) var(--motion-ease-in-out);
+}
+
+/* Collapse / menu */
+.el-collapse-item__header,
+.el-collapse-item__wrap {
+  transition: border-color var(--motion-duration-fast) var(--motion-ease-in-out) !important;
+}
+
+/* Tabs */
+.el-tabs__item {
+  transition: color var(--motion-duration-fast) var(--motion-ease-in-out) !important;
+}
+
+.el-tabs__active-bar {
+  transition: transform var(--motion-duration-md) var(--motion-ease-emphasized),
+    width var(--motion-duration-md) var(--motion-ease-emphasized) !important;
+}
+
+/* Input focus ring smooth */
+.el-input__wrapper {
+  transition: box-shadow var(--motion-duration-fast) var(--motion-ease-out),
+    border-color var(--motion-duration-fast) var(--motion-ease-out) !important;
+}
+
+/* Pagination */
+.el-pager li {
+  transition: color var(--motion-duration-fast) var(--motion-ease-in-out),
+    background-color var(--motion-duration-fast) var(--motion-ease-in-out) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-duration-instant: 0.01ms;
+    --motion-duration-fast: 0.01ms;
+    --motion-duration-md: 0.01ms;
+    --motion-duration-slow: 0.01ms;
+  }
+
+  .sidebar {
+    transition: none !important;
+  }
+
+  /* Trang đăng nhập — tắt trang trí động */
+  .login-container .bg-blur-blob,
+  .login-container .node-dot,
+  .login-container .asset-ring,
+  .login-container .asset-cube {
+    animation: none !important;
+  }
+
+  .route-enter-active,
+  .route-leave-active,
+  .app-view-enter-active,
+  .app-view-leave-active,
+  .backdrop-fade-enter-active,
+  .backdrop-fade-leave-active {
+    transition: none !important;
+  }
+
+  .route-enter-from,
+  .route-leave-to,
+  .app-view-enter-from,
+  .app-view-leave-to {
+    transform: none !important;
+  }
+
+  .el-button:active:not(.is-disabled):not(.is-loading) {
+    transform: none !important;
+  }
+}

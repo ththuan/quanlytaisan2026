@@ -1,8 +1,11 @@
 import { defineConfig, loadEnv } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import viteCompression from 'vite-plugin-compression';
 import basicSsl from '@vitejs/plugin-basic-ssl';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(({ mode }) => {
   const rootEnv = loadEnv(mode, path.resolve(__dirname, '..'), '');
@@ -16,6 +19,11 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
+    },
     plugins: [
       vue(),
       useHttps ? basicSsl() : null,
@@ -56,9 +64,6 @@ export default defineConfig(({ mode }) => {
         },
       },
     ].filter(Boolean) as any,
-    resolve: {
-      alias: { '@': path.resolve(__dirname, './src') },
-    },
     server: {
       // HTTPS + 0.0.0.0 gây ERR_SSL_PROTOCOL_ERROR trên Windows → dùng localhost khi HTTPS
       host: useHttps ? 'localhost' : '0.0.0.0',
@@ -91,10 +96,16 @@ export default defineConfig(({ mode }) => {
       chunkSizeWarningLimit: 1500,
       rollupOptions: {
         output: {
-          manualChunks: {
-            'vue-vendor': ['vue', 'vue-router', 'pinia'],
-            'element-plus': ['element-plus'],
-            echarts: ['echarts', 'vue-echarts'],
+          manualChunks(id) {
+            if (id.includes('node_modules/echarts')) {
+              return 'echarts';
+            }
+            if (id.includes('node_modules/vue') || id.includes('node_modules/vue-router') || id.includes('node_modules/pinia')) {
+              return 'vue-vendor';
+            }
+            if (id.includes('node_modules/element-plus')) {
+              return 'element-plus';
+            }
           },
         },
       },

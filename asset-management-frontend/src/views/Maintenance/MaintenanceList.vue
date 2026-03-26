@@ -65,20 +65,11 @@
             :sm="8"
             :md="6"
           >
-            <el-select
+            <DepartmentTreeSelect
               v-model="filterDepartment"
               :placeholder="$t('maintenance.filterByDepartment')"
-              clearable
-              style="width: 100%"
               @change="handleFilter"
-            >
-              <el-option
-                v-for="d in departments"
-                :key="d.id"
-                :label="d.name"
-                :value="d.id"
-              />
-            </el-select>
+            />
           </el-col>
           <el-col
             :xs="24"
@@ -245,6 +236,7 @@ import { Plus } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import MaintenanceFormDialog from '@/components/Maintenance/MaintenanceFormDialog.vue';
 import MaintenanceDetailDialog from '@/components/Maintenance/MaintenanceDetailDialog.vue';
+import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 import moment from 'moment';
 
 const { t } = useI18n();
@@ -252,11 +244,11 @@ const maintenanceStore = useMaintenanceStore();
 const authStore = useAuthStore();
 
 // Sử dụng composable với caching tự động
-const { activeDepartments: departments, isLoading: _departmentsLoading } = useDepartments();
+useDepartments();
 
 const filterStatus = ref('');
 const filterUrgency = ref('');
-const filterDepartment = ref('');
+const filterDepartment = ref<number | null>(null);
 const formDialogVisible = ref(false);
 const detailDialogVisible = ref(false);
 const currentMaintenance = ref<any>(null);
@@ -285,14 +277,14 @@ const handleFilter = () => {
   maintenanceStore.fetchRequests({
     status: filterStatus.value,
     urgency: filterUrgency.value,
-    department_id: filterDepartment.value,
+    department_id: filterDepartment.value ?? undefined,
   });
 };
 
 const handleReset = () => {
   filterStatus.value = '';
   filterUrgency.value = '';
-  filterDepartment.value = '';
+  filterDepartment.value = null;
   maintenanceStore.fetchRequests();
 };
 
@@ -301,7 +293,7 @@ const handlePageChange = (page: number) => {
     page,
     status: filterStatus.value,
     urgency: filterUrgency.value,
-    department_id: filterDepartment.value,
+    department_id: filterDepartment.value ?? undefined,
   });
 };
 
@@ -311,7 +303,7 @@ const handleSizeChange = (size: number) => {
     page: 1,
     status: filterStatus.value,
     urgency: filterUrgency.value,
-    department_id: filterDepartment.value,
+    department_id: filterDepartment.value ?? undefined,
   });
 };
 

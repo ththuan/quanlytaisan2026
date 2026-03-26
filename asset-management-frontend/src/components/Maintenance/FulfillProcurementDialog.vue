@@ -27,19 +27,10 @@
         label-width="160px"
       >
         <el-form-item label="Phòng ban nhận">
-          <el-select
+          <DepartmentTreeSelect
             v-model="form.department_id"
-            filterable
             placeholder="Chọn phòng ban nhận"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="d in departments"
-              :key="d.id"
-              :label="d.name"
-              :value="d.id"
-            />
-          </el-select>
+          />
         </el-form-item>
 
         <el-form-item label="Ngày mua">
@@ -185,10 +176,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { reactive, ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import api from '@/services/api';
 import { useDepartmentStore } from '@/stores/department.store';
+import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 
 const props = defineProps<{
   visible: boolean;
@@ -202,8 +194,6 @@ const emit = defineEmits<{
 
 const departmentStore = useDepartmentStore();
 const loading = ref(false);
-
-const departments = computed(() => departmentStore.departments);
 
 const form = reactive<any>({
   department_id: null as number | null,

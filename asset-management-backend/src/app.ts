@@ -5,6 +5,7 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
 import envConfig from './config/env';
+import logger from './utils/logger';
 import routes from './routes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/logging';
@@ -154,7 +155,10 @@ app.use('/api', routes);
 // Swagger API Documentation (tùy chọn - bỏ qua nếu thiếu module)
 import('./swagger')
   .then(({ setupSwagger }) => setupSwagger(app as Express))
-  .catch((e: any) => console.warn('[swagger] Bỏ qua (thiếu swagger-ui-express/swagger-jsdoc):', e?.message));
+  .catch((e: unknown) => {
+    const msg = e instanceof Error ? e.message : String(e);
+    logger.warn('[swagger] Bỏ qua (thiếu swagger-ui-express/swagger-jsdoc): %s', msg);
+  });
 
 // Serve static files from storage/public with compression and caching
 const storagePath = path.join(__dirname, '../storage/public');

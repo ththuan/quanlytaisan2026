@@ -41,6 +41,8 @@ export interface InventoryReport {
   matched_assets: number;
   surplus_assets: number;
   missing_assets: number;
+  /** Số tài sản đánh dấu cần sửa chữa (theo báo cáo kiểm kê) */
+  needs_repair_assets?: number;
   damaged_assets: number;
   total_original_value: number;
   total_current_value: number;
@@ -88,6 +90,8 @@ export interface InventoryReportDetail {
   value_difference: number;
   asset_condition: 'good' | 'usable' | 'needs_repair' | 'damaged' | 'disposed';
   check_status: 'matched' | 'surplus' | 'missing' | 'damaged';
+  /** Lý do / ghi chú khi duyệt thanh lý vs sửa chữa */
+  disposal_reason?: string;
   notes?: string;
   checked_by?: number;
   checked_at?: string;
