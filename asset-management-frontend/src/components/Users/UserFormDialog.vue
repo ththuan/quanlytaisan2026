@@ -234,7 +234,6 @@ const rules = computed<FormRules>(() => ({
     { min: 3, max: 50, message: t('validation.stringLength', { min: 3, max: 50 }), trigger: 'blur' },
   ],
   email: [
-    { required: true, message: t('validation.required'), trigger: 'blur' },
     { type: 'email', message: t('validation.invalidEmail'), trigger: 'blur' },
   ],
   role: [

@@ -26,7 +26,7 @@ export async function generateUserImportTemplate(): Promise<Buffer> {
   const dataSheet = workbook.addWorksheet('Dữ liệu mẫu');
   dataSheet.columns = [
     { header: 'Tên đăng nhập (*)', key: 'username', width: 22 },
-    { header: 'Email (*)', key: 'email', width: 30 },
+    { header: 'Email', key: 'email', width: 30 },
     { header: 'Mật khẩu (*)', key: 'password', width: 20 },
     { header: 'Họ tên', key: 'fullname', width: 28 },
     { header: 'Vai trò (*)', key: 'role', width: 18 },
@@ -54,7 +54,7 @@ export async function generateUserImportTemplate(): Promise<Buffer> {
     '',
     'BẮT BUỘC (*):',
     '- Tên đăng nhập (*): 3–100 ký tự, chỉ chữ và số (a-z, 0-9), không trùng trong hệ thống',
-    '- Email (*): Đúng định dạng email, không trùng trong hệ thống',
+    '- Email: Không bắt buộc. Nếu điền phải đúng định dạng email, không trùng trong hệ thống',
     '- Mật khẩu (*): Tối thiểu 8 ký tự, có chữ hoa, chữ thường và số. Để trống sẽ dùng mật khẩu mặc định (cấu hình trong hệ thống)',
     '- Vai trò (*): admin | director | department_head | staff',
     '',
@@ -118,7 +118,12 @@ export async function importUsersFromExcel(
     const departments = await Department.findAll();
     const deptByName = new Map(departments.map((d) => [d.name.toLowerCase().trim(), d.id]));
     const existingUsernames = new Set((await User.findAll({ attributes: ['username'] })).map((u) => u.username.toLowerCase()));
-    const existingEmails = new Set((await User.findAll({ attributes: ['email'] })).map((u) => u.email.toLowerCase().trim()));
+    const existingEmails = new Set(
+      (await User.findAll({ attributes: ['email'] }))
+        .map((u) => u.email)
+        .filter((e): e is string => !!e)
+        .map((e) => e.toLowerCase().trim())
+    );
     const fileUsernames = new Set<string>();
     const fileEmails = new Set<string>();
 
@@ -150,9 +155,8 @@ export async function importUsersFromExcel(
       else if (!usernameRegex.test(username)) errors.push('Tên đăng nhập 3–100 ký tự, chỉ chữ và số');
       else if (existingUsernames.has(username.toLowerCase()) || fileUsernames.has(username.toLowerCase())) errors.push('Tên đăng nhập đã tồn tại (trong hệ thống hoặc trùng trong file)');
 
-      if (!email) errors.push('Email là bắt buộc');
-      else if (!emailRegex.test(email)) errors.push('Email không đúng định dạng');
-      else if (existingEmails.has(email) || fileEmails.has(email)) errors.push('Email đã tồn tại (trong hệ thống hoặc trùng trong file)');
+      if (email && !emailRegex.test(email)) errors.push('Email không đúng định dạng');
+      else if (email && (existingEmails.has(email) || fileEmails.has(email))) errors.push('Email đã tồn tại (trong hệ thống hoặc trùng trong file)');
 
       if (!validateOnly && !password && password.length === 0) {
         // Cho phép để trống -> dùng mật khẩu mặc định
@@ -181,7 +185,7 @@ export async function importUsersFromExcel(
 
       if (validateOnly) {
         fileUsernames.add(username.toLowerCase());
-        fileEmails.add(email);
+        if (email) fileEmails.add(email);
         result.imported++;
         continue;
       }
@@ -191,7 +195,7 @@ export async function importUsersFromExcel(
         const password_hash = await User.hashPassword(finalPassword);
         await User.create({
           username,
-          email,
+          email: email || null,
           password_hash,
           fullname: fullname || null,
           role: role!,
@@ -199,7 +203,7 @@ export async function importUsersFromExcel(
           is_active: true,
         });
         existingUsernames.add(username.toLowerCase());
-        existingEmails.add(email);
+        if (email) existingEmails.add(email);
         result.imported++;
       } catch (err: any) {
         result.errors.push({

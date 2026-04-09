@@ -256,7 +256,7 @@ import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
-import { House, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, QuestionFilled, Grid, List } from '@element-plus/icons-vue';
+import { House, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, QuestionFilled, Grid } from '@element-plus/icons-vue';
 import NotificationBell from '@/components/Notifications/NotificationBell.vue';
 import TotpSetupDialog from '@/components/Auth/TotpSetupDialog.vue';
 import ChangePasswordDialog from '@/components/Auth/ChangePasswordDialog.vue';

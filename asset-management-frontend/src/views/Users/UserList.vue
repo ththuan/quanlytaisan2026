@@ -206,7 +206,7 @@
               class="guide-list"
               style="margin: 0; padding-left: 18px;"
             >
-              <li>Tải file mẫu Excel, điền thông tin (Tên đăng nhập, Email, Mật khẩu, Vai trò bắt buộc)</li>
+              <li>Tải file mẫu Excel, điền thông tin (Tên đăng nhập, Mật khẩu, Vai trò bắt buộc; Email không bắt buộc)</li>
               <li>Upload file → bấm <strong>Kiểm tra lỗi</strong></li>
               <li>Nếu có lỗi: sửa file rồi Kiểm tra lại. Nếu không lỗi: bấm <strong>Xác nhận import</strong></li>
             </ol>
@@ -379,7 +379,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, reactive } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
 import { Plus, Search, Upload, Download } from '@element-plus/icons-vue';
