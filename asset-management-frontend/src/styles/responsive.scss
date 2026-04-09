@@ -10,6 +10,12 @@
   --bp-md: 992px;   /* Tablet ngang / iPad */
   --bp-lg: 1200px;  /* Desktop nhỏ */
   --bp-xl: 1440px;  /* Desktop lớn */
+
+  /* Safe-area insets (iPhone notch / home indicator) */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -19,6 +25,10 @@ html,
 body {
   width: 100%;
   overflow-x: hidden;
+  /* iOS Safari - ngăn double-tap zoom */
+  touch-action: manipulation;
+  /* iOS Safari font-size inflation fix */
+  -webkit-text-size-adjust: 100%;
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -29,6 +39,8 @@ body {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   border-radius: 8px;
+  /* iOS momentum scroll */
+  overscroll-behavior-x: contain;
 }
 
 .responsive-table .el-table {
@@ -38,14 +50,14 @@ body {
 /* Tablet: giảm min-width */
 @media (max-width: 992px) {
   .responsive-table .el-table {
-    min-width: 800px;
+    min-width: 750px;
   }
 }
 
 /* Mobile: giảm thêm */
 @media (max-width: 768px) {
   .responsive-table .el-table {
-    min-width: 700px;
+    min-width: 600px;
   }
 }
 
@@ -63,7 +75,16 @@ body {
 /* Mobile */
 @media (max-width: 768px) {
   .el-main {
-    padding: 12px !important;
+    padding: 12px 10px !important;
+    /* iOS safe area - tránh bị home indicator che */
+    padding-bottom: calc(12px + var(--safe-bottom)) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .el-main {
+    padding: 10px 8px !important;
+    padding-bottom: calc(10px + var(--safe-bottom)) !important;
   }
 }
 
@@ -71,40 +92,53 @@ body {
    PAGE HEADER: Title và Action Buttons
    ───────────────────────────────────────────────────────── */
 
-/* Tablet */
-@media (max-width: 992px) {
-  .page-header .header-content {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-  }
-
+/* iPad Pro & Tablet ngang (1024px) */
+@media (max-width: 1024px) {
   .page-header .header-right {
-    width: 100%;
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
   }
 
   .page-header .header-right .el-button {
+    flex: 1 1 auto;
+    min-width: 120px;
+  }
+}
+
+/* Tablet dọc (992px) */
+@media (max-width: 992px) {
+  .page-header .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .page-header .header-right {
+    width: 100%;
+  }
+
+  .page-header .header-right .el-button {
     flex: 1 1 calc(50% - 4px); /* 2 nút mỗi hàng */
-    min-width: 140px;
+    min-width: 130px;
   }
 }
 
 /* Mobile */
 @media (max-width: 768px) {
   .page-header {
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
 
   .page-header .header-content {
-    gap: 12px;
+    gap: 10px;
   }
 
   .page-header .header-right .el-button {
-    flex: 1 1 100%; /* 1 nút mỗi hàng */
-    width: 100%;
+    flex: 1 1 calc(50% - 4px);
+    white-space: nowrap;
+    font-size: 13px;
+    padding: 8px 10px;
   }
 
   .page-title {
@@ -119,11 +153,15 @@ body {
 /* Mobile nhỏ */
 @media (max-width: 480px) {
   .page-title {
-    font-size: 18px !important;
+    font-size: 17px !important;
   }
 
   .page-subtitle {
     display: none; /* Ẩn subtitle trên màn hình rất nhỏ */
+  }
+
+  .page-header .header-right .el-button {
+    flex: 1 1 100%; /* 1 nút mỗi hàng trên iPhone nhỏ */
   }
 }
 
@@ -132,34 +170,48 @@ body {
    ───────────────────────────────────────────────────────── */
 
 /* Tablet */
-@media (max-width: 992px) {
+@media (max-width: 1024px) {
   .filter-section {
     margin-bottom: 16px;
   }
 
-  .filter-actions {
+  .filter-row {
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
   }
 
-  .filter-actions .el-input,
-  .filter-actions .el-select {
-    flex: 1 1 calc(50% - 4px);
+  .filter-item {
+    flex: 1 1 calc(50% - 5px) !important;
     min-width: 140px;
+  }
+
+  .filter-item.search-input {
+    flex: 1 1 100% !important;
   }
 }
 
 /* Mobile */
 @media (max-width: 768px) {
-  .filter-section .filter-actions {
-    width: 100%;
+  .filter-section .filter-row {
+    flex-direction: column;
+    gap: 8px;
   }
 
-  .filter-actions .el-input,
-  .filter-actions .el-select,
+  .filter-item,
+  .filter-item.search-input,
+  .filter-item.filter-item--dept {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+  }
+
+  .filter-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
   .filter-actions .el-button {
-    flex: 1 1 100%;
-    width: 100%;
+    flex: 1;
   }
 
   .card-header {
@@ -247,14 +299,13 @@ body {
    MAIN LAYOUT HEADER: Breadcrumb và User Info
    ───────────────────────────────────────────────────────── */
 
-/* Tablet */
-@media (max-width: 992px) {
+/* iPad / Tablet ngang */
+@media (max-width: 1024px) {
   .el-header {
-    padding: 0 16px !important;
-  }
-
-  .header-left {
-    gap: 12px !important;
+    padding: 0 14px !important;
+    /* iOS safe area - tránh notch (landscape) */
+    padding-left: calc(14px + var(--safe-left)) !important;
+    padding-right: calc(14px + var(--safe-right)) !important;
   }
 
   .breadcrumb {
@@ -262,10 +313,19 @@ body {
   }
 }
 
+/* Tablet dọc */
+@media (max-width: 992px) {
+  .header-left {
+    gap: 10px !important;
+  }
+}
+
 /* Mobile */
 @media (max-width: 768px) {
   .el-header {
     padding: 0 10px !important;
+    padding-left: calc(10px + var(--safe-left)) !important;
+    padding-right: calc(10px + var(--safe-right)) !important;
   }
 
   /* Ẩn breadcrumb để tiết kiệm không gian */
@@ -278,16 +338,8 @@ body {
     display: none !important;
   }
 
-  .user-info span:not(.el-icon) {
-    max-width: 80px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: inline-block;
-  }
-
   .header-right {
-    gap: 8px !important;
+    gap: 6px !important;
   }
 }
 
@@ -295,11 +347,28 @@ body {
    DIALOGS: Form và Modal Windows
    ───────────────────────────────────────────────────────── */
 
-/* Tablet */
+/* iPad / Tablet ngang - chỉ giới hạn dialog không tràn màn hình */
+@media (max-width: 1024px) {
+  .el-dialog {
+    width: min(90vw, 960px) !important;
+    max-width: 90vw !important;
+  }
+}
+
+/* Tablet dọc */
 @media (max-width: 992px) {
   .el-dialog {
-    width: 90vw !important;
-    max-width: 700px !important;
+    width: 92vw !important;
+    max-width: 680px !important;
+    max-height: 92vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .el-dialog__body {
+    overflow-y: auto !important;
+    flex: 1 !important;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -308,12 +377,19 @@ body {
   .el-dialog {
     width: 95vw !important;
     max-width: 95vw !important;
+    max-height: 90vh !important;
     margin: 8px auto !important;
+    border-radius: 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
   .el-dialog__body {
     padding: 16px !important;
     overflow-x: hidden;
+    overflow-y: auto !important;
+    flex: 1 !important;
+    -webkit-overflow-scrolling: touch;
   }
 
   .el-dialog__header {
@@ -334,9 +410,15 @@ body {
   }
 
   /* Buttons trong dialog footer */
+  .el-dialog__footer {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
   .el-dialog__footer .el-button {
     flex: 1;
-    margin: 0 4px;
+    margin: 0 !important;
   }
 }
 
@@ -353,8 +435,43 @@ body {
     max-width: 100vw !important;
     margin: 0 !important;
     border-radius: 16px 16px 0 0 !important;
-    max-height: 90vh !important;
+    max-height: 92vh !important;
     overflow-y: auto !important;
+    /* iOS safe area - tránh home indicator */
+    padding-bottom: var(--safe-bottom);
+  }
+
+  /* Form trong dialog: buộc single-column để không bị hẹp trên iPhone */
+  .el-dialog .el-row .el-col {
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+  }
+
+  /* Form item trong dialog: chuyển label lên trên để tiết kiệm chiều ngang */
+  .el-dialog .el-form-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  .el-dialog .el-form-item__label {
+    width: auto !important;
+    text-align: left !important;
+    padding-right: 0 !important;
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+
+  .el-dialog .el-form-item__content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Table trong dialog: cho phép scroll ngang */
+  .el-dialog .el-table-wrapper,
+  .el-dialog .el-scrollbar {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -394,70 +511,27 @@ body {
 }
 
 /* ─────────────────────────────────────────────────────────
-   PAGINATION: Phân trang
-   ───────────────────────────────────────────────────────── */
-
-/* Tablet */
-@media (max-width: 992px) {
-  .pagination-section {
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start !important;
-  }
-
-  .pagination-info {
-    order: 2;
-  }
-
-  .el-pagination {
-    order: 1;
-  }
-}
-
-/* Mobile */
-@media (max-width: 768px) {
-  .el-pagination {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .el-pagination .el-pager li {
-    min-width: 32px;
-    height: 32px;
-    line-height: 32px;
-    font-size: 13px;
-  }
-
-  .el-pagination button {
-    min-width: 32px;
-    height: 32px;
-  }
-
-  /* Ẩn một số controls không cần thiết */
-  .el-pagination .el-pagination__sizes {
-    display: none;
-  }
-
-  .el-pagination .el-pagination__jump {
-    display: none;
-  }
-}
-
-/* ─────────────────────────────────────────────────────────
    DASHBOARD SPECIFIC
    ───────────────────────────────────────────────────────── */
 
-/* Tablet */
-@media (max-width: 992px) {
+/* iPad / Tablet ngang */
+@media (max-width: 1024px) {
   .dashboard {
     padding: 16px;
   }
 
   .dashboard-header h2 {
-    font-size: 24px;
+    font-size: 22px;
   }
 
+  /* Chart: giảm chiều cao trên tablet */
+  .dept-chart {
+    height: 400px !important;
+  }
+}
+
+/* Tablet dọc */
+@media (max-width: 992px) {
   .stat-value {
     font-size: 1.75rem;
   }
@@ -471,27 +545,47 @@ body {
 /* Mobile */
 @media (max-width: 768px) {
   .dashboard {
-    padding: 12px;
+    padding: 10px;
   }
 
   .dashboard-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
+    gap: 10px;
   }
 
   .dashboard-header h2 {
     font-size: 20px;
   }
 
+  /* Chart: chiều cao nhỏ hơn trên mobile */
+  .dept-chart {
+    height: 300px !important;
+  }
+
+  /* Card header chart có status capsules */
+  .card-header {
+    flex-direction: column !important;
+    gap: 10px;
+    align-items: flex-start !important;
+  }
+
   .status-capsules {
     width: 100%;
-    justify-content: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
   .status-capsule {
-    flex: 1 1 calc(50% - 4px);
-    min-width: 100px;
+    flex: 1 1 calc(50% - 3px);
+    min-width: 90px;
+  }
+}
+
+@media (max-width: 480px) {
+  .status-capsule {
+    flex: 1 1 100%;
   }
 }
 
@@ -522,7 +616,7 @@ body {
 /* ─────────────────────────────────────────────────────────   TOUCH TARGETS & SCROLLABLE TABS
    ───────────────────────────────────────────────────────── */
 
-/* Bigger touch targets on touch devices */
+/* Bigger touch targets on touch devices (iPad & iPhone) */
 @media (max-width: 1024px) {
   .el-button {
     min-height: 40px;
@@ -531,6 +625,25 @@ body {
   .el-menu-item,
   .el-sub-menu__title {
     min-height: 52px !important;
+    line-height: 52px !important;
+  }
+
+  /* Bigger touch targets cho input và select */
+  .el-input__inner,
+  .el-select .el-input__inner {
+    min-height: 40px;
+    font-size: 16px; /* iOS: ngăn zoom khi focus input */
+  }
+
+  /* Ngăn zoom khi tap vào input trên iOS */
+  input[type="text"],
+  input[type="password"],
+  input[type="search"],
+  input[type="email"],
+  input[type="number"],
+  textarea,
+  select {
+    font-size: 16px !important;
   }
 }
 
@@ -539,6 +652,12 @@ body {
   .el-tabs__nav-wrap {
     overflow-x: auto !important;
     overflow-y: hidden;
+    /* iOS momentum scroll cho tabs */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .el-tabs__nav-wrap::after {
+    display: none;
   }
 
   .el-tabs__nav {
@@ -550,8 +669,85 @@ body {
   }
 }
 
-/* ───────────────────────────────────────────────────────────   UTILITY CLASSES
+/* ─────────────────────────────────────────────────────────
+   iOS SAFARI SPECIFIC FIXES
    ───────────────────────────────────────────────────────── */
+
+/* Fix position:sticky trên iOS - cần có overflow không phải hidden */
+@supports (-webkit-overflow-scrolling: touch) {
+  .el-table__body-wrapper {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* El-Select dropdown - cần z-index cao hơn trên iOS */
+.el-select-dropdown {
+  z-index: 9999 !important;
+}
+
+/* El-DatePicker - tránh bị cắt trên iOS */
+.el-picker__popper {
+  z-index: 9999 !important;
+}
+
+/* Fix el-popover bị khuất trên iPad */
+.el-popover {
+  z-index: 9998 !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   PAGINATION: Phân trang
+   ───────────────────────────────────────────────────────── */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .pagination-section {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start !important;
+  }
+
+  .pagination-info {
+    order: 2;
+    font-size: 13px;
+  }
+
+  .el-pagination {
+    order: 1;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .el-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .el-pagination .el-pager li {
+    min-width: 36px;
+    height: 36px;
+    line-height: 36px;
+    font-size: 13px;
+  }
+
+  .el-pagination .el-pagination__prev,
+  .el-pagination .el-pagination__next {
+    min-width: 36px;
+    height: 36px;
+  }
+
+  /* Ẩn một số controls không cần thiết */
+  .el-pagination .el-pagination__sizes {
+    display: none;
+  }
+
+  .el-pagination .el-pagination__jump {
+    display: none;
+  }
+}
 
 /* Hide trên mobile */
 .hidden-xs {

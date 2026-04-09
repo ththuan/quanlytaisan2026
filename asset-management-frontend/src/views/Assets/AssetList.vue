@@ -467,7 +467,7 @@
     <el-dialog
       v-model="showImportDialog"
       title="Import tài sản hàng loạt từ Excel"
-      width="600px"
+      :width="windowWidth <= 640 ? '95vw' : windowWidth <= 900 ? '90vw' : '600px'"
       :close-on-click-modal="false"
     >
       <div class="import-dialog-content">
@@ -637,7 +637,7 @@
     <el-dialog
       v-model="showQRExportDialog"
       title="Xuất QR Code hàng loạt theo đơn vị"
-      width="460px"
+      :width="windowWidth <= 640 ? '95vw' : '460px'"
       :close-on-click-modal="false"
     >
       <el-form
@@ -740,6 +740,11 @@ const importResult = ref<ImportResult | null>(null);
 const exporting = ref(false);
 const generatingQR = ref(false);
 
+// Responsive dialog widths
+const windowWidth = ref(window.innerWidth);
+const onResize = () => { windowWidth.value = window.innerWidth; };
+window.addEventListener('resize', onResize);
+
 // QR Export dialog
 const showQRExportDialog = ref(false);
 const qrExportDeptId = ref<number | null>(null);
@@ -821,6 +826,7 @@ const onSearchInput = () => {
 
 onUnmounted(() => {
   debouncedSearch.cancel();
+  window.removeEventListener('resize', onResize);
 });
 
 onMounted(async () => {
@@ -1179,6 +1185,7 @@ const handleExportQRPDF = async () => {
   padding: 24px;
   background: #f5f7fa;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* Page Header */

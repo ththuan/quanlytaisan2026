@@ -1158,6 +1158,7 @@ const downloadQRCode = () => {
   padding: 24px;
   background: #f0f2f5;
   min-height: calc(100vh - 60px);
+  min-height: calc(100dvh - 60px);
 }
 
 .page-header {

@@ -47,46 +47,48 @@
       </div>
 
 
-      <el-table
-        v-loading="summaryLoading"
-        :data="summaryRows"
-        style="width: 100%"
-      >
-        <el-table-column
-          prop="category_code"
-          label="Mã loại"
-          width="120"
-        />
-        <el-table-column
-          prop="category"
-          label="Loại tài sản"
-          min-width="260"
-        />
-        <el-table-column
-          prop="name"
-          label="Tên tài sản"
-          min-width="220"
-        />
-        <el-table-column
-          prop="unit"
-          label="Đơn vị"
-          width="120"
-        />
-        <el-table-column
-          prop="total_quantity"
-          label="Tổng SL"
-          width="120"
-        />
-        <el-table-column
-          prop="total_amount"
-          label="Tổng tiền"
-          width="160"
+      <div class="responsive-table">
+        <el-table
+          v-loading="summaryLoading"
+          :data="summaryRows"
+          style="width: 100%"
         >
-          <template #default="scope">
-            {{ formatMoney(scope.row.total_amount) }}
-          </template>
-        </el-table-column>
-      </el-table>
+          <el-table-column
+            prop="category_code"
+            label="Mã loại"
+            width="120"
+          />
+          <el-table-column
+            prop="category"
+            label="Loại tài sản"
+            min-width="260"
+          />
+          <el-table-column
+            prop="name"
+            label="Tên tài sản"
+            min-width="220"
+          />
+          <el-table-column
+            prop="unit"
+            label="Đơn vị"
+            width="120"
+          />
+          <el-table-column
+            prop="total_quantity"
+            label="Tổng SL"
+            width="120"
+          />
+          <el-table-column
+            prop="total_amount"
+            label="Tổng tiền"
+            width="160"
+          >
+            <template #default="scope">
+              {{ formatMoney(scope.row.total_amount) }}
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
     </el-card>
 
     <el-card>
@@ -138,80 +140,82 @@
         </el-button>
       </div>
 
-      <el-table
-        v-loading="loading"
-        :data="rows"
-        style="width: 100%"
-      >
-        <el-table-column
-          prop="code"
-          label="Mã"
-          width="140"
-        />
-        <el-table-column
-          prop="title"
-          label="Nội dung"
-          min-width="240"
-        />
-        <el-table-column
-          label="Cấp phát (phòng ban)"
-          min-width="220"
+      <div class="responsive-table">
+        <el-table
+          v-loading="loading"
+          :data="rows"
+          style="width: 100%"
         >
-          <template #default="scope">
-            {{ scope.row.receiving_department?.name || '—' }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="Ngày mua"
-          width="140"
-        >
-          <template #default="scope">
-            {{ formatDate(scope.row.purchase_date) }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="Trạng thái"
-          width="130"
-        >
-          <template #default="scope">
-            <el-tag :type="statusTagType(scope.row.status)">
-              {{ statusLabel(scope.row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
-          :label="$t('common.actions')"
-          width="220"
-          fixed="right"
-        >
-          <template #default="scope">
-            <el-button
-              size="small"
-              @click="openDetail(scope.row.id)"
-            >
-              {{ $t('common.view') }}
-            </el-button>
-            <template v-if="!authStore.isDirector">
+          <el-table-column
+            prop="code"
+            label="Mã"
+            width="140"
+          />
+          <el-table-column
+            prop="title"
+            label="Nội dung"
+            min-width="240"
+          />
+          <el-table-column
+            label="Cấp phát (phòng ban)"
+            min-width="220"
+          >
+            <template #default="scope">
+              {{ scope.row.receiving_department?.name || '—' }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Ngày mua"
+            width="140"
+          >
+            <template #default="scope">
+              {{ formatDate(scope.row.purchase_date) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Trạng thái"
+            width="130"
+          >
+            <template #default="scope">
+              <el-tag :type="statusTagType(scope.row.status)">
+                {{ statusLabel(scope.row.status) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            :label="$t('common.actions')"
+            width="220"
+            fixed="right"
+          >
+            <template #default="scope">
               <el-button
-                v-if="scope.row.status === 'draft'"
                 size="small"
-                @click="openEdit(scope.row.id)"
+                @click="openDetail(scope.row.id)"
               >
-                Sửa
+                {{ $t('common.view') }}
               </el-button>
-              <el-button
-                v-if="scope.row.status === 'draft'"
-                size="small"
-                type="danger"
-                plain
-                @click="confirmDelete(scope.row.id)"
-              >
+              <template v-if="!authStore.isDirector">
+                <el-button
+                  v-if="scope.row.status === 'draft'"
+                  size="small"
+                  @click="openEdit(scope.row.id)"
+                >
+                  Sửa
+                </el-button>
+                <el-button
+                  v-if="scope.row.status === 'draft'"
+                  size="small"
+                  type="danger"
+                  plain
+                  @click="confirmDelete(scope.row.id)"
+                >
                 Xóa
               </el-button>
             </template>
           </template>
         </el-table-column>
       </el-table>
+      </div>
 
       <div class="pager">
         <el-pagination

@@ -371,7 +371,9 @@ const toggleSidebar = () => {
 <style scoped>
 
 .main-layout-root {
+  /* iOS Safari fix: 100vh không tính browser chrome */
   min-height: 100vh;
+  min-height: 100dvh;
   height: 100%;
   width: 100%;
   position: relative;
@@ -379,6 +381,7 @@ const toggleSidebar = () => {
 
 .main-layout {
   height: 100vh;
+  height: 100dvh;
   position: relative;
   font-family: 'Plus Jakarta Sans', sans-serif;
   background-color: #f8fafc;
@@ -397,6 +400,10 @@ const toggleSidebar = () => {
   border-right: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* iOS smooth scrolling trong sidebar */
+  -webkit-overflow-scrolling: touch;
   transition:
     transform 0.38s cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 0.38s cubic-bezier(0.22, 1, 0.36, 1);
@@ -408,9 +415,13 @@ const toggleSidebar = () => {
   top: 0;
   left: 0;
   height: 100vh;
+  height: 100dvh;
   z-index: 2000;
   transform: translateX(-100%);
   will-change: transform;
+  /* iOS safe-area: tránh notch che sidebar */
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .sidebar.sidebar--open {
@@ -490,15 +501,21 @@ const toggleSidebar = () => {
 
 .el-header {
   height: 56px !important;
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid #f1f5f9;
   display: flex;
   align-items: center;
   padding: 0 20px;
+  /* iOS safe-area: tránh notch ở landscape */
+  padding-left: calc(20px + env(safe-area-inset-left, 0px));
+  padding-right: calc(20px + env(safe-area-inset-right, 0px));
   position: sticky;
   top: 0;
   z-index: 100;
+  /* iOS Safari: đảm bảo sticky hoạt động */
+  -webkit-transform: translateZ(0);
 }
 
 .header-content {
@@ -599,7 +616,14 @@ const toggleSidebar = () => {
 
 @media (max-width: 768px) {
   .user-name {
-    max-width: 80px;
+    max-width: 72px;
+    font-size: 13px;
+  }
+
+  /* Thu nhỏ toggle button trên mobile */
+  .sidebar-toggle {
+    width: 36px;
+    height: 36px;
   }
 }
 
@@ -623,11 +647,16 @@ const toggleSidebar = () => {
 .el-main {
   background-color: #f8fafc;
   padding: 24px;
+  /* iOS: smooth scroll trong main content */
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
 }
 
 @media (max-width: 768px) {
   .el-main {
     padding: 12px 8px;
+    /* iOS safe area - home indicator */
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   }
 }
 

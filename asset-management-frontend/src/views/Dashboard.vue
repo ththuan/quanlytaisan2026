@@ -230,8 +230,7 @@
         >
           <template #header>
             <div
-              class="card-header"
-              style="justify-content: space-between;"
+              class="card-header chart-card-header"
             >
               <div class="header-left">
                 <span class="card-title">Mạng lưới tài sản thông minh</span>
@@ -255,7 +254,6 @@
 
           <div
             class="dept-chart force-full-width"
-            style="height: 600px;"
           >
             <VChart
               class="dept-echart"
@@ -289,71 +287,74 @@
             </div>
           </template>
 
-          <el-table
-            v-loading="loading"
-            :data="auditLogs"
-            size="small"
-          >
-            <el-table-column
-              label="Thời gian"
-              width="160"
+          <div class="responsive-table">
+            <el-table
+              v-loading="loading"
+              :data="auditLogs"
+              size="small"
+              style="min-width: 600px"
             >
-              <template #default="{ row }">
-                {{ formatDateTime(row.created_at) }}
-              </template>
-            </el-table-column>
-            <el-table-column
-              label="Người dùng"
-              min-width="140"
-            >
-              <template #default="{ row }">
-                {{ getUserDisplayName(row) }}
-              </template>
-            </el-table-column>
-            <el-table-column
-              label="Vai trò"
-              width="130"
-            >
-              <template #default="{ row }">
-                <el-tag
-                  :type="getRoleTagType(row.user?.role)"
-                  size="small"
-                >
-                  {{ getRoleText(row.user?.role) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column
-              label="Hành động"
-              width="120"
-            >
-              <template #default="{ row }">
-                <el-tag
-                  :type="getActionTagType(row.action)"
-                  size="small"
-                  effect="plain"
-                >
-                  {{ getActionText(row.action) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column
-              label="Đối tượng"
-              min-width="180"
-            >
-              <template #default="{ row }">
-                {{ getTargetText(row) }}
-              </template>
-            </el-table-column>
-            <el-table-column
-              label="Địa chỉ IP"
-              width="130"
-            >
-              <template #default="{ row }">
-                <span class="ip-text">{{ row.ip_address ? row.ip_address.replace(/^::ffff:/, '') : '-' }}</span>
-              </template>
-            </el-table-column>
-          </el-table>
+              <el-table-column
+                label="Thời gian"
+                width="150"
+              >
+                <template #default="{ row }">
+                  {{ formatDateTime(row.created_at) }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                label="Người dùng"
+                min-width="120"
+              >
+                <template #default="{ row }">
+                  {{ getUserDisplayName(row) }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                label="Vai trò"
+                width="120"
+              >
+                <template #default="{ row }">
+                  <el-tag
+                    :type="getRoleTagType(row.user?.role)"
+                    size="small"
+                  >
+                    {{ getRoleText(row.user?.role) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column
+                label="Hành động"
+                width="110"
+              >
+                <template #default="{ row }">
+                  <el-tag
+                    :type="getActionTagType(row.action)"
+                    size="small"
+                    effect="plain"
+                  >
+                    {{ getActionText(row.action) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column
+                label="Đối tượng"
+                min-width="160"
+              >
+                <template #default="{ row }">
+                  {{ getTargetText(row) }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                label="Địa chỉ IP"
+                width="120"
+              >
+                <template #default="{ row }">
+                  <span class="ip-text">{{ row.ip_address ? row.ip_address.replace(/^::ffff:/, '') : '-' }}</span>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
         </el-card>
       </el-col>
     </el-row>
@@ -778,6 +779,7 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
   padding: 24px;
   background-color: #f8fafc;
   min-height: calc(100vh - 56px);
+  min-height: calc(100dvh - 56px);
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
@@ -959,6 +961,12 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
   align-items: center;
 }
 
+.chart-card-header {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .card-title {
   font-size: 1.05rem;
   font-weight: 800;
@@ -1039,6 +1047,23 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
   margin: -20px; /* Tràn viền card để tạo cảm giác không gian vô tận như hình mẫu */
   overflow: hidden;
   border-radius: 0 0 16px 16px;
+}
+
+@media (max-width: 1024px) {
+  .dept-chart {
+    height: 380px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dept-chart {
+    height: 280px;
+    margin: -12px;
+  }
+
+  .force-full-width {
+    width: calc(100% + 24px);
+  }
 }
 
 .force-full-width {
@@ -1242,6 +1267,17 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
 
   .status-capsule {
     flex: 1 1 calc(50% - 4px);
+  }
+
+  /* Card header stacks on mobile so capsules don't crowd the title */
+  .chart-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .chart-card-header .header-right {
+    width: 100%;
   }
 }
 

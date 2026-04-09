@@ -52,49 +52,51 @@
         </el-button>
       </div>
 
-      <el-table
-        v-loading="loading"
-        :data="rows"
-        style="width: 100%"
-      >
-        <el-table-column
-          prop="code"
-          :label="$t('assetDisposals.caseCode')"
-          width="170"
-        />
-        <el-table-column
-          :label="$t('common.status')"
-          width="160"
+      <div class="responsive-table">
+        <el-table
+          v-loading="loading"
+          :data="rows"
+          style="width: 100%"
         >
-          <template #default="scope">
-            <el-tag :type="statusTagType(scope.row.status)">
-              {{ statusLabel(scope.row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
-          :label="$t('common.createdAt')"
-          width="180"
-        >
-          <template #default="scope">
-            <span>{{ formatDateTime(scope.row.created_at || scope.row.createdAt) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column
-          :label="$t('common.actions')"
-          width="140"
-          fixed="right"
-        >
-          <template #default="scope">
-            <el-button
-              size="small"
-              @click="openDetail(scope.row.id)"
-            >
-              {{ $t('common.view') }}
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+          <el-table-column
+            prop="code"
+            :label="$t('assetDisposals.caseCode')"
+            width="170"
+          />
+          <el-table-column
+            :label="$t('common.status')"
+            width="160"
+          >
+            <template #default="scope">
+              <el-tag :type="statusTagType(scope.row.status)">
+                {{ statusLabel(scope.row.status) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            :label="$t('common.createdAt')"
+            width="180"
+          >
+            <template #default="scope">
+              <span>{{ formatDateTime(scope.row.created_at || scope.row.createdAt) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            :label="$t('common.actions')"
+            width="140"
+            fixed="right"
+          >
+            <template #default="scope">
+              <el-button
+                size="small"
+                @click="openDetail(scope.row.id)"
+              >
+                {{ $t('common.view') }}
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
 
       <div class="pager">
         <el-pagination

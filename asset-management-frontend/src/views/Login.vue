@@ -221,10 +221,12 @@ const handleVerify2FA = async () => {
 .login-container {
   display: flex;
   min-height: 100vh;
+  min-height: 100svh;
   width: 100vw;
   background-color: #fcfdfe;
   font-family: 'Outfit', sans-serif;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   position: relative;
 }
 
@@ -370,6 +372,35 @@ const handleVerify2FA = async () => {
   padding: 40px;
   background-color: #fcfdfe;
   z-index: 10;
+  /* Mobile: chiếm toàn bộ */
+  min-width: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* iPad: giảm padding */
+@media (max-width: 1024px) {
+  .login-right {
+    flex: 1;
+    padding: 32px 28px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .login-right {
+    flex: 1;
+    padding: 24px 20px;
+    align-items: flex-start;
+    padding-top: max(32px, env(safe-area-inset-top, 32px));
+    padding-bottom: max(24px, env(safe-area-inset-bottom, 24px));
+  }
+}
+
+@media (max-width: 480px) {
+  .login-right {
+    padding: 20px 16px;
+  }
 }
 
 .form-card {
@@ -406,10 +437,17 @@ const handleVerify2FA = async () => {
 
 .sub-welcome {
   color: #64748b;
-  font-size: 1.1rem;
+  font-size: 1rem;
   text-align: center;
   margin-top: 8px;
-  margin-bottom: 45px;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 768px) {
+  .sub-welcome {
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+  }
 }
 
 .premium-form :deep(.el-form-item) {
@@ -428,8 +466,13 @@ const handleVerify2FA = async () => {
   border: 1px solid #e2e8f0;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
   border-radius: 10px;
-  height: 44px;
+  height: 48px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* iOS: ngăn tự động zoom khi focus input */
+.premium-form :deep(.el-input__inner) {
+  font-size: 16px !important;
 }
 
 .premium-form :deep(.el-input__wrapper.is-focus) {
@@ -441,7 +484,7 @@ const handleVerify2FA = async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: -5px 0 35px 0;
+  margin: -5px 0 24px 0;
 }
 
 .premium-submit-btn {
@@ -469,9 +512,30 @@ const handleVerify2FA = async () => {
 
 .login-footer {
   text-align: center;
-  margin-top: 45px;
+  margin-top: 28px;
   color: #94a3b8;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 480px) {
+  .login-footer {
+    margin-top: 20px;
+    font-size: 0.78rem;
+  }
+
+  .school-logo {
+    height: 64px;
+    width: 64px;
+  }
+
+  .logo-wrapper {
+    margin-bottom: 16px;
+  }
+
+  .premium-submit-btn {
+    height: 46px;
+    font-size: 1rem;
+  }
 }
 
 /* 2FA Step refined */
@@ -515,7 +579,6 @@ const handleVerify2FA = async () => {
 }
 
 @media (max-width: 640px) {
-  .login-right { padding: 30px 20px; }
-  .welcome-text { font-size: 1.8rem; }
+  .welcome-text { font-size: 1.6rem; }
 }
 </style>

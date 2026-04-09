@@ -50,42 +50,44 @@
       </el-row>
 
       <!-- Table -->
-      <el-table v-loading="loading" :data="logs" stripe border style="width: 100%; margin-top: 16px">
-        <el-table-column type="index" width="55" label="#" />
-        <el-table-column label="Thời gian" width="170">
-          <template #default="{ row }">
-            {{ formatDate(row.created_at) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="Người thực hiện" min-width="160">
-          <template #default="{ row }">
-            <div>{{ row.user?.fullname || row.user?.username || `User #${row.user_id}` }}</div>
-            <el-tag size="small" type="info">{{ roleText(row.user?.role) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="Hành động" width="110">
-          <template #default="{ row }">
-            <el-tag :type="actionTagType(row.action)" size="small">{{ actionText(row.action) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="table_name" label="Đối tượng" width="160">
-          <template #default="{ row }">
-            {{ tableLabel(row.table_name) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="record_id" label="ID bản ghi" width="100" />
-        <el-table-column label="Mô tả" min-width="200">
-          <template #default="{ row }">
-            <span class="log-description">{{ row.description || row.new_value || '—' }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="ip_address" label="IP" width="130" />
-        <el-table-column label="Chi tiết" width="80" fixed="right">
-          <template #default="{ row }">
-            <el-button size="small" text :icon="View" @click="showDetail(row)" />
-          </template>
-        </el-table-column>
-      </el-table>
+      <div class="responsive-table" style="margin-top: 16px">
+        <el-table v-loading="loading" :data="logs" stripe border style="width: 100%">
+          <el-table-column type="index" width="55" label="#" />
+          <el-table-column label="Thời gian" width="170">
+            <template #default="{ row }">
+              {{ formatDate(row.created_at) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="Người thực hiện" min-width="160">
+            <template #default="{ row }">
+              <div>{{ row.user?.fullname || row.user?.username || `User #${row.user_id}` }}</div>
+              <el-tag size="small" type="info">{{ roleText(row.user?.role) }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="Hành động" width="110">
+            <template #default="{ row }">
+              <el-tag :type="actionTagType(row.action)" size="small">{{ actionText(row.action) }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="table_name" label="Đối tượng" width="160">
+            <template #default="{ row }">
+              {{ tableLabel(row.table_name) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="record_id" label="ID bản ghi" width="100" />
+          <el-table-column label="Mô tả" min-width="200">
+            <template #default="{ row }">
+              <span class="log-description">{{ row.description || row.new_value || '—' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="ip_address" label="IP" width="130" />
+          <el-table-column label="Chi tiết" width="80" fixed="right">
+            <template #default="{ row }">
+              <el-button size="small" text :icon="View" @click="showDetail(row)" />
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
 
       <!-- Pagination -->
       <div class="pagination-row">
