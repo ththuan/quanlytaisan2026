@@ -9,7 +9,7 @@ export interface UserAttributes {
   id: number;
   username: string;
   email: string;
-  password_hash: string;
+  password_hash: string | null;
   fullname?: string;
   role: UserRole;
   department_id?: number;
@@ -17,6 +17,8 @@ export interface UserAttributes {
   last_login?: Date;
   totp_secret?: string | null;
   totp_enabled: boolean;
+  google_id?: string | null;
+  auth_provider: 'local' | 'google';
   created_at?: Date;
   updated_at?: Date;
 }
@@ -27,7 +29,7 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   public id!: number;
   public username!: string;
   public email!: string;
-  public password_hash!: string;
+  public password_hash!: string | null;
   public fullname?: string;
   public role!: UserRole;
   public department_id?: number;
@@ -35,6 +37,8 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   public last_login?: Date;
   public totp_secret!: string | null;
   public totp_enabled!: boolean;
+  public google_id!: string | null;
+  public auth_provider!: 'local' | 'google';
   public readonly created_at!: Date;
   public readonly updated_at!: Date;
 
@@ -83,7 +87,17 @@ User.init(
     },
     password_hash: {
       type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    google_id: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      unique: true,
+    },
+    auth_provider: {
+      type: DataTypes.STRING(20),
       allowNull: false,
+      defaultValue: 'local',
     },
     fullname: {
       type: DataTypes.STRING(255),

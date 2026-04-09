@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "auto-skill": {
+      "source": "MaTriXy/auto-skill",
+      "sourceType": "github",
+      "computedHash": "6aa811bf6dd35ffcac8c1ac7248c536679be669eac0878123c3f682a4f1ba420"
+    }
+  }
+}

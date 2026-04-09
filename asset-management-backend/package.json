@@ -4,7 +4,7 @@
   "description": "Asset Management System Backend API",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "nodemon --exec ts-node src/server.ts",
+    "dev": "nodemon --legacy-watch --exec ts-node src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "jest --coverage",
@@ -48,6 +48,7 @@
     "multer": "^1.4.5-lts.1",
     "pg": "^8.11.3",
     "pg-hstore": "^2.3.4",
+    "google-auth-library": "^10.0.0",
     "qrcode": "^1.5.4",
     "sequelize": "^6.35.0",
     "speakeasy": "^2.0.0",

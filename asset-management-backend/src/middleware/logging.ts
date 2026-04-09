@@ -63,7 +63,7 @@ export const auditLog = (action: 'create' | 'update' | 'delete' | 'approve') => 
             action,
             table_name: req.baseUrl.split('/').pop(),
             record_id: body?.data?.id || req.params.id,
-            old_value: req.body._oldValue || null,
+            old_value: null,
             new_value: body?.data || req.body,
             ip_address: getClientIp(req),
             user_agent: req.get('user-agent'),

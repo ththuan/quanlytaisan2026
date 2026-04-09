@@ -25,6 +25,11 @@ export interface CreateManualCasePayload {
 }
 
 class AssetDisposalService {
+  async listByAsset(assetId: number) {
+    const response: any = await api.get('/asset-disposals', { params: { asset_id: assetId, limit: 50 } });
+    return (response?.data || response?.rows || []) as any[];
+  }
+
   async listCases(params?: AssetDisposalCaseListParams) {
     const response: any = await api.get('/asset-disposals', { params });
     return response;

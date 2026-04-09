@@ -36,7 +36,7 @@ export const useAuthStore = defineStore('auth', () => {
 
         const data = response.data as AuthResponse;
         _applyAuthResponse(data);
-        ElMessage.success('Login successful');
+        ElMessage.success('Đăng nhập thành công');
         return true;
       }
       return false;
@@ -98,6 +98,7 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
+      localStorage.removeItem('lastActivity');
 
       ElMessage.success('Logged out successfully');
     }
@@ -138,6 +139,7 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
+    localStorage.removeItem('lastActivity');
   }
 
   function _applyAuthResponse(data: AuthResponse) {
@@ -147,6 +149,8 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem('accessToken', data.accessToken);
     localStorage.setItem('refreshToken', data.refreshToken);
     localStorage.setItem('user', JSON.stringify(data.user));
+    // Reset idle timer khi đăng nhập
+    localStorage.setItem('lastActivity', Date.now().toString());
   }
 
   return {

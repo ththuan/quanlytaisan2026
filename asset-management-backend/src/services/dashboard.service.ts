@@ -26,13 +26,19 @@ const buildScopeWhere = (scope: any, dateField: string = 'created_at', deptField
     const start = new Date(year, 0, 1);
     const end = new Date(year, 11, 31, 23, 59, 59);
     where[dateField] = { [Op.between]: [start, end] };
-  } else {
-    const d = range === 'last30days' ? 30 : days && days > 0 ? days : 30;
+  } else if (range === 'last30days') {
+    const d = 30;
     const end = new Date();
     const start = new Date();
     start.setDate(start.getDate() - d);
     where[dateField] = { [Op.between]: [start, end] };
+  } else if (days && days > 0) {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - days);
+    where[dateField] = { [Op.between]: [start, end] };
   }
+  // else: no range specified → no date filter (show all)
 
   if (departmentId && deptField) {
     where[deptField] = departmentId;
@@ -64,13 +70,20 @@ class DashboardService {
       whereMaint.department_id = departmentId;
     }
 
-    const [assetsTotal, assetsInScope, procurementsInScope, stockReceiptsInScope, stockIssuesInScope, maintenancePending, transfersInScope, disposalInScope, assetDisposalPending] = await Promise.all([
+    // Time-scoped totals for maintenance (all statuses, by date range — same logic as transfers)
+    const whereMaintTotal = buildScopeWhere(query, 'created_at', 'department_id');
+
+    const [assetsTotal, assetsInScope, procurementsInScope, stockReceiptsInScope, stockIssuesInScope, maintenancePending, purchaseRequestsPending, repairPending, purchaseRequestsTotal, repairTotal, transfersInScope, disposalInScope, assetDisposalPending] = await Promise.all([
       Asset.count({ where: whereAssetsActive }),
       Asset.count({ where: whereAssetNew }),
       Procurement.count({ where: whereProc }),
       StockReceipt.count({ where: whereReceipt }),
       StockIssue.count({ where: whereIssue }),
       MaintenanceRequest.count({ where: whereMaint }),
+      MaintenanceRequest.count({ where: { ...whereMaint, request_type: 'procurement' } }),
+      MaintenanceRequest.count({ where: { ...whereMaint, request_type: 'repair' } }),
+      MaintenanceRequest.count({ where: { ...whereMaintTotal, request_type: 'procurement' } }),
+      MaintenanceRequest.count({ where: { ...whereMaintTotal, request_type: 'repair' } }),
       AssetTransfer.count({ 
         where: {
           ...buildScopeWhere(query, 'created_at'),
@@ -93,6 +106,10 @@ class DashboardService {
       stock_receipts: stockReceiptsInScope,
       stock_issues: stockIssuesInScope,
       maintenance_pending: maintenancePending,
+      purchase_requests_pending: purchaseRequestsPending,
+      repair_pending: repairPending,
+      purchase_requests_total: purchaseRequestsTotal,
+      repair_total: repairTotal,
       transfers_total: transfersInScope,
       disposal_total: disposalInScope,
       disposal_pending: assetDisposalPending,
@@ -279,10 +296,35 @@ class DashboardService {
     }
 
     const deptId = parseIntSafe(query.departmentId);
+
+    let deptRecordIds: number[] | null = null;
+    if (deptId) {
+      // Tìm tất cả record_id mà thuộc về đơn vị này (theo từng loại bảng)
+      const [deptAssets, deptMaint, deptTransfers, deptDisposals, deptProcs, deptInventory, deptUsers] = await Promise.all([
+        Asset.findAll({ where: { current_department_id: deptId }, attributes: ['id'], raw: true }),
+        sequelize.query(`SELECT id FROM maintenance_requests WHERE department_id = :deptId`, { replacements: { deptId }, type: QueryTypes.SELECT }),
+        sequelize.query(`SELECT id FROM asset_transfers WHERE from_department_id = :deptId OR to_department_id = :deptId`, { replacements: { deptId }, type: QueryTypes.SELECT }),
+        sequelize.query(`SELECT id FROM asset_disposal_cases WHERE origin_department_id = :deptId`, { replacements: { deptId }, type: QueryTypes.SELECT }),
+        sequelize.query(`SELECT id FROM procurement_requests WHERE department_id = :deptId`, { replacements: { deptId }, type: QueryTypes.SELECT }),
+        sequelize.query(`SELECT id FROM inventory_rounds WHERE department_id = :deptId`, { replacements: { deptId }, type: QueryTypes.SELECT }),
+        User.findAll({ where: { department_id: deptId }, attributes: ['id'], raw: true }),
+      ]);
+      // Ghép tất cả các log entry liên quan đến đơn vị
+      deptRecordIds = [
+        ...((deptAssets as any[]).map((r: any) => r.id)),
+        ...((deptMaint as any[]).map((r: any) => r.id)),
+        ...((deptTransfers as any[]).map((r: any) => r.id)),
+        ...((deptDisposals as any[]).map((r: any) => r.id)),
+        ...((deptProcs as any[]).map((r: any) => r.id)),
+        ...((deptInventory as any[]).map((r: any) => r.id)),
+        ...((deptUsers as any[]).map((r: any) => r.id)),
+      ];
+    }
+
     const { rows, count } = await AuditLog.findAndCountAll({
       where: {
         ...where,
-        ...(deptId ? { '$user.department_id$': deptId } : {})
+        ...(deptId && deptRecordIds !== null ? { record_id: { [Op.in]: deptRecordIds.length ? deptRecordIds : [-1] } } : {}),
       },
       limit,
       offset,
@@ -292,7 +334,7 @@ class DashboardService {
           model: User,
           as: 'user',
           attributes: ['id', 'username', 'fullname', 'role', 'department_id'],
-          required: !!deptId,
+          required: false,
         },
       ],
     });
@@ -407,13 +449,18 @@ class DashboardService {
         const start = new Date(y, 0, 1).toISOString();
         const end = new Date(y, 11, 31, 23, 59, 59).toISOString();
         dateCondition = `AND a.created_at BETWEEN '${start}' AND '${end}'`;
-      } else {
-        const d = range === 'last30days' ? 30 : days && days > 0 ? days : 30;
+      } else if (range === 'last30days') {
         const end = new Date();
         const start = new Date();
-        start.setDate(start.getDate() - d);
+        start.setDate(start.getDate() - 30);
+        dateCondition = `AND a.created_at BETWEEN '${start.toISOString()}' AND '${end.toISOString()}'`;
+      } else if (days && days > 0) {
+        const end = new Date();
+        const start = new Date();
+        start.setDate(start.getDate() - days);
         dateCondition = `AND a.created_at BETWEEN '${start.toISOString()}' AND '${end.toISOString()}'`;
       }
+      // else: no range → no date filter (show all)
 
       const replacements: Record<string, unknown> = {};
       let deptCondition = '';

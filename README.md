@@ -71,10 +71,10 @@ cd quanlytaisan
 cp .env.example .env
 # Chỉnh .env nếu cần (DB, JWT_SECRET, CORS_ORIGIN, port...)
 
-# Tạo volume cho PostgreSQL (bắt buộc lần đầu)
+# Tạo volume (bắt buộc lần đầu)
 docker volume create quanlytaisan_postgres_data
 
-# Khởi động
+# Khởi động (development — hot-reload)
 docker compose up -d
 
 # Xem log
@@ -90,12 +90,34 @@ docker compose logs -f
 docker compose --profile cloudflare up -d
 ```
 
+**Các file docker-compose:**
+
+| File | Mô tả |
+|------|-------|
+| `docker-compose.yml` | Development (hot-reload, mount source code, port 3000 + 5000) |
+| `docker-compose.dev.yml` | Development nâng cao (healthcheck, không mount node_modules) |
+| `docker-compose.prod.yml` | Production (nginx port 80/443, build tối ưu, không expose port trực tiếp) |
+
+Chạy production:
+```bash
+# Tạo thêm volume cho backup (production)
+docker volume create quanlytaisan_backend_backups
+
+# Tạo SSL certificate tự ký (nếu chưa có)
+powershell -ExecutionPolicy Bypass -File scripts\generate-ssl.ps1
+
+docker compose -f docker-compose.prod.yml up -d
+```
+
 ### Chạy không Docker (phát triển)
 
 **1. Backend**
 ```bash
 cd quanlytaisan
-cp .env.example .env
+
+# Copy .env vào thư mục backend (backend đọc .env từ thư mục của nó)
+cp .env.example asset-management-backend/.env
+# Chỉnh asset-management-backend/.env: DB_HOST=localhost, các thông số DB...
 
 cd asset-management-backend
 npm install
@@ -126,11 +148,12 @@ quanlytaisan/
 │   │   ├── models/
 │   │   ├── routes/
 │   │   ├── middleware/
+│   │   ├── migrations/         # Sequelize migrations
 │   │   └── config/
-│   ├── migrations/
-│   ├── seeders/
+│   ├── seeders/                # Sequelize seeders
+│   ├── scripts/                # Node scripts (reset-admin-password...)
 │   └── Dockerfile
-├── asset-management-frontend/ # Vue 3 + Vite + Element Plus
+├── asset-management-frontend/  # Vue 3 + Vite + Element Plus
 │   ├── src/
 │   │   ├── views/
 │   │   ├── components/
@@ -138,14 +161,21 @@ quanlytaisan/
 │   │   ├── stores/
 │   │   └── styles/
 │   └── Dockerfile
-├── scripts/                    # PowerShell: backup, restore, reset; Node: generate-secrets
+├── nginx/                      # Cấu hình nginx (production)
+│   └── nginx.conf
+├── scripts/                    # PowerShell: backup, restore, reset, sync; Node: generate-secrets
 │   ├── backup-db.ps1
 │   ├── list-backups.ps1
 │   ├── restore-db.ps1
 │   ├── reset-data.ps1
-│   ├── generate-secrets.js     # Tạo JWT_SECRET, DEFAULT_PASSWORD cho production
+│   ├── generate-secrets.js
+│   ├── generate-ssl.ps1
+│   ├── sync-push.ps1 / sync-push.bat
+│   ├── sync-pull.ps1 / sync-pull.bat
 │   └── README.md
 ├── docker-compose.yml
+├── docker-compose.dev.yml
+├── docker-compose.prod.yml
 ├── .env.example
 └── README.md
 ```
@@ -157,12 +187,14 @@ quanlytaisan/
 | Biến | Mô tả | Mặc định |
 |------|-------|----------|
 | `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT` | Kết nối PostgreSQL | postgres / postgres / asset_management / 5432 |
+| `BACKEND_PORT` | Port backend expose ra host | `5000` |
+| `FRONTEND_PORT` | Port frontend expose ra host | `3000` |
 | `JWT_SECRET` | Secret ký JWT. **Production**: dùng secret mạnh | `your-secret-key-change-in-production` |
-| `DEFAULT_PASSWORD` | Mật khẩu mặc định cho user mới / reset | `Ctec@123` |
-| `CORS_ORIGIN` | Origin cho phép. **Production**: domain cụ thể (vd: `https://yourdomain.com`) | `*` |
-| `BODY_LIMIT` | Giới hạn kích thước body request | `10mb` (nếu cần ảnh base64 lớn: `50mb`) |
-| `VITE_HTTPS` | Frontend chạy HTTPS local | `false` |
-| `VITE_PROXY_TARGET` | URL backend khi dev | `http://localhost:5000` |
+| `DEFAULT_PASSWORD` | Mật khẩu mặc định khi tạo user mới / import user (không áp dụng cho `admin`) | `Ctec@123` |
+| `CORS_ORIGIN` | Origin cho phép. **Production**: domain cụ thể (vd: `https://yourdomain.com`) | `http://localhost:3000` |
+| `LOG_LEVEL` | Mức log của backend (`error`, `warn`, `info`, `debug`) | `info` |
+| `VITE_API_BASE_URL` | URL API backend mà frontend gọi | `/api` (Docker) / `http://localhost:5000/api` (dev) |
+| `BODY_LIMIT` | Giới hạn kích thước body request của backend | `10mb` (nếu cần ảnh base64 lớn: `50mb`) |
 
 **Tạo secret cho production:**
 ```bash
@@ -196,10 +228,13 @@ Trong thư mục `scripts/`:
 | Script | Mô tả |
 |--------|--------|
 | **backup-db.ps1** | Tạo backup database |
-| **list-backups.ps1** | Liệt kê file backup |
+| **list-backups.ps1** | Liệt kê file backup + thống kê DB hiện tại |
 | **restore-db.ps1** | Khôi phục từ file backup |
 | **reset-data.ps1** | Reset dữ liệu nghiệp vụ (cẩn thận) |
 | **generate-secrets.js** | Tạo `JWT_SECRET`, `DEFAULT_PASSWORD` ngẫu nhiên cho production |
+| **generate-ssl.ps1** | Tạo SSL certificate tự ký cho nginx (production trên mạng nội bộ) |
+| **sync-push.ps1** / **sync-push.bat** | Đẩy code lên GitHub (dùng khi làm việc trên nhiều máy) |
+| **sync-pull.ps1** / **sync-pull.bat** | Kéo code mới nhất từ GitHub |
 
 Chi tiết: [scripts/README.md](./scripts/README.md).
 
@@ -215,13 +250,56 @@ Chi tiết: [scripts/README.md](./scripts/README.md).
 4. Dùng HTTPS (SSL/TLS)
 5. Nếu cần upload ảnh base64 lớn: đặt `BODY_LIMIT=50mb` trong `.env`
 
-**Đã có sẵn:** Helmet, rate limiting, JWT, phân quyền theo role, 2FA (TOTP), bcrypt, CORS, SQL parameterized. Token không truyền qua URL (download chứng từ dùng Authorization header). Docker: `docker-compose.yml` truyền `DEFAULT_PASSWORD`, `BODY_LIMIT` vào backend.
+**Đã có sẵn:** Helmet, rate limiting, JWT (HS256, hết hạn sau 15 phút, refresh token 7 ngày), phân quyền theo role, 2FA (TOTP), bcrypt, CORS, SQL parameterized. Token không truyền qua URL (download chứng từ dùng Authorization header). MIME filter kiểm tra file upload. Audit log chống giả mạo. Docker: các file `docker-compose*.yml` truyền `DEFAULT_PASSWORD`, `BODY_LIMIT` vào backend.
 
 **Lưu ý:** Một số dependency (vd: xlsx, minimatch) có báo audit; chạy `npm audit fix` trong backend. Token lưu trong localStorage (cân nhắc cookie HttpOnly sau).
 
 ---
 
 ## 📌 Cập nhật gần đây
+
+### v1.1.0 — 2026-04-04
+
+**Bảo mật**
+- JWT token bây giờ có thời hạn (access: 15 phút, refresh: 7 ngày) với `issuer` và `algorithm` được xác thực — trước đây token không hết hạn (infinite lifetime).
+- Thêm MIME type filter cho upload file thanh lý: chỉ cho phép PDF, Word, ảnh; từ chối file thực thi và các định dạng nguy hiểm.
+- Audit log không còn đọc `old_value` từ request body người dùng (chống giả mạo log).
+- Endpoint upload ảnh tài sản (`POST /assets/:id/image`) yêu cầu quyền Admin hoặc Manager (trước đây bỏ sót middleware phân quyền).
+- Trang System Admin bị chặn với Director ở frontend (trước đây Director truy cập được, backend từ chối gây trải nghiệm lỗi).
+
+**Token Refresh**
+- Backend: thêm endpoint `POST /api/auth/refresh` để cấp lại access token từ refresh token hợp lệ.
+- Frontend: interceptor Axios tự động gọi `/auth/refresh` khi nhận 401, xếp hàng các request chờ, rồi thử lại toàn bộ — người dùng không bị đăng xuất đột ngột khi token hết hạn.
+
+**Kho vật tư**
+- Phiếu cấp phát (`stock_issues`) lưu thêm trường `department_id`: ghi nhận đơn vị nhận cấp phát.
+- Form cấp phát trong Dashboard Kho hiển thị dropdown chọn phòng ban.
+- Lịch sử cấp phát hiển thị cột "Đơn vị" tương ứng.
+
+**Sửa lỗi Backend**
+- `getHierarchyStats`: lỗi không còn bị nuốt im lặng, chuyển sang Express error handler đúng cách.
+- `refreshAccessToken`: sửa lỗi nghiêm trọng — hàm trước đây dùng chuỗi refresh token làm payload thay vì decode ra claims.
+
+**Sửa lỗi Frontend**
+- Dashboard: bộ lọc thời gian (`timeRange`) trước đây không trigger reload dữ liệu — đã thêm `watch`.
+- Dashboard: thống kê "Tổng tài sản" hiển thị đúng (`assets_total`) thay vì số tài sản mới trong kỳ.
+- Dashboard: bỏ API call thừa `getProcurementStats` (kết quả không được dùng đến).
+- Dashboard: hiển thị skeleton loading trên 6 thẻ thống kê khi đang tải dữ liệu.
+- Trang 404: hiển thị tiếng Việt với nút "Quay lại" và "Về trang chủ".
+- Thông báo đăng nhập thành công chuyển sang tiếng Việt.
+
+**Chất lượng code**
+- Xóa file `middleware/cache.ts` (class `MemoryCache` không được import ở đâu — dead code).
+- Thêm khai báo TypeScript cho `RouteMeta` (`requiresAuth`, `requiresAdmin`, `requiresSystemAdmin`, `titleKey`, `breadcrumbParent`).
+
+**Trang mới**
+- **Nhật ký hoạt động** (`/audit-logs`, Admin): xem toàn bộ audit log với bộ lọc (hành động, bảng, khoảng thời gian, user_id), phân trang, xem chi tiết thay đổi old/new value.
+- **Danh mục tài sản** (`/asset-categories`, Admin): quản lý danh mục CRUD đầy đủ theo Thông tư 141, toggle chế độ cây/bảng, trường khấu hao.
+- **Hộp thư thông báo** (`/notifications`): trang inbox đầy đủ — xem tất cả thông báo, đánh dấu đã đọc, điều hướng đến phiếu liên quan theo loại. Nút "Xem tất cả" trên chuông thông báo dẫn thẳng vào trang này.
+
+---
+
+### v1.0.x — trước 2026-04-04
 
 - **Bảo mật**: JWT_SECRET/DEFAULT_PASSWORD cấu hình qua `.env`; token không truyền qua URL; CORS production; body limit cấu hình được; script `generate-secrets.js`; Docker truyền đủ biến env cho backend.
 - **Backend**: Sửa lỗi build TypeScript (`setupSwagger`); thêm `tests/setup.test.ts` để Jest chạy được; `test_e2e_images.js` đọc mật khẩu từ `E2E_PASSWORD`/`DEFAULT_PASSWORD`.
@@ -239,12 +317,12 @@ Các tính năng sau **chưa có** hoặc mới có một phần, **khả thi** 
 | Ưu tiên | Tính năng | Lý do |
 |--------|------------|--------|
 | **1** | **Quên mật khẩu qua email** | Trang đăng nhập có link "Quên mật khẩu?" nhưng chưa có luồng gửi link đặt lại qua email. Hiện chỉ Admin mới reset được. Người dùng quên mật khẩu cần tự liên hệ admin. |
-| **2** | **Gửi email thông báo** | Backend có biến SMTP trong `.env.example` nhưng chưa dùng. Nên gửi email khi: có việc cần phê duyệt (điều chuyển, sửa chữa, thanh lý…), đã phê duyệt/từ chối, hoặc nhắc bảo trì đến hạn. |
+| **2** | **Gửi email thông báo** | Backend chưa tích hợp SMTP. Nên gửi email khi: có việc cần phê duyệt (điều chuyển, sửa chữa, thanh lý…), đã phê duyệt/từ chối, hoặc nhắc bảo trì đến hạn. |
 | **3** | **Tìm kiếm toàn cục** | ✅ Đã có: ô tìm trên header (Tài sản, Người dùng, Phiếu mua sắm), debounce, phân quyền theo role. |
-| **4** | **Refresh token rotation** | Đã có refresh token; nên rotate: mỗi lần dùng refresh token thì vô hiệu hóa token cũ và cấp cặp token mới, giảm rủi ro token bị lộ dùng lâu dài. |
+| **4** | **Refresh token rotation** | ✅ Đã có refresh token và endpoint `/auth/refresh`. Có thể nâng cao thêm: rotate token — mỗi lần dùng refresh token thì vô hiệu hóa token cũ và cấp cặp token mới, giảm rủi ro token bị lộ dùng lâu dài. |
 | **5** | **Xuất báo cáo định kỳ (lưu lịch sử)** | Đã có backup DB và xuất Excel theo yêu cầu. Có thể thêm: lập lịch xuất báo cáo theo tháng/năm (tài sản, điều chuyển, bảo trì) lưu file hoặc gửi email cho lãnh đạo. |
 
-Hệ thống **đã có**: audit log, thông báo in-app (chuông), workflow phê duyệt nhiều cấp, 2FA, phân quyền, dashboard tổng quan.
+Hệ thống **đã có**: audit log (trang đầy đủ + API), thông báo in-app (chuông popup + trang inbox /notifications), workflow phê duyệt nhiều cấp, 2FA, phân quyền, dashboard tổng quan, quản lý danh mục tài sản.
 
 ---
 
@@ -255,5 +333,5 @@ Hệ thống **đã có**: audit log, thông báo in-app (chuông), workflow ph�
 
 ---
 
-**Version**: 1.0.0  
-**Cập nhật**: 2026-03-17
+**Version**: 1.1.0  
+**Cập nhật**: 2026-04-04

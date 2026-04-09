@@ -166,14 +166,24 @@
 
         <el-alert 
           v-if="(report.needs_repair_assets || 0) > 0" 
-          type="warning" 
+          :type="report.status === 'completed' ? 'success' : 'warning'" 
           :closable="false"
           show-icon
         >
           <template #title>
             <strong>Có {{ report.needs_repair_assets }} tài sản cần sửa chữa</strong>
+            <span v-if="report.status === 'completed'"> – đề nghị sửa chữa đã được tạo tự động</span>
           </template>
-          <p>Bạn cần lập kế hoạch sửa chữa hoặc bảo dưỡng các tài sản này. Có thể lọc danh sách theo "Cần sửa" để xem chi tiết.</p>
+          <p v-if="report.status !== 'completed'">
+            Sau khi admin phê duyệt, hệ thống sẽ tự động tạo đề nghị sửa chữa và chuyển sang quy trình xử lý.
+          </p>
+          <p v-else>
+            Đề nghị sửa chữa đã được tạo tự động trong module <strong>Sửa chữa / Bảo dưỡng</strong>. 
+            Admin cần phê duyệt trước khi kỹ thuật tiến hành sửa chữa.
+            <el-link type="primary" :underline="false" @click="$router.push('/maintenance?request_type=repair&source=inventory')" style="margin-left:8px">
+              Xem đề nghị sửa chữa →
+            </el-link>
+          </p>
         </el-alert>
 
         <el-alert 
@@ -523,7 +533,7 @@
               </template>
               <p style="margin: 8px 0 0 0; line-height: 1.6;">
                 Các tài sản dưới đây được đánh dấu <strong>"Cần sửa chữa"</strong> (còn sửa được).<br>
-                • <strong>Chọn</strong> tài sản → Duyệt sửa chữa → Đưa vào quy trình sửa chữa/bảo dưỡng<br>
+                • <strong>Chọn</strong> tài sản → Duyệt sửa chữa → Hệ thống <b>tự động tạo đề nghị sửa chữa</b> trong module Sửa chữa/Bảo dưỡng<br>
                 • <strong>Không chọn</strong> → Từ chối sửa chữa → Chuyển sang thanh lý (coi như hỏng nặng, sửa không được)
               </p>
             </el-alert>
@@ -740,7 +750,7 @@ const approveReport = async () => {
       report.value.id,
       approveData.value.approved,
       approveData.value.rejection_reason,
-      approveData.value.repair_approved_asset_ids?.length ? approveData.value.repair_approved_asset_ids : undefined
+      approveData.value.repair_approved_asset_ids
     );
     ElMessage.success(approveData.value.approved ? 'Đã phê duyệt báo cáo' : 'Đã từ chối báo cáo');
     showApproveDialog.value = false;

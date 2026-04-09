@@ -4,7 +4,7 @@ import { useAuthStore } from './auth.store';
 
 export interface Notification {
   id: number;
-  type: 'transfer' | 'maintenance' | 'inventory' | 'disposal' | 'report' | 'request';
+  type: 'transfer' | 'maintenance' | 'procurement' | 'inventory' | 'disposal' | 'report' | 'request';
   title: string;
   message: string;
   status: string;

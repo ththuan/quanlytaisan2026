@@ -17,6 +17,7 @@
             :icon="Bell"
             circle
             class="bell-button"
+            @click="handleBellClick"
           />
         </el-badge>
       </template>
@@ -63,6 +64,9 @@
               </el-icon>
               <el-icon v-else-if="notification.type === 'maintenance'">
                 <Tools />
+              </el-icon>
+              <el-icon v-else-if="notification.type === 'procurement'">
+                <ShoppingCart />
               </el-icon>
               <el-icon v-else-if="notification.type === 'inventory'">
                 <List />
@@ -116,7 +120,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useNotificationStore, type Notification } from '@/stores/notification.store';
-import { Bell, Switch, Tools, Document, Close, List, DeleteFilled } from '@element-plus/icons-vue';
+import { Bell, Switch, Tools, Document, Close, List, DeleteFilled, ShoppingCart } from '@element-plus/icons-vue';
 import moment from 'moment';
 
 const router = useRouter();
@@ -128,16 +132,13 @@ let refreshInterval: number | null = null;
 const unreadCount = computed(() => notificationStore.unreadCount);
 
 onMounted(() => {
-  // Fetch notifications immediately with a small delay to avoid race conditions
-  setTimeout(() => {
-    notificationStore.fetchNotifications(true);
-  }, 1000);
+  // Fetch notifications immediately on mount
+  notificationStore.fetchNotifications(true);
   
-  // Refresh notifications every 2 minutes (120 seconds) instead of 30 seconds
-  // This reduces API calls significantly
+  // Refresh every 30 seconds to catch approvals by other users quickly
   refreshInterval = window.setInterval(() => {
     notificationStore.fetchNotifications();
-  }, 120000);
+  }, 30000);
 });
 
 onUnmounted(() => {
@@ -146,24 +147,32 @@ onUnmounted(() => {
   }
 });
 
-// Watch for dropdown open to refresh notifications (with debounce)
+// Force-refresh notifications when the bell button is clicked
+const handleBellClick = () => {
+  // If dropdown will open (currently closed), fetch fresh data immediately
+  if (!showDropdown.value) {
+    notificationStore.fetchNotifications(true);
+  }
+};
+
+// Also watch dropdown open as a fallback (e.g., keyboard or programmatic open)
 let dropdownWatchTimeout: number | null = null;
 watch(() => showDropdown.value, (isOpen) => {
   if (isOpen) {
-    // Clear any pending timeout
     if (dropdownWatchTimeout) {
       clearTimeout(dropdownWatchTimeout);
     }
-    // Fetch after a short delay to avoid multiple rapid calls
+    // Small delay to avoid double-fetch if handleBellClick already fired
     dropdownWatchTimeout = window.setTimeout(() => {
       notificationStore.fetchNotifications(true);
-    }, 300);
+    }, 50);
   }
 });
 
 const typeRouteMap: Record<string, string> = {
   transfer: '/transfers',
   maintenance: '/maintenance',
+  procurement: '/purchase-requests',
   inventory: '/inventory',
   disposal: '/asset-disposals',
 };
@@ -186,6 +195,7 @@ const markAllAsRead = () => {
 
 const viewAll = () => {
   showDropdown.value = false;
+  router.push('/notifications');
 };
 
 const formatTime = (date: string) => {

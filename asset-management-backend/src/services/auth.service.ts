@@ -3,8 +3,9 @@ import qrcode from 'qrcode';
 import jwt from 'jsonwebtoken';
 import { User, Department } from '../models';
 import { UnauthorizedError, ConflictError, NotFoundError, ValidationError } from '../utils/errorHandler';
-import { generateAccessToken, generateRefreshToken, JWTPayload } from '../utils/jwt.utils';
+import { generateAccessToken, generateRefreshToken, verifyToken, JWTPayload } from '../utils/jwt.utils';
 import jwtConfig from '../config/jwt';
+import envConfig from '../config/env';
 
 // Short-lived token issued after password verification when 2FA is enabled.
 const TEMP_TOKEN_EXPIRY = '5m';
@@ -34,6 +35,7 @@ export interface TotpPendingResponse {
   requires_2fa: true;
   temp_token: string;
 }
+
 
 class AuthService {
   async register(data: RegisterInput): Promise<AuthResponse> {
@@ -170,17 +172,15 @@ class AuthService {
     await user.update({ password_hash });
   }
 
-  async refreshAccessToken(refreshToken: string): Promise<{ accessToken: string }> {
+  async refreshAccessToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
     try {
-      // Verify refresh token is done in auth middleware
-      // Here we just generate new access token
-      const payload: any = refreshToken; // This should be decoded in middleware
-
+      const payload = verifyToken(refreshToken);
+      // Re-issue both tokens (rotation: old refresh token is replaced by a new one)
       const newAccessToken = generateAccessToken(payload);
-
-      return { accessToken: newAccessToken };
+      const newRefreshToken = generateRefreshToken(payload);
+      return { accessToken: newAccessToken, refreshToken: newRefreshToken };
     } catch (error) {
-      throw new UnauthorizedError('Invalid refresh token');
+      throw new UnauthorizedError('Invalid or expired refresh token');
     }
   }
 

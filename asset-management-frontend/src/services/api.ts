@@ -14,7 +14,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -36,13 +36,28 @@ api.interceptors.request.use(
 let consecutiveNetworkErrors = 0;
 let lastNetworkErrorTime = 0;
 
+// Track whether a token refresh is in progress to avoid parallel refresh requests
+let isRefreshing = false;
+let refreshSubscribers: Array<(token: string) => void> = [];
+
+const onRefreshed = (newToken: string) => {
+  refreshSubscribers.forEach((cb) => cb(newToken));
+  refreshSubscribers = [];
+};
+
+const addRefreshSubscriber = (cb: (token: string) => void) => {
+  refreshSubscribers.push(cb);
+};
+
 // Response interceptor với xử lý lỗi mạng thông minh
 api.interceptors.response.use(
   (response: AxiosResponse) => {
     consecutiveNetworkErrors = 0;
+    // Cập nhật thời điểm hoạt động cuối cùng mỗi khi có response thành công
+    localStorage.setItem('lastActivity', Date.now().toString());
     return response.data;
   },
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
     const now = Date.now();
     
     // Xử lý lỗi mạng
@@ -70,9 +85,49 @@ api.interceptors.response.use(
       const isAuthRequest =
         error.config?.url?.includes('/auth/login') ||
         error.config?.url?.includes('/auth/register') ||
-        error.config?.url?.includes('/auth/2fa/validate-login');
-      // Đừng clear auth / redirect khi 401 từ chính request đăng nhập/đăng ký — component sẽ hiển thị lỗi (sai mật khẩu, v.v.)
+        error.config?.url?.includes('/auth/2fa/validate-login') ||
+        error.config?.url?.includes('/auth/refresh');
+      // Đừng clear auth / redirect khi 401 từ chính request đăng nhập/đăng ký
       if (!isAuthRequest) {
+        const storedRefreshToken = localStorage.getItem('refreshToken');
+        if (storedRefreshToken && !isRefreshing) {
+          isRefreshing = true;
+          try {
+            const res = await axios.post(`${API_BASE_URL}/auth/refresh`, { refresh_token: storedRefreshToken });
+            // Backend trả về { success: true, data: { accessToken: "..." } }
+            const newAccessToken: string = (res as any)?.data?.data?.accessToken || (res as any)?.data?.accessToken;
+            const newRefreshToken: string | undefined = (res as any)?.data?.data?.refreshToken || (res as any)?.data?.refreshToken;
+            if (newAccessToken) {
+              localStorage.setItem('accessToken', newAccessToken);
+              if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
+              try { useAuthStore().accessToken = newAccessToken; } catch { /* pinia not ready */ }
+              onRefreshed(newAccessToken);
+              isRefreshing = false;
+              // Retry the original failed request
+              const retryConfig = { ...error.config! };
+              retryConfig.headers = retryConfig.headers ?? {};
+              retryConfig.headers['Authorization'] = `Bearer ${newAccessToken}`;
+              return api(retryConfig);
+            }
+            // newAccessToken empty — fall through to logout
+            throw new Error('Empty access token in refresh response');
+          } catch {
+            isRefreshing = false;
+            refreshSubscribers = [];
+          }
+        } else if (storedRefreshToken && isRefreshing) {
+          // Queue requests while refresh is in progress
+          return new Promise((resolve, reject) => {
+            addRefreshSubscriber((newToken: string) => {
+              const retryConfig = { ...error.config! };
+              retryConfig.headers = retryConfig.headers ?? {};
+              retryConfig.headers['Authorization'] = `Bearer ${newToken}`;
+              resolve(api(retryConfig));
+            });
+            setTimeout(() => reject(error), 10000);
+          });
+        }
+        // No refresh token or refresh failed — logout
         try {
           const authStore = useAuthStore();
           authStore.clearAuth();

@@ -138,7 +138,25 @@ const routes: RouteRecordRaw[] = [
         path: '/system-admin',
         name: 'SystemAdmin',
         component: () => import('@/views/SystemAdmin/SystemAdminView.vue'),
-        meta: { requiresAdmin: true, titleKey: 'menu.systemAdmin' },
+        meta: { requiresSystemAdmin: true, titleKey: 'menu.systemAdmin' },
+      },
+      {
+        path: '/audit-logs',
+        name: 'AuditLogs',
+        component: () => import('@/views/AuditLogs/AuditLogView.vue'),
+        meta: { requiresAuth: true, titleKey: 'menu.auditLogs' },
+      },
+      {
+        path: '/notifications',
+        name: 'Notifications',
+        component: () => import('@/views/Notifications/NotificationsView.vue'),
+        meta: { requiresAuth: true, titleKey: 'menu.notifications' },
+      },
+      {
+        path: '/asset-categories',
+        name: 'AssetCategories',
+        component: () => import('@/views/AssetCategories/AssetCategoryView.vue'),
+        meta: { requiresAdmin: true, titleKey: 'menu.assetCategories' },
       },
     ],
   },
@@ -175,6 +193,11 @@ router.beforeEach((to, _from, next) => {
 
   // Kiểm tra quyền admin cho các route có meta.requiresAdmin
   if (to.meta.requiresAdmin && !['admin', 'director'].includes(userRole || '')) {
+    return next(getLandingPathByRole());
+  }
+
+  // System-admin: chỉ admin mới vào được (không phải director)
+  if (to.meta.requiresSystemAdmin && userRole !== 'admin') {
     return next(getLandingPathByRole());
   }
 

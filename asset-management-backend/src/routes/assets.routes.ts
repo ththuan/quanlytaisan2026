@@ -66,9 +66,10 @@ router.put(
   assetsController.updateAsset
 );
 
-// POST /api/assets/:id/image - Upload image strictly for an asset
+// POST /api/assets/:id/image - Upload image strictly for an asset (admin/director/staff)
 router.post(
   '/:id/image',
+  isAdminOrManager,
   upload.single('image'),
   auditLog('update'),
   invalidateCache('assets'),

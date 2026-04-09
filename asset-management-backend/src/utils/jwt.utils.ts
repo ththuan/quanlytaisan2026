@@ -11,16 +11,29 @@ export interface JWTPayload {
 }
 
 export const generateAccessToken = (payload: JWTPayload): string => {
-  return jwt.sign(payload, jwtConfig.secret);
+  const { iat: _iat, exp: _exp, ...claims } = payload as any;
+  return jwt.sign(claims, jwtConfig.secret, {
+    expiresIn: jwtConfig.accessExpiration as any,
+    issuer: jwtConfig.issuer,
+    algorithm: jwtConfig.algorithm,
+  });
 };
 
 export const generateRefreshToken = (payload: JWTPayload): string => {
-  return jwt.sign(payload, jwtConfig.secret);
+  const { iat: _iat, exp: _exp, ...claims } = payload as any;
+  return jwt.sign(claims, jwtConfig.secret, {
+    expiresIn: jwtConfig.refreshExpiration as any,
+    issuer: jwtConfig.issuer,
+    algorithm: jwtConfig.algorithm,
+  });
 };
 
 export const verifyToken = (token: string): JWTPayload => {
   try {
-    const decoded = jwt.verify(token, jwtConfig.secret) as JWTPayload;
+    const decoded = jwt.verify(token, jwtConfig.secret, {
+      issuer: jwtConfig.issuer,
+      algorithms: [jwtConfig.algorithm],
+    }) as JWTPayload;
     return decoded;
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {

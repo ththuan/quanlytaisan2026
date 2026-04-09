@@ -79,6 +79,15 @@
         >
           <template #default="{ row }">
             {{ row.asset?.name || '-' }}
+            <el-tag
+              v-if="row.source_inventory_report_id"
+              size="small"
+              type="info"
+              style="margin-left:6px; font-size:11px"
+              title="Đề nghị sửa chữa được tạo tự động từ kiểm kê định kỳ"
+            >
+              Từ kiểm kê
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column
@@ -227,7 +236,7 @@
     <MaintenanceDetailDialog
       v-model:visible="detailDialogVisible"
       :maintenance="currentItem"
-      @update="fetchData"
+      @update="() => fetchData({}, true)"
     />
 
     <!-- Admin Level-2 Approval Dialog with cost info -->
@@ -332,6 +341,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
+import { useNotificationStore } from '@/stores/notification.store';
 import { useDepartmentStore } from '@/stores/department.store';
 import { Plus } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -344,6 +354,15 @@ import assetDisposalService from '@/services/assetDisposal.service';
 const { t } = useI18n();
 const router = useRouter();
 const authStore = useAuthStore();
+const notificationStore = useNotificationStore();
+
+const getNextApprovalStatus = (currentStatus: string, role: string): string | null => {
+  if (role === 'department_head' && (currentStatus === 'pending' || currentStatus === 'new')) return 'approved_by_head';
+  if (role === 'admin' && currentStatus === 'approved_by_head') return 'approved_by_admin';
+  if (role === 'admin' && currentStatus === 'repair_completed') return 'completed';
+  if (role === 'director' && currentStatus === 'approved_by_admin') return 'approved_by_director';
+  return null;
+};
 const departmentStore = useDepartmentStore();
 
 const loading = ref(false);
@@ -387,12 +406,12 @@ onMounted(async () => {
 });
 
 let isFetching = false;
-const fetchData = async (params: any = {}) => {
+const fetchData = async (params: any = {}, silent = false) => {
   if (isFetching) {
     return;
   }
   isFetching = true;
-  loading.value = true;
+  if (!silent) loading.value = true;
   try {
     const requestParams: any = {
       ...params,
@@ -499,7 +518,9 @@ const handleSubmitForApproval = async (item: any) => {
     );
     await api.post(`/maintenance/${item.id}/submit`);
     ElMessage.success('Đã gửi phê duyệt thành công. Yêu cầu của bạn đang chờ trưởng phòng xem xét.');
-    fetchData();
+    const sidx = requests.value.findIndex((r: any) => r.id === item.id);
+    if (sidx !== -1) requests.value[sidx] = { ...requests.value[sidx], status: 'pending' };
+    fetchData({}, true);
   } catch (error: any) {
     if (error !== 'cancel') {
       const errorMessage = error.response?.data?.message || error.message || t('common.error');
@@ -566,8 +587,15 @@ const handleApprove = async (row: any) => {
       { type: 'warning', confirmButtonText: 'Phê duyệt', cancelButtonText: 'Hủy' }
     );
     await api.put(`/maintenance/${id}/approve`);
+    const userRole = authStore.user?.role;
+    const aidx = requests.value.findIndex((r: any) => r.id === id);
+    if (aidx !== -1 && userRole) {
+      const next = getNextApprovalStatus(requests.value[aidx].status, userRole);
+      if (next) requests.value[aidx] = { ...requests.value[aidx], status: next };
+    }
     ElMessage.success('Đã phê duyệt thành công.');
-    fetchData();
+    notificationStore.fetchNotifications(true);
+    fetchData({}, true);
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error.response?.data?.message || error.message || t('common.error'));
@@ -585,7 +613,10 @@ const submitAdminApproval = async () => {
     });
     ElMessage.success('Đã phê duyệt (Quản trị viên). Chuyển lên Giám hiệu.');
     adminApprovalVisible.value = false;
-    fetchData();
+    const aaidx = requests.value.findIndex((r: any) => r.id === adminApprovalRow.value?.id);
+    if (aaidx !== -1) requests.value[aaidx] = { ...requests.value[aaidx], status: 'approved_by_admin' };
+    notificationStore.fetchNotifications(true);
+    fetchData({}, true);
   } catch (error: any) {
     ElMessage.error(error.response?.data?.message || error.message || t('common.error'));
   } finally {
@@ -602,7 +633,9 @@ const handleCompleteRepair = async (id: number) => {
     );
     await api.post(`/maintenance/${id}/complete-repair`);
     ElMessage.success('Đã báo hoàn thành sửa chữa. Chờ Admin xác nhận.');
-    fetchData();
+    const cridx = requests.value.findIndex((r: any) => r.id === id);
+    if (cridx !== -1) requests.value[cridx] = { ...requests.value[cridx], status: 'repair_completed' };
+    fetchData({}, true);
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error.response?.data?.message || error.message || t('common.error'));
@@ -631,7 +664,7 @@ const handleToDisposal = async (row: any) => {
     const res: any = await assetDisposalService.createFromMaintenance(row.id, result as 'liquidation' | 'destruction');
     const caseId = res?.data?.id;
     ElMessage.success('Đã tạo hồ sơ Thanh lý/Tiêu hủy. Đang chuyển hướng...');
-    fetchData();
+    fetchData({}, true);
     await router.push({ path: '/asset-disposals', query: { openId: String(caseId) } });
   } catch (error: any) {
     if (error !== 'close') {
@@ -658,7 +691,8 @@ const handleDelete = async (item: any) => {
     );
     await api.delete(`/maintenance/${item.id}`);
     ElMessage.success('Đã xóa đề nghị thành công');
-    fetchData();
+    requests.value = requests.value.filter((r: any) => r.id !== item.id);
+    fetchData({}, true);
   } catch (error: any) {
     if (error !== 'cancel') {
       const errorMessage = error.response?.data?.message || error.message || t('common.error');
@@ -685,7 +719,7 @@ const handleFormSuccess = async () => {
   }
   
   // Reload list
-  fetchData();
+  fetchData({}, true);
 };
 
 const getStatusType = (status: string) => {
@@ -712,7 +746,7 @@ const getStatusType = (status: string) => {
 const getStatusText = (status: string) => {
   const statusMap: Record<string, string> = {
     draft: 'Nháp',
-    new: t('maintenance.status.new'),
+    new: 'Chờ phê duyệt',
     pending: 'Chờ phê duyệt',
     approved_by_head: 'Trưởng Đơn vị đã duyệt',
     approved_by_admin: 'Quản trị viên đã duyệt',

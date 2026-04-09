@@ -241,9 +241,9 @@
       </el-col>
     </el-row>
 
-    <!-- Docker Containers -->
+    <!-- Docker Containers (chỉ khi có docker CLI/socket trong process backend) -->
     <el-card
-      v-if="dockerInfo?.available"
+      v-if="dockerInfo?.available && dockerInfo.dockerCliAvailable !== false"
       class="docker-card"
     >
       <template #header>
@@ -330,6 +330,19 @@
         </el-table>
       </div>
     </el-card>
+
+    <el-alert
+      v-else-if="dockerInfo?.available && dockerInfo.dockerCliAvailable === false"
+      type="info"
+      :closable="false"
+      class="docker-alert"
+      show-icon
+    >
+      <template #title>
+        Đang chạy trong Docker (không điều khiển CLI từ container)
+      </template>
+      {{ dockerInfo.message }}
+    </el-alert>
 
     <el-alert
       v-else-if="dockerInfo && !dockerInfo.available"
@@ -466,22 +479,34 @@
     </el-card>
 
     <!-- Backups List -->
-    <el-card
-      v-if="backups.length > 0"
-      class="backups-card"
-    >
+    <el-card class="backups-card">
       <template #header>
         <div class="card-header">
           <span><el-icon><Folder /></el-icon> Danh sách Backup</span>
+          <el-button
+            size="small"
+            :icon="Refresh"
+            :loading="loadingBackups"
+            @click="fetchBackups"
+          >
+            Làm mới
+          </el-button>
         </div>
       </template>
+      <el-empty
+        v-if="backups.length === 0"
+        description="Chưa có file backup nào. Nhấn 'Tạo Backup' để tạo bản sao lưu đầu tiên."
+        :image-size="80"
+      />
       <el-table
+        v-else
         :data="backups"
         stripe
       >
         <el-table-column
           prop="name"
           label="Tên file"
+          min-width="260"
         />
         <el-table-column
           prop="size"
@@ -491,10 +516,70 @@
         <el-table-column
           prop="created"
           label="Ngày tạo"
-          width="200"
+          width="180"
         />
+        <el-table-column
+          label="Thạo tác"
+          width="140"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <el-button
+              size="small"
+              type="warning"
+              :icon="RefreshLeft"
+              :loading="restoringFile === row.name"
+              @click="confirmRestore(row.name)"
+            >
+              Khôi phục
+            </el-button>
+          </template>
+        </el-table-column>
       </el-table>
     </el-card>
+
+    <!-- Restore Confirmation Dialog -->
+    <el-dialog
+      v-model="showRestoreDialog"
+      title="Xác nhận Khôi phục Database"
+      width="500px"
+    >
+      <el-alert
+        type="error"
+        :closable="false"
+        style="margin-bottom: 20px"
+      >
+        <template #title>
+          CẢNH BÁO: Khôi phục sẽ GHI ĐÈ toàn bộ dữ liệu hiện tại!
+        </template>
+        Dữ liệu trong database sẽ được thay thế bằng snapshot từ file backup.
+        Thao tác này không thể hoàn tác. Hãy chắc chắn bạn muốn tiếp tục.
+      </el-alert>
+      <div style="margin-bottom: 12px">
+        <strong>File backup:</strong> <code>{{ restoreFilename }}</code>
+      </div>
+      <el-form>
+        <el-form-item label="Nhập 'RESTORE' để xác nhận:">
+          <el-input
+            v-model="restoreConfirmText"
+            placeholder="RESTORE"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showRestoreDialog = false">
+          Hủy
+        </el-button>
+        <el-button
+          type="warning"
+          :disabled="restoreConfirmText !== 'RESTORE'"
+          :loading="restoringFile !== null"
+          @click="doRestore"
+        >
+          Xác nhận Khôi phục
+        </el-button>
+      </template>
+    </el-dialog>
 
     <!-- Reset Confirmation Dialog -->
     <el-dialog
@@ -571,6 +656,7 @@ import {
   VideoPlay,
   VideoPause,
   RefreshRight,
+  RefreshLeft,
 } from '@element-plus/icons-vue';
 import systemAdminService, {
   type SystemInfo,
@@ -590,6 +676,7 @@ const systemInfo = ref<SystemInfo | null>(null);
 const dockerInfo = ref<DockerInfo | null>(null);
 const databaseInfo = ref<DatabaseInfo | null>(null);
 const backups = ref<BackupInfo[]>([]);
+const loadingBackups = ref(false);
 
 const containerLoading = reactive<Record<string, boolean>>({});
 const actionLoading = reactive({
@@ -604,6 +691,10 @@ const resetConfirmText = ref('');
 const showLogsDialog = ref(false);
 const selectedContainer = ref('');
 const containerLogs = ref('');
+const showRestoreDialog = ref(false);
+const restoreFilename = ref('');
+const restoreConfirmText = ref('');
+const restoringFile = ref<string | null>(null);
 
 const getMemoryColor = (percentage: number) => {
   if (percentage < 60) return '#67c23a';
@@ -646,10 +737,13 @@ const fetchDatabaseInfo = async () => {
 };
 
 const fetchBackups = async () => {
+  loadingBackups.value = true;
   try {
     backups.value = await systemAdminService.listBackups();
   } catch (error) {
     console.error('Failed to fetch backups:', error);
+  } finally {
+    loadingBackups.value = false;
   }
 };
 
@@ -796,6 +890,31 @@ const seedDatabase = async () => {
     // User cancelled
   } finally {
     actionLoading.seed = false;
+  }
+};
+
+const confirmRestore = (filename: string) => {
+  restoreFilename.value = filename;
+  restoreConfirmText.value = '';
+  showRestoreDialog.value = true;
+};
+
+const doRestore = async () => {
+  if (restoreConfirmText.value !== 'RESTORE') return;
+  restoringFile.value = restoreFilename.value;
+  try {
+    const result = await systemAdminService.restoreBackup(restoreFilename.value);
+    if (result.success) {
+      ElMessage.success(result.message);
+      showRestoreDialog.value = false;
+    } else {
+      ElMessage.error(result.message);
+    }
+  } catch {
+    ElMessage.error('Không thể khôi phục backup');
+  } finally {
+    restoringFile.value = null;
+    restoreConfirmText.value = '';
   }
 };
 

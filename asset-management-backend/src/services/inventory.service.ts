@@ -15,6 +15,7 @@ import {
   User,
   Department,
   AuditLog,
+  MaintenanceRequest,
 } from '../models';
 import assetDisposalService from './assetDisposal.service';
 import { NotFoundError, ForbiddenError, ValidationError } from '../utils/errorHandler';
@@ -774,19 +775,22 @@ class InventoryService {
     reportId: number,
     approvedBy?: number,
     transaction?: any,
-    repairApprovedAssetIds: number[] = []
+    repairApprovedAssetIds?: number[]  // undefined = approve ALL repairs; [] = reject all; [ids] = only those IDs
   ): Promise<void> {
     const details = await InventoryReportDetail.findAll({
       where: { inventory_report_id: reportId },
       transaction,
-      include: [{ model: InventoryReport, as: 'inventory_report', attributes: ['id', 'department_id'] }],
+      include: [{ model: InventoryReport, as: 'inventory_report', attributes: ['id', 'department_id', 'created_by'] }],
     });
+
+    // undefined = admin did not make an explicit selection → approve all repair suggestions
+    const approveAllRepairs = repairApprovedAssetIds == null;
 
     let disposalCaseId: number | null = null;
     if (approvedBy) {
       const hasDisposal = details.some((d: any) => d.suggest_disposal);
-      const hasRepairRejected = details.some(
-        (d: any) => d.suggest_repair && !repairApprovedAssetIds.includes(d.asset_id)
+      const hasRepairRejected = !approveAllRepairs && details.some(
+        (d: any) => d.suggest_repair && !repairApprovedAssetIds!.includes(d.asset_id)
       );
       if (hasDisposal || hasRepairRejected) {
         const disposalCase = await assetDisposalService.ensureDisposalCaseFromInventoryReport(reportId, approvedBy, transaction);
@@ -815,7 +819,7 @@ class InventoryService {
       } else if (detail.suggest_disposal) {
         updateData.status = 'pending_disposal';
         updateData.asset_condition = 'damaged';
-        updateData.current_department_id = null;
+        // Giữ lại current_department_id để đơn vị vẫn thấy tài sản của mình
 
         if (approvedBy && disposalCaseId) {
           await assetDisposalService.addItemFromInventoryDetail(
@@ -827,14 +831,44 @@ class InventoryService {
           );
         }
       } else if (detail.suggest_repair) {
-        const approvedForRepair = repairApprovedAssetIds.includes((detail as any).asset_id);
+        const approvedForRepair = approveAllRepairs || repairApprovedAssetIds!.includes((detail as any).asset_id);
         if (approvedForRepair) {
           updateData.status = 'pending_repair';
           updateData.asset_condition = 'needs_repair';
+
+          // Tự động tạo đề nghị sửa chữa để đơn vị/kỹ thuật xử lý tiếp
+          if (approvedBy) {
+            const deptId = (detail as any).inventory_report?.department_id ?? null;
+            const reportCreatedBy = (detail as any).inventory_report?.created_by ?? approvedBy;
+            // Kiểm tra xem đã có đề nghị sửa chữa từ cùng kiểm kê này chưa (tránh tạo trùng)
+            const existingRepair = await MaintenanceRequest.findOne({
+              where: {
+                asset_id: (detail as any).asset_id,
+                source_inventory_report_id: reportId,
+                status: { [Op.notIn]: ['rejected_by_head', 'rejected_by_admin', 'rejected_by_director', 'completed'] },
+              },
+              transaction,
+            });
+            if (!existingRepair) {
+              await MaintenanceRequest.create(
+                {
+                  request_type: 'repair',
+                  asset_id: (detail as any).asset_id,
+                  department_id: deptId,
+                  description: detail.disposal_reason || detail.notes || 'Tài sản cần sửa chữa (phát hiện qua kiểm kê định kỳ)',
+                  urgency: 'normal',
+                  status: 'pending',
+                  requested_by: reportCreatedBy,
+                  source_inventory_report_id: reportId,
+                } as any,
+                { transaction }
+              );
+            }
+          }
         } else {
           updateData.status = 'pending_disposal';
           updateData.asset_condition = 'damaged';
-          updateData.current_department_id = null;
+          // Giữ lại current_department_id để đơn vị vẫn thấy tài sản của mình
           if (approvedBy && disposalCaseId) {
             await assetDisposalService.addItemFromInventoryDetail(
               disposalCaseId,

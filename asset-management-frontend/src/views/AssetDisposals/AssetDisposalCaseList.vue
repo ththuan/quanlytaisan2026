@@ -8,12 +8,12 @@
         </div>
       </div>
       <el-button
-        v-if="authStore.isAdmin"
+        v-if="authStore.isAdmin || authStore.isDirector || authStore.isDepartmentHead || authStore.isStaff"
         type="danger"
         :icon="Delete"
         @click="destructionVisible = true"
       >
-        {{ $t('assetDisposals.createCase') }}
+        {{ authStore.isAdmin || authStore.isDirector ? $t('assetDisposals.createCase') : 'Gửi đề nghị thanh lý / tiêu hủy' }}
       </el-button>
     </div>
 
@@ -141,7 +141,7 @@ const limit = ref(10);
 
 const filters = reactive<{ search: string; status: any }>({
   search: '',
-  status: 'pending',
+  status: '',
 });
 
 const params = computed(() => ({

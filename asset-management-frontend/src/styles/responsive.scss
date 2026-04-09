@@ -219,10 +219,9 @@ body {
 
 /* Mobile: 2 cột */
 @media (max-width: 767px) {
-  .stats-section .el-row,
-  .summary-stats {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 8px;
+  .stats-section .el-col {
+    max-width: 50% !important;
+    flex: 0 0 50% !important;
   }
 
   .stat-card {
@@ -341,6 +340,24 @@ body {
   }
 }
 
+/* Mobile nhỏ: bottom-sheet style */
+@media (max-width: 480px) {
+  .el-overlay-dialog {
+    display: flex !important;
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .el-dialog {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    border-radius: 16px 16px 0 0 !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+}
+
 /* ─────────────────────────────────────────────────────────
    CARDS: El-Card Components
    ───────────────────────────────────────────────────────── */
@@ -373,16 +390,6 @@ body {
   .el-input__inner,
   .el-textarea__inner {
     font-size: 14px;
-  }
-
-  /* Form 2 cột thành 1 cột */
-  .el-form .el-row {
-    flex-direction: column;
-  }
-
-  .el-form .el-col {
-    max-width: 100% !important;
-    flex: 0 0 100% !important;
   }
 }
 
@@ -512,8 +519,38 @@ body {
   }
 }
 
-/* ─────────────────────────────────────────────────────────
-   UTILITY CLASSES
+/* ─────────────────────────────────────────────────────────   TOUCH TARGETS & SCROLLABLE TABS
+   ───────────────────────────────────────────────────────── */
+
+/* Bigger touch targets on touch devices */
+@media (max-width: 1024px) {
+  .el-button {
+    min-height: 40px;
+  }
+
+  .el-menu-item,
+  .el-sub-menu__title {
+    min-height: 52px !important;
+  }
+}
+
+/* Scrollable tabs on mobile */
+@media (max-width: 768px) {
+  .el-tabs__nav-wrap {
+    overflow-x: auto !important;
+    overflow-y: hidden;
+  }
+
+  .el-tabs__nav {
+    flex-wrap: nowrap !important;
+  }
+
+  .el-tabs__item {
+    white-space: nowrap;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────   UTILITY CLASSES
    ───────────────────────────────────────────────────────── */
 
 /* Hide trên mobile */

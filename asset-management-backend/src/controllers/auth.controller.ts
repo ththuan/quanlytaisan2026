@@ -72,6 +72,20 @@ export const logout = async (_req: Request, res: Response, next: NextFunction): 
   }
 };
 
+export const refreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { refresh_token } = req.body;
+    if (!refresh_token || typeof refresh_token !== 'string') {
+      res.status(400).json({ success: false, message: 'refresh_token là bắt buộc' });
+      return;
+    }
+    const result = await authService.refreshAccessToken(refresh_token);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ── TOTP / Google Authenticator ───────────────────────────────────────────────
 
 /** POST /auth/2fa/validate-login  — verify TOTP code during login */

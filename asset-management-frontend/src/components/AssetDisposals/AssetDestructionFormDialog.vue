@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     v-model="visible"
-    :title="formData.disposal_type === 'destruction' ? 'Tạo hồ sơ tiêu hủy tài sản' : 'Tạo hồ sơ thanh lý tài sản'"
+    :title="dialogTitle"
     width="900px"
     :close-on-click-modal="false"
     @closed="resetForm"
@@ -11,7 +11,7 @@
       class="dialog-hint"
     >
       <el-alert
-        type="info"
+        :type="isUnitRole ? 'warning' : 'info'"
         show-icon
         :closable="false"
       >
@@ -19,6 +19,7 @@
           <b>Tiêu hủy tài sản</b> – Điều 24 Quy chế 2026: Áp dụng cho tài sản liên quan đến
           bí mật nhà nước, bảo vệ môi trường, phần mềm hết hạn bản quyền. Hiệu trưởng quyết
           định tiêu hủy TS cố định có nguyên giá &lt; 1 tỷ đồng.
+          <span v-if="isUnitRole"> Đơn vị gửi đề nghị, admin sẽ tổng hợp và ban hành quyết định.</span>
         </template>
       </el-alert>
     </div>
@@ -34,6 +35,7 @@
         <template #title>
           <b>Thanh lý tài sản</b> – Điều 23 Quy chế 2026: Áp dụng khi TS hết hạn sử dụng,
           hư hỏng không sửa được, hoặc chi phí sửa chữa &gt; 30% nguyên giá.
+          <span v-if="isUnitRole"> Đơn vị gửi đề nghị, admin sẽ tổng hợp và ban hành quyết định.</span>
         </template>
       </el-alert>
     </div>
@@ -368,7 +370,7 @@
         :loading="submitting"
         @click="submit"
       >
-        Tạo hồ sơ {{ formData.disposal_type === 'destruction' ? 'tiêu hủy' : 'thanh lý' }}
+        {{ submitLabel }}
       </el-button>
     </template>
   </el-dialog>
@@ -380,6 +382,24 @@ import { ElMessage } from 'element-plus';
 import { Delete, Refresh, Search } from '@element-plus/icons-vue';
 import assetDisposalService from '@/services/assetDisposal.service';
 import api from '@/services/api';
+import { useAuthStore } from '@/stores/auth.store';
+
+const authStore = useAuthStore();
+const isUnitRole = computed(() => authStore.isStaff || authStore.isDepartmentHead);
+
+const dialogTitle = computed(() => {
+  if (isUnitRole.value) {
+    return formData.disposal_type === 'destruction' ? 'Gửi đề nghị tiêu hủy tài sản' : 'Gửi đề nghị thanh lý tài sản';
+  }
+  return formData.disposal_type === 'destruction' ? 'Tạo hồ sơ tiêu hủy tài sản (tổng hợp)' : 'Tạo hồ sơ thanh lý tài sản (tổng hợp)';
+});
+
+const submitLabel = computed(() => {
+  if (isUnitRole.value) {
+    return `Gửi đề nghị ${formData.disposal_type === 'destruction' ? 'tiêu hủy' : 'thanh lý'}`;
+  }
+  return `Tạo hồ sơ ${formData.disposal_type === 'destruction' ? 'tiêu hủy' : 'thanh lý'} (tổng hợp)`;
+});
 
 const emit = defineEmits(['created']);
 const visible = defineModel<boolean>();
@@ -510,7 +530,8 @@ const searchAssets = () => {
   searchTimer = setTimeout(async () => {
     searchLoading.value = true;
     try {
-      const params: any = { search: assetSearch.value, status: 'active,inactive,damaged,pending_disposal', limit: 20 };
+      // Không cho phép thêm tài sản đã có trạng thái pending_disposal (đã được đề nghị)
+      const params: any = { search: assetSearch.value, status: 'active,inactive,damaged', limit: 20 };
       const res: any = await api.get('/assets', { params });
       const list = res?.data?.data || res?.data?.items || res?.data || [];
       const existingIds = new Set([...selectedAssetIds.value, ...manualAssets.value.map((a: any) => a.id)]);

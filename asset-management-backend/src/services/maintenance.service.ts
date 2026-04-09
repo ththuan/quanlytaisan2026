@@ -1,6 +1,6 @@
 import { Op, QueryTypes } from 'sequelize';
 import sequelize from '../config/database';
-import { MaintenanceRequest, MaintenanceDamageImage, Asset, Department, User, RequestApproval, AssetCategory, Procurement, AssetDisposalCase, AssetDisposalItem, AuditLog } from '../models';
+import { MaintenanceRequest, MaintenanceDamageImage, Asset, Department, User, RequestApproval, AssetCategory, Procurement, AssetDisposalCase, AssetDisposalItem, AuditLog, InventoryReport, InventoryRound } from '../models';
 import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errorHandler';
 import { getPaginationParams, buildPaginationResult, getOffset, PaginationResult } from '../utils/pagination';
 import { MaintenanceStatus } from '../models/MaintenanceRequest';
@@ -670,6 +670,13 @@ class MaintenanceService {
           as: 'linkedDisposalCase',
           required: false,
           attributes: ['id', 'code', 'status', 'disposal_type'],
+        },
+        {
+          model: InventoryReport,
+          as: 'sourceInventoryReport',
+          required: false,
+          attributes: ['id', 'status'],
+          include: [{ model: InventoryRound, as: 'inventory_round', attributes: ['id', 'round_name', 'round_year'], required: false }],
         },
       ],
     });

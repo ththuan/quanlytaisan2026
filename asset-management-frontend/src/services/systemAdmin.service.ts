@@ -23,9 +23,13 @@ export interface DockerContainer {
 
 export interface DockerInfo {
   available: boolean;
+  /** false = backend trong container, không gọi được docker CLI (bình thường nếu chưa mount socket) */
+  dockerCliAvailable?: boolean;
+  runningInContainer?: boolean;
   version?: string;
   containers?: DockerContainer[];
   error?: string;
+  message?: string;
 }
 
 export interface DatabaseInfo {
@@ -120,6 +124,11 @@ const systemAdminService = {
   async listBackups(): Promise<BackupInfo[]> {
     const response = await api.get('/system-admin/backups');
     return unwrap<BackupInfo[]>(response) ?? [];
+  },
+
+  async restoreBackup(filename: string): Promise<{ success: boolean; message: string }> {
+    const response = await api.post('/system-admin/restore', { filename });
+    return unwrap<{ success: boolean; message: string }>(response);
   },
 
   async resetBusinessData(): Promise<{ success: boolean; message: string }> {

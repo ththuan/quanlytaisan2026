@@ -154,7 +154,7 @@ export const getPendingApprovals = async (req: AuthenticatedRequest, res: Respon
         const d = item.toJSON ? item.toJSON() : item;
         notifications.push({
           id: d.id,
-          type: 'maintenance',
+          type: d.request_type === 'procurement' ? 'procurement' : 'maintenance',
           title: `Yêu cầu ${requestTypeLabels[d.request_type] || d.request_type} cần phê duyệt`,
           message: `"${d.description || d.title || '(không có mô tả)'}" — đơn vị ${d.department?.name || ''} — ${maintenanceStatusLabels[d.status] || d.status}`,
           status: d.status,

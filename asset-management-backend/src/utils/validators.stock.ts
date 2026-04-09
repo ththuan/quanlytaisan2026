@@ -31,6 +31,7 @@ export const createStockIssueSchema = Joi.object({
   location: Joi.string().max(255).required(),
   purpose: Joi.string().max(500).required(),
   notes: Joi.string().allow('', null).optional(),
+  department_id: Joi.number().integer().positive().allow(null).optional(),
   lines: Joi.array().items(
     Joi.object({
       item_id: Joi.number().integer().positive().required(),

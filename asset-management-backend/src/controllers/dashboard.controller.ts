@@ -117,7 +117,7 @@ export const getMaintenanceStats = async (req: AuthRequest, res: Response, next:
   }
 };
 
-export const getHierarchyStats = async (req: AuthRequest, res: Response, _next: NextFunction) => {
+export const getHierarchyStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const query = { ...req.query };
     if (!['admin', 'director'].includes(req.user?.role || '')) {
@@ -127,7 +127,6 @@ export const getHierarchyStats = async (req: AuthRequest, res: Response, _next: 
     const data = await dashboardService.getHierarchyStats(query);
     res.json({ success: true, data });
   } catch (e) {
-    console.error('[getHierarchyStats]', e);
-    res.json({ success: true, data: [] });
+    next(e);
   }
 };

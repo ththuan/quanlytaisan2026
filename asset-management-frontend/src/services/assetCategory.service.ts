@@ -7,6 +7,7 @@ export interface AssetCategory {
   parent_code?: string;
   unit: string;
   category_group: string;
+  tracking_type: 'individual' | 'batch';
   is_depreciable: boolean;
   depreciation_rate?: number;
   useful_life_years?: number;

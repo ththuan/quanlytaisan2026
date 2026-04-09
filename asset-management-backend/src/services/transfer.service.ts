@@ -431,6 +431,22 @@ class TransferService {
       where.asset_id = query.asset_id;
     }
 
+    if (query.from_department_id) {
+      where.from_department_id = query.from_department_id;
+    }
+
+    if (query.to_department_id) {
+      where.to_department_id = query.to_department_id;
+    }
+
+    const assetWhere: any = {};
+    if (query.search) {
+      assetWhere[Op.or] = [
+        { asset_code: { [Op.iLike]: `%${query.search}%` } },
+        { name: { [Op.iLike]: `%${query.search}%` } },
+      ];
+    }
+
     const { count, rows } = await AssetTransfer.findAndCountAll({
       where,
       limit,
@@ -441,6 +457,8 @@ class TransferService {
           model: Asset,
           as: 'asset',
           attributes: ['id', 'asset_code', 'name', 'status'],
+          where: Object.keys(assetWhere).length ? assetWhere : undefined,
+          required: Object.keys(assetWhere).length > 0,
         },
         {
           model: Department,

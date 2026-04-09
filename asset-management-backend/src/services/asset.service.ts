@@ -665,9 +665,33 @@ class AssetService {
     };
   }
 
-  async getPendingDisposalGrouped(): Promise<any[]> {
+  async getPendingDisposalGrouped(departmentId?: number): Promise<any[]> {
+    // Tìm tất cả asset_id đã có trong hồ sơ đang chờ xử lý (pending), để loại trừ
+    const { AssetDisposalCase } = await import('../models');
+    const activeCaseItems = await AssetDisposalItem.findAll({
+      include: [
+        {
+          model: AssetDisposalCase,
+          as: 'disposal_case',
+          where: { status: 'pending' },
+          required: true,
+          attributes: [],
+        },
+      ],
+      attributes: ['asset_id'],
+    });
+    const alreadyInCaseIds = activeCaseItems.map((i: any) => i.asset_id).filter(Boolean);
+
+    const where: any = { status: 'pending_disposal' };
+    if (alreadyInCaseIds.length > 0) {
+      where.id = { [Op.notIn]: alreadyInCaseIds };
+    }
+    if (departmentId) {
+      where.current_department_id = departmentId;
+    }
+
     const assets = await Asset.findAll({
-      where: { status: 'pending_disposal' },
+      where,
       include: [
         { model: Department, as: 'current_department', attributes: ['id', 'name'] },
       ],

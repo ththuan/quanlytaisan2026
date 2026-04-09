@@ -86,6 +86,7 @@ export interface MaintenanceRequestAttributes {
   rejected_at?: Date;
   linked_procurement_id?: number; // FK – phiếu Tăng tài sản được tạo từ đề nghị này
   linked_disposal_case_id?: number; // FK – hồ sơ thanh lý/tiêu hủy được tạo từ đề nghị này
+  source_inventory_report_id?: number; // FK – tạo tự động từ kiểm kê định kỳ
   created_at?: Date;
   updated_at?: Date;
 }
@@ -159,6 +160,7 @@ class MaintenanceRequest extends Model<MaintenanceRequestAttributes, Maintenance
   public rejected_at?: Date;
   public linked_procurement_id?: number;
   public linked_disposal_case_id?: number;
+  public source_inventory_report_id?: number;
   public readonly created_at!: Date;
   public readonly updated_at!: Date;
   
@@ -476,6 +478,14 @@ MaintenanceRequest.init(
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL',
       comment: 'FK tới asset_disposal_cases – hồ sơ thanh lý/tiêu hủy được tạo từ đề nghị này',
+    },
+    source_inventory_report_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: { model: 'inventory_reports', key: 'id' },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+      comment: 'FK tới inventory_reports – yêu cầu sửa chữa được tạo tự động từ kiểm kê định kỳ',
     },
   },
   {

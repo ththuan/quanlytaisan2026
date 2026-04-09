@@ -3,6 +3,7 @@ import app from './app';
 import envConfig from './config/env';
 import { testConnection } from './config/database';
 import logger from './utils/logger';
+import { startScheduler } from './utils/scheduler';
 
 const PORT = envConfig.port;
 const HOST = envConfig.host;
@@ -38,6 +39,7 @@ const startServer = async () => {
       logger.info(`Environment: ${envConfig.nodeEnv}`);
       logger.info(`API Documentation: http://${HOST}:${PORT}/api/docs`);
     });
+    startScheduler();
   } catch (error) {
     logger.error('Failed to start server:', error);
     process.exit(1);

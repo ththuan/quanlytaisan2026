@@ -610,6 +610,59 @@
             </div>
           </el-card>
 
+          <!-- Lịch sử thanh lý -->
+          <el-card
+            v-if="disposalHistory.length > 0"
+            class="info-card disposal-history-card"
+            shadow="never"
+          >
+            <template #header>
+              <div class="card-title">
+                <el-icon><Delete /></el-icon>
+                <span>Lịch sử thanh lý / tiêu hủy</span>
+              </div>
+            </template>
+            <div v-loading="loadingDisposalHistory" class="repair-history-content">
+              <div
+                v-for="dc in disposalHistory"
+                :key="dc.id"
+                class="repair-item"
+              >
+                <div class="repair-header">
+                  <el-tag :type="getDisposalStatusType(dc.status)" size="small">
+                    {{ getDisposalStatusText(dc.status) }}
+                  </el-tag>
+                  <el-tag type="info" size="small" style="margin-left:6px">
+                    {{ dc.disposal_type === 'liquidation' ? 'Thanh lý' : 'Tiêu hủy' }}
+                  </el-tag>
+                  <span class="repair-date">{{ formatDate(dc.created_at) }}</span>
+                </div>
+                <div class="repair-details">
+                  <div v-if="dc.code" class="repair-description">
+                    <span class="detail-label">Mã hồ sơ:</span>
+                    <span class="detail-text">{{ dc.code }}</span>
+                  </div>
+                  <div v-if="dc.decision_no" class="repair-description">
+                    <span class="detail-label">Số quyết định:</span>
+                    <span class="detail-text">{{ dc.decision_no }}</span>
+                  </div>
+                  <div v-if="dc.decision_date" class="repair-description">
+                    <span class="detail-label">Ngày quyết định:</span>
+                    <span class="detail-text">{{ formatDate(dc.decision_date) }}</span>
+                  </div>
+                  <div v-if="dc.creator" class="repair-requester">
+                    <span class="detail-label">Người lập hồ sơ:</span>
+                    <span class="detail-text">{{ dc.creator?.fullname || dc.creator?.username }}</span>
+                  </div>
+                  <div v-if="dc.notes" class="repair-description">
+                    <span class="detail-label">Ghi chú:</span>
+                    <span class="detail-text">{{ dc.notes }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-card>
+
           <!-- Hình ảnh tài sản -->
           <el-card
             class="info-card image-card"
@@ -695,6 +748,7 @@ import { ArrowLeft, Edit, Delete, Document, Location, Box, TrendCharts, Switch, 
 import AssetFormDialog from '@/components/Assets/AssetFormDialog.vue';
 import ReportDamageDialog from '@/components/Assets/ReportDamageDialog.vue';
 import { assetService } from '@/services/asset.service';
+import assetDisposalService from '@/services/assetDisposal.service';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import moment from 'moment';
 import { formatI18nOrRaw } from '@/utils/assetDisplay';
@@ -715,6 +769,8 @@ const transferHistory = ref<any[]>([]);
 const loadingHistory = ref(false);
 const repairHistory = ref<any[]>([]);
 const loadingRepairHistory = ref(false);
+const disposalHistory = ref<any[]>([]);
+const loadingDisposalHistory = ref(false);
 const qrCodeImage = ref<string | null>(null);
 const loadingQRCode = ref(false);
 const generatingQR = ref(false);
@@ -824,6 +880,7 @@ onMounted(async () => {
   await Promise.all([
     loadTransferHistory(id),
     loadRepairHistory(id),
+    loadDisposalHistory(id),
   ]);
   const categoryGroup = assetStore.currentAsset?.assetCategory?.category_group;
   if (categoryGroup !== 'nha_cua') {
@@ -857,6 +914,27 @@ const loadRepairHistory = async (assetId: number) => {
   }
 };
 
+const loadDisposalHistory = async (assetId: number) => {
+  loadingDisposalHistory.value = true;
+  try {
+    disposalHistory.value = await assetDisposalService.listByAsset(assetId);
+  } catch {
+    disposalHistory.value = [];
+  } finally {
+    loadingDisposalHistory.value = false;
+  }
+};
+
+const getDisposalStatusType = (status: string) => {
+  const map: Record<string, string> = { pending: 'warning', completed: 'success', cancelled: 'info' };
+  return (map[status] || 'info') as any;
+};
+
+const getDisposalStatusText = (status: string) => {
+  const map: Record<string, string> = { pending: 'Chờ xử lý', completed: 'Hoàn thành', cancelled: 'Đã hủy' };
+  return map[status] || status;
+};
+
 const getRepairStatusType = (status: string) => {
   const map: Record<string, string> = {
     new: 'info',
@@ -878,19 +956,21 @@ const getRepairStatusType = (status: string) => {
 
 const getRepairStatusText = (status: string) => {
   const map: Record<string, string> = {
-    new: 'Mới',
+    draft: 'Nháp',
+    new: 'Chờ phê duyệt',
     pending: 'Chờ phê duyệt',
     approved_by_head: 'Trưởng Đơn vị đã duyệt',
     approved_by_admin: 'Quản trị viên đã duyệt',
     approved_by_director: 'Giám hiệu đã duyệt',
     in_progress: 'Đang sửa chữa',
     repair_completed: 'Đã sửa xong - Chờ xác nhận',
-    repair_approved: 'Đã hoàn thành',
+    repair_approved: 'Xác nhận hoàn thành',
     completed: 'Hoàn thành',
     done: 'Hoàn thành',
     rejected_by_head: 'Trưởng Đơn vị từ chối',
     rejected_by_admin: 'Quản trị viên từ chối',
     rejected_by_director: 'Giám hiệu từ chối',
+    rejected_due_to_high_cost: 'Từ chối (chi phí cao)',
   };
   return map[status] || status;
 };

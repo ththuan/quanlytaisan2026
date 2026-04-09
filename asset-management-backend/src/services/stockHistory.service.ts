@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { StockReceipt, StockReceiptLine, StockIssue, StockIssueLine, StockItem, User } from '../models';
+import { StockReceipt, StockReceiptLine, StockIssue, StockIssueLine, StockItem, User, Department } from '../models';
 
 export interface StockHistoryQuery {
   from_date?: string;
@@ -105,6 +105,7 @@ class StockHistoryService {
               include: [{ model: StockItem, as: 'item', attributes: ['id', 'code', 'name', 'unit'] }],
             },
             { model: User, as: 'creator', attributes: ['id', 'username', 'fullname'], required: false },
+            { model: Department, as: 'department', attributes: ['id', 'name'], required: false },
           ] as any,
           order: [['issue_date', 'DESC'], ['id', 'DESC']],
         })
@@ -127,6 +128,8 @@ class StockHistoryService {
         notes: r.notes,
         location: r.location,
         purpose: r.purpose,
+        department_id: r.department_id || null,
+        department_name: r.department?.name || null,
         created_by: r.created_by,
         created_by_name: r.creator?.fullname || r.creator?.username || null,
       }));

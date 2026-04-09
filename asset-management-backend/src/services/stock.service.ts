@@ -24,6 +24,7 @@ export interface CreateIssueInput {
   location: string;
   purpose: string;
   notes?: string;
+  department_id?: number;
   lines: Array<{ item_id: number; quantity: number }>;
 }
 
@@ -213,6 +214,7 @@ class StockService {
           purpose: payload.purpose,
           notes: payload.notes || null,
           created_by: userId || null,
+          department_id: payload.department_id || null,
         } as any,
         { transaction }
       );

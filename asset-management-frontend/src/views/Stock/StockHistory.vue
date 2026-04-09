@@ -132,6 +132,9 @@
                 <div><strong>Hóa đơn:</strong> {{ row.invoice_no || '-' }}</div>
               </template>
               <template v-else>
+                <div v-if="row.department_name">
+                  <strong>Đơn vị:</strong> {{ row.department_name }}
+                </div>
                 <div><strong>Ở đâu:</strong> {{ row.location }}</div>
                 <div><strong>Vào việc:</strong> {{ row.purpose }}</div>
               </template>

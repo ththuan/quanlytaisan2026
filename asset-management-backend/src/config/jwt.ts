@@ -17,7 +17,7 @@ const jwtConfig: JWTConfig = {
     process.env.JWT_ACCESS_SECRET ||
     process.env.ACCESS_TOKEN_SECRET ||
     'your_super_secret_jwt_key_change_this_in_production',
-  accessExpiration: process.env.JWT_ACCESS_EXPIRATION || '15m',
+  accessExpiration: process.env.JWT_ACCESS_EXPIRATION || '31m',
   refreshExpiration: process.env.JWT_REFRESH_EXPIRATION || '7d',
   algorithm: 'HS256',
   issuer: 'asset-management-system',

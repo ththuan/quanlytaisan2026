@@ -482,17 +482,27 @@
           </el-table-column>
           <el-table-column
             label="Kết quả"
-            width="100"
+            width="130"
             align="center"
           >
             <template #default="{ row }">
-              <el-tag
-                v-if="row.inventory_detail"
-                :type="getStatusType(row.inventory_detail.check_status)"
-                size="small"
-              >
-                {{ getCheckStatusLabel(row.inventory_detail.check_status) }}
-              </el-tag>
+              <div v-if="row.inventory_detail">
+                <el-tag
+                  :type="getStatusType(row.inventory_detail.check_status)"
+                  size="small"
+                >
+                  {{ getCheckStatusLabel(row.inventory_detail.check_status) }}
+                </el-tag>
+                <el-tag
+                  v-if="row.inventory_detail.scan_method === 'manual_confirm'"
+                  type="warning"
+                  size="small"
+                  style="margin-top: 2px; display: block;"
+                  title="Xác nhận thủ công — QR không quét được"
+                >
+                  ⚠️ Thủ công
+                </el-tag>
+              </div>
               <el-tag
                 v-else
                 type="info"
@@ -504,6 +514,161 @@
           </el-table-column>
         </el-table>
       </div>
+    </el-card>
+
+    <!-- Kiểm kê theo nhóm (bạch items) -->
+    <el-card
+      v-if="batchGroups.length > 0"
+      style="margin-top: 16px;"
+    >
+      <template #header>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-weight:600;">
+            <el-icon style="margin-right:6px;vertical-align:-2px;"><Box /></el-icon>
+            Kiểm kê theo nhóm — Công cụ dụng cụ
+          </span>
+          <div>
+            <el-tag
+              v-if="batchUnconfirmedCount > 0"
+              type="warning"
+              style="margin-right:8px;"
+            >
+              {{ batchUnconfirmedCount }} nhóm chưa xác nhận
+            </el-tag>
+            <el-tag
+              v-else
+              type="success"
+            >
+              Đã xác nhận hết
+            </el-tag>
+          </div>
+        </div>
+      </template>
+      <el-alert
+        type="info"
+        :closable="false"
+        style="margin-bottom:12px;"
+        description="Tài sản dạng công cụ dụng cụ được kiểm kê theo nhóm. Chỉ cần đếm tổng số lượng rồi nhấn Xác nhận — không cần quét QR từng món."
+      />
+      <el-table
+        :data="batchGroups"
+        border
+        stripe
+      >
+        <el-table-column
+          prop="category_code"
+          label="Mã loại"
+          width="110"
+        />
+        <el-table-column
+          prop="category_name"
+          label="Tên danh mục"
+          min-width="200"
+        />
+        <el-table-column
+          prop="unit"
+          label="ĐVT"
+          width="70"
+          align="center"
+        />
+        <el-table-column
+          label="SL sổ sách"
+          prop="book_quantity"
+          width="105"
+          align="center"
+        />
+        <el-table-column
+          label="SL thực tế"
+          width="140"
+          align="center"
+        >
+          <template #default="{ row }">
+            <el-input-number
+              v-model="batchInputs[row.category_id].actual_quantity"
+              :min="0"
+              :max="row.book_quantity + 50"
+              size="small"
+              style="width:108px;"
+              :disabled="row.confirmed"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="Tình trạng"
+          width="158"
+        >
+          <template #default="{ row }">
+            <el-select
+              v-model="batchInputs[row.category_id].condition"
+              size="small"
+              :disabled="row.confirmed"
+            >
+              <el-option value="good" label="Đang dùng tốt" />
+              <el-option value="usable" label="Còn dùng được" />
+              <el-option value="needs_repair" label="Cần sửa" />
+            </el-select>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="Ghi chú"
+          min-width="130"
+        >
+          <template #default="{ row }">
+            <el-input
+              v-model="batchInputs[row.category_id].notes"
+              size="small"
+              :disabled="row.confirmed"
+              placeholder="Ghi chú..."
+            />
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="Kết quả"
+          width="110"
+          align="center"
+        >
+          <template #default="{ row }">
+            <el-tag
+              v-if="row.confirmed"
+              type="success"
+              size="small"
+            >
+              Đã xác nhận
+            </el-tag>
+            <el-tag
+              v-else
+              type="info"
+              size="small"
+            >
+              Chưa kiểm
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          width="100"
+          align="center"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <el-button
+              v-if="!row.confirmed"
+              type="primary"
+              size="small"
+              :loading="batchSaving === row.category_id"
+              @click="confirmBatchGroup(row)"
+            >
+              Xác nhận
+            </el-button>
+            <el-button
+              v-else
+              size="small"
+              @click="resetBatchGroup(row)"
+            >
+              Sửa lại
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
     </el-card>
 
     <!-- Check Asset Dialog -->
@@ -569,7 +734,7 @@
 
         <!-- Thông báo cho tài sản đã quét QR -->
         <el-alert
-          v-if="selectedAsset && canScanAsset(selectedAsset) && selectedAsset.inventory_detail"
+          v-if="selectedAsset && canScanAsset(selectedAsset) && selectedAsset.inventory_detail && !isManualConfirm"
           type="success"
           :closable="false"
           style="margin-bottom: 20px"
@@ -583,9 +748,40 @@
           </p>
         </el-alert>
 
+        <!-- Xác nhận thủ công - QR không quét được -->
+        <el-alert
+          v-if="isManualConfirm && selectedAsset && !selectedAsset.inventory_detail"
+          type="warning"
+          :closable="false"
+          style="margin-bottom: 20px"
+        >
+          <template #title>
+            <strong>⚠️ Xác nhận thủ công — Mã QR không quét được</strong>
+          </template>
+          <p style="margin: 8px 0 0 0; color: #606266;">
+            Hành động này được ghi lại để kiểm tra. Vui lòng chọn lý do bên dưới.
+            Số lượng sẽ tự động khớp với sổ sách. Chỉ cần xác nhận tình trạng tài sản.
+          </p>
+        </el-alert>
+
+        <!-- Xác nhận thủ công - hiện thị khi đã có inventory_detail có scan_method = manual_confirm -->
+        <el-alert
+          v-if="selectedAsset && selectedAsset.inventory_detail && selectedAsset.inventory_detail.scan_method === 'manual_confirm'"
+          type="warning"
+          :closable="false"
+          style="margin-bottom: 20px"
+        >
+          <template #title>
+            <strong>⚠️ Tài sản này được xác nhận thủ công (QR không quét được)</strong>
+          </template>
+          <p style="margin: 8px 0 0 0; color: #606266;">
+            Lý do: {{ manualReasonOptions.find(o => o.value === selectedAsset.inventory_detail?.manual_reason)?.label || selectedAsset.inventory_detail?.manual_reason || 'Không rõ' }}
+          </p>
+        </el-alert>
+
         <!-- Thông báo cho tài sản chưa quét QR (không nên xảy ra nhưng để phòng) -->
         <el-alert
-          v-if="selectedAsset && canScanAsset(selectedAsset) && !selectedAsset.inventory_detail"
+          v-if="selectedAsset && canScanAsset(selectedAsset) && !selectedAsset.inventory_detail && !isManualConfirm"
           type="warning"
           :closable="false"
           style="margin-bottom: 20px"
@@ -697,10 +893,29 @@
               placeholder="Ghi chú thêm về tài sản..."
             />
           </el-form-item>
+          <!-- Lý do không quét được QR: chỉ hiện khi xác nhận thủ công mới -->
+          <el-form-item
+            v-if="isManualConfirm && !selectedAsset?.inventory_detail"
+            label="Lý do không quét QR"
+            required
+          >
+            <el-select
+              v-model="checkForm.manual_reason"
+              placeholder="Chọn lý do..."
+              style="width: 100%"
+            >
+              <el-option
+                v-for="opt in manualReasonOptions"
+                :key="opt.value"
+                :value="opt.value"
+                :label="opt.label"
+              />
+            </el-select>
+          </el-form-item>
         </el-form>
       </div>
       <template #footer>
-        <el-button @click="() => { showCheckDialog = false; isFromScan = false; }">
+        <el-button @click="() => { showCheckDialog = false; isFromScan = false; isManualConfirm = false; }">
           Hủy
         </el-button>
         <el-button
@@ -719,10 +934,11 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { ArrowLeft, DocumentCopy, Select, Search, InfoFilled, Camera, Loading, Calendar, Timer, OfficeBuilding, Warning } from '@element-plus/icons-vue';
+import { ArrowLeft, DocumentCopy, Select, Search, InfoFilled, Camera, Loading, Calendar, Timer, OfficeBuilding, Warning, Box } from '@element-plus/icons-vue';
 import { useAuthStore } from '@/stores/auth.store';
 import inventoryService, { type InventoryRound, type InventoryReport } from '@/services/inventory.service';
 import { assetService } from '@/services/asset.service';
+import { assetCategoryService } from '@/services/assetCategory.service';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 
 const route = useRoute();
@@ -744,6 +960,12 @@ const hasChanges = ref(false);
 const searchText = ref('');
 const filterStatus = ref('');
 
+// ─── Batch tracking ──────────────────────────────────────────────────────────
+const categoriesMap = ref<Map<number, any>>(new Map());
+const batchInputs = ref<Record<number, { actual_quantity: number; condition: string; notes: string }>>({});
+const batchSaving = ref<number | null>(null);
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Barcode Scanner
 const scannedCode = ref('');
 const scanning = ref(false);
@@ -763,11 +985,19 @@ const cameraKey = ref(0); // Thay đổi key = Vue xóa DOM và tạo lại hoà
 const showCheckDialog = ref(false);
 const selectedAsset = ref<any>(null);
 const isFromScan = ref(false); // Track if dialog opened from QR scan
+const isManualConfirm = ref(false); // QR not scannable → manual confirmation with audit trail
+const manualReasonOptions = [
+  { value: 'qr_faded', label: 'Mã QR bị mờ / rách / hỏng' },
+  { value: 'inaccessible', label: 'Tài sản ở vị trí khó tiếp cận' },
+  { value: 'scanner_error', label: 'Thiết bị quét lỗi / hết pin' },
+  { value: 'other', label: 'Lý do khác' },
+];
 const checkForm = ref({
   actual_quantity: 1,
   asset_condition: 'good',
   check_status: 'matched',
   notes: '',
+  manual_reason: '',
 });
 
 // Computed
@@ -810,6 +1040,8 @@ const hasUnscannedAssets = computed(() => {
   return assets.value.some(asset => {
     // Chỉ tính tài sản có thể quét QR
     if (!canScanAsset(asset)) return false;
+    // Bỏ qua tài sản kiểm theo nhóm (batch)
+    if (isBatchAsset(asset)) return false;
     // Chưa có inventory_detail hoặc chưa được đánh dấu
     return !asset.inventory_detail;
   });
@@ -819,6 +1051,7 @@ const hasUnscannedAssets = computed(() => {
 const unscannedCount = computed(() => {
   return assets.value.filter(asset => {
     if (!canScanAsset(asset)) return false;
+    if (isBatchAsset(asset)) return false; // batch handled separately
     return !asset.inventory_detail;
   }).length;
 });
@@ -833,13 +1066,122 @@ const canScanAsset = (asset: any) => {
   return !nonScannableUnits.includes(unit);
 };
 
-// Kiểm tra xem có tài sản nào có thể quét QR không
+// Kiểm tra có tài sản nào có thể quét QR không
 const hasScannableAssets = computed(() => {
-  return assets.value.some(asset => canScanAsset(asset));
+  return assets.value.some(asset => canScanAsset(asset) && !isBatchAsset(asset));
 });
 
+// ─── Batch computed / methods ─────────────────────────────────────────────────
+const isBatchAsset = (asset: any): boolean => {
+  if (!asset?.category_id) return false;
+  return categoriesMap.value.get(asset.category_id)?.tracking_type === 'batch';
+};
+
+const batchGroups = computed(() => {
+  const groups = new Map<number, {
+    category_id: number; category_name: string; category_code: string;
+    unit: string; book_quantity: number; assets: any[]; confirmed: boolean;
+  }>();
+
+  for (const asset of assets.value) {
+    if (!isBatchAsset(asset)) continue;
+    const catId = asset.category_id;
+    if (!catId) continue;
+    const cat = categoriesMap.value.get(catId);
+    if (!groups.has(catId)) {
+      if (!batchInputs.value[catId]) {
+        batchInputs.value[catId] = { actual_quantity: 0, condition: 'good', notes: '' };
+      }
+      groups.set(catId, {
+        category_id: catId,
+        category_name: cat?.name || asset.category || 'Không rõ',
+        category_code: asset.category_code || cat?.code || '',
+        unit: asset.unit || cat?.unit || 'Cái',
+        book_quantity: 0,
+        assets: [],
+        confirmed: false,
+      });
+    }
+    const group = groups.get(catId)!;
+    group.book_quantity += (asset.quantity || 1);
+    group.assets.push(asset);
+  }
+
+  for (const group of groups.values()) {
+    group.confirmed = group.assets.length > 0 && group.assets.every(a => !!a.inventory_detail);
+    if (group.confirmed && batchInputs.value[group.category_id]?.actual_quantity === 0) {
+      batchInputs.value[group.category_id].actual_quantity =
+        group.assets.reduce((s, a) => s + (a.inventory_detail?.actual_quantity ?? 0), 0);
+    }
+  }
+  return Array.from(groups.values());
+});
+
+const batchUnconfirmedCount = computed(() => batchGroups.value.filter(g => !g.confirmed).length);
+
+const confirmBatchGroup = async (group: { category_id: number; category_name: string; book_quantity: number; assets: any[]; unit: string }) => {
+  const input = batchInputs.value[group.category_id];
+  if (!input || input.actual_quantity === undefined || input.actual_quantity < 0) {
+    ElMessage.warning('Vui lòng nhập số lượng thực tế (được phép là 0)');
+    return;
+  }
+  batchSaving.value = group.category_id;
+  try {
+    let remaining = Math.round(input.actual_quantity);
+    for (const asset of group.assets) {
+      const bookQty = asset.quantity || 1;
+      const isMatched = remaining > 0;
+      const actualQty = isMatched ? Math.min(bookQty, remaining) : 0;
+      if (isMatched) remaining -= actualQty;
+      const checkData = {
+        actual_quantity: actualQty,
+        check_status: isMatched ? 'matched' : 'missing',
+        asset_condition: input.condition,
+        notes: (input.notes ? input.notes + ' — ' : '') + 'Kiểm theo nhóm',
+        suggest_repair: input.condition === 'needs_repair',
+        suggest_disposal: false,
+      };
+      await inventoryService.saveCheck(report.value!.id, asset.id, checkData);
+      asset.inventory_detail = { ...checkData };
+    }
+    const missing = group.book_quantity - Math.round(input.actual_quantity);
+    ElMessage.success(
+      missing > 0
+        ? `Nhóm “${group.category_name}”: ${input.actual_quantity}/${group.book_quantity} — thiếu ${missing} ${group.unit}`
+        : `Nhóm “${group.category_name}”: đủ ${input.actual_quantity}/${group.book_quantity}`
+    );
+  } catch (err: any) {
+    ElMessage.error(err?.response?.data?.message || 'Lỗi khi xác nhận nhóm');
+  } finally {
+    batchSaving.value = null;
+  }
+};
+
+const resetBatchGroup = (group: { category_id: number; assets: any[] }) => {
+  for (const asset of group.assets) asset.inventory_detail = null;
+  batchInputs.value[group.category_id].actual_quantity = 0;
+};
+
+const loadCategories = async () => {
+  try {
+    const res = await assetCategoryService.getAll(true);
+    const map = new Map<number, any>();
+    for (const cat of res.data) {
+      map.set(cat.id, cat);
+      if (cat.tracking_type === 'batch' && !batchInputs.value[cat.id]) {
+        batchInputs.value[cat.id] = { actual_quantity: 0, condition: 'good', notes: '' };
+      }
+    }
+    categoriesMap.value = map;
+  } catch {
+    // non-critical — batch section just won’t appear if categories fail to load
+  }
+};
+// ─── End batch ────────────────────────────────────────────────────────────────
+
 const filteredAssets = computed(() => {
-  let result = assets.value;
+  // Exclude batch assets — they appear in the batch section below
+  let result = assets.value.filter(a => !isBatchAsset(a));
 
   if (searchText.value) {
     const search = searchText.value.toLowerCase();
@@ -1111,22 +1453,33 @@ const handleRowClick = (row: any) => {
     // Đã quét QR rồi → cho phép chỉnh sửa tình trạng
     openCheckDialog(row, false);
   } else {
-    // Chưa quét QR → yêu cầu quét QR trước
-    ElMessage.warning({
-      message: `Tài sản "${row.name || row.asset_code}" có mã QR. Vui lòng quét mã QR để xác nhận tài sản còn tồn tại. Nếu không quét được, tài sản sẽ được đánh dấu là "Thiếu" (mất) khi nộp báo cáo.`,
-      duration: 6000,
-      showClose: true
-    });
-    // Focus vào ô quét QR
-    nextTick(() => {
-      scannerInputRef.value?.focus();
+    // Chưa quét QR → hỏi người dùng: quét QR hay xác nhận thủ công
+    ElMessageBox.confirm(
+      `Tài sản "${row.name || row.asset_code}" chưa được quét QR. Bạn muốn làm gì?`,
+      'Chọn phương thức kiểm kê',
+      {
+        distinguishCancelAndClose: true,
+        confirmButtonText: 'QR không quét được — Xác nhận thủ công',
+        cancelButtonText: 'Quét mã QR',
+        type: 'warning',
+      }
+    ).then(() => {
+      // confirmButton: QR không quét được → mở dialog xác nhận thủ công
+      openCheckDialog(row, false, true);
+    }).catch((action: string) => {
+      if (action === 'cancel') {
+        // cancelButton: focus về ô quét QR
+        nextTick(() => { scannerInputRef.value?.focus(); });
+      }
+      // close (X) → không làm gì
     });
   }
 };
 
-const openCheckDialog = (row: any, fromScan: boolean = false) => {
+const openCheckDialog = (row: any, fromScan: boolean = false, manualConfirm: boolean = false) => {
   selectedAsset.value = row;
   isFromScan.value = fromScan;
+  isManualConfirm.value = manualConfirm;
   
   if (row.inventory_detail) {
     // Đã có kết quả kiểm kê → cho phép chỉnh sửa
@@ -1135,17 +1488,20 @@ const openCheckDialog = (row: any, fromScan: boolean = false) => {
       asset_condition: row.inventory_detail.asset_condition,
       check_status: row.inventory_detail.check_status,
       notes: row.inventory_detail.notes || '',
+      manual_reason: row.inventory_detail.manual_reason || '',
     };
   } else {
-    // Chưa có kết quả kiểm kê (chỉ xảy ra với tài sản diện tích)
+    // Chưa có kết quả kiểm kê
     const isAreaAsset = !canScanAsset(row);
-    const defaultQuantity = isAreaAsset ? (row.quantity || 1) : 1;
+    // Manual confirm: use book quantity; area asset: use book quantity; otherwise default 1
+    const defaultQuantity = (manualConfirm || isAreaAsset) ? (row.quantity || 1) : 1;
     
     checkForm.value = {
       actual_quantity: defaultQuantity,
       asset_condition: row.status === 'pending_disposal' ? 'damaged' : 'good',
       check_status: 'matched',
       notes: row.status === 'pending_disposal' ? 'Tài sản chờ thanh lý - đề nghị đưa vào hồ sơ thanh lý trong đợt này' : '',
+      manual_reason: '',
     };
   }
   showCheckDialog.value = true;
@@ -1297,14 +1653,38 @@ const saveCheck = async () => {
   const isAreaAsset = !canScanAsset(selectedAsset.value);
   const isScannedAsset = !isAreaAsset && selectedAsset.value.inventory_detail;
 
+  // Validate manual confirm: require a reason
+  if (isManualConfirm.value && !selectedAsset.value.inventory_detail && !checkForm.value.manual_reason) {
+    ElMessage.error('Vui lòng chọn lý do không quét được mã QR');
+    return;
+  }
+
   savingCheck.value = true;
   try {
     // Với tài sản đã quét QR: chỉ cho phép cập nhật tình trạng, giữ nguyên số lượng và kết quả
     const isPendingDisposal = selectedAsset.value.status === 'pending_disposal';
+
+    // Determine scan_method for audit trail
+    let scanMethod: string;
+    if (isManualConfirm.value) {
+      scanMethod = 'manual_confirm';
+    } else if (isFromScan.value) {
+      scanMethod = 'qr_scan';
+    } else if (isAreaAsset) {
+      scanMethod = 'area_manual';
+    } else {
+      scanMethod = 'qr_scan'; // editing an already-scanned asset
+    }
+
     const data: any = {
       asset_id: selectedAsset.value.id,
       asset_condition: checkForm.value.asset_condition, // Luôn cho phép chỉnh sửa tình trạng
+      scan_method: scanMethod,
     };
+
+    if (isManualConfirm.value && !selectedAsset.value.inventory_detail) {
+      data.manual_reason = checkForm.value.manual_reason;
+    }
     // NGUYÊN TẮC: Không thể vừa sửa chữa vừa thanh lý
     // - needs_repair: Tài sản CÒN SỬA ĐƯỢC → suggest_repair = true, suggest_disposal = false
     // - damaged: Tài sản HỎNG NẶNG, SỬA KHÔNG ĐƯỢC → suggest_disposal = true, suggest_repair = false
@@ -1365,6 +1745,7 @@ const saveCheck = async () => {
     hasChanges.value = true;
     showCheckDialog.value = false;
     isFromScan.value = false;
+    isManualConfirm.value = false;
     ElMessage.success('Đã lưu kết quả kiểm kê');
   } catch (error: any) {
     ElMessage.error(error.response?.data?.message || 'Có lỗi xảy ra');
@@ -1921,6 +2302,7 @@ onMounted(async () => {
     return;
   }
   
+  await loadCategories();
   await fetchData();
   
   // Tự động focus vào input scanner sau khi load xong

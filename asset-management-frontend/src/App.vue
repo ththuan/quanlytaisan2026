@@ -1,19 +1,14 @@
 <template>
   <div id="app">
-    <router-view v-slot="{ Component }">
-      <transition
-        name="app-view"
-        mode="out-in"
-      >
-        <component :is="Component" />
-      </transition>
-    </router-view>
+    <router-view />
   </div>
 </template>
 
 <script setup lang="ts">
-// Auth is initialized in main.ts before app mounts.
-// No additional setup needed here.
+import { useIdleTimeout } from '@/composables/useIdleTimeout';
+
+// Tự động logout sau 30 phút không hoạt động
+useIdleTimeout();
 </script>
 
 <style>

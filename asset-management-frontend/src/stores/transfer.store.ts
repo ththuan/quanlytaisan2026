@@ -32,8 +32,8 @@ export const useTransferStore = defineStore('transfer', {
   }),
 
   actions: {
-    async fetchTransfers(params?: any) {
-      this.loading = true;
+    async fetchTransfers(params?: any, silent = false) {
+      if (!silent) this.loading = true;
       this.error = null;
       try {
         const response = await transferService.getAll(params);
@@ -43,7 +43,7 @@ export const useTransferStore = defineStore('transfer', {
         this.error = error.response?.data?.message || 'Failed to fetch transfers';
         throw error;
       } finally {
-        this.loading = false;
+        if (!silent) this.loading = false;
       }
     },
 
@@ -92,7 +92,6 @@ export const useTransferStore = defineStore('transfer', {
     },
 
     async approveTransfer(id: number) {
-      this.loading = true;
       this.error = null;
       try {
         const response = await transferService.approve(id);
@@ -100,13 +99,10 @@ export const useTransferStore = defineStore('transfer', {
       } catch (error: any) {
         this.error = error.response?.data?.message || 'Failed to approve transfer';
         throw error;
-      } finally {
-        this.loading = false;
       }
     },
 
     async rejectTransfer(id: number, notes?: string) {
-      this.loading = true;
       this.error = null;
       try {
         const response = await transferService.reject(id, notes);
@@ -114,8 +110,6 @@ export const useTransferStore = defineStore('transfer', {
       } catch (error: any) {
         this.error = error.response?.data?.message || 'Failed to reject transfer';
         throw error;
-      } finally {
-        this.loading = false;
       }
     },
   },

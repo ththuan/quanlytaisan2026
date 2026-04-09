@@ -9,8 +9,6 @@ services:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
       POSTGRES_DB: ${DB_NAME:-asset_management}
-    ports:
-      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -28,25 +26,35 @@ services:
       target: production
     container_name: asset-management-backend
     restart: unless-stopped
-    ports:
-      - "${BACKEND_PORT:-5000}:5000"
     environment:
-      NODE_ENV: ${NODE_ENV:-production}
+      NODE_ENV: production
       PORT: 5000
       HOST: 0.0.0.0
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-asset_management}
       DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
-      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      DB_PASSWORD: ${DB_PASSWORD}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      JWT_SECRET: ${JWT_SECRET}
+      DEFAULT_PASSWORD: ${DEFAULT_PASSWORD:-Ctec@123}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      DB_POOL_MAX: ${DB_POOL_MAX:-10}
+      DB_POOL_MIN: ${DB_POOL_MIN:-2}
+      DB_POOL_IDLE: ${DB_POOL_IDLE:-30000}
+      DB_POOL_ACQUIRE: ${DB_POOL_ACQUIRE:-30000}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_ALLOWED_DOMAIN: ${GOOGLE_ALLOWED_DOMAIN:-ctec.edu.vn}
+      ADMIN_GOOGLE_EMAIL: ${ADMIN_GOOGLE_EMAIL:-}
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - asset-management-network
+    volumes:
+      - backend_backups:/app/backups
+      - ./asset-management-backend/storage:/app/storage
+      - ./asset-management-backend/logs:/app/logs
     command: sh -c "npm run migrate && npm run start"
 
   frontend:
@@ -54,12 +62,28 @@ services:
       context: ./asset-management-frontend
       dockerfile: Dockerfile
       target: production
+      args:
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     container_name: asset-management-frontend
     restart: unless-stopped
-    ports:
-      - "${FRONTEND_PORT:-3000}:80"
     depends_on:
       - backend
+    networks:
+      - asset-management-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: asset-management-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+      - frontend
     networks:
       - asset-management-network
 
@@ -67,6 +91,9 @@ volumes:
   postgres_data:
     external: true
     name: quanlytaisan_postgres_data
+  backend_backups:
+    external: true
+    name: quanlytaisan_backend_backups
 
 networks:
   asset-management-network:

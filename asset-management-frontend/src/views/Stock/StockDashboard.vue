@@ -16,14 +16,14 @@
               @clear="fetchItems"
             />
             <el-button
-              v-if="!authStore.isDirector"
+              v-if="authStore.isAdmin"
               type="primary"
               @click="openReceipt"
             >
               Nhập kho
             </el-button>
             <el-button
-              v-if="!authStore.isDirector"
+              v-if="authStore.isAdmin"
               type="warning"
               @click="openIssue"
             >
@@ -129,10 +129,10 @@
             style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="Vận đơn Shopee">
+        <el-form-item label="Số vận đơn">
           <el-input
             v-model="receiptForm.shopee_waybill"
-            placeholder="Nhập mã vận đơn Shopee"
+            placeholder="Mã vận đơn Shopee, GHN, Viettel Post… (tuỳ chọn)"
           />
         </el-form-item>
         <el-form-item label="Nhà cung cấp">
@@ -158,13 +158,19 @@
         <el-divider content-position="left">
           Dòng nhập
         </el-divider>
-        <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
           <el-button
             type="primary"
             @click="addReceiptLine"
           >
             Thêm dòng
           </el-button>
+          <div
+            v-if="receiptTotalAmount > 0"
+            style="font-weight:600; color:#303133; font-size:14px"
+          >
+            Tổng giá trị: <span style="color:#e6a23c">{{ formatCurrency(receiptTotalAmount) }}</span>
+          </div>
         </div>
 
         <el-table
@@ -173,37 +179,48 @@
           stripe
           size="small"
         >
+          <!-- Cột Vật tư: dùng autocomplete để tìm có sẵn HOẶC tạo mới -->
           <el-table-column
-            label="Vật tư"
+            label="Tên vật tư"
             min-width="280"
           >
             <template #default="{ row }">
-              <el-select
-                v-model="row.item_id"
-                filterable
-                clearable
-                placeholder="Chọn vật tư"
+              <el-autocomplete
+                v-model="row.item_search_text"
+                :fetch-suggestions="(q: string, cb: (s: any[]) => void) => suggestReceiptItems(q, cb)"
+                placeholder="Gõ để tìm hoặc nhập tên vật tư mới"
                 style="width:100%"
-                @change="() => syncLineFromItem(row)"
+                clearable
+                @select="(s: any) => onReceiptItemSelect(row, s)"
+                @change="(v: string) => onReceiptItemTextChange(row, v)"
               >
-                <el-option
-                  v-for="it in items"
-                  :key="it.id"
-                  :label="`${it.code} - ${it.name}`"
-                  :value="it.id"
-                />
-              </el-select>
-              <div style="margin-top: 6px;">
-                <el-input
-                  v-model="row.item_name"
-                  placeholder="Hoặc nhập tên vật tư mới"
-                />
+                <template #default="{ item }">
+                  <div style="display:flex; justify-content:space-between; align-items:center; gap:8px">
+                    <span><b>{{ item.code }}</b> — {{ item.name }}</span>
+                    <el-tag
+                      size="small"
+                      :type="Number(item.on_hand) > 0 ? 'success' : 'info'"
+                    >
+                      Tồn: {{ item.on_hand }}
+                    </el-tag>
+                  </div>
+                </template>
+              </el-autocomplete>
+              <div style="margin-top:3px; font-size:11px; line-height:1.4">
+                <span
+                  v-if="row.item_id"
+                  style="color:#409eff"
+                >↩ Nhập thêm vào kho (đã có trong danh mục)</span>
+                <span
+                  v-else-if="row.item_search_text?.trim()"
+                  style="color:#67c23a"
+                >✚ Sẽ tạo mới vật tư "{{ row.item_search_text.trim() }}" vào danh mục</span>
               </div>
             </template>
           </el-table-column>
           <el-table-column
             label="ĐVT"
-            width="120"
+            width="100"
           >
             <template #default="{ row }">
               <el-input
@@ -226,8 +243,8 @@
             </template>
           </el-table-column>
           <el-table-column
-            label="Đơn giá"
-            width="160"
+            label="Đơn giá (đ)"
+            width="150"
             align="right"
           >
             <template #default="{ row }">
@@ -241,7 +258,18 @@
             </template>
           </el-table-column>
           <el-table-column
-            width="70"
+            label="Thành tiền"
+            width="130"
+            align="right"
+          >
+            <template #default="{ row }">
+              <span style="color:#e6a23c; font-weight:500">
+                {{ formatCurrency(row.quantity * row.unit_price) }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            width="60"
             align="center"
           >
             <template #default="{ $index }">
@@ -289,16 +317,32 @@
             style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="Ở đâu">
+        <el-form-item label="Đơn vị nhận">
+          <el-select
+            v-model="issueForm.department_id"
+            filterable
+            clearable
+            placeholder="Chọn đơn vị (nếu có)"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="dept in departmentStore.departments"
+              :key="dept.id"
+              :label="dept.name"
+              :value="dept.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="Nơi sử dụng">
           <el-input
             v-model="issueForm.location"
-            placeholder="VD: Tầng 3, Khu A"
+            placeholder="VD: Phòng 301, Tầng 3 Khu A, Sân thể dục…"
           />
         </el-form-item>
-        <el-form-item label="Vào việc gì">
+        <el-form-item label="Mục đích / công việc">
           <el-input
             v-model="issueForm.purpose"
-            placeholder="VD: Sửa điện phòng 301"
+            placeholder="VD: Sửa điện, thay ổ cắm, bảo trì điều hòa…"
           />
         </el-form-item>
         <el-form-item label="Ghi chú">
@@ -335,34 +379,66 @@
               <el-select
                 v-model="row.item_id"
                 filterable
-                placeholder="Chọn vật tư"
+                placeholder="Chọn vật tư cần xuất"
                 style="width:100%"
+                @change="() => onIssueItemChange(row)"
               >
                 <el-option
                   v-for="it in items"
                   :key="it.id"
-                  :label="`${it.code} - ${it.name} (Tồn: ${it.on_hand})`"
+                  :label="`${it.code} - ${it.name}`"
                   :value="it.id"
                   :disabled="Number(it.on_hand) <= 0"
-                />
+                >
+                  <div style="display:flex; justify-content:space-between; align-items:center">
+                    <span>{{ it.code }} — {{ it.name }}</span>
+                    <el-tag
+                      size="small"
+                      :type="Number(it.on_hand) > 0 ? 'success' : 'danger'"
+                    >
+                      Tồn: {{ it.on_hand }} {{ it.unit }}
+                    </el-tag>
+                  </div>
+                </el-option>
               </el-select>
+              <div
+                v-if="row.item_id !== null"
+                style="margin-top:3px; font-size:11px; color:#606266;"
+              >
+                <span v-if="row.max_qty > 0">
+                  Hiện tồn kho: <b style="color:#67c23a">{{ row.max_qty }}</b>
+                  {{ items.find(i => i.id === row.item_id)?.unit || '' }}
+                  — có thể xuất tối đa {{ row.max_qty }}
+                </span>
+                <span
+                  v-else
+                  style="color:#f56c6c"
+                >⚠ Vật tư này đã hết hàng trong kho</span>
+              </div>
             </template>
           </el-table-column>
           <el-table-column
-            label="SL"
-            width="110"
+            label="SL xuất"
+            width="130"
             align="center"
           >
             <template #default="{ row }">
               <el-input-number
                 v-model="row.quantity"
                 :min="1"
-                :max="100000"
+                :max="row.max_qty || 100000"
+                :disabled="row.item_id !== null && row.max_qty === 0"
               />
+              <div
+                v-if="row.item_id !== null && row.max_qty > 0 && row.quantity > row.max_qty"
+                style="color:#f56c6c; font-size:11px; margin-top:2px"
+              >
+                Vượt tồn kho!
+              </div>
             </template>
           </el-table-column>
           <el-table-column
-            width="70"
+            width="60"
             align="center"
           >
             <template #default="{ $index }">
@@ -395,14 +471,16 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { useAuthStore } from '@/stores/auth.store';
+import { useDepartmentStore } from '@/stores/department.store';
 import stockService, { type StockItem } from '@/services/stock.service';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const departmentStore = useDepartmentStore();
 
 const loading = ref(false);
 const saving = ref(false);
@@ -426,6 +504,7 @@ const issueForm = reactive<any>({
   location: '',
   purpose: '',
   notes: '',
+  department_id: null,
   lines: [] as any[],
 });
 
@@ -443,6 +522,7 @@ const fetchItems = async () => {
 
 onMounted(() => {
   fetchItems();
+  departmentStore.fetchDepartments({ limit: 1000 });
 });
 
 const goHistory = () => {
@@ -465,6 +545,7 @@ const openIssue = () => {
   issueForm.location = '';
   issueForm.purpose = '';
   issueForm.notes = '';
+  issueForm.department_id = null;
   issueForm.lines = [];
   addIssueLine();
   issueVisible.value = true;
@@ -473,7 +554,7 @@ const openIssue = () => {
 const addReceiptLine = () => {
   receiptForm.lines.push({
     item_id: null,
-    item_name: '',
+    item_search_text: '',  // single unified field for autocomplete
     unit: 'Cái',
     category: '',
     min_stock: 0,
@@ -486,20 +567,86 @@ const addIssueLine = () => {
   issueForm.lines.push({
     item_id: null,
     quantity: 1,
+    max_qty: 100000,  // dynamically updated when item is selected
   });
 };
 
-const syncLineFromItem = (row: any) => {
-  const it = items.value.find((x) => x.id === row.item_id);
-  if (!it) return;
-  row.unit = it.unit || row.unit;
-  row.category = it.category || row.category;
-  row.min_stock = it.min_stock ?? row.min_stock;
-  if (!row.item_name) row.item_name = it.name;
+// Autocomplete: search catalog for receipt lines
+const suggestReceiptItems = (query: string, callback: Function) => {
+  const q = (query || '').toLowerCase().trim();
+  const results = (q
+    ? items.value.filter(it =>
+        it.name.toLowerCase().includes(q) ||
+        it.code.toLowerCase().includes(q)
+      )
+    : items.value.slice(0, 20)
+  ).map(it => ({ ...it, value: it.name }));
+  callback(results);
 };
+
+// When user selects an existing catalog item in receipt
+const onReceiptItemSelect = (row: any, selected: any) => {
+  row.item_id = selected.id;
+  row.item_search_text = selected.name;
+  row.unit = selected.unit || 'Cái';
+  row.category = selected.category || '';
+  row.min_stock = selected.min_stock || 0;
+};
+
+// When autocomplete text changes manually (user clears or edits after selecting)
+const onReceiptItemTextChange = (row: any, value: string) => {
+  if (!value?.trim()) {
+    row.item_id = null;
+    row.unit = 'Cái';
+    row.category = '';
+    row.min_stock = 0;
+    return;
+  }
+  // If the text no longer matches the selected item's name → deselect (user typed new name)
+  if (row.item_id) {
+    const selected = items.value.find(i => i.id === row.item_id);
+    if (!selected || selected.name !== value) {
+      row.item_id = null;
+    }
+  }
+};
+
+// When issue item is selected: update max_qty from on_hand
+const onIssueItemChange = (row: any) => {
+  const it = items.value.find(i => i.id === row.item_id);
+  if (it) {
+    row.max_qty = Math.max(0, Number(it.on_hand) || 0);
+    if (row.quantity > row.max_qty && row.max_qty > 0) {
+      row.quantity = row.max_qty;
+    }
+  } else {
+    row.max_qty = 100000;
+  }
+};
+
+// Total amount for receipt form
+const receiptTotalAmount = computed(() =>
+  receiptForm.lines.reduce((sum: number, l: any) => sum + (l.quantity || 0) * (l.unit_price || 0), 0)
+);
+
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
 
 const submitReceipt = async () => {
   if (!receiptForm.lines.length) return ElMessage.error('Phải có ít nhất 1 dòng nhập');
+
+  // Validate: mỗi dòng phải có tên vật tư
+  for (const l of receiptForm.lines) {
+    if (!l.item_id && !(l.item_search_text || '').trim()) {
+      ElMessage.error('Vui lòng nhập tên vật tư cho tất cả dòng (chọn có sẵn hoặc gõ tên mới)');
+      return;
+    }
+    if (!l.quantity || l.quantity < 1) {
+      ElMessage.error('Số lượng mỗi dòng phải ≥ 1');
+      return;
+    }
+  }
+
   saving.value = true;
   try {
     const payload = {
@@ -510,7 +657,7 @@ const submitReceipt = async () => {
       notes: receiptForm.notes || null,
       lines: receiptForm.lines.map((l: any) => ({
         item_id: l.item_id || null,
-        item_name: l.item_id ? null : (l.item_name || '').trim(),
+        item_name: l.item_id ? null : (l.item_search_text || '').trim(),
         unit: l.unit || 'Cái',
         category: l.category || null,
         min_stock: l.min_stock ?? 0,
@@ -542,6 +689,7 @@ const submitIssue = async () => {
       location: issueForm.location,
       purpose: issueForm.purpose,
       notes: issueForm.notes || null,
+      department_id: issueForm.department_id || null,
       lines: issueForm.lines.map((l: any) => ({
         item_id: l.item_id,
         quantity: l.quantity,
@@ -579,5 +727,13 @@ const submitIssue = async () => {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+:deep(.el-autocomplete) {
+  width: 100%;
+}
+
+:deep(.el-autocomplete-suggestion__wrap) {
+  max-height: 280px;
 }
 </style>

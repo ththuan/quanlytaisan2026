@@ -33,6 +33,10 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Build args for Vite env vars (passed at build time)
+ARG VITE_GOOGLE_CLIENT_ID=""
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
+
 # Build application
 RUN npm run build
 

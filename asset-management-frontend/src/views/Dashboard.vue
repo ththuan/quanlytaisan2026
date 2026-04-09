@@ -7,13 +7,7 @@
           Tổng quan hoạt động quản lý tài sản
         </p>
       </div>
-      <div class="dashboard-filters">
-        <el-segmented
-          v-model="timeRange"
-          :options="timeRangeOptions"
-          size="default"
-        />
-      </div>
+
     </div>
 
     <el-row
@@ -37,12 +31,19 @@
             </el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value text-truncate">
-              {{ formatNumber(stats.assetsTotal) }}
-            </div>
-            <div class="stat-label">
-              Tổng tài sản
-            </div>
+            <el-skeleton
+              v-if="loading"
+              :rows="1"
+              animated
+            />
+            <template v-else>
+              <div class="stat-value text-truncate">
+                {{ formatNumber(stats.assetsTotal) }}
+              </div>
+              <div class="stat-label">
+                Tổng tài sản
+              </div>
+            </template>
           </div>
         </el-card>
       </el-col>
@@ -56,7 +57,7 @@
         <el-card
           class="stat-card stat-clickable"
           shadow="hover"
-          @click="$router.push('/maintenance')"
+          @click="$router.push('/purchase-requests')"
         >
           <div class="stat-icon procurements-icon">
             <el-icon size="24">
@@ -64,12 +65,19 @@
             </el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value text-truncate">
-              {{ formatNumber(stats.procurements) }}
-            </div>
-            <div class="stat-label">
-              Mua sắm
-            </div>
+            <el-skeleton
+              v-if="loading"
+              :rows="1"
+              animated
+            />
+            <template v-else>
+              <div class="stat-value text-truncate">
+                {{ formatNumber(stats.purchaseRequestsTotal) }}
+              </div>
+              <div class="stat-label">
+                Mua sắm
+              </div>
+            </template>
           </div>
         </el-card>
       </el-col>
@@ -91,12 +99,19 @@
             </el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value text-truncate">
-              {{ formatNumber(stats.maintenancePending) }}
-            </div>
-            <div class="stat-label">
-              Sửa chữa
-            </div>
+            <el-skeleton
+              v-if="loading"
+              :rows="1"
+              animated
+            />
+            <template v-else>
+              <div class="stat-value text-truncate">
+                {{ formatNumber(stats.repairTotal) }}
+              </div>
+              <div class="stat-label">
+                Sửa chữa
+              </div>
+            </template>
           </div>
         </el-card>
       </el-col>
@@ -118,12 +133,19 @@
             </el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value text-truncate">
-              {{ formatNumber(stats.transfersTotal) }}
-            </div>
-            <div class="stat-label">
-              Điều chuyển
-            </div>
+            <el-skeleton
+              v-if="loading"
+              :rows="1"
+              animated
+            />
+            <template v-else>
+              <div class="stat-value text-truncate">
+                {{ formatNumber(stats.transfersTotal) }}
+              </div>
+              <div class="stat-label">
+                Điều chuyển
+              </div>
+            </template>
           </div>
         </el-card>
       </el-col>
@@ -145,12 +167,19 @@
             </el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value text-truncate">
-              {{ formatNumber(inventoryPending) }}
-            </div>
-            <div class="stat-label">
-              Kiểm kê
-            </div>
+            <el-skeleton
+              v-if="loading"
+              :rows="1"
+              animated
+            />
+            <template v-else>
+              <div class="stat-value text-truncate">
+                {{ formatNumber(inventoryPending) }}
+              </div>
+              <div class="stat-label">
+                Kiểm kê
+              </div>
+            </template>
           </div>
         </el-card>
       </el-col>
@@ -172,12 +201,19 @@
             </el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value text-truncate">
-              {{ formatNumber(disposalPending) }}
-            </div>
-            <div class="stat-label">
-              Đề nghị thanh lý
-            </div>
+            <el-skeleton
+              v-if="loading"
+              :rows="1"
+              animated
+            />
+            <template v-else>
+              <div class="stat-value text-truncate">
+                {{ formatNumber(disposalPending) }}
+              </div>
+              <div class="stat-label">
+                Đề nghị thanh lý
+              </div>
+            </template>
           </div>
         </el-card>
       </el-col>
@@ -334,8 +370,6 @@ import * as dashboardService from '@/services/dashboard.service';
 import { inventoryService } from '@/services/inventory.service';
 import { useAuthStore } from '@/stores/auth.store';
 
-type TimeRange = 'last30days' | 'currentYear';
-
 const { t } = useI18n();
 const router = useRouter();
 const loading = ref(true);
@@ -345,11 +379,6 @@ const isAdminOrDirector = computed(() => {
   return role === 'admin' || role === 'director';
 });
 
-const timeRange = ref<TimeRange>('last30days');
-const timeRangeOptions = [
-  { label: '30 ngày gần nhất', value: 'last30days' },
-  { label: 'Năm hiện tại', value: 'currentYear' },
-];
 
 const stats = reactive({
   assetsTotal: 0,
@@ -360,6 +389,10 @@ const stats = reactive({
   stockIssues: 0,
   itemsTotal: 0,
   maintenancePending: 0,
+  purchaseRequestsPending: 0,
+  repairPending: 0,
+  purchaseRequestsTotal: 0,
+  repairTotal: 0,
   transfersTotal: 0,
   disposalTotal: 0,
 });
@@ -383,26 +416,26 @@ const auditPagination = ref({
   hasPrev: false,
 });
 
-const requestParams = computed(() => ({ range: timeRange.value }));
-
 onMounted(async () => {
   await loadDashboardData();
 });
 
+
+
+
 const loadDashboardData = async () => {
   loading.value = true;
   try {
-    const [overviewRes, statusRes, deptRes, stockRes, procRes, catRes, auditRes, maintRes, inventoryRes, hierarchyRes] = await Promise.all([
-      dashboardService.getOverviewStats(requestParams.value),
-      dashboardService.getAssetStatusStats(requestParams.value),
+    const [overviewRes, statusRes, deptRes, stockRes, catRes, auditRes, maintRes, inventoryRes, hierarchyRes] = await Promise.all([
+      dashboardService.getOverviewStats({}),
+      dashboardService.getAssetStatusStats({}),
       dashboardService.getDepartmentStats(),
-      dashboardService.getStockStats(requestParams.value),
-      dashboardService.getProcurementStats(requestParams.value),
-      dashboardService.getCategoryBreakdown({ ...requestParams.value, limit: 8 }),
-      dashboardService.getAuditLogs({ ...requestParams.value, limit: 10, page: 1 }),
-      dashboardService.getMaintenanceStats(requestParams.value),
+      dashboardService.getStockStats({}),
+      dashboardService.getCategoryBreakdown({ limit: 8 }),
+      dashboardService.getAuditLogs({ limit: 10, page: 1 }),
+      dashboardService.getMaintenanceStats({}),
       inventoryService.getPendingReportsCount(),
-      dashboardService.getHierarchyStats(requestParams.value),
+      dashboardService.getHierarchyStats({}),
     ]);
 
     // axios interceptor in `src/services/api.ts` trả về `response.data`
@@ -410,7 +443,6 @@ const loadDashboardData = async () => {
     const status = (statusRes as any)?.data || [];
     const departments = (deptRes as any)?.data || [];
     const stock = (stockRes as any)?.data || {};
-    const procurements = (procRes as any)?.data || {};
     const categories = (catRes as any)?.data || [];
     const auditResult = (auditRes as any)?.data || {};
     const hierarchy = (hierarchyRes as any)?.data || [];
@@ -423,15 +455,16 @@ const loadDashboardData = async () => {
     disposalPending.value = Number(overview.disposal_pending || 0);
 
     // Fix swapped or inaccurate stats from API
-    const totalAssets = Number(overview.assets_new || overview.assets_total || 0);
-    const operationalAssets = Number(overview.assets_total || 0);
-
-    stats.assetsTotal = totalAssets;
-    stats.assetsNew = operationalAssets;
+    stats.assetsTotal = Number(overview.assets_total || 0);
+    stats.assetsNew = Number(overview.assets_new || 0);
     stats.procurements = Number(overview.procurements || 0);
     stats.stockReceipts = Number(overview.stock_receipts || 0);
     stats.stockIssues = Number(overview.stock_issues || 0);
     stats.maintenancePending = Number(overview.maintenance_pending || 0);
+    stats.purchaseRequestsPending = Number(overview.purchase_requests_pending || 0);
+    stats.repairPending = Number(overview.repair_pending || 0);
+    stats.purchaseRequestsTotal = Number(overview.purchase_requests_total || 0);
+    stats.repairTotal = Number(overview.repair_total || 0);
     stats.transfersTotal = Number(overview.transfers_total || 0);
     stats.disposalTotal = Number(overview.disposal_total || 0);
 
@@ -458,8 +491,6 @@ const loadDashboardData = async () => {
     }
 
     maintenanceByStatus.value = Array.isArray(maintenance) ? maintenance : [];
-
-    void procurements;
   } catch (error) {
     console.error('Error loading dashboard data:', error);
   } finally {
@@ -726,6 +757,7 @@ const getRoleText = (role: string | undefined) => {
     admin: 'Quản trị viên',
     director: 'Giám hiệu',
     manager: 'Trưởng phòng',
+    department_head: 'Trưởng đơn vị',
     staff: 'Nhân viên',
   };
   return map[role || ''] || role || '-';

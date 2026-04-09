@@ -64,9 +64,6 @@ app.use(
       if (productionOrigins.includes(origin) || devOrigins.includes(origin)) {
         return callback(null, true);
       }
-      if (envConfig.nodeEnv === 'development') {
-        return callback(null, true);
-      }
       callback(new Error('Not allowed by CORS'));
     },
     credentials: true,

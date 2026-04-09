@@ -3,9 +3,9 @@ FROM node:18-alpine AS development
 
 WORKDIR /app
 
-# Install dependencies cần thiết cho development + Docker CLI (cho trang Quản trị hệ thống)
-RUN apk add --no-cache python3 make g++ docker-cli || \
-    (sed -i 's/^#\(.*\/community\)/\1/' /etc/apk/repositories && apk update && apk add --no-cache docker-cli)
+# Install dependencies cần thiết cho development + Docker CLI + postgresql-client (backup/restore)
+RUN apk add --no-cache python3 make g++ docker-cli postgresql-client || \
+    (sed -i 's/^#\(.*\/community\)/\1/' /etc/apk/repositories && apk update && apk add --no-cache docker-cli postgresql-client)
 
 # Copy package files
 COPY package*.json ./
@@ -36,8 +36,11 @@ FROM node:18-alpine AS production
 
 WORKDIR /app
 
+# postgresql-client cần cho backup/restore database (pg_dump, psql)
+RUN apk add --no-cache postgresql-client
+
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci --only=production --ignore-scripts 2>/dev/null || npm ci --only=production --legacy-peer-deps
 
 COPY --from=builder /app/dist ./dist
 # Cần cho sequelize-cli migrate/seed

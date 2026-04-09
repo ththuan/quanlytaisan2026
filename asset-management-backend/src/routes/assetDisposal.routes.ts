@@ -11,7 +11,8 @@ router.post('/:id/complete', authenticateToken, requireRoles(['admin', 'director
 
 // POST /manual – Tạo hồ sơ tiêu hủy/thanh lý thủ công (không từ kiểm kê)
 // Theo Điều 23 (Thanh lý) và Điều 24 (Tiêu hủy) Quy chế 2026
-router.post('/manual', authenticateToken, requireRoles(['admin', 'director']), (req, res) => assetDisposalController.createManualCase(req, res));
+// Các đơn vị (staff/head) tạo hồ sơ cho phòng mình; admin/director tổng hợp tất cả
+router.post('/manual', authenticateToken, requireRoles(['admin', 'director', 'staff', 'department_head']), (req, res) => assetDisposalController.createManualCase(req, res));
 
 // POST /from-maintenance/:maintenanceId – Chuyển đề nghị sửa chữa sang thanh lý/tiêu hủy
 router.post('/from-maintenance/:maintenanceId', authenticateToken, requireRoles(['admin']), (req, res) => assetDisposalController.createFromMaintenance(req, res));

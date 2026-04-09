@@ -48,6 +48,9 @@ services:
     networks:
       - asset-management-network
     volumes:
+      # Tùy chọn (dev, máy Linux): mount socket để màn Quản trị hệ thống gọi được "docker ps".
+      # Docker Desktop Windows thường không cần hoặc dùng đường dẫn khác; bỏ comment nếu hiểu rủi ro bảo mật.
+      # - /var/run/docker.sock:/var/run/docker.sock
       - ./asset-management-backend/src:/app/src
       - ./asset-management-backend/logs:/app/logs
       - ./asset-management-backend/storage:/app/storage

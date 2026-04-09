@@ -20,6 +20,7 @@ export interface AssetCategoryAttributes {
   parent_code?: string;
   unit: string;
   category_group: CategoryGroup;
+  tracking_type: 'individual' | 'batch';
   is_depreciable: boolean;
   depreciation_rate?: number;
   useful_life_years?: number;
@@ -39,6 +40,7 @@ class AssetCategory extends Model<AssetCategoryAttributes, AssetCategoryCreation
   public parent_code?: string;
   public unit!: string;
   public category_group!: CategoryGroup;
+  public tracking_type!: 'individual' | 'batch';
   public is_depreciable!: boolean;
   public depreciation_rate?: number;
   public useful_life_years?: number;
@@ -88,6 +90,11 @@ AssetCategory.init(
         'cong_cu_dung_cu'
       ),
       allowNull: false,
+    },
+    tracking_type: {
+      type: DataTypes.ENUM('individual', 'batch'),
+      allowNull: false,
+      defaultValue: 'individual',
     },
     is_depreciable: {
       type: DataTypes.BOOLEAN,

@@ -210,6 +210,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useTransferStore } from '@/stores/transfer.store';
 import { useAuthStore } from '@/stores/auth.store';
+import { useNotificationStore } from '@/stores/notification.store';
 import { useDepartments } from '@/composables/useDepartments';
 import { Plus } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -221,6 +222,7 @@ import moment from 'moment';
 const { t } = useI18n();
 const transferStore = useTransferStore();
 const authStore = useAuthStore();
+const notificationStore = useNotificationStore();
 
 // Sử dụng composable mới với caching tự động
 useDepartments();
@@ -287,8 +289,15 @@ const handleApprove = async (id: number) => {
       type: 'warning',
     });
     await transferStore.approveTransfer(id);
+    const aidx = transferStore.transfers.findIndex((t: any) => t.id === id);
+    if (aidx !== -1) transferStore.transfers[aidx] = { ...transferStore.transfers[aidx], status: 'approved' };
     ElMessage.success(t('transfers.approveSuccess'));
-    transferStore.fetchTransfers();
+    notificationStore.fetchNotifications(true);
+    transferStore.fetchTransfers({
+      search: searchQuery.value || undefined,
+      status: filterStatus.value || undefined,
+      to_department_id: filterDepartment.value ?? undefined,
+    }, true);
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error.message || t('common.error'));
@@ -304,8 +313,15 @@ const handleReject = async (id: number) => {
       inputPlaceholder: t('transfers.enterReason'),
     });
     await transferStore.rejectTransfer(id, value);
+    const ridx = transferStore.transfers.findIndex((t: any) => t.id === id);
+    if (ridx !== -1) transferStore.transfers[ridx] = { ...transferStore.transfers[ridx], status: 'rejected' };
     ElMessage.success(t('transfers.rejectSuccess'));
-    transferStore.fetchTransfers();
+    notificationStore.fetchNotifications(true);
+    transferStore.fetchTransfers({
+      search: searchQuery.value || undefined,
+      status: filterStatus.value || undefined,
+      to_department_id: filterDepartment.value ?? undefined,
+    }, true);
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error.message || t('common.error'));
@@ -315,7 +331,7 @@ const handleReject = async (id: number) => {
 
 const handleFormSuccess = () => {
   formDialogVisible.value = false;
-  transferStore.fetchTransfers();
+  transferStore.fetchTransfers(undefined, true);
 };
 
 const getStatusType = (status: string) => {

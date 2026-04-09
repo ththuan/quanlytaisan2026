@@ -4,7 +4,7 @@
     <el-container class="main-layout">
       <transition name="backdrop-fade">
         <div
-          v-if="isMobile && !isHidden"
+          v-if="isOverlay && !isHidden"
           class="sidebar-backdrop"
           @click="closeSidebar"
         />
@@ -14,7 +14,7 @@
         v-show="!isHidden"
         width="250px"
         class="sidebar"
-        :class="{ 'sidebar--mobile': isMobile, 'sidebar--open': isMobile && !isHidden }"
+        :class="{ 'sidebar--mobile': isOverlay, 'sidebar--open': isOverlay && !isHidden }"
       >
         <div class="logo">
           <h3>Quản lý tài sản</h3>
@@ -76,7 +76,7 @@
 
           <el-menu-item index="/inventory">
             <el-icon><Notebook /></el-icon>
-            <span>Kiểm kê tài sản</span>
+            <span>{{ $t('inventory.title') }}</span>
           </el-menu-item>
 
           <!-- Thanh lý / Tiêu hủy -->
@@ -120,6 +120,14 @@
             <el-icon><Setting /></el-icon>
             <span>Quản trị hệ thống</span>
           </el-menu-item>
+
+          <el-menu-item
+            v-if="authStore.user?.role === 'admin'"
+            index="/asset-categories"
+          >
+            <el-icon><Grid /></el-icon>
+            <span>{{ $t('menu.assetCategories') }}</span>
+          </el-menu-item>
         </el-menu>
       </el-aside>
 
@@ -157,7 +165,7 @@
               </div>
             </div>
             <div class="header-right">
-              <div class="header-help-links">
+              <div v-if="!isTablet" class="header-help-links">
                 <el-button
                   text
                   bg
@@ -168,7 +176,7 @@
                   <el-icon class="header-help-ic">
                     <Document />
                   </el-icon>
-                  <span v-if="!isMobile">{{ $t('menu.documentation') }}</span>
+                  <span>{{ $t('menu.documentation') }}</span>
                 </el-button>
                 <span
                   class="header-help-divider"
@@ -184,7 +192,7 @@
                   <el-icon class="header-help-ic">
                     <QuestionFilled />
                   </el-icon>
-                  <span v-if="!isMobile">{{ $t('menu.support') }}</span>
+                  <span>{{ $t('menu.support') }}</span>
                 </el-button>
               </div>
               <NotificationBell />
@@ -192,8 +200,9 @@
               <el-dropdown class="user-dropdown">
                 <span class="user-info">
                   <el-icon><User /></el-icon>
-                  {{ authStore.user?.fullname || authStore.user?.username }}
+                  <span class="user-name">{{ authStore.user?.fullname || authStore.user?.username }}</span>
                   <el-tag
+                    v-if="!isMobile"
                     size="small"
                     type="info"
                     style="margin-left: 8px"
@@ -247,7 +256,7 @@ import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
-import { House, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, QuestionFilled } from '@element-plus/icons-vue';
+import { House, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, QuestionFilled, Grid, List } from '@element-plus/icons-vue';
 import NotificationBell from '@/components/Notifications/NotificationBell.vue';
 import TotpSetupDialog from '@/components/Auth/TotpSetupDialog.vue';
 import ChangePasswordDialog from '@/components/Auth/ChangePasswordDialog.vue';
@@ -303,12 +312,23 @@ const handleLogout = async () => {
 };
 
 const MOBILE_BREAKPOINT = 768;
+const TABLET_BREAKPOINT = 1024;
 
 const isMobile = ref(false);
+const isTablet = ref(false);
 const isHidden = ref(false);
 
+// Overlay mode: sidebar là drawer trên mobile + tablet (iPad)
+const isOverlay = computed(() => isMobile.value || isTablet.value);
+
 const updateIsMobile = () => {
+  const prevOverlay = isOverlay.value;
   isMobile.value = window.innerWidth < MOBILE_BREAKPOINT;
+  isTablet.value = window.innerWidth >= MOBILE_BREAKPOINT && window.innerWidth < TABLET_BREAKPOINT;
+  // Tự động ẩn sidebar khi chuyển sang overlay mode
+  if (!prevOverlay && isOverlay.value) {
+    isHidden.value = true;
+  }
 };
 
 const closeSidebar = () => {
@@ -320,11 +340,11 @@ onMounted(() => {
   window.addEventListener('resize', updateIsMobile);
 
   const hiddenState = localStorage.getItem('sidebarHidden');
-  if (hiddenState !== null) {
+  if (hiddenState !== null && !isOverlay.value) {
     isHidden.value = hiddenState === 'true';
   }
 
-  if (isMobile.value) {
+  if (isOverlay.value) {
     isHidden.value = true;
   }
 });
@@ -334,14 +354,17 @@ onBeforeUnmount(() => {
 });
 
 const handleMenuSelect = () => {
-  if (isMobile.value) {
+  if (isOverlay.value) {
     closeSidebar();
   }
 };
 
 const toggleSidebar = () => {
   isHidden.value = !isHidden.value;
-  localStorage.setItem('sidebarHidden', String(isHidden.value));
+  // Chỉ lưu trạng thái trên desktop (không overlay)
+  if (!isOverlay.value) {
+    localStorage.setItem('sidebarHidden', String(isHidden.value));
+  }
 };
 </script>
 
@@ -558,18 +581,34 @@ const toggleSidebar = () => {
   margin: 0 2px;
 }
 
+.user-name {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 1024px) {
+  .header-right {
+    gap: 6px;
+  }
+  .user-name {
+    max-width: 100px;
+  }
+}
+
 @media (max-width: 768px) {
-  .header-help-ic {
-    margin-right: 0;
+  .user-name {
+    max-width: 80px;
   }
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   cursor: pointer;
-  padding: 6px 12px;
+  padding: 6px 10px;
   border-radius: 12px;
   transition: all 0.2s;
   border: 1px solid transparent;
@@ -584,6 +623,18 @@ const toggleSidebar = () => {
 .el-main {
   background-color: #f8fafc;
   padding: 24px;
+}
+
+@media (max-width: 768px) {
+  .el-main {
+    padding: 12px 8px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .el-main {
+    padding: 16px 12px;
+  }
 }
 
 /* .route-* transitions: src/styles/motion.scss */

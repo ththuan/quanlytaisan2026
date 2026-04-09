@@ -16,9 +16,7 @@ export const getAllAssets = async (req: AuthRequest, res: Response, next: NextFu
     if (user.role !== 'admin' && user.role !== 'director') {
       if (user.department_id) {
         query.current_department_id = String(user.department_id);
-        if (!query.status) {
-          query.exclude_disposed = 'true';
-        }
+        // Không ẩn tài sản đã thanh lý — viên chức/trưởng đơn vị có quyền xem tài sản đã thanh lý của đơn vị mình
       } else {
         // Nếu user không có department_id, trả về danh sách rỗng
         res.status(200).json({
@@ -196,9 +194,12 @@ export const getAssetHistory = async (req: Request, res: Response, next: NextFun
 /**
  * Lấy tài sản chờ thanh lý nhóm theo đơn vị
  */
-export const getPendingDisposalGrouped = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getPendingDisposalGrouped = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const data = await assetService.getPendingDisposalGrouped();
+    const user = (req as any).user;
+    // Staff/Head chỉ xem tài sản của phòng mình
+    const departmentId = ['staff', 'department_head'].includes(user?.role) ? user?.department_id : undefined;
+    const data = await assetService.getPendingDisposalGrouped(departmentId);
     res.status(200).json({ success: true, data });
   } catch (error) {
     next(error);

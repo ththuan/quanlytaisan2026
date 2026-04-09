@@ -364,6 +364,17 @@ AssetDisposalCase.belongsTo(MaintenanceRequest, {
   as: 'sourceMaintenanceRequest',
 });
 
+// MaintenanceRequest <-> InventoryReport (tạo từ kiểm kê)
+MaintenanceRequest.belongsTo(InventoryReport, {
+  foreignKey: 'source_inventory_report_id',
+  as: 'sourceInventoryReport',
+});
+
+InventoryReport.hasMany(MaintenanceRequest, {
+  foreignKey: 'source_inventory_report_id',
+  as: 'maintenance_requests',
+});
+
 AssetDisposalCase.belongsTo(Department, {
   foreignKey: 'origin_department_id',
   as: 'origin_department',
@@ -418,6 +429,11 @@ StockReceipt.belongsTo(User, {
 StockIssue.belongsTo(User, {
   foreignKey: 'created_by',
   as: 'creator',
+});
+
+StockIssue.belongsTo(Department, {
+  foreignKey: 'department_id',
+  as: 'department',
 });
 
 StockReceipt.hasMany(StockReceiptLine, {

@@ -1373,10 +1373,8 @@ const handleExportQRPDF = async () => {
   letter-spacing: 0.03em;
   line-height: 1.2;
   margin-top: 1px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
+  white-space: normal;
+  word-break: break-word;
 }
 
 /* Main Card */
@@ -1406,12 +1404,12 @@ const handleExportQRPDF = async () => {
 
 .filter-item {
   flex: 1;
-  min-width: 180px;
+  min-width: 140px;
 }
 
 .filter-item.search-input {
   flex: 2;
-  min-width: 250px;
+  min-width: 200px;
 }
 
 .filter-item :deep(.el-input__wrapper),
@@ -1455,6 +1453,13 @@ const handleExportQRPDF = async () => {
 
 .asset-table :deep(.cell) {
   white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .asset-table :deep(.cell) {
+    white-space: normal;
+    word-break: break-word;
+  }
 }
 
 .asset-code {
@@ -1586,5 +1591,76 @@ const handleExportQRPDF = async () => {
 
 .import-btn {
   margin-right: 12px;
+}
+
+/* ── Mobile responsive ── */
+@media (max-width: 767px) {
+  /* Stat cards: 2 per row */
+  .stats-section :deep(.el-col) {
+    max-width: 50% !important;
+    flex: 0 0 50% !important;
+  }
+
+  /* Header buttons: wrap to 2 per row */
+  .header-right {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .header-right .el-button {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 120px;
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+
+  /* Filter: single column */
+  .filter-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .filter-item,
+  .filter-item.search-input {
+    flex: 1 1 100%;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .filter-actions {
+    width: 100%;
+  }
+
+  .filter-actions .el-button {
+    flex: 1;
+  }
+
+  /* Stat card smaller on mobile */
+  .stat-card {
+    padding: 10px 8px;
+  }
+
+  .stat-value {
+    font-size: 1rem !important;
+  }
+
+  .stat-icon {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 16px !important;
+  }
+
+  /* Pagination */
+  .pagination-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-right .el-button {
+    flex: 1 1 100%;
+  }
 }
 </style>

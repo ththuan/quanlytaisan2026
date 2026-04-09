@@ -9,11 +9,12 @@ export interface StockIssueAttributes {
   purpose: string;
   notes?: string;
   created_by?: number;
+  department_id?: number;
   created_at?: Date;
   updated_at?: Date;
 }
 
-interface StockIssueCreationAttributes extends Optional<StockIssueAttributes, 'id' | 'notes' | 'created_by'> {}
+interface StockIssueCreationAttributes extends Optional<StockIssueAttributes, 'id' | 'notes' | 'created_by' | 'department_id'> {}
 
 class StockIssue extends Model<StockIssueAttributes, StockIssueCreationAttributes> implements StockIssueAttributes {
   public id!: number;
@@ -23,6 +24,7 @@ class StockIssue extends Model<StockIssueAttributes, StockIssueCreationAttribute
   public purpose!: string;
   public notes?: string;
   public created_by?: number;
+  public department_id?: number;
   public readonly created_at!: Date;
   public readonly updated_at!: Date;
 }
@@ -59,6 +61,11 @@ StockIssue.init(
       type: DataTypes.INTEGER,
       allowNull: true,
       references: { model: 'users', key: 'id' },
+    },
+    department_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: { model: 'departments', key: 'id' },
     },
   },
   {

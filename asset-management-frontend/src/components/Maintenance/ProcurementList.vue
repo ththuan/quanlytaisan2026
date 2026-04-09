@@ -210,7 +210,7 @@
     <MaintenanceDetailDialog
       v-model:visible="detailDialogVisible"
       :maintenance="currentItem"
-      @update="fetchData"
+      @update="() => fetchData({}, true)"
     />
   </div>
 </template>
@@ -220,6 +220,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
+import { useNotificationStore } from '@/stores/notification.store';
 import { useDepartmentStore } from '@/stores/department.store';
 import { Plus } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -231,6 +232,14 @@ import procurementService from '@/services/procurement.service';
 
 const { t } = useI18n();
 const authStore = useAuthStore();
+const notificationStore = useNotificationStore();
+
+const getNextApprovalStatus = (currentStatus: string, role: string): string | null => {
+  if (role === 'department_head' && (currentStatus === 'pending' || currentStatus === 'new')) return 'approved_by_head';
+  if (role === 'admin' && currentStatus === 'approved_by_head') return 'approved_by_admin';
+  if (role === 'director' && currentStatus === 'approved_by_admin') return 'approved_by_director';
+  return null;
+};
 const departmentStore = useDepartmentStore();
 const router = useRouter();
 
@@ -265,13 +274,13 @@ onMounted(async () => {
 });
 
 let isFetching = false;
-const fetchData = async (params: any = {}) => {
+const fetchData = async (params: any = {}, silent = false) => {
   // Prevent multiple simultaneous requests
   if (isFetching) {
     return;
   }
   isFetching = true;
-  loading.value = true;
+  if (!silent) loading.value = true;
   try {
     // Build params object, only include non-null values
     const requestParams: any = {
@@ -351,7 +360,7 @@ const handleFulfill = async (row: any) => {
     const res: any = await procurementService.createFromMaintenance(row.id);
     const procId = res?.data?.id;
     ElMessage.success('Đã tạo phiếu Tăng tài sản. Đang chuyển hướng...');
-    await fetchData();
+    fetchData({}, true);
     await router.push({ path: '/procurements', query: { openId: String(procId) } });
   } catch (error: any) {
     ElMessage.error(error.response?.data?.message || error.message || 'Không thể tạo phiếu Tăng tài sản');
@@ -398,7 +407,9 @@ const handleSubmitForApproval = async (item: any) => {
     );
     await api.post(`/maintenance/${item.id}/submit`);
     ElMessage.success('Đã gửi phê duyệt thành công. Yêu cầu của bạn đang chờ trưởng phòng xem xét.');
-    fetchData();
+    const sidx = requests.value.findIndex((r: any) => r.id === item.id);
+    if (sidx !== -1) requests.value[sidx] = { ...requests.value[sidx], status: 'pending' };
+    fetchData({}, true);
   } catch (error: any) {
     if (error !== 'cancel') {
       const errorMessage = error.response?.data?.message || error.message || t('common.error');
@@ -462,8 +473,15 @@ const handleApprove = async (id: number) => {
       }
     );
     await api.put(`/maintenance/${id}/approve`);
+    const userRole = authStore.user?.role;
+    const aidx = requests.value.findIndex((r: any) => r.id === id);
+    if (aidx !== -1 && userRole) {
+      const next = getNextApprovalStatus(requests.value[aidx].status, userRole);
+      if (next) requests.value[aidx] = { ...requests.value[aidx], status: next };
+    }
     ElMessage.success('Đã phê duyệt thành công. Yêu cầu đã được chuyển lên cấp trên.');
-    fetchData();
+    notificationStore.fetchNotifications(true);
+    fetchData({}, true);
   } catch (error: any) {
     if (error !== 'cancel') {
       const errorMessage = error.response?.data?.message || error.message || t('common.error');
@@ -488,7 +506,8 @@ const handleDelete = async (item: any) => {
     );
     await api.delete(`/maintenance/${item.id}`);
     ElMessage.success('Đã xóa yêu cầu thành công');
-    fetchData();
+    requests.value = requests.value.filter((r: any) => r.id !== item.id);
+    fetchData({}, true);
   } catch (error: any) {
     if (error !== 'cancel') {
       const errorMessage = error.response?.data?.message || error.message || t('common.error');
@@ -499,7 +518,7 @@ const handleDelete = async (item: any) => {
 
 const handleFormSuccess = () => {
   formDialogVisible.value = false;
-  fetchData();
+  fetchData({}, true);
 };
 
 const getStatusType = (status: string) => {

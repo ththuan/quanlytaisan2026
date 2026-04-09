@@ -100,15 +100,27 @@ class AssetDisposalService {
       where[Op.or] = [{ code: { [Op.iLike]: `%${query.search}%` } }];
     }
 
+    // Filter theo asset_id: tìm các case có chứa tài sản này
+    const itemInclude: any = {
+      model: AssetDisposalItem,
+      as: 'items',
+      required: !!query.asset_id,
+      attributes: ['id', 'asset_id', 'reason'],
+      ...(query.asset_id ? { where: { asset_id: Number(query.asset_id) } } : {}),
+      include: [{ model: Asset, as: 'asset', attributes: ['id', 'asset_code', 'name'], required: false }],
+    };
+
     const { count, rows } = await AssetDisposalCase.findAndCountAll({
       where,
       limit,
       offset,
       order: [[sortBy, sortOrder]],
+      distinct: true,
       include: [
         { model: Department, as: 'origin_department', attributes: ['id', 'name'], required: false },
         { model: User, as: 'creator', attributes: ['id', 'username', 'fullname'], required: false },
         { model: User, as: 'approver', attributes: ['id', 'username', 'fullname'], required: false },
+        itemInclude,
       ],
     });
 
@@ -216,6 +228,36 @@ class AssetDisposalService {
   ): Promise<any> {
     const transaction = await sequelize.transaction();
     try {
+      // Kiểm tra xem tài sản nào đã có trong hồ sơ đang chờ xử lý (tránh hồ sơ trùng lặp)
+      const existingItems = await AssetDisposalItem.findAll({
+        where: { asset_id: payload.asset_ids },
+        include: [
+          {
+            model: AssetDisposalCase,
+            as: 'disposal_case',
+            where: { status: 'pending' },
+            required: true,
+            attributes: ['id', 'code'],
+          },
+        ],
+        attributes: ['asset_id'],
+        transaction,
+      });
+
+      if (existingItems.length > 0) {
+        const conflictAssetIds = existingItems.map((i: any) => i.asset_id);
+        const conflictAssets = await Asset.findAll({
+          where: { id: conflictAssetIds },
+          attributes: ['id', 'asset_code', 'name'],
+          transaction,
+        });
+        const names = conflictAssets.map((a: any) => `${a.asset_code} – ${a.name}`).join(', ');
+        await transaction.rollback();
+        throw new ConflictError(
+          `Các tài sản sau đã có trong hồ sơ đề nghị giảm tài sản đang chờ xử lý, không thể tạo thêm: ${names}`
+        );
+      }
+
       const year = new Date().getFullYear();
       const prefix = payload.disposal_type === 'destruction' ? 'TH' : 'TL';
 

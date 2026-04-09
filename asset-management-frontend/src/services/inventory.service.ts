@@ -93,6 +93,8 @@ export interface InventoryReportDetail {
   /** Lý do / ghi chú khi duyệt thanh lý vs sửa chữa */
   disposal_reason?: string;
   notes?: string;
+  scan_method?: 'qr_scan' | 'manual_confirm' | 'area_manual' | 'batch';
+  manual_reason?: string;
   checked_by?: number;
   checked_at?: string;
 }
@@ -118,6 +120,8 @@ export interface AddInventoryDetailInput {
   asset_condition: string;
   check_status: string;
   notes?: string;
+  scan_method?: 'qr_scan' | 'manual_confirm' | 'area_manual' | 'batch';
+  manual_reason?: string;
 }
 
 // Axios interceptor in api.ts returns response.data already.
@@ -241,6 +245,10 @@ class InventoryService {
   async addDetail(reportId: number, data: AddInventoryDetailInput): Promise<InventoryReportDetail> {
     const payload: any = await api.post(`/inventory/reports/${reportId}/details`, data);
     return unwrapData<InventoryReportDetail>(payload);
+  }
+
+  async saveCheck(reportId: number, assetId: number, data: Omit<AddInventoryDetailInput, 'asset_id'>): Promise<InventoryReportDetail> {
+    return this.addDetail(reportId, { asset_id: assetId, ...data });
   }
 
   async updateDetail(reportId: number, detailId: number, data: Partial<AddInventoryDetailInput>): Promise<InventoryReportDetail> {

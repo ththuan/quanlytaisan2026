@@ -41,6 +41,9 @@ export const isDirector = authorize('director');
 // Check if user is department head
 export const isDepartmentHead = authorize('department_head');
 
+/** Alias để dùng trong routes: requireRole('admin') thay vì authorize('admin') */
+export const requireRole = (...roles: UserRole[]) => authorize(...roles);
+
 // Check if user can approve maintenance requests (multi-level)
 export const canApproveMaintenanceRequest = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -270,6 +273,3 @@ export const checkOwnership = (userIdField: string = 'user_id') => {
     }
   };
 };
-
-// Export alias for compatibility (accepts spread roles)
-export const requireRole = (...roles: UserRole[]) => authorize(...roles);

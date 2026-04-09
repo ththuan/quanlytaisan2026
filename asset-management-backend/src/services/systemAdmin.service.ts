@@ -1,5 +1,7 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import fs from 'fs';
+import path from 'path';
 import os from 'os';
 import { sequelize } from '../config/database';
 import { SYSTEM_ADMIN_PASSWORD, SYSTEM_ADMIN_USERNAME } from '../config/adminCredentials';
@@ -30,10 +32,16 @@ interface DockerContainer {
 }
 
 interface DockerInfo {
+  /** true nếu gọi được docker CLI, hoặc tiến trình đang chạy trong container (Docker vẫn “đang dùng” ở tầng host) */
   available: boolean;
+  /** false khi chỉ phát hiện container runtime, không list/start/stop được từ API này */
+  dockerCliAvailable?: boolean;
+  runningInContainer?: boolean;
   version?: string;
   containers?: DockerContainer[];
   error?: string;
+  /** Gợi ý khi backend trong container nhưng không có docker.sock / CLI */
+  message?: string;
 }
 
 interface DatabaseInfo {
@@ -52,6 +60,7 @@ interface BackupInfo {
   size: string;
   created: string;
   path: string;
+  mtimeMs: number;
 }
 
 class SystemAdminService {
@@ -93,15 +102,40 @@ class SystemAdminService {
 
       return {
         available: true,
+        dockerCliAvailable: true,
+        runningInContainer: this.isRunningInContainer(),
         version,
         containers,
       };
     } catch (error) {
-      logger.warn('Docker not available:', error);
+      logger.warn('Docker CLI not reachable from this process:', error);
+      if (this.isRunningInContainer()) {
+        return {
+          available: true,
+          dockerCliAvailable: false,
+          runningInContainer: true,
+          containers: [],
+          version: 'Container runtime (Docker/Podman)',
+          message:
+            'Backend đang chạy trong container. Trong setup mặc định không có lệnh `docker` và không mount socket Docker — điều này bình thường; Docker trên máy host vẫn chạy stack của bạn. Để xem danh sách container trong màn hình này (chỉ môi trường tin cậy): thêm Docker CLI vào image và mount `/var/run/docker.sock` từ host.',
+        };
+      }
       return {
         available: false,
-        error: 'Docker không khả dụng hoặc chưa được cài đặt',
+        dockerCliAvailable: false,
+        error: 'Docker không khả dụng hoặc chưa được cài đặt trên máy chạy backend',
       };
+    }
+  }
+
+  /** Phát hiện tiến trình Node đang chạy bên trong container (khác với có thể gọi docker CLI). */
+  private isRunningInContainer(): boolean {
+    try {
+      if (fs.existsSync('/.dockerenv')) return true;
+      const cg = fs.readFileSync('/proc/self/cgroup', 'utf8');
+      return /docker|kubepods|containerd|crio/i.test(cg);
+    } catch {
+      return false;
     }
   }
 
@@ -213,17 +247,37 @@ class SystemAdminService {
   }
 
   async createBackup(): Promise<{ success: boolean; message: string; filename?: string }> {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `backup_${timestamp}.sql`;
+    const backupDir = './backups';
+    const backupPath = path.resolve(backupDir, filename);
+
     try {
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const filename = `backup_${timestamp}.sql`;
-      const backupPath = `./backups/${filename}`;
+      if (!fs.existsSync(backupDir)) {
+        fs.mkdirSync(backupDir, { recursive: true });
+      }
 
       const config = sequelize.config;
-      const command = `docker exec asset-management-postgres pg_dump -U ${config.username} ${config.database} > ${backupPath}`;
+      const host = (config.host as string) || 'postgres';
+      const port = config.port || 5432;
+      const username = config.username as string;
+      const database = config.database as string;
+      const password = (config.password as string) || '';
 
-      await execAsync(command);
+      // Sử dụng pg_dump kết nối trực tiếp tới postgres qua mạng (không cần docker CLI)
+      // -f: ghi trực tiếp vào file, kông dùng shell redirect (tránh file 0 bytes)
+      const command = `pg_dump -h ${host} -p ${port} -U ${username} --clean --if-exists --no-owner --no-acl -f "${backupPath}" ${database}`;
+      const env = { ...process.env, PGPASSWORD: password };
+
+      await execAsync(command, { env, maxBuffer: 100 * 1024 * 1024 });
+
+      // Kiểm tra file thực sự có dữ liệu
+      if (!fs.existsSync(backupPath) || fs.statSync(backupPath).size === 0) {
+        if (fs.existsSync(backupPath)) fs.unlinkSync(backupPath);
+        return { success: false, message: 'Backup thất bại: pg_dump không tạo được dữ liệu' };
+      }
+
       logger.info(`Backup created: ${filename}`);
-
       return {
         success: true,
         message: 'Backup đã được tạo thành công',
@@ -231,6 +285,8 @@ class SystemAdminService {
       };
     } catch (error) {
       logger.error('Backup creation failed:', error);
+      // Dọn file nếu pg_dump thất bại giữa chừng
+      try { if (fs.existsSync(backupPath)) fs.unlinkSync(backupPath); } catch { /* ignore */ }
       return {
         success: false,
         message: 'Không thể tạo backup',
@@ -240,21 +296,50 @@ class SystemAdminService {
 
   async listBackups(): Promise<BackupInfo[]> {
     try {
-      const { stdout } = await execAsync('ls -la ./backups/*.sql 2>/dev/null || echo ""');
-      if (!stdout.trim()) return [];
+      const backupDir = './backups';
+      if (!fs.existsSync(backupDir)) return [];
 
-      const lines = stdout.trim().split('\n').filter((l) => l.includes('.sql'));
-      return lines.map((line) => {
-        const parts = line.split(/\s+/);
-        return {
-          name: parts[parts.length - 1].replace('./backups/', ''),
-          size: parts[4] || '0',
-          created: `${parts[5]} ${parts[6]} ${parts[7]}`,
-          path: parts[parts.length - 1],
-        };
-      });
+      const files = fs.readdirSync(backupDir).filter((f) => /^backup_[\w\-]+\.sql$/.test(f));
+      return files
+        .map((name) => {
+          const filePath = `${backupDir}/${name}`;
+          const stat = fs.statSync(filePath);
+          return {
+            name,
+            size: this.formatBytes(stat.size),
+            created: stat.mtime.toLocaleString('vi-VN'),
+            path: filePath,
+            mtimeMs: stat.mtimeMs,
+          };
+        })
+        .sort((a, b) => b.mtimeMs - a.mtimeMs);
     } catch {
       return [];
+    }
+  }
+
+  /** Xóa các file backup cũ hơn `retentionDays` ngày. Trả về số file đã xóa. */
+  async deleteOldBackups(retentionDays: number = 7): Promise<number> {
+    try {
+      const backupDir = './backups';
+      if (!fs.existsSync(backupDir)) return 0;
+
+      const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
+      const files = fs.readdirSync(backupDir).filter((f) => /^backup_[\w\-]+\.sql$/.test(f));
+      let deleted = 0;
+      for (const name of files) {
+        const filePath = path.join(backupDir, name);
+        const stat = fs.statSync(filePath);
+        if (stat.mtimeMs < cutoff) {
+          fs.unlinkSync(filePath);
+          logger.info(`Old backup deleted: ${name}`);
+          deleted++;
+        }
+      }
+      return deleted;
+    } catch (error) {
+      logger.error('Failed to delete old backups:', error);
+      return 0;
     }
   }
 
@@ -342,6 +427,43 @@ class SystemAdminService {
         success: false,
         message: 'Không thể seed database',
       };
+    }
+  }
+
+  async restoreBackup(filename: string): Promise<{ success: boolean; message: string }> {
+    // Strict validation to prevent path traversal
+    if (!filename || !/^backup_[\w\-]+\.sql$/.test(filename)) {
+      return { success: false, message: 'Tên file backup không hợp lệ' };
+    }
+    try {
+      const backupPath = path.resolve('./backups', filename);
+      if (!fs.existsSync(backupPath)) {
+        return { success: false, message: `File backup không tồn tại: ${filename}` };
+      }
+
+      // Kiểm tra file không rỗng trước khi restore
+      if (fs.statSync(backupPath).size === 0) {
+        return { success: false, message: 'File backup rỗng (0 bytes), không thể khôi phục' };
+      }
+
+      const config = sequelize.config;
+      const host = (config.host as string) || 'postgres';
+      const port = config.port || 5432;
+      const username = config.username as string;
+      const database = config.database as string;
+      const password = (config.password as string) || '';
+
+      // Sử dụng psql kết nối trực tiếp (không cần docker CLI)
+      // -f: đọc từ file thay vì stdin redirect, tránh giới hạn buffer
+      const command = `psql -h ${host} -p ${port} -U ${username} -d ${database} -f "${backupPath}"`;
+      const env = { ...process.env, PGPASSWORD: password };
+      const { stderr } = await execAsync(command, { env, maxBuffer: 100 * 1024 * 1024 });
+      if (stderr) logger.warn(`Restore stderr: ${stderr}`);
+      logger.info(`Database restored from backup: ${filename}`);
+      return { success: true, message: `Khôi phục database thành công từ: ${filename}` };
+    } catch (error) {
+      logger.error('Restore failed:', error);
+      return { success: false, message: 'Không thể khôi phục backup. Kiểm tra file backup còn tồn tại và Docker đang chạy.' };
     }
   }
 
