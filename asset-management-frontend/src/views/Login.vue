@@ -16,7 +16,7 @@
             >
           </div>
           <p class="sub-welcome">
-            Hệ thống Quản lý Tài sản Chuyên nghiệp
+            Hệ thống Quản lý Tài sản
           </p>
         </div>
 
