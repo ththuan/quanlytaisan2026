@@ -148,7 +148,7 @@
                       aria-label="Trang chủ"
                     >
                       <el-icon>
-                        <House />
+                        <HomeFilled />
                       </el-icon>
                     </span>
                   </el-breadcrumb-item>
@@ -264,7 +264,7 @@ import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
-import { House, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, QuestionFilled, Grid } from '@element-plus/icons-vue';
+import { House, HomeFilled, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, QuestionFilled, Grid } from '@element-plus/icons-vue';
 import NotificationBell from '@/components/Notifications/NotificationBell.vue';
 import TotpSetupDialog from '@/components/Auth/TotpSetupDialog.vue';
 import ChangePasswordDialog from '@/components/Auth/ChangePasswordDialog.vue';
@@ -555,6 +555,12 @@ const toggleSidebar = () => {
   font-weight: 700;
 }
 
+.breadcrumb :deep(.el-breadcrumb__separator) {
+  color: #cbd5e1;
+  margin: 0 10px;
+  font-weight: 700;
+}
+
 .header-right {
   display: flex;
   align-items: center;
@@ -639,20 +645,39 @@ const toggleSidebar = () => {
 }
 
 .breadcrumb-home-chip {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #e6f6ef;
-  color: #10b981;
-  border: 1px solid #d1fae5;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #bbf7d0;
+  transition: all 0.2s ease;
 }
 
 .breadcrumb-home-chip .el-icon {
-  font-size: 20px;
+  font-size: 18px;
+}
+
+.breadcrumb-home-chip:hover {
+  background: #dcfce7;
+  color: #047857;
+  border-color: #86efac;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .breadcrumb-home-chip {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+
+  .breadcrumb-home-chip .el-icon {
+    font-size: 16px;
+  }
 }
 
 .el-main {
