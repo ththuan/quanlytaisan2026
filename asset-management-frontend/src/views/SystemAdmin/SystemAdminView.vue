@@ -1135,7 +1135,7 @@ onMounted(() => {
   border-radius: 8px;
   max-height: 500px;
   overflow: auto;
-  font-family: 'Fira Code', 'Consolas', monospace;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 0.85rem;
   line-height: 1.5;
   white-space: pre-wrap;

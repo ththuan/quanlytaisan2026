@@ -46,7 +46,7 @@
         <template #default="{ data }">
           <div class="tree-node">
             <span class="tree-label">
-              <el-tag size="small" type="info" style="margin-right: 6px; font-family: monospace;">{{ data.code }}</el-tag>
+              <el-tag size="small" type="info" style="margin-right: 6px; font-family: 'Plus Jakarta Sans', sans-serif;">{{ data.code }}</el-tag>
               {{ data.name }}
               <el-tag v-if="!data.is_active" size="small" type="danger" style="margin-left: 6px;">Không dùng</el-tag>
             </span>

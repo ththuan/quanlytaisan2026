@@ -1186,7 +1186,7 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
 }
 
 .ip-text {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 0.85rem;
   color: #94a3b8;
 }
