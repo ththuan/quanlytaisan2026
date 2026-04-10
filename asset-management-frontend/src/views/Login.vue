@@ -1,38 +1,51 @@
 <template>
   <div class="login-container">
-    <!-- Animated background accents -->
-    <div class="bg-blur-blob blob-1" />
-    <div class="bg-blur-blob blob-2" />
-    
-    <!-- Left Section: Premium Interactive Network -->
+    <!-- Left Section: Dark Tech Panel with AI Particles -->
     <div class="login-left">
-      <div class="network-scene">
-        <div class="network-wrapper">
-          <div class="network-core">
-            <!-- Dynamic abstract connections -->
-            <div class="web-lines" />
-            <!-- Interactive-feeling nodes with refined glow -->
-            <div
-              v-for="n in 35"
-              :key="n"
-              :class="['node-dot', `dot-${n}`]"
-            />
-            <!-- Floating asset geometry -->
-            <div
-              v-for="i in 8"
-              :key="`ring-${i}`"
-              :class="['asset-ring', `ring-${i}`]"
-            />
-            <div class="asset-cube cube-1" />
-            <div class="asset-cube cube-2" />
+      <canvas ref="canvasRef" class="particle-canvas" />
+      <div class="left-overlay">
+        <div class="left-content">
+          <div class="ai-badge">
+            <span class="ai-dot" />
+            AI POWERED
+          </div>
+          <h1 class="left-title">
+            Quản lý<br>Tài sản số
+          </h1>
+          <p class="left-subtitle">
+            Hệ thống quản lý tài sản thông minh<br>
+            Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ
+          </p>
+          <div class="tech-stats">
+            <div class="stat-item">
+              <span class="stat-number">100%</span>
+              <span class="stat-label">Số hóa</span>
+            </div>
+            <div class="stat-divider" />
+            <div class="stat-item">
+              <span class="stat-number">24/7</span>
+              <span class="stat-label">Trực tuyến</span>
+            </div>
+            <div class="stat-divider" />
+            <div class="stat-item">
+              <span class="stat-number">AI</span>
+              <span class="stat-label">Thông minh</span>
+            </div>
           </div>
         </div>
       </div>
-      <!-- Premium grain texture overlay -->
-      <div class="grain-overlay" />
+      <!-- Floating binary / tech chars -->
+      <div
+        v-for="d in floatingChars"
+        :key="d.id"
+        class="floating-char"
+        :style="d.style"
+      >
+        {{ d.char }}
+      </div>
     </div>
 
-    <!-- Right Section: Premium Login Form -->
+    <!-- Right Section: Login Form -->
     <div class="login-right">
       <div class="form-card">
         <div class="login-header">
@@ -45,7 +58,7 @@
             >
           </div>
           <p class="sub-welcome">
-            Hệ thống quản lý tài sản thông minh
+            Hệ thống Quản lý Tài sản Chuyên nghiệp
           </p>
         </div>
 
@@ -60,12 +73,12 @@
             @submit.prevent="handleLogin"
           >
             <el-form-item
-              label="Tài khoản"
+              label="Tên đăng nhập"
               prop="username"
             >
               <el-input
                 v-model="loginForm.username"
-                placeholder="Tên đăng nhập của bạn"
+                placeholder="Nhập tên đăng nhập"
                 size="large"
                 :prefix-icon="User"
               />
@@ -88,7 +101,7 @@
 
             <div class="form-actions-row">
               <el-checkbox v-model="rememberMe">
-                Ghi nhớ
+                Ghi nhớ phiên đăng nhập
               </el-checkbox>
             </div>
 
@@ -98,10 +111,7 @@
               class="premium-submit-btn"
               @click="handleLogin"
             >
-              Tiếp tục
-              <el-icon class="el-icon--right">
-                <ArrowRight />
-              </el-icon>
+              Đăng nhập ngay
             </el-button>
           </el-form>
 
@@ -157,9 +167,9 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed } from 'vue';
+import { reactive, ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { User, Lock, ArrowRight } from '@element-plus/icons-vue';
+import { User, Lock } from '@element-plus/icons-vue';
 import { useAuthStore } from '@/stores/auth.store';
 import type { FormInstance, FormRules } from '@/types/element-plus';
 
@@ -170,6 +180,7 @@ const router = useRouter();
 const authStore = useAuthStore();
 const loginFormRef = ref<FormInstance>();
 const rememberMe = ref(false);
+const canvasRef = ref<HTMLCanvasElement | null>(null);
 
 const onLogoError = (e: Event) => {
   const img = e.target as HTMLImageElement | null;
@@ -214,355 +225,452 @@ const handleVerify2FA = async () => {
     router.push('/');
   }
 };
+
+// --- Floating chars (tech/binary feel) ---
+const techChars = ['0', '1', 'AI', '01', '10', '∑', 'λ', '∞', '∂', 'β', '✦', '◈'];
+const floatingChars = Array.from({ length: 18 }, (_, i) => ({
+  id: i,
+  char: techChars[i % techChars.length],
+  style: {
+    left: `${Math.random() * 90 + 5}%`,
+    top: `${Math.random() * 90 + 5}%`,
+    animationDelay: `${Math.random() * 8}s`,
+    animationDuration: `${6 + Math.random() * 10}s`,
+    fontSize: `${Math.random() > 0.7 ? 11 : 9}px`,
+    opacity: `${0.08 + Math.random() * 0.14}`,
+  },
+}));
+
+// --- Canvas particle system ---
+interface Particle {
+  x: number; y: number;
+  vx: number; vy: number;
+  r: number; alpha: number;
+}
+
+let animFrameId = 0;
+
+function initCanvas() {
+  const canvas = canvasRef.value;
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const resize = () => {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  };
+  resize();
+  window.addEventListener('resize', resize);
+
+  const COUNT = 90;
+  const MAX_DIST = 130;
+  const particles: Particle[] = Array.from({ length: COUNT }, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    vx: (Math.random() - 0.5) * 0.4,
+    vy: (Math.random() - 0.5) * 0.4,
+    r: Math.random() * 1.8 + 0.6,
+    alpha: Math.random() * 0.6 + 0.3,
+  }));
+
+  const draw = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Update & draw particles
+    for (const p of particles) {
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(180, 210, 255, ${p.alpha})`;
+      ctx.fill();
+    }
+
+    // Draw connections
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < MAX_DIST) {
+          const alpha = (1 - dist / MAX_DIST) * 0.25;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(100, 180, 255, ${alpha})`;
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
+        }
+      }
+    }
+
+    animFrameId = requestAnimationFrame(draw);
+  };
+
+  draw();
+
+  onUnmounted(() => {
+    cancelAnimationFrame(animFrameId);
+    window.removeEventListener('resize', resize);
+  });
+}
+
+onMounted(() => {
+  initCanvas();
+});
 </script>
 
 <style scoped>
 
+/* ============================================================
+   LAYOUT
+   ============================================================ */
 .login-container {
   display: flex;
   min-height: 100vh;
   min-height: 100svh;
   width: 100vw;
-  background-color: #fcfdfe;
-  font-family: 'Outfit', sans-serif;
-  overflow-x: hidden;
-  overflow-y: auto;
-  position: relative;
+  overflow: hidden;
+  font-family: 'Outfit', 'Inter', sans-serif;
 }
 
-/* --- Decorative Background Elements --- */
-.bg-blur-blob {
-  position: absolute;
-  width: 600px;
-  height: 600px;
-  border-radius: 50%;
-  filter: blur(120px);
-  z-index: 0;
-  opacity: 0.15;
-  pointer-events: none;
-}
-.blob-1 { top: -100px; right: -100px; background: #3b82f6; animation: driftBlob 15s infinite alternate; }
-.blob-2 { bottom: -100px; left: 10%; background: #8b5cf6; animation: driftBlob 20s infinite alternate-reverse; }
-
-@keyframes driftBlob {
-  from { transform: translate(0,0); }
-  to { transform: translate(50px, 50px) scale(1.1); }
-}
-
-/* --- Left Side: Tech-Art Network --- */
+/* ============================================================
+   LEFT PANEL – dark navy with canvas particle animation
+   ============================================================ */
 .login-left {
-  flex: 1.1;
+  flex: 1.15;
   position: relative;
-  background-color: #ffffff;
+  background: linear-gradient(135deg, #060d1f 0%, #0a1a35 40%, #0d2145 70%, #091828 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-right: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 @media (max-width: 1023px) {
   .login-left { display: none; }
 }
 
-.network-scene {
+/* Canvas fills the entire left panel */
+.particle-canvas {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  z-index: 2;
+  z-index: 1;
+}
+
+/* Content overlay on top of canvas */
+.left-overlay {
+  position: relative;
+  z-index: 3;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.network-wrapper {
-  position: relative;
   width: 100%;
   height: 100%;
-  max-width: 600px;
-  max-height: 600px;
+  padding: 60px 40px;
 }
 
-.web-lines {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    radial-gradient(circle at center, rgba(59, 130, 246, 0.05) 0%, transparent 70%),
-    linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
-  background-size: 100% 100%, 80px 80px, 80px 80px;
+.left-content {
+  max-width: 480px;
+  text-align: center;
 }
 
-.node-dot {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #3b82f6;
-  filter: blur(0.5px);
-  animation: nodeOrganic 10s infinite ease-in-out;
-}
-
-/* Populate dots dynamically with improved visual spread */
-.dot-1  { top: 25%; left: 35%; background: #8b5cf6; animation-delay: 0s; }
-.dot-2  { top: 45%; left: 20%; background: #3b82f6; animation-delay: -2s; }
-.dot-3  { top: 65%; left: 30%; background: #06b6d4; animation-delay: -4s; }
-.dot-4  { top: 80%; left: 50%; background: #3b82f6; animation-delay: -1s; }
-.dot-5  { top: 15%; left: 55%; background: #c084fc; animation-delay: -3s; }
-.dot-6  { top: 40%; left: 75%; background: #06b6d4; animation-delay: -5s; }
-.dot-7  { top: 60%; left: 85%; background: #3b82f6; animation-delay: -7s; }
-.dot-8  { top: 30%; left: 60%; background: #6366f1; animation-delay: -2.5s; }
-.dot-9  { top: 50%; left: 45%; background: #3b82f6; animation-delay: -6s; }
-.dot-10 { top: 75%; left: 70%; background: #8b5cf6; animation-delay: -8s; }
-/* ... and many more small decorative dots ... */
-[class*="dot-"] { opacity: 0.8; }
-
-.asset-ring {
-  position: absolute;
-  border: 1.5px solid rgba(59, 130, 246, 0.2);
-  border-radius: 50%;
-  animation: ringPulse 12s infinite alternate ease-in-out;
-}
-.ring-1 { width: 120px; height: 120px; top: 40%; left: 40%; border-color: rgba(59, 130, 246, 0.1); }
-.ring-2 { width: 60px; height: 60px; top: 20%; left: 30%; border-color: rgba(139, 92, 246, 0.15); }
-
-.asset-cube {
-  position: absolute;
+/* AI badge */
+.ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(59, 130, 246, 0.15);
   border: 1px solid rgba(59, 130, 246, 0.3);
-  width: 40px;
-  height: 40px;
-  transform: rotate(45deg);
-  opacity: 0.2;
-  animation: cubeRotate 25s infinite linear;
-}
-.cube-1 { top: 15%; left: 70%; }
-.cube-2 { bottom: 15%; left: 20%; }
-
-@keyframes nodeOrganic {
-  0%, 100% { transform: translate(0, 0); }
-  33% { transform: translate(20px, -20px); }
-  66% { transform: translate(-15px, 15px); }
+  border-radius: 100px;
+  padding: 6px 18px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #60a5fa;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+  backdrop-filter: blur(4px);
 }
 
-@keyframes ringPulse {
-  from { transform: scale(0.95); opacity: 0.2; }
-  to { transform: scale(1.05); opacity: 0.5; }
+.ai-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22d3ee;
+  animation: dotPulse 1.5s ease-in-out infinite;
+  display: inline-block;
+  flex-shrink: 0;
 }
 
-@keyframes cubeRotate {
-  from { transform: rotate(0deg) translate(0,0); }
-  to { transform: rotate(360deg) translate(10px, 10px); }
+@keyframes dotPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.6); }
+  50% { box-shadow: 0 0 0 6px rgba(34, 211, 238, 0); }
 }
 
-.grain-overlay {
+/* Main title */
+.left-title {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: #ffffff;
+  letter-spacing: -1px;
+  margin: 0 0 18px;
+  text-shadow: 0 2px 20px rgba(59, 130, 246, 0.3);
+}
+
+.left-subtitle {
+  font-size: 1rem;
+  color: rgba(148, 163, 184, 0.85);
+  line-height: 1.65;
+  margin: 0 0 48px;
+}
+
+/* Stats row */
+.tech-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px 24px;
+  backdrop-filter: blur(8px);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #60a5fa;
+  letter-spacing: -0.5px;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: rgba(148, 163, 184, 0.7);
+  margin-top: 3px;
+  letter-spacing: 0.5px;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 8px;
+}
+
+/* Floating chars (binary/tech feel) */
+.floating-char {
   position: absolute;
-  inset: 0;
-  background-image: url('https://grainy-gradients.vercel.app/noise.svg');
-  opacity: 0.02;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: #60a5fa;
   pointer-events: none;
-  z-index: 5;
+  z-index: 2;
+  animation: floatChar linear infinite;
+  user-select: none;
 }
 
-/* --- Right Side: Premium Login Card --- */
+@keyframes floatChar {
+  0%   { transform: translateY(0px)   rotate(0deg);  }
+  25%  { transform: translateY(-18px) rotate(5deg);  }
+  50%  { transform: translateY(-8px)  rotate(-3deg); }
+  75%  { transform: translateY(-22px) rotate(4deg);  }
+  100% { transform: translateY(0px)   rotate(0deg);  }
+}
+
+/* ============================================================
+   RIGHT PANEL – white card
+   ============================================================ */
 .login-right {
-  flex: 0.9;
+  flex: 0.85;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 40px;
-  background-color: #fcfdfe;
-  z-index: 10;
-  /* Mobile: chiếm toàn bộ */
-  min-width: 0;
+  background: #f1f5f9;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  z-index: 10;
 }
 
-/* iPad: giảm padding */
-@media (max-width: 1024px) {
-  .login-right {
-    flex: 1;
-    padding: 32px 28px;
-  }
+@media (max-width: 1280px) {
+  .login-right { flex: 0.95; padding: 32px 28px; }
 }
 
-/* Mobile */
-@media (max-width: 768px) {
-  .login-right {
-    flex: 1;
-    padding: 24px 20px;
-    align-items: flex-start;
-    padding-top: max(32px, env(safe-area-inset-top, 32px));
-    padding-bottom: max(24px, env(safe-area-inset-bottom, 24px));
-  }
+@media (max-width: 1023px) {
+  .login-right { flex: 1; padding: 24px 20px; align-items: flex-start; }
 }
 
 @media (max-width: 480px) {
-  .login-right {
-    padding: 20px 16px;
-  }
+  .login-right { padding: 16px; }
 }
 
+/* The white card */
 .form-card {
   width: 100%;
   max-width: 440px;
-  display: flex;
-  flex-direction: column;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 40px 36px 32px;
+  box-shadow:
+    0 4px 6px -1px rgba(0,0,0,0.07),
+    0 20px 40px -10px rgba(0,0,0,0.1);
+}
+
+@media (max-width: 480px) {
+  .form-card { padding: 28px 20px 24px; border-radius: 16px; }
+}
+
+/* Header */
+.login-header {
+  text-align: center;
+  margin-bottom: 8px;
 }
 
 .logo-wrapper {
   display: flex;
   justify-content: center;
-  margin-bottom: 25px;
+  margin-bottom: 16px;
 }
 
 .school-logo {
-  height: 80px;
-  width: 80px;
+  height: 72px;
+  width: 72px;
   border-radius: 50%;
   background: #fff;
-  padding: 6px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-  border: 3px solid #fff;
-}
-
-.welcome-text {
-  font-size: 2rem;
-  font-weight: 800;
-  color: #0f172a;
-  margin: 0;
-  text-align: center;
-  letter-spacing: -0.5px;
+  padding: 4px;
+  box-shadow: 0 0 0 3px #e2e8f0, 0 8px 20px rgba(0,0,0,0.08);
+  object-fit: cover;
 }
 
 .sub-welcome {
-  color: #64748b;
-  font-size: 1rem;
-  text-align: center;
-  margin-top: 8px;
-  margin-bottom: 32px;
+  color: #475569;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin: 0 0 28px;
+  line-height: 1.5;
 }
 
-@media (max-width: 768px) {
-  .sub-welcome {
-    font-size: 0.9rem;
-    margin-bottom: 20px;
-  }
-}
-
+/* Form items */
 .premium-form :deep(.el-form-item) {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .premium-form :deep(.el-form-item__label) {
   font-weight: 600;
-  color: #475569;
-  font-size: 0.95rem;
-  padding-bottom: 8px;
+  color: #1e293b;
+  font-size: 0.9rem;
+  padding-bottom: 6px;
 }
 
 .premium-form :deep(.el-input__wrapper) {
-  background-color: #fff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  box-shadow: none !important;
   border-radius: 10px;
-  height: 48px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 46px;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-/* iOS: ngăn tự động zoom khi focus input */
 .premium-form :deep(.el-input__inner) {
   font-size: 16px !important;
+  color: #1e293b;
 }
 
 .premium-form :deep(.el-input__wrapper.is-focus) {
   border-color: #3b82f6;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12) !important;
+  background: #fff;
 }
 
+/* Remember row */
 .form-actions-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin: -5px 0 24px 0;
+  margin: -4px 0 20px;
 }
 
+.form-actions-row :deep(.el-checkbox__label) {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+/* Submit button */
 .premium-submit-btn {
   width: 100%;
-  height: 52px;
-  border-radius: 14px;
-  background: #1e293b;
+  height: 50px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   border: none;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  box-shadow: 0 10px 15px -3px rgba(30, 41, 59, 0.2);
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .premium-submit-btn:hover {
-  background: #0f172a;
-  transform: translateY(-2px);
-  box-shadow: 0 20px 25px -5px rgba(30, 41, 59, 0.25);
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.45);
 }
 
+.premium-submit-btn:active {
+  transform: translateY(0);
+}
+
+/* Footer */
 .login-footer {
   text-align: center;
-  margin-top: 28px;
+  margin-top: 20px;
   color: #94a3b8;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
-@media (max-width: 480px) {
-  .login-footer {
-    margin-top: 20px;
-    font-size: 0.78rem;
-  }
+/* ============================================================
+   2FA STEP
+   ============================================================ */
+.totp-step { text-align: center; }
 
-  .school-logo {
-    height: 64px;
-    width: 64px;
-  }
-
-  .logo-wrapper {
-    margin-bottom: 16px;
-  }
-
-  .premium-submit-btn {
-    height: 46px;
-    font-size: 1rem;
-  }
-}
-
-/* 2FA Step refined */
 .totp-icon-box {
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
   background: #f1f5f9;
-  border-radius: 20px;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 25px auto;
-  font-size: 2.5rem;
+  margin: 0 auto 20px;
+  font-size: 2.2rem;
 }
 
 .totp-title {
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: #0f172a;
-  text-align: center;
   margin-bottom: 8px;
 }
 
 .totp-hint {
   color: #64748b;
-  text-align: center;
-  margin-bottom: 30px;
+  font-size: 0.9rem;
+  margin-bottom: 24px;
 }
 
 .totp-input :deep(.el-input__inner) {
@@ -574,11 +682,18 @@ const handleVerify2FA = async () => {
 
 .back-btn {
   width: 100%;
-  margin-top: 15px;
+  margin-top: 12px;
   color: #94a3b8;
+  font-size: 0.875rem;
 }
 
-@media (max-width: 640px) {
-  .welcome-text { font-size: 1.6rem; }
+/* ============================================================
+   MOBILE ADJUSTMENTS
+   ============================================================ */
+@media (max-width: 480px) {
+  .school-logo { height: 60px; width: 60px; }
+  .sub-welcome { font-size: 0.875rem; margin-bottom: 20px; }
+  .premium-submit-btn { height: 44px; font-size: 0.95rem; }
+  .login-footer { font-size: 0.75rem; }
 }
 </style>
