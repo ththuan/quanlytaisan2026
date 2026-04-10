@@ -1,52 +1,10 @@
 <template>
   <div class="login-container">
-    <!-- Left Section: Dark Tech Panel with AI Particles -->
-    <div class="login-left">
-      <canvas ref="canvasRef" class="particle-canvas" />
-      <div class="left-overlay">
-        <div class="left-content">
-          <div class="ai-badge">
-            <span class="ai-dot" />
-            AI POWERED
-          </div>
-          <h1 class="left-title">
-            Quản lý<br>Tài sản số
-          </h1>
-          <p class="left-subtitle">
-            Hệ thống quản lý tài sản thông minh<br>
-            Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ
-          </p>
-          <div class="tech-stats">
-            <div class="stat-item">
-              <span class="stat-number">100%</span>
-              <span class="stat-label">Số hóa</span>
-            </div>
-            <div class="stat-divider" />
-            <div class="stat-item">
-              <span class="stat-number">24/7</span>
-              <span class="stat-label">Trực tuyến</span>
-            </div>
-            <div class="stat-divider" />
-            <div class="stat-item">
-              <span class="stat-number">AI</span>
-              <span class="stat-label">Thông minh</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- Floating binary / tech chars -->
-      <div
-        v-for="d in floatingChars"
-        :key="d.id"
-        class="floating-char"
-        :style="d.style"
-      >
-        {{ d.char }}
-      </div>
-    </div>
+    <!-- Full-screen particle background -->
+    <canvas ref="canvasRef" class="particle-canvas" />
 
-    <!-- Right Section: Login Form -->
-    <div class="login-right">
+    <!-- Centered login card -->
+    <div class="login-center">
       <div class="form-card">
         <div class="login-header">
           <div class="logo-wrapper">
@@ -173,7 +131,6 @@ import { User, Lock } from '@element-plus/icons-vue';
 import { useAuthStore } from '@/stores/auth.store';
 import type { FormInstance, FormRules } from '@/types/element-plus';
 
-// Import assets
 import logoUrl from '@/login/logo-truong.jpg';
 
 const router = useRouter();
@@ -187,11 +144,7 @@ const onLogoError = (e: Event) => {
   if (img) img.style.display = 'none';
 };
 
-const loginForm = reactive({
-  username: '',
-  password: '',
-});
-
+const loginForm = reactive({ username: '', password: '' });
 const step = ref<'credentials' | '2fa'>('credentials');
 const totpCode = ref('');
 
@@ -221,33 +174,11 @@ const handleLogin = async () => {
 const handleVerify2FA = async () => {
   if (!totpCode.value || totpCode.value.length !== 6) return;
   const success = await authStore.verify2FA(totpCode.value);
-  if (success) {
-    router.push('/');
-  }
+  if (success) router.push('/');
 };
 
-// --- Floating chars (tech/binary feel) ---
-const techChars = ['0', '1', 'AI', '01', '10', '∑', 'λ', '∞', '∂', 'β', '✦', '◈'];
-const floatingChars = Array.from({ length: 18 }, (_, i) => ({
-  id: i,
-  char: techChars[i % techChars.length],
-  style: {
-    left: `${Math.random() * 90 + 5}%`,
-    top: `${Math.random() * 90 + 5}%`,
-    animationDelay: `${Math.random() * 8}s`,
-    animationDuration: `${6 + Math.random() * 10}s`,
-    fontSize: `${Math.random() > 0.7 ? 11 : 9}px`,
-    opacity: `${0.08 + Math.random() * 0.14}`,
-  },
-}));
-
-// --- Canvas particle system ---
-interface Particle {
-  x: number; y: number;
-  vx: number; vy: number;
-  r: number; alpha: number;
-}
-
+// Canvas particle network
+interface Particle { x: number; y: number; vx: number; vy: number; r: number; alpha: number; }
 let animFrameId = 0;
 
 function initCanvas() {
@@ -256,268 +187,97 @@ function initCanvas() {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
-  const resize = () => {
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-  };
+  const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
   resize();
   window.addEventListener('resize', resize);
 
-  const COUNT = 90;
-  const MAX_DIST = 130;
+  const COUNT = 100;
+  const MAX_DIST = 140;
   const particles: Particle[] = Array.from({ length: COUNT }, () => ({
     x: Math.random() * canvas.width,
     y: Math.random() * canvas.height,
-    vx: (Math.random() - 0.5) * 0.4,
-    vy: (Math.random() - 0.5) * 0.4,
-    r: Math.random() * 1.8 + 0.6,
-    alpha: Math.random() * 0.6 + 0.3,
+    vx: (Math.random() - 0.5) * 0.45,
+    vy: (Math.random() - 0.5) * 0.45,
+    r: Math.random() * 1.8 + 0.5,
+    alpha: Math.random() * 0.55 + 0.25,
   }));
 
   const draw = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Update & draw particles
     for (const p of particles) {
-      p.x += p.vx;
-      p.y += p.vy;
+      p.x += p.vx; p.y += p.vy;
       if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
       if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
-
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(180, 210, 255, ${p.alpha})`;
       ctx.fill();
     }
-
-    // Draw connections
     for (let i = 0; i < particles.length; i++) {
       for (let j = i + 1; j < particles.length; j++) {
         const dx = particles[i].x - particles[j].x;
         const dy = particles[i].y - particles[j].y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < MAX_DIST) {
-          const alpha = (1 - dist / MAX_DIST) * 0.25;
           ctx.beginPath();
           ctx.moveTo(particles[i].x, particles[i].y);
           ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.strokeStyle = `rgba(100, 180, 255, ${alpha})`;
+          ctx.strokeStyle = `rgba(100, 180, 255, ${(1 - dist / MAX_DIST) * 0.28})`;
           ctx.lineWidth = 0.6;
           ctx.stroke();
         }
       }
     }
-
     animFrameId = requestAnimationFrame(draw);
   };
 
   draw();
-
-  onUnmounted(() => {
-    cancelAnimationFrame(animFrameId);
-    window.removeEventListener('resize', resize);
-  });
+  onUnmounted(() => { cancelAnimationFrame(animFrameId); window.removeEventListener('resize', resize); });
 }
 
-onMounted(() => {
-  initCanvas();
-});
+onMounted(() => { initCanvas(); });
 </script>
 
 <style scoped>
 
 /* ============================================================
-   LAYOUT
+   LAYOUT – full screen background
    ============================================================ */
 .login-container {
-  display: flex;
+  position: relative;
   min-height: 100vh;
   min-height: 100svh;
   width: 100vw;
-  overflow: hidden;
-  font-family: 'Outfit', 'Inter', sans-serif;
-}
-
-/* ============================================================
-   LEFT PANEL – dark navy with canvas particle animation
-   ============================================================ */
-.login-left {
-  flex: 1.15;
-  position: relative;
-  background: linear-gradient(135deg, #060d1f 0%, #0a1a35 40%, #0d2145 70%, #091828 100%);
   display: flex;
   align-items: center;
   justify-content: center;
+  background: linear-gradient(135deg, #060d1f 0%, #0a1a35 40%, #0d2145 70%, #091828 100%);
+  font-family: 'Outfit', 'Inter', sans-serif;
   overflow: hidden;
 }
 
-@media (max-width: 1023px) {
-  .login-left { display: none; }
-}
-
-/* Canvas fills the entire left panel */
+/* Canvas phủ toàn màn hình */
 .particle-canvas {
-  position: absolute;
+  position: fixed;
   inset: 0;
   width: 100%;
   height: 100%;
-  z-index: 1;
+  z-index: 0;
+  pointer-events: none;
 }
 
-/* Content overlay on top of canvas */
-.left-overlay {
+/* Vùng chứa card login, nằm giữa màn hình */
+.login-center {
   position: relative;
-  z-index: 3;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 100%;
-  padding: 60px 40px;
-}
-
-.left-content {
-  max-width: 480px;
-  text-align: center;
-}
-
-/* AI badge */
-.ai-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  border-radius: 100px;
-  padding: 6px 18px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: #60a5fa;
-  text-transform: uppercase;
-  margin-bottom: 28px;
-  backdrop-filter: blur(4px);
-}
-
-.ai-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #22d3ee;
-  animation: dotPulse 1.5s ease-in-out infinite;
-  display: inline-block;
-  flex-shrink: 0;
-}
-
-@keyframes dotPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.6); }
-  50% { box-shadow: 0 0 0 6px rgba(34, 211, 238, 0); }
-}
-
-/* Main title */
-.left-title {
-  font-size: 3rem;
-  font-weight: 800;
-  line-height: 1.15;
-  color: #ffffff;
-  letter-spacing: -1px;
-  margin: 0 0 18px;
-  text-shadow: 0 2px 20px rgba(59, 130, 246, 0.3);
-}
-
-.left-subtitle {
-  font-size: 1rem;
-  color: rgba(148, 163, 184, 0.85);
-  line-height: 1.65;
-  margin: 0 0 48px;
-}
-
-/* Stats row */
-.tech-stats {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 20px 24px;
-  backdrop-filter: blur(8px);
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-}
-
-.stat-number {
-  font-size: 1.6rem;
-  font-weight: 800;
-  color: #60a5fa;
-  letter-spacing: -0.5px;
-}
-
-.stat-label {
-  font-size: 0.75rem;
-  color: rgba(148, 163, 184, 0.7);
-  margin-top: 3px;
-  letter-spacing: 0.5px;
-}
-
-.stat-divider {
-  width: 1px;
-  height: 36px;
-  background: rgba(255, 255, 255, 0.1);
-  margin: 0 8px;
-}
-
-/* Floating chars (binary/tech feel) */
-.floating-char {
-  position: absolute;
-  font-family: 'Courier New', monospace;
-  font-weight: 600;
-  color: #60a5fa;
-  pointer-events: none;
-  z-index: 2;
-  animation: floatChar linear infinite;
-  user-select: none;
-}
-
-@keyframes floatChar {
-  0%   { transform: translateY(0px)   rotate(0deg);  }
-  25%  { transform: translateY(-18px) rotate(5deg);  }
-  50%  { transform: translateY(-8px)  rotate(-3deg); }
-  75%  { transform: translateY(-22px) rotate(4deg);  }
-  100% { transform: translateY(0px)   rotate(0deg);  }
-}
-
-/* ============================================================
-   RIGHT PANEL – white card
-   ============================================================ */
-.login-right {
-  flex: 0.85;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  background: #f1f5f9;
+  min-height: 100vh;
+  padding: 32px 16px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  z-index: 10;
-}
-
-@media (max-width: 1280px) {
-  .login-right { flex: 0.95; padding: 32px 28px; }
-}
-
-@media (max-width: 1023px) {
-  .login-right { flex: 1; padding: 24px 20px; align-items: flex-start; }
-}
-
-@media (max-width: 480px) {
-  .login-right { padding: 16px; }
 }
 
 /* The white card */
@@ -528,8 +288,8 @@ onMounted(() => {
   border-radius: 20px;
   padding: 40px 36px 32px;
   box-shadow:
-    0 4px 6px -1px rgba(0,0,0,0.07),
-    0 20px 40px -10px rgba(0,0,0,0.1);
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 @media (max-width: 480px) {
