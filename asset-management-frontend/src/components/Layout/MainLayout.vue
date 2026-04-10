@@ -240,6 +240,9 @@
             </transition>
           </router-view>
         </el-main>
+        <footer class="app-footer">
+          Copyright &copy; 2026 Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ.
+        </footer>
       </el-container>
     </el-container>
 
@@ -633,6 +636,19 @@ const toggleSidebar = () => {
   /* iOS: smooth scroll trong main content */
   -webkit-overflow-scrolling: touch;
   overflow-y: auto;
+}
+
+.app-footer {
+  text-align: center;
+  font-size: 12px;
+  color: #94a3b8;
+  padding: 8px 16px;
+  background-color: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 @media (max-width: 768px) {
