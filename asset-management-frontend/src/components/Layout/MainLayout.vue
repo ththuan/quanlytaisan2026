@@ -16,9 +16,6 @@
         class="sidebar"
         :class="{ 'sidebar--mobile': isOverlay, 'sidebar--open': isOverlay && !isHidden }"
       >
-        <div class="logo">
-          <h3>Quản lý tài sản</h3>
-        </div>
         <el-menu
           :default-active="$route.path"
           router
@@ -434,27 +431,6 @@ const toggleSidebar = () => {
 .sidebar.sidebar--open {
   transform: translateX(0);
   box-shadow: 12px 0 40px rgba(0, 0, 0, 0.18);
-}
-
-.logo {
-  height: 56px;
-  display: flex;
-  align-items: center;
-  padding: 0 20px;
-  background-color: #0f172a;
-  margin-bottom: 5px;
-}
-
-.logo h3 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: #fff;
-  background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  letter-spacing: -0.5px;
 }
 
 .el-menu {
