@@ -1184,4 +1184,23 @@ onMounted(() => {
   flex-direction: column;
   gap: 12px;
 }
+
+@media (max-width: 768px) {
+  :deep(.el-dialog) {
+    margin: 0 !important;
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  :deep(.el-dialog__body) {
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  :deep(.el-col) {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
 </style>

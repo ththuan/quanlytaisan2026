@@ -44,7 +44,7 @@
       <!-- Search & Filter -->
       <div class="filter-section">
         <el-row :gutter="16">
-          <el-col :span="8">
+          <el-col :xs="24" :sm="12" :md="8">
             <el-input
               v-model="searchQuery"
               :placeholder="$t('departments.searchPlaceholder')"
@@ -57,7 +57,7 @@
               </template>
             </el-input>
           </el-col>
-          <el-col :span="6">
+          <el-col :xs="24" :sm="12" :md="6">
             <el-select
               v-model="filterType"
               :placeholder="$t('departments.filterByType')"
@@ -72,7 +72,7 @@
               />
             </el-select>
           </el-col>
-          <el-col :span="6">
+          <el-col :xs="24" :sm="12" :md="6">
             <el-button
               type="primary"
               @click="handleSearch"
@@ -563,5 +563,19 @@ const formatDate = (date: string) => {
 .total-info {
   color: #606266;
   font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .pagination-section {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
 }
 </style>

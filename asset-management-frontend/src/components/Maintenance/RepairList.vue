@@ -16,7 +16,7 @@
     <!-- Filters -->
     <div class="filter-section">
       <el-row :gutter="16">
-        <el-col :span="6">
+        <el-col :xs="24" :sm="12" :md="6">
           <el-select
             v-model="filterStatus"
             placeholder="Lọc theo trạng thái"
@@ -31,14 +31,14 @@
             />
           </el-select>
         </el-col>
-        <el-col :span="6">
+        <el-col :xs="24" :sm="12" :md="6">
           <DepartmentTreeSelect
             v-model="filterDepartment"
             placeholder="Lọc theo đơn vị"
             @change="handleFilter"
           />
         </el-col>
-        <el-col :span="6">
+        <el-col :xs="24" :sm="12" :md="6">
           <el-button
             type="primary"
             @click="handleFilter"
@@ -803,5 +803,21 @@ const formatCurrency = (value: number) => {
 
 .cost-info-table {
   font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .list-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .list-header .el-button {
+    width: 100%;
+  }
+
+  .filter-section .el-row {
+    gap: 10px 0;
+  }
 }
 </style>

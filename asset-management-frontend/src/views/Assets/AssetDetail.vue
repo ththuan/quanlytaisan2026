@@ -1728,6 +1728,132 @@ const downloadQRCode = () => {
   margin-bottom: 12px;
 }
 
+/* ─── RESPONSIVE: iPad & Mobile ─────────────────────────── */
+
+/* iPad (landscape ≤ 1279px, portrait ≤ 1024px) */
+@media (max-width: 1024px) {
+  .asset-detail-page {
+    padding: 16px;
+  }
+
+  .content-wrapper {
+    max-width: 100%;
+  }
+
+  .page-header {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 16px;
+  }
+
+  .header-center {
+    flex: 1 1 100%;
+    order: -1;
+  }
+
+  .header-left, .header-right {
+    flex: 0 0 auto;
+  }
+
+  .page-title {
+    font-size: 17px;
+  }
+
+  .finance-grid {
+    flex-wrap: wrap;
+  }
+
+  .finance-item {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 120px;
+  }
+}
+
+/* Mobile (≤ 768px) */
+@media (max-width: 768px) {
+  .asset-detail-page {
+    padding: 12px;
+  }
+
+  /* Page header: stack vertically */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .header-center {
+    order: 0;
+    text-align: left;
+    flex: 1 1 100%;
+  }
+
+  .header-right {
+    text-align: left;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex: 1 1 100%;
+  }
+
+  .header-right .el-button {
+    flex: 1 1 auto;
+  }
+
+  .page-title {
+    font-size: 16px;
+  }
+
+  /* Asset header: icon + info stack vertically */
+  .asset-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  /* Info rows: label/value full width */
+  .info-value {
+    max-width: 70%;
+  }
+
+  /* Finance grid: single column */
+  .finance-grid {
+    flex-direction: column;
+  }
+
+  .finance-item {
+    flex: 1 1 100%;
+  }
+
+  /* Depreciation summary: single column */
+  .depreciation-summary {
+    grid-template-columns: 1fr;
+  }
+
+  /* Depreciation values: stack vertically */
+  .depreciation-values {
+    flex-direction: column;
+  }
+
+  .value-box {
+    flex: 1 1 100%;
+  }
+
+  /* Transfer / repair items */
+  .transfer-header, .repair-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  /* QR code: smaller */
+  .qrcode-image {
+    width: 150px;
+    height: 150px;
+  }
+}
+
 .qrcode-placeholder p {
   color: #909399;
   margin-bottom: 16px;

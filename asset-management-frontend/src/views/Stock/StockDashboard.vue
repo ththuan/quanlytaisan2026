@@ -736,4 +736,21 @@ const submitIssue = async () => {
 :deep(.el-autocomplete-suggestion__wrap) {
   max-height: 280px;
 }
+
+@media (max-width: 768px) {
+  .stock-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .stock-header .actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .stock-header .actions .el-button {
+    flex: 1 1 calc(50% - 4px);
+  }
+}
 </style>

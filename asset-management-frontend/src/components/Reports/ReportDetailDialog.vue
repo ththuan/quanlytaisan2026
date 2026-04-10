@@ -779,4 +779,11 @@ const formatDateTime = (date: string) => {
 .mini-table {
   margin-bottom: 12px;
 }
+
+@media (max-width: 768px) {
+  :deep(.el-col) {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
 </style>

@@ -32,7 +32,7 @@
       <!-- Filters -->
       <div class="filter-section">
         <el-row :gutter="16">
-          <el-col :span="5">
+          <el-col :xs="24" :sm="12" :md="5">
             <el-select
               v-model="filterYear"
               :placeholder="$t('reports.filterByYear')"
@@ -47,7 +47,7 @@
               />
             </el-select>
           </el-col>
-          <el-col :span="5">
+          <el-col :xs="24" :sm="12" :md="5">
             <el-select
               v-model="filterStatus"
               :placeholder="$t('reports.filterByStatus')"
@@ -64,7 +64,9 @@
           </el-col>
           <el-col
             v-if="canFilterByDepartment"
-            :span="6"
+            :xs="24"
+            :sm="12"
+            :md="6"
           >
             <DepartmentTreeSelect
               v-model="filterDepartment"
@@ -72,7 +74,7 @@
               @change="handleFilter"
             />
           </el-col>
-          <el-col :span="canFilterByDepartment ? 6 : 12">
+          <el-col :xs="24" :sm="12" :md="canFilterByDepartment ? 6 : 12">
             <el-button
               type="primary"
               @click="handleFilter"
@@ -537,6 +539,17 @@ const formatCurrency = (value: number) => {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filter-section .el-row {
+    gap: 10px 0;
+  }
 }
 
 </style>

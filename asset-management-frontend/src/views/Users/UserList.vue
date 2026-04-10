@@ -28,7 +28,7 @@
       <!-- Search & Filter -->
       <div class="filter-section">
         <el-row :gutter="16">
-          <el-col :span="8">
+          <el-col :xs="24" :sm="12" :md="8">
             <el-input
               v-model="searchQuery"
               :placeholder="$t('users.searchPlaceholder')"
@@ -41,7 +41,7 @@
               </template>
             </el-input>
           </el-col>
-          <el-col :span="5">
+          <el-col :xs="24" :sm="12" :md="5">
             <el-select
               v-model="filterRole"
               :placeholder="$t('users.filterByRole')"
@@ -56,7 +56,7 @@
               />
             </el-select>
           </el-col>
-          <el-col :span="5">
+          <el-col :xs="24" :sm="12" :md="5">
             <el-select
               v-model="filterStatus"
               :placeholder="$t('users.filterByStatus')"
@@ -73,7 +73,7 @@
               />
             </el-select>
           </el-col>
-          <el-col :span="6">
+          <el-col :xs="24" :sm="12" :md="6">
             <el-button
               type="primary"
               @click="handleSearch"
@@ -699,4 +699,21 @@ const formatDate = (date: string) => {
 }
 .text-success { color: var(--el-color-success); }
 .text-danger { color: var(--el-color-danger); }
+
+@media (max-width: 768px) {
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .card-header > div {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .card-header > div .el-button {
+    flex: 1 1 calc(50% - 4px);
+  }
+}
 </style>

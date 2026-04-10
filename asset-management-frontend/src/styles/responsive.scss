@@ -65,6 +65,13 @@ body {
    PAGE LAYOUT: Padding và spacing
    ───────────────────────────────────────────────────────── */
 
+/* iPad: overlay sidebar (<1280px) - nội dung chiếm full chiều rộng */
+@media (max-width: 1279px) {
+  .el-main {
+    padding: 20px !important;
+  }
+}
+
 /* Tablet và nhỏ hơn */
 @media (max-width: 992px) {
   .el-main {
@@ -92,8 +99,8 @@ body {
    PAGE HEADER: Title và Action Buttons
    ───────────────────────────────────────────────────────── */
 
-/* iPad Pro & Tablet ngang (1024px) */
-@media (max-width: 1024px) {
+/* iPad (≤1279px) — overlay mode, full width content */
+@media (max-width: 1279px) {
   .page-header .header-right {
     display: flex;
     flex-wrap: wrap;
@@ -347,8 +354,8 @@ body {
    DIALOGS: Form và Modal Windows
    ───────────────────────────────────────────────────────── */
 
-/* iPad / Tablet ngang - chỉ giới hạn dialog không tràn màn hình */
-@media (max-width: 1024px) {
+/* iPad / Tablet — dialog không tràn màn hình (overlay mode ≤ 1279px) */
+@media (max-width: 1279px) {
   .el-dialog {
     width: min(90vw, 960px) !important;
     max-width: 90vw !important;

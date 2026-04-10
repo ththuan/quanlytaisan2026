@@ -315,4 +315,11 @@ const handleSubmit = async () => {
   color: #909399;
   font-size: 12px;
 }
+
+@media (max-width: 768px) {
+  :deep(.el-col) {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
 </style>

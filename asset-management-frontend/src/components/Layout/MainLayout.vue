@@ -11,7 +11,7 @@
       </transition>
 
       <el-aside
-        v-show="!isHidden"
+        v-show="!isHidden || isOverlay"
         width="250px"
         class="sidebar"
         :class="{ 'sidebar--mobile': isOverlay, 'sidebar--open': isOverlay && !isHidden }"
@@ -312,7 +312,8 @@ const handleLogout = async () => {
 };
 
 const MOBILE_BREAKPOINT = 768;
-const TABLET_BREAKPOINT = 1024;
+// Tăng lên 1280 để bao gồm tất cả iPad (landscape iPad Pro 11" = 1194px, iPad Air = 1180px)
+const TABLET_BREAKPOINT = 1280;
 
 const isMobile = ref(false);
 const isTablet = ref(false);
@@ -325,9 +326,15 @@ const updateIsMobile = () => {
   const prevOverlay = isOverlay.value;
   isMobile.value = window.innerWidth < MOBILE_BREAKPOINT;
   isTablet.value = window.innerWidth >= MOBILE_BREAKPOINT && window.innerWidth < TABLET_BREAKPOINT;
-  // Tự động ẩn sidebar khi chuyển sang overlay mode
+
+  // Chuyển sang overlay mode → ẩn sidebar
   if (!prevOverlay && isOverlay.value) {
     isHidden.value = true;
+  }
+  // Chuyển từ overlay sang desktop (xoay màn hình) → khôi phục trạng thái
+  if (prevOverlay && !isOverlay.value) {
+    const hiddenState = localStorage.getItem('sidebarHidden');
+    isHidden.value = hiddenState === 'true';
   }
 };
 
@@ -605,7 +612,7 @@ const toggleSidebar = () => {
   white-space: nowrap;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1279px) {
   .header-right {
     gap: 6px;
   }
