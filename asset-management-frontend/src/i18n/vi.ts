@@ -81,15 +81,16 @@ export default {
   helpDocs: {
     title: 'Tài liệu hướng dẫn',
     subtitle:
-      'Hướng dẫn sử dụng theo vai trò: viên chức, trưởng đơn vị và giám hiệu — tập trung vào quy trình và thao tác thực tế trên phần mềm.',
+      'Hướng dẫn sử dụng theo vai trò: viên chức, trưởng đơn vị, giám hiệu và quản trị viên — tập trung vào quy trình và thao tác thực tế trên phần mềm.',
     rolesLead:
-      'Ưu tiên đọc tab đúng với vai trò của bạn. Phần “Tổng quan chức năng” phía dưới là bản rút gọn cho mọi vai trò; quản trị viên có thêm thao tác cấp hệ thống (người dùng, phòng ban, nhật ký…).',
+      'Ưu tiên đọc tab đúng với vai trò của bạn. Phần "Tổng quan chức năng" phía dưới là bản rút gọn cho mọi vai trò.',
     tabStaff: 'Viên chức',
     tabHead: 'Trưởng đơn vị',
     tabDirector: 'Giám hiệu',
+    tabAdmin: 'Quản trị viên',
     overviewTitle: 'Tổng quan chức năng hệ thống',
     overviewLead:
-      'Bảng sau giúp định vị nhanh các module. Chi tiết cách làm việc từng bước nằm ở các tab Viên chức / Trưởng đơn vị / Giám hiệu phía trên.',
+      'Bảng sau giúp định vị nhanh các module. Chi tiết cách làm việc từng bước nằm ở các tab phía trên.',
 
     staff: {
       intro:
@@ -181,7 +182,7 @@ export default {
 
     director: {
       intro:
-        'Giám hiệu có tầm nhìn toàn trường: xem các luồng phê duyệt cấp cao (tùy cấu hình), báo cáo tổng hợp, và các module mua sắm/kho khi được gán quyền tương đương giám đốc trong hệ thống.',
+        'Giám hiệu có tầm nhìn toàn trường: xem các luồng phê duyệt sửa chữa/cấp cao, báo cáo tổng hợp. Lưu ý: các menu Kho vật tư, Mua sắm/Cấp phát và Quản trị hệ thống chỉ dành riêng cho Quản trị viên — Giám hiệu không có quyền truy cập các mục này.',
       sec1Title: 'Phạm vi quyền và dữ liệu toàn trường',
       sec1Body: `1. Tài khoản giám hiệu thường xem được tài sản, điều chuyển và báo cáo trên phạm vi toàn trường (trừ khi cấu hình hạn chế).
 2. Dùng dữ liệu tổng hợp để chỉ đạo: tồn kho tài sản theo đơn vị, tình hình đề nghị mua sắm/sửa chữa, tiến độ kiểm kê.
@@ -202,16 +203,45 @@ export default {
 2. Với thanh lý: đảm bảo hồ sơ điện tử khớp quyết định thanh lý/hội đồng theo quy chế nhà trường.
 3. Chỉ đạo xử lý các trường hợp sai lệch lớn (mất mát, hư hỏng nặng) theo quy trình kỷ luật và báo cáo cấp trên nếu cần.`,
 
-      sec5Title: 'Báo cáo, mua sắm / kho vật tư (khi có quyền truy cập menu)',
-      sec5Body: `1. Menu “Báo cáo”: dùng để xuất/xem thống kê theo phòng ban, danh mục, giá trị — phục vụ họp giao ban hoặc báo cáo Sở/đoàn thanh tra.
-2. Menu “Mua sắm / Tăng giảm tài sản”, “Kho vật tư” (nếu hiển thị): theo dõi phiếu nhập xuất, tồn kho vật tư gắn với hoạt động trường.
-3. Giao quản trị viên hỗ trợ cấu hình danh mục, phòng ban và quyền nếu cần điều chỉnh cho sát thực tế năm học.`,
+      sec5Title: 'Báo cáo tổng hợp và phối hợp cấp trên',
+      sec5Body: `1. Menu "Báo cáo": dùng để xuất/xem thống kê theo phòng ban, danh mục, giá trị — phục vụ họp giao ban hoặc báo cáo Sở/đoàn thanh tra.
+2. Yêu cầu Quản trị viên hỗ trợ cấu hình danh mục, phòng ban, nhập liệu tài sản mới và điều chỉnh quyền khi cần.
+3. Khi đổi quy trình nội bộ: thông báo cho Quản trị viên cập nhật hướng dẫn; thông báo cho Trưởng đơn vị/viên chức để thao tác thống nhất trên phần mềm.`,
 
-      sec6Title: 'Phối hợp quản trị hệ thống và an toàn dữ liệu',
-      sec6Body: `1. Yêu cầu quản trị duy trì tài khoản theo đúng biến động nhân sự; tắt tài khoản khi nghỉ việc/chuyển công tác.
-2. Khuyến khích bật xác thực hai bước cho cán bộ chủ chốt; sao lưu và khôi phục dữ liệu theo quy trình IT của trường.
-3. Khi đổi quy trình nội bộ (ví dụ thêm bước duyệt giấy): cập nhật lại hướng dẫn đơn vị và thông báo cho Trưởng đơn vị/viên chức để thao tác thống nhất trên phần mềm.`,
+    },
 
+    admin: {
+      intro:
+        'Quản trị viên có toàn quyền trên hệ thống: quản lý tài khoản, cấu hình danh mục/phòng ban, kho vật tư, mua sắm/cấp phát và xem nhật ký hệ thống. Đây là vai trò duy nhất có thể truy cập các menu Kho vật tư, Mua sắm, Quản trị hệ thống.',
+      sec1Title: 'Quản lý tài khoản người dùng',
+      sec1Body: `1. Vào "Quản trị hệ thống > Người dùng": tạo tài khoản mới, gán vai trò (admin / giám hiệu / trưởng đơn vị / viên chức), gắn phòng ban.
+2. Vô hiệu hóa tài khoản khi nhân sự nghỉ việc hoặc chuyển công tác; không xóa để giữ lịch sử thao tác.
+3. Đặt lại mật khẩu khi người dùng quên; nhắc đổi mật khẩu ngay sau lần đầu đăng nhập.`,
+
+      sec2Title: 'Cấu hình danh mục và phòng ban',
+      sec2Body: `1. Vào "Quản trị hệ thống > Danh mục tài sản": thêm/sửa/ẩn danh mục; thiết lập thuộc tính khấu hao, đơn vị tính (cái, m², bộ...).
+2. Vào "Quản trị hệ thống > Phòng ban": cập nhật cơ cấu tổ chức khi có thay đổi; đảm bảo mỗi phòng ban có Trưởng đơn vị đúng vai trò.
+3. Danh mục đất và diện tích phòng (Đất, Phòng học, Phòng thực hành, Hội trường) không tính khấu hao — có thể nhập mà không cần giá mua.`,
+
+      sec3Title: 'Kho vật tư',
+      sec3Body: `1. Vào "Kho vật tư": quản lý danh sách vật tư tiêu hao/vật liệu; theo dõi tồn kho và phiếu nhập/xuất.
+2. Xử lý phiếu nhập kho khi có mua sắm mới; xuất kho khi bàn giao/sử dụng.
+3. Đây là menu chỉ dành cho Quản trị viên — các vai trò khác không thấy mục này.`,
+
+      sec4Title: 'Mua sắm và cấp phát',
+      sec4Body: `1. Vào "Mua sắm": xem và xử lý các đề nghị mua sắm từ các đơn vị; theo dõi tiến độ thực hiện.
+2. Phê duyệt hoặc từ chối đề nghị; nhập kết quả mua sắm khi hoàn thành.
+3. Cấp phát tài sản/vật tư cho phòng ban sau khi nhập kho; đảm bảo số liệu khớp với hồ sơ kế toán.`,
+
+      sec5Title: 'Phê duyệt điều chuyển và sửa chữa',
+      sec5Body: `1. Admin và Trưởng đơn vị đều có quyền phê duyệt phiếu điều chuyển tài sản.
+2. Với yêu cầu sửa chữa/bảo trì: xử lý cấp trường sau khi Trưởng đơn vị duyệt cấp 1.
+3. Can thiệp khi phiếu chờ quá lâu hoặc hai đơn vị có vướng mắc chưa giải quyết.`,
+
+      sec6Title: 'Nhật ký hệ thống và an toàn dữ liệu',
+      sec6Body: `1. Vào "Quản trị hệ thống > Nhật ký": kiểm tra lịch sử thao tác khi cần xác minh ai đã thay đổi dữ liệu nào.
+2. Đảm bảo sao lưu cơ sở dữ liệu định kỳ theo quy trình của đơn vị.
+3. Khi có yêu cầu thay đổi quy trình hoặc phân quyền: thực hiện trong code/cấu hình; thông báo cho người dùng liên quan.`,
     },
 
     block1Title: 'Tài sản & mã QR',
@@ -219,15 +249,15 @@ export default {
     block1b: 'Xuất / nhập Excel (quyền quản trị); tạo và in mã QR gắn tài sản.',
     block1c: 'Xem lịch sử thay đổi và thông tin khấu hao trên từng tài sản.',
     block2Title: 'Điều chuyển & luân chuyển',
-    block2a: 'Tạo đề nghị điều chuyển, theo dõi trạng thái phê duyệt.',
+    block2a: 'Tạo đề nghị điều chuyển (viên chức / Admin); Trưởng đơn vị hoặc Admin phê duyệt.',
     block2b: 'Danh sách tài sản cập nhật theo phòng ban hiện tại sau khi hoàn tất.',
     block3Title: 'Kiểm kê & thanh lý',
     block3a: 'Tạo đợt kiểm kê, quét QR khi kiểm đếm, xem báo cáo lệch.',
     block3b: 'Luồng đề nghị thanh lý / tiêu hủy theo quy định đơn vị.',
     block4Title: 'Báo cáo & phân quyền',
     block4a: 'Báo cáo tổng hợp theo phòng ban, danh mục; xuất file khi được phép.',
-    block4b: 'Quản trị viên: người dùng, phòng ban, cấu hình hệ thống và nhật ký thao tác.',
-    tip: 'Quy trình giấy tờ, hội đồng, ngưỡng giá trị phê duyệt và biểu mẫu riêng của trường có thể chi tiết hơn quy định trên phần mềm — vui lòng bổ sung trong quy chế nội bộ và đào tạo thêm tại đơn vị. Liên hệ IT khi cần chỉnh quyền hoặc cấu hình.',
+    block4b: 'Admin: người dùng, phòng ban, kho vật tư, mua sắm, nhật ký và quản trị hệ thống.',
+    tip: 'Quy trình giấy tờ, hội đồng, ngưỡng giá trị phê duyệt và biểu mẫu riêng của trường có thể chi tiết hơn quy định trên phần mềm — vui lòng bổ sung trong quy chế nội bộ và đào tạo thêm tại đơn vị. Liên hệ Quản trị viên khi cần chỉnh quyền hoặc cấu hình.',
   },
 
   helpSupport: {

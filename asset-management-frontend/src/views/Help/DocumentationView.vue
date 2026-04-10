@@ -88,6 +88,30 @@
           </el-collapse-item>
         </el-collapse>
       </el-tab-pane>
+
+      <el-tab-pane
+        :label="$t('helpDocs.tabAdmin')"
+        name="admin"
+      >
+        <p class="tab-intro">
+          {{ $t('helpDocs.admin.intro') }}
+        </p>
+        <el-collapse
+          v-model="openAdmin"
+          class="help-collapse"
+        >
+          <el-collapse-item
+            v-for="sec in adminSections"
+            :key="sec.name"
+            :title="$t(sec.titleKey)"
+            :name="sec.name"
+          >
+            <div class="help-body">
+              {{ $t(sec.bodyKey) }}
+            </div>
+          </el-collapse-item>
+        </el-collapse>
+      </el-tab-pane>
     </el-tabs>
 
     <h2 class="help-page__overview-title">
@@ -150,6 +174,7 @@ const activeRole = ref('staff');
 const openStaff = ref(['s1', 's2', 's3']);
 const openHead = ref(['h1', 'h2']);
 const openDirector = ref(['d1', 'd2']);
+const openAdmin = ref(['a1', 'a2']);
 
 const staffSections = [
   { name: 's1', titleKey: 'helpDocs.staff.sec1Title', bodyKey: 'helpDocs.staff.sec1Body' },
@@ -178,7 +203,15 @@ const directorSections = [
   { name: 'd3', titleKey: 'helpDocs.director.sec3Title', bodyKey: 'helpDocs.director.sec3Body' },
   { name: 'd4', titleKey: 'helpDocs.director.sec4Title', bodyKey: 'helpDocs.director.sec4Body' },
   { name: 'd5', titleKey: 'helpDocs.director.sec5Title', bodyKey: 'helpDocs.director.sec5Body' },
-  { name: 'd6', titleKey: 'helpDocs.director.sec6Title', bodyKey: 'helpDocs.director.sec6Body' },
+];
+
+const adminSections = [
+  { name: 'a1', titleKey: 'helpDocs.admin.sec1Title', bodyKey: 'helpDocs.admin.sec1Body' },
+  { name: 'a2', titleKey: 'helpDocs.admin.sec2Title', bodyKey: 'helpDocs.admin.sec2Body' },
+  { name: 'a3', titleKey: 'helpDocs.admin.sec3Title', bodyKey: 'helpDocs.admin.sec3Body' },
+  { name: 'a4', titleKey: 'helpDocs.admin.sec4Title', bodyKey: 'helpDocs.admin.sec4Body' },
+  { name: 'a5', titleKey: 'helpDocs.admin.sec5Title', bodyKey: 'helpDocs.admin.sec5Body' },
+  { name: 'a6', titleKey: 'helpDocs.admin.sec6Title', bodyKey: 'helpDocs.admin.sec6Body' },
 ];
 
 const blocks = [
