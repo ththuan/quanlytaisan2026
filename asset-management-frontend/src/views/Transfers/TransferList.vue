@@ -24,7 +24,7 @@
           <el-col
             :xs="24"
             :sm="10"
-            :md="8"
+            :md="7"
           >
             <el-input
               v-model="searchQuery"
@@ -37,7 +37,7 @@
           <el-col
             :xs="12"
             :sm="7"
-            :md="6"
+            :md="5"
           >
             <el-select
               v-model="filterStatus"
@@ -67,7 +67,7 @@
           <el-col
             :xs="24"
             :sm="24"
-            :md="4"
+            :md="6"
             class="filter-actions"
           >
             <el-button
