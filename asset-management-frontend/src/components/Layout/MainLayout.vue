@@ -170,36 +170,6 @@
               </div>
             </div>
             <div class="header-right">
-              <div v-if="!isTablet" class="header-help-links">
-                <el-button
-                  text
-                  bg
-                  class="header-help-btn"
-                  :title="$t('menu.documentation')"
-                  @click="router.push('/documentation')"
-                >
-                  <el-icon class="header-help-ic">
-                    <Document />
-                  </el-icon>
-                  <span>{{ $t('menu.documentation') }}</span>
-                </el-button>
-                <span
-                  class="header-help-divider"
-                  aria-hidden="true"
-                />
-                <el-button
-                  text
-                  bg
-                  class="header-help-btn"
-                  :title="$t('menu.support')"
-                  @click="router.push('/support')"
-                >
-                  <el-icon class="header-help-ic">
-                    <QuestionFilled />
-                  </el-icon>
-                  <span>{{ $t('menu.support') }}</span>
-                </el-button>
-              </div>
               <NotificationBell />
 
               <el-dropdown class="user-dropdown">
@@ -249,13 +219,84 @@
           </router-view>
         </el-main>
         <footer class="app-footer">
-          Copyright &copy; 2026 Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ.
+          <div class="footer-actions">
+            <el-button
+              class="footer-help-btn"
+              @click="showGuideDialog = true"
+            >
+              {{ $t('menu.documentation') }}
+            </el-button>
+            <el-button
+              class="footer-help-btn"
+              @click="showSupportDialog = true"
+            >
+              {{ $t('menu.support') }}
+            </el-button>
+          </div>
+          <div class="footer-copyright">
+            Copyright &copy; 2026 Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ.
+          </div>
         </footer>
       </el-container>
     </el-container>
 
     <TotpSetupDialog v-model="showTotpDialog" />
     <ChangePasswordDialog v-model="showChangePasswordDialog" />
+
+    <el-dialog
+      v-model="showGuideDialog"
+      title="Hướng dẫn sử dụng"
+      width="760px"
+      class="footer-help-dialog"
+    >
+      <div class="footer-help-content">
+        <div class="help-step">
+          <div class="help-step-title">Bước 1: Đăng nhập</div>
+          <p>Sử dụng tài khoản được cấp để đăng nhập vào hệ thống quản lý tài sản.</p>
+        </div>
+        <div class="help-step">
+          <div class="help-step-title">Bước 2: Quản lý tài sản</div>
+          <p>Thêm mới, cập nhật, tra cứu thông tin tài sản và theo dõi tình trạng sử dụng theo đơn vị.</p>
+        </div>
+        <div class="help-step">
+          <div class="help-step-title">Bước 3: Xử lý nghiệp vụ</div>
+          <p>Thực hiện điều chuyển, kiểm kê, sửa chữa, mua sắm hoặc thanh lý theo quyền được phân công.</p>
+        </div>
+        <div class="help-step">
+          <div class="help-step-title">Bước 4: Theo dõi và báo cáo</div>
+          <p>Xem thống kê, báo cáo tổng hợp và kiểm tra lịch sử thao tác khi cần đối soát dữ liệu.</p>
+        </div>
+      </div>
+      <template #footer>
+        <el-button type="primary" @click="showGuideDialog = false">Đã hiểu</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="showSupportDialog"
+      title="Liên hệ hỗ trợ"
+      width="680px"
+      class="footer-help-dialog"
+    >
+      <div class="footer-help-content">
+        <p><strong>{{ $t('helpSupport.contactTitle') }}:</strong> {{ $t('helpSupport.contactLabel') }}</p>
+        <p>{{ $t('helpSupport.contactHint') }}</p>
+        <p>
+          <strong>{{ $t('helpSupport.emailLabel') }}</strong>
+          support@cect.edu.vn
+        </p>
+        <p>
+          <strong>{{ $t('helpSupport.phoneLabel') }}</strong>
+          0292 3 888 999
+        </p>
+        <div class="help-support-note">
+          Vui lòng cung cấp ảnh chụp màn hình, thời điểm xảy ra lỗi và tài khoản sử dụng để được xử lý nhanh hơn.
+        </div>
+      </div>
+      <template #footer>
+        <el-button type="primary" @click="showSupportDialog = false">Đã hiểu</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -275,6 +316,8 @@ const authStore = useAuthStore();
 const { t } = useI18n();
 const showTotpDialog = ref(false);
 const showChangePasswordDialog = ref(false);
+const showGuideDialog = ref(false);
+const showSupportDialog = ref(false);
 
 const breadcrumbItems = computed(() => {
   const route = router.currentRoute.value;
@@ -585,37 +628,6 @@ const toggleSidebar = () => {
   gap: 12px;
 }
 
-.header-help-links {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding-right: 8px;
-  margin-right: 4px;
-  border-right: 1px solid #e2e8f0;
-}
-
-.header-help-btn {
-  font-weight: 600;
-  color: #475569 !important;
-  padding: 6px 10px !important;
-}
-
-.header-help-btn:hover {
-  color: #0f172a !important;
-}
-
-.header-help-ic {
-  margin-right: 6px;
-  font-size: 16px;
-}
-
-.header-help-divider {
-  width: 1px;
-  height: 18px;
-  background: #e2e8f0;
-  margin: 0 2px;
-}
-
 .user-name {
   max-width: 160px;
   overflow: hidden;
@@ -707,16 +719,68 @@ const toggleSidebar = () => {
 }
 
 .app-footer {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   font-size: 12px;
-  color: #94a3b8;
+  color: #64748b;
   padding: 8px 16px;
   background-color: #f8fafc;
   border-top: 1px solid #e2e8f0;
   flex-shrink: 0;
+}
+
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-help-btn {
+  border: 1px solid #cbd5e1;
+  color: #1d4ed8;
+  background: #eef2ff;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-weight: 500;
+}
+
+.footer-help-btn:hover {
+  color: #1e40af;
+  background: #e0e7ff;
+  border-color: #93c5fd;
+}
+
+.footer-copyright {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.footer-help-content {
+  color: #475569;
+  line-height: 1.65;
+}
+
+.help-step {
+  margin-bottom: 10px;
+}
+
+.help-step-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 2px;
+}
+
+.help-support-note {
+  margin-top: 12px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 10px 12px;
 }
 
 @media (max-width: 768px) {
@@ -724,6 +788,16 @@ const toggleSidebar = () => {
     padding: 12px 8px;
     /* iOS safe area - home indicator */
     padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .app-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .footer-copyright {
+    max-width: 100%;
   }
 }
 
