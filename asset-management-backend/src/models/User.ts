@@ -19,6 +19,8 @@ export interface UserAttributes {
   totp_enabled: boolean;
   google_id?: string | null;
   auth_provider: 'local' | 'google';
+  failed_login_attempts: number;
+  locked_until?: Date | null;
   created_at?: Date;
   updated_at?: Date;
 }
@@ -39,6 +41,8 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   public totp_enabled!: boolean;
   public google_id!: string | null;
   public auth_provider!: 'local' | 'google';
+  public failed_login_attempts!: number;
+  public locked_until!: Date | null;
   public readonly created_at!: Date;
   public readonly updated_at!: Date;
 
@@ -134,6 +138,16 @@ User.init(
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: false,
+    },
+    failed_login_attempts: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    locked_until: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null,
     },
   },
   {

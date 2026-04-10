@@ -113,7 +113,7 @@ app.use(requestLogger);
 // Rate limiting for auth endpoints (more lenient)
 const authLimiter = rateLimit({
   windowMs: parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-  max: parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS || '20'), // 20 login attempts per 15 minutes
+  max: parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS || '10'), // 10 login attempts per 15 minutes (IP-based; per-account lockout is also active)
   message: {
     success: false,
     message: 'Quá nhiều lần thử đăng nhập. Vui lòng đợi 15 phút rồi thử lại.',

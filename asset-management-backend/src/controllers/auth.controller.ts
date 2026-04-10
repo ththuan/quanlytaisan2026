@@ -19,7 +19,9 @@ export const register = async (req: Request, res: Response, next: NextFunction):
 
 export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const result = await authService.login(req.body ?? {});
+    const ipAddress = req.ip || req.socket?.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+    const result = await authService.login(req.body ?? {}, ipAddress, userAgent);
 
     res.status(200).json({
       success: true,

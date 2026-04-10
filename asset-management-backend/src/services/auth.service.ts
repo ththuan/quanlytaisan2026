@@ -1,7 +1,7 @@
 import speakeasy from 'speakeasy';
 import qrcode from 'qrcode';
 import jwt from 'jsonwebtoken';
-import { User, Department } from '../models';
+import { User, Department, AuditLog } from '../models';
 import { UnauthorizedError, ConflictError, NotFoundError, ValidationError } from '../utils/errorHandler';
 import { generateAccessToken, generateRefreshToken, verifyToken, JWTPayload } from '../utils/jwt.utils';
 import jwtConfig from '../config/jwt';
@@ -10,6 +10,10 @@ import envConfig from '../config/env';
 // Short-lived token issued after password verification when 2FA is enabled.
 const TEMP_TOKEN_EXPIRY = '5m';
 const TEMP_TOKEN_PURPOSE = '2fa_pending';
+
+// Brute-force protection: lock account after this many consecutive wrong passwords.
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MINUTES = 15;
 
 export interface RegisterInput {
   username: string;
@@ -84,15 +88,15 @@ class AuthService {
     };
   }
 
-  async login(data: LoginInput): Promise<AuthResponse | TotpPendingResponse> {
+  async login(data: LoginInput, ipAddress?: string, userAgent?: string): Promise<AuthResponse | TotpPendingResponse> {
     if (!data?.username || typeof data.password !== 'string') {
       throw new UnauthorizedError('Invalid credentials');
     }
 
-    // Find user by username (không include department để tránh lỗi join; thêm sau khi login)
+    // Find user by username — include totp_enabled so 2FA check works; exclude secret (not needed here)
     const user = await User.findOne({ 
       where: { username: String(data.username).trim() },
-      attributes: { exclude: ['totp_secret', 'totp_enabled'] },
+      attributes: { exclude: ['totp_secret'] },
     });
 
     if (!user) {
@@ -102,6 +106,14 @@ class AuthService {
     // Check if user is active
     if (!user.is_active) {
       throw new UnauthorizedError('Account is disabled');
+    }
+
+    // Check account lockout (per-username protection, not bypassable by changing IP)
+    if (user.locked_until && user.locked_until > new Date()) {
+      const minutesLeft = Math.ceil((user.locked_until.getTime() - Date.now()) / 60000);
+      throw new UnauthorizedError(
+        `Tài khoản bị tạm khóa do đăng nhập sai nhiều lần. Vui lòng thử lại sau ${minutesLeft} phút.`
+      );
     }
 
     // Verify password (guard: bcrypt can throw if password_hash is invalid)
@@ -117,11 +129,55 @@ class AuthService {
     }
 
     if (!isPasswordValid) {
+      // Increment failed attempts; lock account when threshold is reached
+      const newAttempts = (user.failed_login_attempts || 0) + 1;
+      const updates: Partial<{ failed_login_attempts: number; locked_until: Date | null }> = {
+        failed_login_attempts: newAttempts,
+      };
+      if (newAttempts >= MAX_FAILED_ATTEMPTS) {
+        updates.locked_until = new Date(Date.now() + LOCKOUT_DURATION_MINUTES * 60_000);
+      }
+      await user.update(updates);
+
+      // Log failed attempt to audit trail
+      try {
+        await AuditLog.create({
+          user_id: user.id,
+          action: 'login',
+          table_name: 'users',
+          record_id: user.id,
+          new_value: { success: false, attempts: newAttempts, locked: newAttempts >= MAX_FAILED_ATTEMPTS },
+          ip_address: ipAddress,
+          user_agent: userAgent,
+        });
+      } catch (_e) { /* never let audit failures block the auth response */ }
+
+      if (newAttempts >= MAX_FAILED_ATTEMPTS) {
+        throw new UnauthorizedError(
+          `Đăng nhập sai ${MAX_FAILED_ATTEMPTS} lần liên tiếp. Tài khoản bị khóa ${LOCKOUT_DURATION_MINUTES} phút.`
+        );
+      }
       throw new UnauthorizedError('Invalid credentials');
     }
 
-    // If 2FA is enabled, return a short-lived temp token (totp_* có thể undefined nếu bảng chưa có cột)
-    if ((user as any).totp_enabled && (user as any).totp_secret) {
+    // Successful password — reset lockout counter
+    await user.update({ failed_login_attempts: 0, locked_until: null });
+
+    // Log successful login to audit trail
+    try {
+      await AuditLog.create({
+        user_id: user.id,
+        action: 'login',
+        table_name: 'users',
+        record_id: user.id,
+        new_value: { success: true },
+        ip_address: ipAddress,
+        user_agent: userAgent,
+      });
+    } catch (_e) { /* never let audit failures block the auth response */ }
+
+    // If 2FA is enabled, return a short-lived temp token; secret is verified in validateTotpLogin
+    if (user.totp_enabled) {
       const tempToken = jwt.sign(
         { id: user.id, purpose: TEMP_TOKEN_PURPOSE },
         jwtConfig.secret,
