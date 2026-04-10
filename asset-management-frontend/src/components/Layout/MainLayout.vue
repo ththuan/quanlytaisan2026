@@ -531,6 +531,21 @@ const toggleSidebar = () => {
   min-width: 0;
 }
 
+.breadcrumb {
+  display: flex;
+  align-items: center;
+}
+
+.breadcrumb :deep(.el-breadcrumb) {
+  display: inline-flex;
+  align-items: center;
+}
+
+.breadcrumb :deep(.el-breadcrumb__item) {
+  display: inline-flex;
+  align-items: center;
+}
+
 .sidebar-toggle {
   border: none;
   background: #f1f5f9;
@@ -546,6 +561,9 @@ const toggleSidebar = () => {
 }
 
 .breadcrumb :deep(.el-breadcrumb__inner) {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
   color: #64748b;
   font-weight: 400;
 }
