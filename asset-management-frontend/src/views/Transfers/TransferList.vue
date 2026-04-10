@@ -83,12 +83,13 @@
         </el-row>
       </div>
 
-      <div class="responsive-table">
+      <div class="transfer-table-wrapper">
         <el-table
           v-loading="transferStore.loading"
           :data="transferStore.transfers"
           border
           stripe
+          style="width: 100%"
         >
           <el-table-column
             type="index"
@@ -370,6 +371,8 @@ const formatDate = (date: string) => {
 
 .filter-section {
   margin-bottom: 20px;
+  position: relative;
+  z-index: 2;
 }
 
 .filter-section .el-select {
@@ -384,13 +387,18 @@ const formatDate = (date: string) => {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
-  margin-top: 8px;
 }
 
 @media (max-width: 768px) {
   .filter-actions {
     justify-content: flex-start;
   }
+}
+
+.transfer-table-wrapper {
+  width: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .pagination {

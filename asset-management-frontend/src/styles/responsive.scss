@@ -692,6 +692,12 @@ body {
   z-index: 9999 !important;
 }
 
+/* El-Tree-Select dropdown (dùng trong DepartmentTreeSelect) */
+.el-tree-select__popper,
+.department-tree-select-popper {
+  z-index: 9999 !important;
+}
+
 /* El-DatePicker - tránh bị cắt trên iOS */
 .el-picker__popper {
   z-index: 9999 !important;
