@@ -554,7 +554,7 @@ const toggleSidebar = () => {
   height: 100vh;
   height: 100dvh;
   position: relative;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   background-color: #f8fafc;
 }
 

@@ -66,7 +66,7 @@
         Hoặc nhập thủ công:
         <el-tag
           type="info"
-          style="font-family:'Plus Jakarta Sans', sans-serif;font-size:14px;letter-spacing:2px"
+          style="font-family:'Inter', sans-serif;font-size:14px;letter-spacing:2px"
         >
           {{ secret }}
         </el-tag>

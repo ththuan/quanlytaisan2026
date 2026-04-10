@@ -12,11 +12,11 @@ useIdleTimeout();
 </script>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
   --el-font-size-base: 14px;
-  --el-font-family: 'Plus Jakarta Sans', sans-serif;
+  --el-font-family: 'Inter', sans-serif;
 }
 
 html {
@@ -31,7 +31,7 @@ html {
 }
 
 body {
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-family: 'Inter', sans-serif !important;
   font-size: 14px;
   color: #1e293b;
   background-color: #f8fafc;
@@ -41,14 +41,14 @@ body {
 }
 
 #app {
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-family: 'Inter', sans-serif !important;
   font-size: 14px;
 }
 
 /* Force modern font on UI elements */
 input, button, select, textarea, .el-button, .el-input, .el-select, .el-table, 
 .el-menu, .el-dropdown, .el-message, .el-breadcrumb, .el-form-item__label, .el-tag {
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-family: 'Inter', sans-serif !important;
   font-size: 14px;
 }
 

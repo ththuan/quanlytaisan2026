@@ -252,7 +252,7 @@ onMounted(() => { initCanvas(); });
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #060d1f 0%, #0a1a35 40%, #0d2145 70%, #091828 100%);
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   overflow: hidden;
 }
 

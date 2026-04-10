@@ -780,7 +780,7 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
   background-color: #f8fafc;
   min-height: calc(100vh - 56px);
   min-height: calc(100dvh - 56px);
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 .dashboard-header {
@@ -1186,7 +1186,7 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
 }
 
 .ip-text {
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 0.85rem;
   color: #94a3b8;
 }

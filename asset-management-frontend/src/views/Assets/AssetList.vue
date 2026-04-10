@@ -1075,7 +1075,7 @@ const buildPrintHTML = (items: Array<{ asset_code: string; name: string; categor
 <title>QR Code – ${deptName}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fff; }
+  body { font-family: 'Inter', sans-serif; background: #fff; }
   h2 { text-align: center; font-size: 14pt; padding: 6mm 0 3mm; }
   .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4mm; padding: 6mm 8mm; }
   .qr-cell {
