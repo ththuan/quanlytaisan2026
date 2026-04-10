@@ -142,7 +142,15 @@
               <div class="breadcrumb">
                 <el-breadcrumb separator="/">
                   <el-breadcrumb-item :to="{ path: '/' }">
-                    {{ $t('common.home') }}
+                    <span
+                      class="breadcrumb-home-chip"
+                      :title="$t('common.home')"
+                      aria-label="Trang chủ"
+                    >
+                      <el-icon>
+                        <House />
+                      </el-icon>
+                    </span>
                   </el-breadcrumb-item>
                   <template
                     v-for="(item, idx) in breadcrumbItems"
@@ -628,6 +636,23 @@ const toggleSidebar = () => {
   background-color: #fff;
   border-color: #e2e8f0;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.breadcrumb-home-chip {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e6f6ef;
+  color: #10b981;
+  border: 1px solid #d1fae5;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
+}
+
+.breadcrumb-home-chip .el-icon {
+  font-size: 20px;
 }
 
 .el-main {
