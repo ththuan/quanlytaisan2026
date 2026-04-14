@@ -40,6 +40,7 @@ services:
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
       DEFAULT_PASSWORD: ${DEFAULT_PASSWORD:-Ctec@123}
       BODY_LIMIT: ${BODY_LIMIT:-10mb}
@@ -56,13 +57,14 @@ services:
       - asset-management-network
     volumes:
       - ./asset-management-backend/src:/app/src
+      - ./asset-management-backend/tsconfig.json:/app/tsconfig.json
       - ./asset-management-backend/logs:/app/logs
       - ./asset-management-backend/storage:/app/storage
       - backend_backups:/app/backups
       - /app/node_modules
       # Cho phép trang Quản trị hệ thống gọi lệnh docker (xem/start/stop container)
       - /var/run/docker.sock:/var/run/docker.sock
-    command: sh -c "npm run migrate || echo 'MIGRATE FAILED' ; (npm run seed:admin || true) ; npx nodemon --legacy-watch --exec 'ts-node --transpile-only src/server.ts'"
+    command: sh -c "npm install --production=false && (npm run migrate || echo 'MIGRATE FAILED') && (npm run seed:admin || true) && npm run dev"
 
   # Frontend Web
   frontend:

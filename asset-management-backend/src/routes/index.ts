@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import publicRoutes from './public.routes';
 import authRoutes from './auth.routes';
 import assetsRoutes from './assets.routes';
 import usersRoutes from './users.routes';
@@ -22,6 +23,9 @@ import systemAdminRoutes from './systemAdmin.routes';
 import searchRoutes from './search.routes';
 
 const router = Router();
+
+// Public routes - không yêu cầu xác thực (đặt trước các route có auth)
+router.use('/public', publicRoutes);
 
 // API Routes
 router.use('/auth', authRoutes);

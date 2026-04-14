@@ -7,6 +7,7 @@ import path from 'path';
 import envConfig from './config/env';
 import logger from './utils/logger';
 import routes from './routes';
+import scanRoutes from './routes/scan.routes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/logging';
 import { cachingMiddleware } from './middleware/caching';
@@ -148,6 +149,9 @@ app.use('/api', limiter);
 
 // API Routes
 app.use('/api', routes);
+
+// Scan routes - Trang HTML tra cứu tài sản qua QR (không cần auth, không dưới /api/)
+app.use('/scan', scanRoutes);
 
 // Swagger API Documentation (tùy chọn - bỏ qua nếu thiếu module)
 import('./swagger')

@@ -7,6 +7,7 @@
 import QRCode from 'qrcode';
 import { Op } from 'sequelize';
 import { Asset } from '../models';
+import envConfig from '../config/env';
 
 export interface QRCodeData {
   asset_code: string;
@@ -20,11 +21,11 @@ export interface QRCodeData {
 class QRCodeService {
   /**
    * Generate QR code data string từ thông tin tài sản
-   * Chỉ encode asset_code (plain string) để QR đơn giản, ít mô-đun → in ra dễ quét hơn
+   * Encode URL công khai để camera điện thoại có thể mở trực tiếp trang tra cứu
    */
   generateQRCodeData(asset: Asset): string {
-    // Plain string, không JSON → QR ngắn nhất có thể, dễ đọc cả khi in nhỏ
-    return asset.asset_code;
+    const baseUrl = envConfig.frontendUrl.replace(/\/$/, '');
+    return `${baseUrl}/scan/${asset.asset_code}`;
   }
 
   /**
@@ -82,7 +83,24 @@ class QRCodeService {
   decodeQRCodeData(qrDataString: string): QRCodeData {
     const trimmed = qrDataString.trim();
     
-    // Format mới: plain asset_code (không phải JSON)
+    // Format URL: https://domain/scan/ASSET_CODE
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      const urlParts = trimmed.split('/');
+      const scanIndex = urlParts.indexOf('scan');
+      const assetCode = scanIndex !== -1 && urlParts[scanIndex + 1]
+        ? urlParts[scanIndex + 1]
+        : urlParts[urlParts.length - 1];
+      return {
+        asset_code: assetCode,
+        name: '',
+        category_code: '',
+        category_name: '',
+        quantity: 1,
+        id: 0,
+      };
+    }
+
+    // Format plain asset_code (không phải JSON, không phải URL)
     if (!trimmed.startsWith('{')) {
       return {
         asset_code: trimmed,

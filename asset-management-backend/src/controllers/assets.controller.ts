@@ -5,6 +5,7 @@ import assetService from '../services/asset.service';
 import depreciationCalculatorService from '../services/depreciationCalculator.service';
 import exportService from '../services/export.service';
 import qrcodeService from '../services/qrcode.service';
+import envConfig from '../config/env';
 import { AuthRequest } from '../middleware/auth.middleware';
 
 export const getAllAssets = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -514,8 +515,10 @@ export const getQRCode = async (req: AuthRequest, res: Response, _next: NextFunc
       return;
     }
 
-    // Nếu chưa có QR code, generate mới
-    if (!asset.qr_code || !asset.qr_code_image) {
+    // Nếu chưa có QR code, hoặc QR code chứa URL cũ (không khớp FRONTEND_URL hiện tại) → generate lại
+    const expectedBase = envConfig.frontendUrl.replace(/\/$/, '');
+    const qrOutdated = asset.qr_code && !asset.qr_code.startsWith(expectedBase);
+    if (!asset.qr_code || !asset.qr_code_image || qrOutdated) {
       try {
         const result = await qrcodeService.generateQRCodeForAsset(asset);
         res.status(200).json({

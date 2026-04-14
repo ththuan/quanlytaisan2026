@@ -1537,8 +1537,16 @@ const handleScanCode = async () => {
         throw new Error('Invalid QR code format');
       }
     } catch {
-      // Không phải JSON, tìm theo asset_code thông thường
-      assetData = await inventoryService.findAssetByCode(scannedValue);
+      // Không phải JSON - có thể là URL format (https://domain/scan/ASSET_CODE) hoặc mã thô
+      let codeToLookup = scannedValue;
+      if (scannedValue.startsWith('http://') || scannedValue.startsWith('https://')) {
+        const urlParts = scannedValue.split('/');
+        const scanIndex = urlParts.indexOf('scan');
+        codeToLookup = scanIndex !== -1 && urlParts[scanIndex + 1]
+          ? urlParts[scanIndex + 1]
+          : urlParts[urlParts.length - 1];
+      }
+      assetData = await inventoryService.findAssetByCode(codeToLookup);
     }
     
     // Kiểm tra xem tài sản có cần quét QR không
@@ -1577,6 +1585,7 @@ const handleScanCode = async () => {
       // Tự động lưu kết quả kiểm kê với trạng thái "Khớp"
       if (!report.value) {
         ElMessage.error('Không tìm thấy báo cáo kiểm kê');
+        scannedCode.value = '';
         return;
       }
       
@@ -1593,6 +1602,7 @@ const handleScanCode = async () => {
           actual_quantity: bookQuantity, // Phải = số lượng sổ sách (chứng minh tài sản còn tồn tại)
           asset_condition: 'good', // Mặc định: Tốt - Còn sử dụng được và đang sử dụng
           check_status: 'matched', // Chắc chắn khớp với sổ sách (đã quét QR = tài sản còn tồn tại)
+          scan_method: 'qr_scan', // Phương thức: quét mã QR
           notes: 'Đã quét QR code - Tài sản còn tồn tại tại đơn vị. Số lượng và kết quả kiểm kê không thể chỉnh sửa.',
         };
         

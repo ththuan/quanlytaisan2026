@@ -3,6 +3,13 @@ import type { RouteRecordRaw } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
 
 const routes: RouteRecordRaw[] = [
+  // Route công khai - quét QR code, không cần đăng nhập
+  {
+    path: '/scan/:code',
+    name: 'AssetPublicScan',
+    component: () => import('@/views/Assets/AssetPublicView.vue'),
+    meta: { requiresAuth: false, titleKey: 'assets.publicScan' },
+  },
   {
     path: '/login',
     name: 'Login',

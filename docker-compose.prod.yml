@@ -36,6 +36,7 @@ services:
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
       JWT_SECRET: ${JWT_SECRET}
       DEFAULT_PASSWORD: ${DEFAULT_PASSWORD:-Ctec@123}
       LOG_LEVEL: ${LOG_LEVEL:-info}

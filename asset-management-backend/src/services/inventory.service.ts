@@ -474,6 +474,8 @@ class InventoryService {
       suggest_repair?: boolean;
       disposal_reason?: string;
       notes?: string;
+      scan_method?: 'qr_scan' | 'manual_confirm' | 'area_manual' | 'batch';
+      manual_reason?: string;
     }
   ): Promise<InventoryReportDetail> {
     const report = await InventoryReport.findByPk(reportId);
@@ -537,6 +539,8 @@ class InventoryService {
       suggest_repair: suggestRepair,
       disposal_reason: data.disposal_reason || (isPendingDisposal ? 'Chi phí sửa chữa vượt quá giá trị tài sản' : undefined),
       notes: data.notes,
+      scan_method: data.scan_method,
+      manual_reason: data.manual_reason,
     });
 
     await this.updateReportSummary(reportId);
@@ -562,6 +566,8 @@ class InventoryService {
       suggest_repair: boolean;
       disposal_reason: string;
       notes: string;
+      scan_method: 'qr_scan' | 'manual_confirm' | 'area_manual' | 'batch';
+      manual_reason: string;
     }>
   ): Promise<InventoryReportDetail> {
     const detail = await InventoryReportDetail.findByPk(detailId, {
@@ -1011,8 +1017,19 @@ class InventoryService {
   async findAssetByCode(assetCodeOrQR: string, departmentId: number) {
     let asset;
 
+    // Hỗ trợ format URL: https://domain/scan/ASSET_CODE
+    const trimmed = assetCodeOrQR.trim();
+    let resolvedCode = trimmed;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      const urlParts = trimmed.split('/');
+      const scanIndex = urlParts.indexOf('scan');
+      resolvedCode = scanIndex !== -1 && urlParts[scanIndex + 1]
+        ? urlParts[scanIndex + 1]
+        : urlParts[urlParts.length - 1];
+    }
+
     try {
-      const qrData = JSON.parse(assetCodeOrQR);
+      const qrData = JSON.parse(resolvedCode);
       if (qrData.asset_code) {
         asset = await Asset.findOne({
           where: {
@@ -1042,7 +1059,7 @@ class InventoryService {
     } catch {
       asset = await Asset.findOne({
         where: {
-          asset_code: assetCodeOrQR,
+          asset_code: resolvedCode,
           current_department_id: departmentId,
           status: { [Op.in]: ['active', 'inactive', 'damaged', 'pending_disposal', 'pending_repair'] },
         },
