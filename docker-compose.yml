@@ -65,6 +65,12 @@ services:
       # Cho phép trang Quản trị hệ thống gọi lệnh docker (xem/start/stop container)
       - /var/run/docker.sock:/var/run/docker.sock
     command: sh -c "npm install --production=false && (npm run migrate || echo 'MIGRATE FAILED') && (npm run seed:admin || true) && npm run dev"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:5000/api/health', r => process.exit(r.statusCode===200?0:1)).on('error', () => process.exit(1))\""]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 120s
 
   # Frontend Web
   frontend:
@@ -80,7 +86,8 @@ services:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
       NODE_ENV: ${NODE_ENV:-development}
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - asset-management-network
     volumes:
@@ -90,6 +97,25 @@ services:
       - /app/node_modules
 
   # Cloudflare Quick Tunnel - miễn phí, chạy ngay, không cần tài khoản
+  # Nginx reverse proxy - HTTPS trên cổng 443, HTTP redirect trên cổng 80
+  nginx:
+    image: nginx:alpine
+    container_name: asset-management-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+    networks:
+      - asset-management-network
+
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: asset-management-cloudflared

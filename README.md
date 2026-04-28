@@ -94,18 +94,92 @@ docker compose --profile cloudflare up -d
 
 | File | Mô tả |
 |------|-------|
-| `docker-compose.yml` | Development (hot-reload, mount source code, port 3000 + 5000) |
-| `docker-compose.dev.yml` | Development nâng cao (healthcheck, không mount node_modules) |
+| `docker-compose.yml` | Development (hot-reload, mount source code, HTTPS qua nginx port 80/443) |
+| `docker-compose.dev.yml` | Development nâng cao (healthcheck, không mount node_modules, HTTP port 3000) |
 | `docker-compose.prod.yml` | Production (nginx port 80/443, build tối ưu, không expose port trực tiếp) |
 
-Chạy production:
-```bash
-# Tạo thêm volume cho backup (production)
-docker volume create quanlytaisan_backend_backups
+---
 
-# Tạo SSL certificate tự ký (nếu chưa có)
+## 🔐 Chạy với HTTPS / SSL
+
+`docker-compose.yml` (dev) và `docker-compose.prod.yml` (production) đều dùng **nginx** làm reverse proxy với HTTPS trên cổng 443. HTTP (port 80) tự redirect sang HTTPS, ngoại trừ các đường dẫn công khai như `/scan/` và `/api/public/` (dành cho quét QR trên điện thoại không cần cert).
+
+### 1. Tạo SSL certificate tự ký (lần đầu)
+
+```powershell
+# Tự động phát hiện IP mạng nội bộ và tạo cert vào nginx/ssl/
 powershell -ExecutionPolicy Bypass -File scripts\generate-ssl.ps1
 
+# Hoặc chỉ định IP cụ thể:
+powershell -ExecutionPolicy Bypass -File scripts\generate-ssl.ps1 -IP 192.168.1.100
+```
+
+Script tạo ra `nginx/ssl/server.crt` và `nginx/ssl/server.key`. Certificate có thời hạn **10 năm**, bao gồm SAN cho cả IP và `localhost`.
+
+> **Đã có cert sẵn?** Đặt file vào `nginx/ssl/server.crt` và `nginx/ssl/server.key` là xong.
+
+### 2. Chạy development với HTTPS
+
+```bash
+# Tạo volume (bắt buộc lần đầu)
+docker volume create quanlytaisan_postgres_data
+
+docker compose up -d
+```
+
+Truy cập: **`https://<IP-máy-chủ>`** (ví dụ `https://172.16.116.67`)
+
+Trình duyệt sẽ báo **"Không bảo mật"** (cert tự ký) → bấm **Nâng cao → Vẫn tiếp tục**.
+
+> **Lưu ý:** `VITE_HTTPS` trong `.env` không cần bật khi dùng Docker — HTTPS do nginx xử lý, không phải Vite.
+
+### 3. Chạy production với HTTPS
+
+```bash
+# Tạo volume lần đầu
+docker volume create quanlytaisan_postgres_data
+docker volume create quanlytaisan_backend_backups
+
+# Tạo cert nếu chưa có
+powershell -ExecutionPolicy Bypass -File scripts\generate-ssl.ps1
+
+docker compose -f docker-compose.prod.yml up -d
+```
+
+Truy cập: **`https://<IP-hoặc-domain>`**
+
+### 4. Cấu hình `.env` cho HTTPS
+
+Khi chạy với HTTPS, cập nhật `FRONTEND_URL` để CORS và redirect đúng:
+
+```env
+FRONTEND_URL=https://172.16.116.67
+CORS_ORIGIN=https://172.16.116.67
+```
+
+### 5. (Tuỳ chọn) Chạy Vite dev server HTTPS trực tiếp trên Windows
+
+Nếu không dùng Docker mà chạy Vite trực tiếp trên máy Windows:
+
+```batch
+cd asset-management-frontend
+dev-https.bat
+```
+
+Hoặc set biến môi trường rồi chạy:
+```powershell
+$env:VITE_HTTPS = "true"
+npx vite
+```
+
+Vite dùng `@vitejs/plugin-basic-ssl` để tạo cert tạm thời. Mở: **`https://localhost:3000`** → chấp nhận cảnh báo cert 1 lần.
+
+> **Lưu ý khi dùng Vite HTTPS trực tiếp:** `host` bị giới hạn về `localhost` (không bind `0.0.0.0`) để tránh lỗi `ERR_SSL_PROTOCOL_ERROR` trên Windows. Các máy khác trong mạng nội bộ **không truy cập được** qua IP — dùng Docker + nginx nếu cần truy cập từ nhiều máy.
+
+---
+
+Chạy production (cũ, giữ lại để tham khảo):
+```bash
 docker compose -f docker-compose.prod.yml up -d
 ```
 
