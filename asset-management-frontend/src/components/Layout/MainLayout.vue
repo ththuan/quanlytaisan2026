@@ -262,7 +262,7 @@
             </el-collapse>
           </el-tab-pane>
 
-          <el-tab-pane :label="$t('helpDocs.tabHead')" name="head">
+          <el-tab-pane :label="$t('helpDocs.tabHead')" name="head" lazy>
             <p class="tab-intro">{{ $t('helpDocs.head.intro') }}</p>
             <el-collapse v-model="openGuideHead" class="help-collapse">
               <el-collapse-item v-for="sec in guideHeadSections" :key="sec.name" :title="$t(sec.titleKey)" :name="sec.name">
@@ -271,7 +271,7 @@
             </el-collapse>
           </el-tab-pane>
 
-          <el-tab-pane :label="$t('helpDocs.tabDirector')" name="director">
+          <el-tab-pane :label="$t('helpDocs.tabDirector')" name="director" lazy>
             <p class="tab-intro">{{ $t('helpDocs.director.intro') }}</p>
             <el-collapse v-model="openGuideDirector" class="help-collapse">
               <el-collapse-item v-for="sec in guideDirectorSections" :key="sec.name" :title="$t(sec.titleKey)" :name="sec.name">
@@ -280,7 +280,7 @@
             </el-collapse>
           </el-tab-pane>
 
-          <el-tab-pane :label="$t('helpDocs.tabAdmin')" name="admin">
+          <el-tab-pane :label="$t('helpDocs.tabAdmin')" name="admin" lazy>
             <p class="tab-intro">{{ $t('helpDocs.admin.intro') }}</p>
             <el-collapse v-model="openGuideAdmin" class="help-collapse">
               <el-collapse-item v-for="sec in guideAdminSections" :key="sec.name" :title="$t(sec.titleKey)" :name="sec.name">
@@ -329,11 +329,11 @@
         <p>{{ $t('helpSupport.contactHint') }}</p>
         <p>
           <strong>{{ $t('helpSupport.emailLabel') }}</strong>
-          support@cect.edu.vn
+          ththuan@ctec.edu.vn
         </p>
         <p>
           <strong>{{ $t('helpSupport.phoneLabel') }}</strong>
-          0292 3 888 999
+          0944300848
         </p>
         <div class="help-support-note">
           Vui lòng cung cấp ảnh chụp màn hình, thời điểm xảy ra lỗi và tài khoản sử dụng để được xử lý nhanh hơn.
@@ -603,7 +603,7 @@ const toggleSidebar = () => {
 .el-menu {
   border-right: none !important;
   background-color: transparent !important;
-  padding: 0 12px;
+  padding: 20px 12px 12px;
 }
 
 :deep(.el-menu-item) {
@@ -619,6 +619,11 @@ const toggleSidebar = () => {
     color 0.22s cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Menu item đầu tiên có margin-top nhiều hơn */
+:deep(.el-menu-item:first-child) {
+  margin-top: 8px;
 }
 
 :deep(.el-menu-item:active) {
@@ -829,6 +834,18 @@ const toggleSidebar = () => {
   /* iOS: smooth scroll trong main content */
   -webkit-overflow-scrolling: touch;
   overflow-y: auto;
+  /* Desktop Chrome/Edge: prevent flash when switching tabs */
+  contain: layout style paint;
+  isolation: isolate;
+}
+
+/* Desktop-specific optimizations to prevent tab-switch flash */
+@media (min-width: 1024px) {
+  .el-main {
+    /* Force GPU compositing layer on desktop */
+    will-change: scroll-position;
+    transform: translateZ(0);
+  }
 }
 
 .app-footer {

@@ -4,6 +4,7 @@
     :title="isEdit ? $t('reports.editReport') : $t('reports.createReport')"
     width="600px"
     :close-on-click-modal="false"
+    destroy-on-close
     @update:model-value="$emit('update:visible', $event)"
   >
     <el-form

@@ -4,6 +4,8 @@ import ElementPlus from 'element-plus';
 import 'element-plus/dist/index.css';
 import './styles/responsive.scss';
 import './styles/motion.scss';
+import './styles/dialog-optimization.scss';
+import './styles/dialog-close-fix.scss';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import App from './App.vue';
 import router from './router';

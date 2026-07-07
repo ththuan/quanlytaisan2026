@@ -58,3 +58,8 @@ export const getMaintenanceStats = (params?: DashboardParams) => {
 export const getHierarchyStats = (params?: DashboardParams) => {
   return api.get('/dashboard/hierarchy', { params });
 };
+
+// 10. Pending Approvals (for approval tab in dashboard)
+export const getPendingApprovals = () => {
+  return api.get('/notifications/pending-approvals');
+};

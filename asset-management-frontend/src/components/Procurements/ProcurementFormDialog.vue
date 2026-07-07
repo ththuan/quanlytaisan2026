@@ -4,6 +4,7 @@
     :title="editId ? 'Sửa phiếu' : 'Tạo phiếu'"
     width="980px"
     class="procurement-dialog"
+    destroy-on-close
     @close="emit('update:modelValue', false)"
   >
     <!-- Banner: phiếu được chuyển từ đề nghị mua sắm -->

@@ -261,6 +261,7 @@
       <el-tab-pane
         label="Báo cáo kiểm kê"
         name="reports"
+        lazy
       >
         <!-- Filters -->
         <div class="filters">

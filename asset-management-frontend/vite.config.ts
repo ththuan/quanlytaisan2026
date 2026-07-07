@@ -65,12 +65,19 @@ export default defineConfig(({ mode }) => {
       },
     ].filter(Boolean) as any,
     server: {
-      // HTTPS + 0.0.0.0 gây ERR_SSL_PROTOCOL_ERROR trên Windows → dùng localhost khi HTTPS
-      host: useHttps ? 'localhost' : '0.0.0.0',
+      host: '0.0.0.0', // Allow external access (IP-based)
       port,
       https: useHttps,
       allowedHosts: true,
       open: false,
+      hmr: {
+        // Let browser auto-detect the correct host (localhost or IP)
+        // When accessing via IP, WebSocket will connect to that IP
+        protocol: useHttps ? 'wss' : 'ws',
+        // Don't specify host - let Vite use the browser's current host
+        port: port,
+        overlay: false, // Disable error overlay to avoid WebSocket error popup
+      },
       proxy: {
         '/storage': {
           target: env.VITE_PROXY_TARGET || 'http://backend:5000',

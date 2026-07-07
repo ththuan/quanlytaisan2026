@@ -45,6 +45,49 @@ interface NotificationState {
   lastFetchTime: number | null;
   isFetching: boolean;
   retryDelay: number;
+  dismissedNotifications: Set<string>; // Store dismissed notification keys
+}
+
+// Helper to generate unique key for notification
+function getNotificationKey(notification: Notification): string {
+  // Use type + related ID to uniquely identify a notification
+  if (notification.transfer_id) return `transfer-${notification.transfer_id}`;
+  if (notification.maintenance_id) return `maintenance-${notification.maintenance_id}`;
+  if (notification.report_id) return `report-${notification.report_id}`;
+  if (notification.disposal_id) return `disposal-${notification.disposal_id}`;
+  return `notification-${notification.id}`;
+}
+
+// Load dismissed notifications from localStorage
+function loadDismissedNotifications(): Set<string> {
+  try {
+    const stored = localStorage.getItem('dismissed_notifications');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Only keep dismissals from last 30 days
+      const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+      const filtered = Object.entries(parsed)
+        .filter(([_, timestamp]) => (timestamp as number) > thirtyDaysAgo)
+        .map(([key]) => key);
+      return new Set(filtered);
+    }
+  } catch (e) {
+    console.error('Error loading dismissed notifications:', e);
+  }
+  return new Set();
+}
+
+// Save dismissed notifications to localStorage
+function saveDismissedNotifications(dismissed: Set<string>) {
+  try {
+    const obj: Record<string, number> = {};
+    dismissed.forEach(key => {
+      obj[key] = Date.now();
+    });
+    localStorage.setItem('dismissed_notifications', JSON.stringify(obj));
+  } catch (e) {
+    console.error('Error saving dismissed notifications:', e);
+  }
 }
 
 export const useNotificationStore = defineStore('notification', {
@@ -56,6 +99,7 @@ export const useNotificationStore = defineStore('notification', {
     lastFetchTime: null,
     isFetching: false,
     retryDelay: 60000,
+    dismissedNotifications: loadDismissedNotifications(),
   }),
 
   getters: {
@@ -91,8 +135,14 @@ export const useNotificationStore = defineStore('notification', {
         const response: any = await api.get('/notifications/pending-approvals');
         const items: Notification[] = response?.data || response || [];
 
-        this.notifications = items;
-        this.unreadCount = items.length;
+        // Filter out dismissed notifications
+        const filteredItems = items.filter(item => {
+          const key = getNotificationKey(item);
+          return !this.dismissedNotifications.has(key);
+        });
+
+        this.notifications = filteredItems;
+        this.unreadCount = filteredItems.length;
         this.lastFetchTime = now;
         this.retryDelay = 60000;
       } catch (error: any) {
@@ -111,11 +161,28 @@ export const useNotificationStore = defineStore('notification', {
     },
 
     async markAsRead(notificationId: number) {
+      // Find notification and add to dismissed set
+      const notification = this.notifications.find(n => n.id === notificationId);
+      if (notification) {
+        const key = getNotificationKey(notification);
+        this.dismissedNotifications.add(key);
+        saveDismissedNotifications(this.dismissedNotifications);
+      }
+      
+      // Remove from current list
       this.notifications = this.notifications.filter(n => n.id !== notificationId);
       this.unreadCount = this.notifications.length;
     },
 
     async markAllAsRead() {
+      // Add all current notifications to dismissed set
+      this.notifications.forEach(notification => {
+        const key = getNotificationKey(notification);
+        this.dismissedNotifications.add(key);
+      });
+      saveDismissedNotifications(this.dismissedNotifications);
+      
+      // Clear current list
       this.notifications = [];
       this.unreadCount = 0;
     },
@@ -123,6 +190,13 @@ export const useNotificationStore = defineStore('notification', {
     clearNotifications() {
       this.notifications = [];
       this.unreadCount = 0;
+    },
+
+    clearDismissedNotifications() {
+      this.dismissedNotifications.clear();
+      saveDismissedNotifications(this.dismissedNotifications);
+      // Refresh to show all notifications again
+      this.fetchNotifications(true);
     },
   },
 });

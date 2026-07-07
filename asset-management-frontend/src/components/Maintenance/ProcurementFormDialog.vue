@@ -4,6 +4,7 @@
     :title="isEdit ? $t('maintenance.procurement.editRequest') : $t('maintenance.procurement.createRequest')"
     width="95%"
     :close-on-click-modal="false"
+    destroy-on-close
     top="5vh"
     @update:model-value="$emit('update:visible', $event)"
   >

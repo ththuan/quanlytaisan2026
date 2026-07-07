@@ -1,0 +1,137 @@
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL DIALOG CLOSE FIX - SUMMARY
+   
+   Problem: Dialogs flash white when closing on Chrome/Edge desktop
+   Root cause: Element Plus fade-out transition causes brief white flash
+   
+   Solution: Override ALL close animations to use instant hide
+   
+   Files modified:
+   1. App.vue - Global event handlers for dialog close
+   2. dialog-optimization.scss - CSS overrides for instant close
+   3. motion.scss - Fade transition overrides
+   
+   This fix applies to ALL dialogs automatically:
+   ✓ el-dialog (all forms, details, etc.)
+   ✓ el-drawer
+   ✓ el-message-box
+   ✓ All popovers and dropdowns
+   
+   NO need to modify individual dialog components!
+   ═══════════════════════════════════════════════════════════ */
+
+/* Force instant close for all overlay-based components */
+.el-overlay.v-leave-active,
+.el-overlay.v-leave-to,
+.el-overlay.is-closing {
+  transition: none !important;
+  animation: none !important;
+  opacity: 0 !important;
+}
+
+/* Force instant close for dialog content */
+.el-dialog.v-leave-active,
+.el-dialog.v-leave-to,
+.el-drawer.v-leave-active,
+.el-drawer.v-leave-to {
+  transition: none !important;
+  animation: none !important;
+  opacity: 0 !important;
+  transform: none !important;
+}
+
+/* Handle Element Plus animation classes */
+.dialog-fade-leave-active,
+.dialog-fade-leave-to,
+.el-zoom-in-center-leave-active,
+.el-zoom-in-center-leave-to,
+.el-zoom-in-top-leave-active,
+.el-zoom-in-top-leave-to {
+  transition: none !important;
+  animation: none !important;
+  opacity: 0 !important;
+  transform: none !important;
+}
+
+/* Message box specific */
+.el-message-box__wrapper.v-leave-active,
+.el-message-box__wrapper.v-leave-to {
+  transition: opacity 0.1s ease !important; /* Keep slight fade for system dialogs */
+}
+
+/* Popover close - instant hide */
+.el-popper.v-leave-active,
+.el-popper.v-leave-to {
+  transition: none !important;
+  opacity: 0 !important;
+}
+
+/* Loading overlay - instant hide */
+.el-loading-mask.is-fullscreen.v-leave-active,
+.el-loading-mask.is-fullscreen.v-leave-to {
+  transition: none !important;
+  opacity: 0 !important;
+}
+
+/* Prevent any lingering backdrop */
+.el-popup-parent--hidden {
+  /* Restore scrolling immediately */
+  overflow: auto !important;
+}
+
+/* Critical: Hide overlay backdrop instantly */
+body > .el-overlay:not(.is-message-box) {
+  /* When closing, hide immediately */
+  &.v-leave-active,
+  &.v-leave-to {
+    opacity: 0 !important;
+    transition: none !important;
+    /* Ensure it doesn't block clicks during close */
+    pointer-events: none !important;
+  }
+}
+
+/* Desktop Chrome/Edge specific - most aggressive fix */
+@media (min-width: 1024px) {
+  .chromium-desktop {
+    /* All overlays close instantly on desktop */
+    .el-overlay:not(.is-message-box) {
+      &.v-leave-active,
+      &.v-leave-to {
+        transition: none !important;
+        animation: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+    }
+    
+    /* All dialogs/drawers close instantly on desktop */
+    .el-dialog,
+    .el-drawer {
+      &.v-leave-active,
+      &.v-leave-to {
+        transition: none !important;
+        animation: none !important;
+        opacity: 0 !important;
+        transform: none !important;
+        visibility: hidden !important;
+      }
+    }
+  }
+}
+
+/* Ensure body scrolling is restored immediately after dialog closes */
+body.el-popup-parent--hidden {
+  /* Force restore scroll on next frame */
+  &:not(:has(.el-overlay)) {
+    overflow: auto !important;
+  }
+}
+
+/* Prevent overlay z-index from blocking content when closing */
+.el-overlay.v-leave-active,
+.el-overlay.v-leave-to {
+  z-index: -1 !important;
+  pointer-events: none !important;
+}

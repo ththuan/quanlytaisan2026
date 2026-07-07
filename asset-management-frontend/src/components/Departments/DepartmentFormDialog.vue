@@ -4,7 +4,9 @@
     :title="isEdit ? $t('departments.editDepartment') : $t('departments.addDepartment')"
     width="600px"
     :close-on-click-modal="false"
-    @close="handleClose"
+    destroy-on-close
+    :append-to-body="true"
+    @closed="handleClosed"
   >
     <el-form
       ref="formRef"
@@ -173,9 +175,12 @@ const resetForm = () => {
   formData.description = '';
 };
 
-const handleClose = () => {
+const handleClosed = () => {
   resetForm();
   formRef.value?.resetFields();
+};
+
+const handleClose = () => {
   emit('update:visible', false);
 };
 

@@ -4,6 +4,7 @@
     :title="$t('transfers.createTransfer')"
     width="650px"
     :close-on-click-modal="false"
+    destroy-on-close
     @update:model-value="$emit('update:visible', $event)"
   >
     <el-form

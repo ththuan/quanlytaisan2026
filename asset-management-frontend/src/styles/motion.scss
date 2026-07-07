@@ -19,12 +19,26 @@
   transition:
     opacity var(--motion-duration-md) var(--motion-ease-out),
     transform var(--motion-duration-md) var(--motion-ease-out);
+  /* Prevent layout shift during transition */
+  will-change: opacity, transform;
+  /* Desktop: force layer creation to prevent repaint flash */
+  @media (min-width: 1024px) {
+    backface-visibility: hidden;
+    transform: translateZ(0);
+  }
 }
 
 .route-leave-active {
   transition:
     opacity var(--motion-duration-fast) var(--motion-ease-in-out),
     transform var(--motion-duration-fast) var(--motion-ease-in-out);
+  /* Position leaving element absolutely to prevent layout jumping */
+  position: absolute;
+  width: 100%;
+  /* Desktop: optimize leaving transition */
+  @media (min-width: 1024px) {
+    pointer-events: none;
+  }
 }
 
 .route-enter-from {
@@ -72,6 +86,7 @@
 }
 
 /* ─── Element Plus: dialogs / drawer overlay ─── */
+/* Dialog optimizations moved to dialog-optimization.scss */
 .el-overlay {
   transition: background-color var(--motion-duration-md) var(--motion-ease-out) !important;
 }
@@ -79,6 +94,17 @@
 .el-fade-in-linear-enter-active,
 .el-fade-in-linear-leave-active {
   transition: opacity var(--motion-duration-md) var(--motion-ease-out) !important;
+}
+
+/* OVERRIDE: Disable fade-out animation to prevent dialog flash */
+.el-fade-in-linear-leave-active {
+  /* Instant disappear instead of slow fade - prevents white flash */
+  transition: none !important;
+  opacity: 0 !important;
+}
+
+.el-fade-in-linear-leave-to {
+  opacity: 0 !important;
 }
 
 /* Message / notification */
@@ -142,6 +168,26 @@
     width var(--motion-duration-md) var(--motion-ease-emphasized) !important;
 }
 
+/* Tab pane content — smooth fade in/out to prevent flickering */
+.el-tab-pane {
+  animation: tab-content-fade-in var(--motion-duration-fast) var(--motion-ease-out);
+  /* Optimize rendering performance */
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes tab-content-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Input focus ring smooth */
 .el-input__wrapper {
   transition: box-shadow var(--motion-duration-fast) var(--motion-ease-out),
@@ -192,5 +238,30 @@
 
   .el-button:active:not(.is-disabled):not(.is-loading) {
     transform: none !important;
+  }
+
+  .el-tab-pane {
+    animation: none !important;
+  }
+}
+
+/* Temporarily disable transitions when tab just regained visibility (Chromium desktop only) */
+@media (min-width: 1024px) {
+  .chromium-desktop.tab-switching * {
+    transition: none !important;
+    animation: none !important;
+  }
+  
+  /* IMPORTANT: Re-enable transitions for dialogs/overlays to prevent flash */
+  .chromium-desktop.tab-switching .el-overlay,
+  .chromium-desktop.tab-switching .el-dialog,
+  .chromium-desktop.tab-switching .el-drawer,
+  .chromium-desktop.tab-switching .el-message-box,
+  .chromium-desktop.tab-switching .el-popover,
+  .chromium-desktop.tab-switching .el-popper {
+    transition: opacity 0.01ms ease !important;
+    animation: none !important;
+    /* Keep overlay/dialog rendering optimized */
+    will-change: auto;
   }
 }

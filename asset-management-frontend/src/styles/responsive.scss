@@ -41,10 +41,17 @@ body {
   border-radius: 8px;
   /* iOS momentum scroll */
   overscroll-behavior-x: contain;
+  /* Desktop optimization: prevent repaint flash */
+  contain: layout style paint;
+  will-change: scroll-position;
 }
 
 .responsive-table .el-table {
   min-width: 900px; /* Đảm bảo table có đủ không gian */
+  /* Optimize table rendering on desktop browsers */
+  @media (min-width: 1024px) {
+    contain: layout style;
+  }
 }
 
 /* Tablet: giảm min-width */
@@ -305,6 +312,11 @@ body {
 /* ─────────────────────────────────────────────────────────
    MAIN LAYOUT HEADER: Breadcrumb và User Info
    ───────────────────────────────────────────────────────── */
+
+/* Add spacing below header for better content separation */
+.el-main {
+  padding-top: 20px !important;
+}
 
 /* iPad / Tablet ngang */
 @media (max-width: 1024px) {

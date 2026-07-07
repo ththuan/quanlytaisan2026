@@ -1,0 +1,211 @@
+/* ═══════════════════════════════════════════════════════════
+   Dialog/Popup Optimizations
+   Prevent flash and improve performance for dialogs, drawers, popovers
+   APPLIES TO ALL DIALOGS - No need to modify individual components
+   ═══════════════════════════════════════════════════════════ */
+
+/* Overlay optimizations - prevent flash on tab switching */
+.el-overlay,
+.el-overlay-dialog {
+  /* Force GPU acceleration */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  /* Isolate from main content rendering */
+  isolation: isolate;
+  /* Smoother fade transition */
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* CRITICAL: Prevent flash when closing dialogs */
+.el-overlay.is-closing,
+.el-overlay.v-leave-active,
+.el-overlay.v-leave-to {
+  /* Instant disappear instead of animated fade - prevents flash */
+  transition: none !important;
+  opacity: 0 !important;
+}
+
+/* Dialog optimization */
+.el-dialog,
+.el-drawer,
+.el-message-box {
+  /* Prevent content flash */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  /* Contain layout changes within dialog */
+  contain: layout style;
+  /* Smooth scale animation only on open */
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* CRITICAL: Disable dialog animation when closing */
+.el-overlay.is-closing .el-dialog,
+.el-overlay.v-leave-active .el-dialog,
+.el-overlay.v-leave-to .el-dialog {
+  transition: none !important;
+  transform: none !important;
+}
+
+/* Dialog body - prevent internal reflows from affecting outside */
+.el-dialog__body,
+.el-drawer__body {
+  /* CSS containment for better performance */
+  contain: layout style paint;
+  /* Prevent flash when closing */
+  backface-visibility: hidden;
+}
+
+/* CRITICAL FIX: Override Element Plus default close animation */
+/* These classes are added by Element Plus during close */
+.el-dialog.v-leave-active,
+.el-dialog.v-leave-to,
+.el-drawer.v-leave-active,
+.el-drawer.v-leave-to {
+  /* Force instant disappear - NO animation */
+  transition: none !important;
+  animation: none !important;
+  opacity: 0 !important;
+  transform: none !important;
+}
+
+/* Also handle dialog wrapper animations */
+.el-dialog__wrapper.v-leave-active,
+.el-dialog__wrapper.v-leave-to {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Popovers and dropdowns */
+.el-popper,
+.el-popover,
+.el-select-dropdown,
+.el-picker-panel,
+.el-cascader-panel,
+.el-date-picker,
+.el-time-picker {
+  /* Optimize for frequent show/hide */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+  /* Prevent z-index issues */
+  isolation: isolate;
+}
+
+/* Select dropdown specific */
+.el-select-dropdown__item {
+  /* Smooth hover without repaint */
+  backface-visibility: hidden;
+}
+
+/* Notification bell dropdown */
+.notification-popover {
+  backface-visibility: hidden;
+  will-change: opacity;
+}
+
+/* Desktop Chrome/Edge: Extra optimization */
+@media (min-width: 1024px) {
+  .chromium-desktop .el-overlay {
+    /* More aggressive compositing on desktop */
+    will-change: auto; /* Don't use will-change on overlay, causes flash */
+  }
+  
+  .chromium-desktop .el-dialog,
+  .chromium-desktop .el-drawer {
+    /* Optimize compositing */
+    will-change: auto;
+  }
+  
+  /* When tab is switching, keep dialogs stable */
+  .chromium-desktop.tab-switching .el-overlay {
+    /* Prevent overlay from participating in the flash */
+    transition: none !important;
+  }
+  
+  .chromium-desktop.tab-switching .el-dialog,
+  .chromium-desktop.tab-switching .el-drawer,
+  .chromium-desktop.tab-switching .el-message-box {
+    /* Keep dialog content stable during tab switch */
+    transition: none !important;
+    animation: none !important;
+  }
+  
+  /* IMPORTANT: When closing dialog on desktop, use instant hide */
+  .chromium-desktop .el-overlay:not(.is-message-box).v-leave-active,
+  .chromium-desktop .el-overlay:not(.is-message-box).v-leave-to {
+    /* Instant close - no flash */
+    transition: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+  
+  .chromium-desktop .el-dialog.v-leave-active,
+  .chromium-desktop .el-dialog.v-leave-to,
+  .chromium-desktop .el-drawer.v-leave-active,
+  .chromium-desktop .el-drawer.v-leave-to {
+    /* Instant close - no flash */
+    transition: none !important;
+    animation: none !important;
+    opacity: 0 !important;
+    transform: none !important;
+  }
+}
+
+/* Loading states in dialogs - prevent double flash */
+.el-dialog .el-loading-mask,
+.el-drawer .el-loading-mask {
+  /* Optimize loading overlay */
+  backface-visibility: hidden;
+  will-change: opacity;
+}
+
+/* Nested dialogs (if any) */
+.el-overlay + .el-overlay {
+  /* Stack properly without z-index conflicts */
+  isolation: isolate;
+}
+
+/* High z-index dialogs (system messages, etc.) */
+.el-message,
+.el-notification {
+  /* Highest priority - never flash */
+  backface-visibility: hidden;
+  isolation: isolate;
+  will-change: transform, opacity;
+}
+
+/* Form elements inside dialogs - prevent sub-pixel rendering issues */
+.el-dialog .el-input__wrapper,
+.el-dialog .el-textarea__inner,
+.el-dialog .el-select,
+.el-drawer .el-input__wrapper,
+.el-drawer .el-textarea__inner,
+.el-drawer .el-select {
+  /* Crisp rendering */
+  backface-visibility: hidden;
+}
+
+/* Tables inside dialogs - optimize rendering */
+.el-dialog .el-table,
+.el-drawer .el-table {
+  /* Contain table rendering */
+  contain: layout style;
+  backface-visibility: hidden;
+}
+
+/* Images in dialogs - prevent flash */
+.el-dialog img,
+.el-drawer img {
+  /* Use GPU for smooth rendering */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Fix for specific dialog types that might have heavy content */
+.el-dialog.is-fullscreen {
+  /* Fullscreen dialogs need extra optimization */
+  contain: strict;
+  will-change: transform;
+}
+

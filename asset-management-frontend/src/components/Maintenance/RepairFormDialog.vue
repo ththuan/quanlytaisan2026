@@ -4,6 +4,7 @@
     :title="isEdit ? 'Sửa đề nghị sửa chữa' : 'Tạo đề nghị sửa chữa'"
     width="90%"
     :close-on-click-modal="false"
+    destroy-on-close
     top="5vh"
     @update:model-value="$emit('update:visible', $event)"
   >

@@ -19,13 +19,13 @@
         >
           <el-cascader
             v-model="selectedCategory"
-            v-loading="loadingCategories"
             :options="categoryTree"
             :props="cascaderProps"
             placeholder="Chọn loại tài sản (ví dụ: Nhà cấp I, Máy vi tính, Xe ô tô...)"
             style="width: 100%"
             filterable
             clearable
+            :loading="loadingCategories"
             @change="handleCategoryChange"
           />
         </el-form-item>

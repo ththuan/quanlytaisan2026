@@ -4,7 +4,9 @@
     :title="isEdit ? $t('assets.editAsset') : $t('assets.addAsset')"
     width="800px"
     :close-on-click-modal="false"
-    @close="handleClose"
+    destroy-on-close
+    :append-to-body="true"
+    @closed="handleClosed"
   >
     <el-form
       ref="formRef"
@@ -26,13 +28,13 @@
           >
             <el-cascader
               v-model="selectedCategory"
-              v-loading="loadingCategories"
               :options="categoryTree"
               :props="cascaderProps"
               placeholder="Chọn loại tài sản (ví dụ: Nhà cấp I, Máy vi tính, Xe ô tô...)"
               style="width: 100%"
               filterable
               clearable
+              :loading="loadingCategories"
               @change="handleCategoryChange"
             />
           </el-form-item>
@@ -889,9 +891,12 @@ const resetForm = () => {
   qrCodeImage.value = null;
 };
 
-const handleClose = () => {
+const handleClosed = () => {
   resetForm();
   formRef.value?.resetFields();
+};
+
+const handleClose = () => {
   emit('update:visible', false);
 };
 

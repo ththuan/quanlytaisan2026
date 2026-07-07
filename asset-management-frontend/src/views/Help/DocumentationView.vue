@@ -44,6 +44,7 @@
       <el-tab-pane
         :label="$t('helpDocs.tabHead')"
         name="head"
+        lazy
       >
         <p class="tab-intro">
           {{ $t('helpDocs.head.intro') }}
@@ -68,6 +69,7 @@
       <el-tab-pane
         :label="$t('helpDocs.tabDirector')"
         name="director"
+        lazy
       >
         <p class="tab-intro">
           {{ $t('helpDocs.director.intro') }}
@@ -92,6 +94,7 @@
       <el-tab-pane
         :label="$t('helpDocs.tabAdmin')"
         name="admin"
+        lazy
       >
         <p class="tab-intro">
           {{ $t('helpDocs.admin.intro') }}

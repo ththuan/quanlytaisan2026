@@ -486,43 +486,78 @@ onMounted(async () => {
 .header-actions {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .summary-card {
-  margin-bottom: 12px;
+  margin-bottom: 20px;
+  border: 1px solid #e4e7ed;
+}
+
+.summary-card :deep(.el-card__body) {
+  padding: 20px;
 }
 
 .summary-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
-  gap: 12px;
+  margin-bottom: 16px;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
 .summary-title {
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 15px;
+  color: #303133;
 }
 
 .summary-filters {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .filters {
   display: flex;
   gap: 12px;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   flex-wrap: wrap;
 }
 
 .pager {
   display: flex;
   justify-content: flex-end;
-  margin-top: 12px;
+  margin-top: 16px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .summary-card {
+    margin-bottom: 16px;
+  }
+  
+  .summary-card :deep(.el-card__body) {
+    padding: 16px;
+  }
+  
+  .summary-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .summary-filters {
+    width: 100%;
+    flex-direction: column;
+  }
+  
+  .summary-filters .el-select,
+  .summary-filters .el-button {
+    width: 100%;
+  }
 }
 </style>

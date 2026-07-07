@@ -4,7 +4,9 @@
     :title="isEdit ? $t('users.editUser') : $t('users.addUser')"
     width="600px"
     :close-on-click-modal="false"
-    @close="handleClose"
+    destroy-on-close
+    :append-to-body="true"
+    @closed="handleClosed"
   >
     <el-form
       ref="formRef"
@@ -258,9 +260,12 @@ const resetForm = () => {
   formData.is_active = true;
 };
 
-const handleClose = () => {
+const handleClosed = () => {
   resetForm();
   formRef.value?.resetFields();
+};
+
+const handleClose = () => {
   emit('update:visible', false);
 };
 

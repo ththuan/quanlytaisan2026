@@ -4,6 +4,7 @@
     :title="dialogTitle"
     width="900px"
     :close-on-click-modal="false"
+    destroy-on-close
     @closed="resetForm"
   >
     <div

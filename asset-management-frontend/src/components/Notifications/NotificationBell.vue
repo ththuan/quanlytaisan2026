@@ -128,23 +128,68 @@ const notificationStore = useNotificationStore();
 
 const showDropdown = ref(false);
 let refreshInterval: number | null = null;
+let visibilityTimeout: number | null = null;
 
 const unreadCount = computed(() => notificationStore.unreadCount);
+
+// Start/stop polling based on tab visibility to prevent unnecessary API calls and UI flashing
+function startPolling() {
+  if (refreshInterval) return; // Already polling
+  refreshInterval = window.setInterval(() => {
+    notificationStore.fetchNotifications();
+  }, 30000);
+}
+
+function stopPolling() {
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+    refreshInterval = null;
+  }
+}
+
+// Handle tab visibility changes with debounce to prevent flash on desktop browsers
+function handleVisibilityChange() {
+  // Clear any pending visibility timeout
+  if (visibilityTimeout) {
+    clearTimeout(visibilityTimeout);
+    visibilityTimeout = null;
+  }
+
+  if (document.hidden) {
+    // Tab is hidden - pause polling immediately to save resources
+    stopPolling();
+  } else {
+    // Tab is visible again - debounce the fetch to prevent flash on desktop Chrome/Edge
+    // Desktop browsers may trigger visibility change multiple times rapidly
+    visibilityTimeout = window.setTimeout(() => {
+      // Only fetch if user hasn't switched tabs again
+      if (!document.hidden) {
+        notificationStore.fetchNotifications();
+        startPolling();
+      }
+    }, 500); // 500ms debounce - enough to prevent flash but not noticeable to users
+  }
+}
 
 onMounted(() => {
   // Fetch notifications immediately on mount
   notificationStore.fetchNotifications(true);
   
-  // Refresh every 30 seconds to catch approvals by other users quickly
-  refreshInterval = window.setInterval(() => {
-    notificationStore.fetchNotifications();
-  }, 30000);
+  // Start polling only if tab is currently visible
+  if (!document.hidden) {
+    startPolling();
+  }
+  
+  // Listen for tab visibility changes
+  document.addEventListener('visibilitychange', handleVisibilityChange);
 });
 
 onUnmounted(() => {
-  if (refreshInterval) {
-    clearInterval(refreshInterval);
+  stopPolling();
+  if (visibilityTimeout) {
+    clearTimeout(visibilityTimeout);
   }
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
 });
 
 // Force-refresh notifications when the bell button is clicked

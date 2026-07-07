@@ -305,6 +305,20 @@ export default {
     },
   },
 
+  // Dashboard
+  dashboard: {
+    title: 'Bảng điều khiển',
+    overview: 'Tổng quan',
+    approvals: 'Phê duyệt',
+    reports: 'Báo cáo',
+    activity: 'Hoạt động',
+    pendingApprovals: 'Yêu cầu cần duyệt',
+    noPendingApprovals: 'Không có yêu cầu nào cần duyệt',
+    viewDetails: 'Xem chi tiết',
+    recentActivity: 'Hoạt động gần đây',
+    assetNetwork: 'Mạng lưới tài sản thông minh',
+  },
+
   // Auth
   auth: {
     login: 'Đăng nhập',

@@ -1528,11 +1528,16 @@ const handleScanCode = async () => {
         
         // Validate số lượng từ QR code
         if (qrData.quantity !== 1) {
-          ElMessage.warning(`Cảnh báo: QR code có số lượng ${qrData.quantity}, nhưng hệ thống chỉ hỗ trợ số lượng = 1`);
+          ElMessage.warning({
+            message: `Cảnh báo: QR code có số lượng ${qrData.quantity}, nhưng hệ thống chỉ hỗ trợ số lượng = 1`,
+            duration: 2000,
+            showClose: true,
+            offset: 60
+          });
         }
         
-        // Hiển thị thông tin từ QR code
-        ElMessage.success(`Đã quét QR code: ${qrData.name} (${qrData.category_code || qrData.category_name || 'Chưa phân loại'})`);
+        // Không hiển thị thông báo ở đây để tránh che camera
+        // Thông báo sẽ hiển thị sau khi save thành công
       } else {
         throw new Error('Invalid QR code format');
       }
@@ -1553,9 +1558,10 @@ const handleScanCode = async () => {
     if (!canScanAsset(assetData)) {
       const unit = assetData.unit || 'm2';
       ElMessage.warning({
-        message: `Tài sản có đơn vị tính là "${unit}" không cần quét mã QR. Vui lòng kiểm kê thủ công bằng cách click vào tài sản trong danh sách.`,
-        duration: 5000,
-        showClose: true
+        message: `Tài sản có đơn vị tính "${unit}" không cần quét QR. Vui lòng kiểm kê thủ công.`,
+        duration: 3000,
+        showClose: true,
+        offset: 60
       });
       // Vẫn mở dialog để người dùng có thể kiểm kê thủ công
     }
@@ -1627,9 +1633,10 @@ const handleScanCode = async () => {
         
         hasChanges.value = true;
           ElMessage.success({
-            message: `✓ Đã quét QR: ${foundAsset.name || foundAsset.asset_code} - Tài sản còn tồn tại và khớp với sổ sách. Số lượng và kết quả kiểm kê đã được xác nhận, không thể chỉnh sửa. Bạn có thể click vào tài sản để chỉnh sửa tình trạng (tốt, cần sửa, hỏng...) nếu cần.`,
-            duration: 6000,
-            showClose: true
+            message: `✓ ${foundAsset.name || foundAsset.asset_code} - Khớp sổ sách`,
+            duration: 2000,
+            showClose: true,
+            offset: 60
           });
       } catch (error: any) {
         console.error('Error auto-saving scan result:', error);
@@ -1647,7 +1654,12 @@ const handleScanCode = async () => {
     scannerInputRef.value?.focus();
     
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.message || 'Không tìm thấy tài sản với mã này');
+    ElMessage.error({
+      message: error.response?.data?.message || 'Không tìm thấy tài sản với mã này',
+      duration: 2000,
+      showClose: true,
+      offset: 60
+    });
     // Xóa mã và focus lại input
     scannedCode.value = '';
     await nextTick();
@@ -2184,7 +2196,12 @@ const onQRCodeScanned = async (decodedText: string) => {
     
   } catch (error: any) {
     console.error('Error processing scanned code:', error);
-    ElMessage.error('Lỗi khi xử lý mã QR: ' + (error.message || 'Không xác định'));
+    ElMessage.error({
+      message: 'Lỗi khi xử lý mã QR: ' + (error.message || 'Không xác định'),
+      duration: 2000,
+      showClose: true,
+      offset: 60
+    });
     // Restart camera để reset state và tiếp tục quét
     scannedCode.value = '';
     scanning.value = false;
@@ -2263,10 +2280,20 @@ const switchCamera = async () => {
     await startCameraWithIndex(currentCameraIndex.value);
     
     const cam = availableCameras.value[currentCameraIndex.value];
-    ElMessage.success(`Đã chuyển sang: ${cam?.label || 'Camera ' + (currentCameraIndex.value + 1)}`);
+    ElMessage.success({
+      message: `Đã chuyển sang: ${cam?.label || 'Camera ' + (currentCameraIndex.value + 1)}`,
+      duration: 2000,
+      showClose: true,
+      offset: 60
+    });
   } catch (error) {
     console.error('Error switching camera:', error);
-    ElMessage.error('Không thể đổi camera');
+    ElMessage.error({
+      message: 'Không thể đổi camera',
+      duration: 2000,
+      showClose: true,
+      offset: 60
+    });
   }
 };
 

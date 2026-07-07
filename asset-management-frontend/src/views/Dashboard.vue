@@ -7,8 +7,16 @@
           Tổng quan hoạt động quản lý tài sản
         </p>
       </div>
-
     </div>
+
+    <!-- Tabs wrapper -->
+    <el-tabs v-model="activeTab" type="border-card" class="dashboard-tabs">
+      
+      <!-- Tab: Tổng quan -->
+      <el-tab-pane name="overview">
+        <template #label>
+          <span>Tổng quan</span>
+        </template>
 
     <el-row
       :gutter="16"
@@ -265,10 +273,14 @@
         </el-card>
       </el-col>
     </el-row>
-
-
-
-
+      </el-tab-pane>
+      
+      <!-- Tab: Hoạt động gần đây -->
+      <el-tab-pane name="activity" lazy>
+        <template #label>
+          <span>Hoạt động</span>
+        </template>
+        
     <el-row
       :gutter="16"
       class="charts-row"
@@ -358,6 +370,9 @@
         </el-card>
       </el-col>
     </el-row>
+      </el-tab-pane>
+      
+    </el-tabs>
   </div>
 </template>
 
@@ -372,6 +387,8 @@ import { inventoryService } from '@/services/inventory.service';
 import { useAuthStore } from '@/stores/auth.store';
 
 const { t } = useI18n();
+const activeTab = ref('overview');
+
 const router = useRouter();
 const loading = ref(true);
 const authStore = useAuthStore();
@@ -776,15 +793,24 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
 <style scoped>
 
 .dashboard {
-  padding: 24px;
+  padding: 16px;
   background-color: #f8fafc;
-  min-height: calc(100vh - 56px);
-  min-height: calc(100dvh - 56px);
+  min-height: calc(100vh - 76px);
+  min-height: calc(100dvh - 76px);
   font-family: 'Inter', sans-serif;
 }
 
+.dashboard-tabs {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+}
+
+.dashboard-tabs :deep(.el-tabs__content) {
+  padding: 20px 16px;
+}
+
 .dashboard-header {
-  margin-bottom: 32px;
+  margin-bottom: 20px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
