@@ -1087,11 +1087,6 @@ class InventoryService {
       throw new NotFoundError('Không tìm thấy tài sản với mã này trong phòng ban của bạn');
     }
 
-    if (asset.quantity !== 1) {
-      await asset.update({ quantity: 1 });
-      asset.quantity = 1;
-    }
-
     const assetData = asset.toJSON();
     return {
       ...assetData,

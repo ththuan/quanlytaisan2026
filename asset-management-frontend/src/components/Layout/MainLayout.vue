@@ -41,14 +41,20 @@
             <span>{{ isStaffOrHead ? 'Đề nghị điều chuyển' : $t('menu.transfers') }}</span>
           </el-menu-item>
 
-          <!-- Mua sắm thiết bị -->
-          <el-menu-item index="/purchase-requests">
+          <!-- Mua sắm thiết bị: admin + director -->
+          <el-menu-item
+            v-if="isAdminOrDirector"
+            index="/purchase-requests"
+          >
             <el-icon><ShoppingCart /></el-icon>
             <span>{{ $t('menu.purchaseRequests') }}</span>
           </el-menu-item>
 
-          <!-- Bảo trì / Sửa chữa -->
-          <el-menu-item index="/maintenance">
+          <!-- Bảo trì / Sửa chữa: admin + director -->
+          <el-menu-item
+            v-if="isAdminOrDirector"
+            index="/maintenance"
+          >
             <el-icon><Tools /></el-icon>
             <span>{{ $t('menu.repairTracking') }}</span>
           </el-menu-item>
@@ -139,6 +145,9 @@
                 class="sidebar-toggle"
                 @click="toggleSidebar"
               />
+              <div class="header-app-title">
+                <span class="app-title-main">Quản lý tài sản</span>
+              </div>
               <div class="breadcrumb">
                 <el-breadcrumb separator="/">
                   <el-breadcrumb-item :to="{ path: '/' }">
@@ -351,7 +360,7 @@ import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
-import { House, HomeFilled, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, QuestionFilled, Grid, List } from '@element-plus/icons-vue';
+import { House, HomeFilled, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, List } from '@element-plus/icons-vue';
 import NotificationBell from '@/components/Notifications/NotificationBell.vue';
 import TotpSetupDialog from '@/components/Auth/TotpSetupDialog.vue';
 import ChangePasswordDialog from '@/components/Auth/ChangePasswordDialog.vue';
@@ -688,6 +697,26 @@ const toggleSidebar = () => {
   min-width: 0;
 }
 
+.header-app-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.app-title-main {
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.app-title-sub {
+  font-size: 12px;
+  font-weight: 400;
+  color: #909399;
+}
+
 .header-left .breadcrumb {
   min-width: 0;
 }
@@ -970,6 +999,14 @@ const toggleSidebar = () => {
 }
 
 @media (max-width: 768px) {
+  .header-app-title .app-title-sub {
+    display: none;
+  }
+  
+  .header-app-title .app-title-main {
+    font-size: 13px;
+  }
+
   .el-main {
     padding: 12px 8px;
     /* iOS safe area - home indicator */

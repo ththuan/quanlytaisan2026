@@ -16,20 +16,25 @@ const router = Router();
 // Apply authentication to all routes
 router.use(authenticateToken);
 
-// Get pending counts (must be before /:id routes)
-router.get('/pending-counts', maintenanceController.getPendingCounts);
+// Get pending counts - admin, director only
+router.get('/pending-counts', requireRole('admin', 'director'), maintenanceController.getPendingCounts);
 
-// All authenticated users can view and create maintenance requests
+// List/create/view - all authenticated users (service filters by role/department)
 router.get('/', maintenanceController.getAllMaintenance);
+router.post('/', validateRequest(createMaintenanceSchema), auditLog('create'), maintenanceController.createMaintenance);
 router.get('/:id', canViewMaintenanceRequest, maintenanceController.getMaintenanceById);
 
 // Get approval history for a request
 router.get('/:id/approval-history', canViewMaintenanceRequest, maintenanceController.getApprovalHistory);
 
-// Submit for approval (must be before /:id routes)
+// Submit for approval - all authenticated users
 router.post('/:id/submit', auditLog('approve'), maintenanceController.submitForApproval);
 
-// Admin bắt đầu thực hiện sửa chữa: approved_by_director → in_progress
+// Update/delete - all authenticated users (controller checks ownership/permission)
+router.put('/:id', validateRequest(updateMaintenanceSchema), auditLog('update'), maintenanceController.updateMaintenance);
+router.delete('/:id', auditLog('delete'), maintenanceController.deleteMaintenance);
+
+// Admin starts repair: approved_by_director -> in_progress
 router.post(
   '/:id/start-repair',
   requireRole('admin'),
@@ -37,7 +42,7 @@ router.post(
   maintenanceController.startRepair
 );
 
-// Admin xác nhận hoàn thành sửa chữa: in_progress → repair_completed
+// Admin confirms repair completion: in_progress -> repair_completed
 router.post(
   '/:id/complete-repair',
   requireRole('admin'),
@@ -54,22 +59,7 @@ router.post(
   maintenanceController.fulfillProcurement
 );
 
-router.post(
-  '/',
-  validateRequest(createMaintenanceSchema),
-  auditLog('create'),
-  maintenanceController.createMaintenance
-);
-
-// Update maintenance (creator or admin/manager)
-router.put(
-  '/:id',
-  validateRequest(updateMaintenanceSchema),
-  auditLog('update'),
-  maintenanceController.updateMaintenance
-);
-
-// Multi-level approval (Department Head, Admin, Director)
+// Multi-level approval - admin, director, and department_head (via canApproveMaintenanceRequest)
 router.post(
   '/:id/process-approval',
   canApproveMaintenanceRequest,
@@ -78,7 +68,7 @@ router.post(
   maintenanceController.processApproval
 );
 
-// PUT route for approval (uses processApproval logic for multi-level workflow)
+// PUT route for approval (multi-level workflow)
 router.put(
   '/:id/approve',
   canApproveMaintenanceRequest,
@@ -86,26 +76,19 @@ router.put(
   maintenanceController.approveMaintenancePut
 );
 
-// Legacy approve/reject routes (for backward compatibility)
+// Legacy approve/reject routes
 router.post(
   '/:id/approve',
-  requireRole('admin', 'department_head'),
+  canApproveMaintenanceRequest,
   auditLog('approve'),
   maintenanceController.approveMaintenance
 );
 
 router.post(
   '/:id/reject',
-  requireRole('admin', 'department_head'),
+  canApproveMaintenanceRequest,
   auditLog('approve'),
   maintenanceController.rejectMaintenance
-);
-
-// Delete maintenance (creator or admin)
-router.delete(
-  '/:id',
-  auditLog('delete'),
-  maintenanceController.deleteMaintenance
 );
 
 export default router;

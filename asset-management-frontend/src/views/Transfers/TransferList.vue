@@ -242,9 +242,8 @@ const statuses = computed(() => [
   { value: 'completed', label: t('transfers.status.completed') },
 ]);
 
-onMounted(async () => {
-  await transferStore.fetchTransfers();
-  // Department đã tự động load qua composable
+onMounted(() => {
+  transferStore.fetchTransfers();
 });
 
 const applyFilters = () => {

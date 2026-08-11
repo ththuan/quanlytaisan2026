@@ -6,6 +6,7 @@
  *   04a-CK/TSC – Công khai hình thành tài sản công
  *   04b-CK/TSC – Công khai tình hình sử dụng tài sản công
  *   04c-CK/TSC – Công khai tình hình xử lý tài sản công
+ *   04d-CK/TSC – Công khai tình hình khai thác nguồn lực tài sản công
  *   kekhai       – Kê khai tài sản công (CSDL Quốc gia)
  */
 
@@ -416,6 +417,150 @@ export async function export04c(year: number): Promise<Buffer> {
   ws.getCell('A1').font = { bold: true, size: 11 };
   ws.getCell('A2').font = { italic: true, size: 10 };
   ws.mergeCells('A4:L4');
+  ws.getCell('A4').font = { bold: true, size: 13 };
+  ws.getCell('A4').alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.getRow(4).height = 32;
+
+  return wb.xlsx.writeBuffer() as unknown as Buffer;
+}
+
+// ─── 04d-CK/TSC – Công khai khai thác nguồn lực tài sản công ────────────────
+// Theo Mẫu 04d-CK/TSC, Thông tư 120/2025/TT-BTC
+
+export async function export04d(year: number): Promise<Buffer> {
+  // Query assets used for business/lease/joint-venture purposes
+  const items: any[] = await sequelize.query(
+    `SELECT a.*, d.name AS department_name,
+            expl.purpose, expl.revenue, expl.cost, expl.budget_paid, expl.retained, expl.contract_no
+     FROM assets a
+     LEFT JOIN departments d ON a.current_department_id = d.id
+     LEFT JOIN asset_exploitation expl ON a.id = expl.asset_id
+       AND EXTRACT(YEAR FROM expl.year_applied) = :year
+     WHERE a.status IN ('active', 'in_use')
+       AND expl.id IS NOT NULL
+     UNION ALL
+     SELECT a.*, d.name AS department_name,
+            NULL AS purpose,
+            NULL AS revenue, NULL AS cost, NULL AS budget_paid, NULL AS retained, NULL AS contract_no
+     FROM assets a
+     LEFT JOIN departments d ON a.current_department_id = d.id
+     WHERE a.status IN ('active', 'in_use')
+       AND a.usage_purpose IN ('business', 'lease', 'joint_venture', 'lien_doanh', 'lien_ket', 'cho_thue', 'kinh_doanh')
+       AND NOT EXISTS (
+         SELECT 1 FROM asset_exploitation expl
+         WHERE expl.asset_id = a.id AND EXTRACT(YEAR FROM expl.year_applied) = :year
+       )
+     ORDER BY department_name, asset_code`,
+    { replacements: { year }, type: QueryTypes.SELECT }
+  );
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Phần mềm Quản lý tài sản';
+  const ws = wb.addWorksheet('04d-CKTSC');
+  ws.columns = [
+    { key: 'stt',       width: 6 },
+    { key: 'code',      width: 16 },
+    { key: 'name',      width: 34 },
+    { key: 'type',      width: 18 },
+    { key: 'unit',      width: 8 },
+    { key: 'qty',       width: 8 },
+    { key: 'price',     width: 18 },
+    { key: 'residual',  width: 18 },
+    { key: 'purpose',   width: 18 },
+    { key: 'contract',  width: 20 },
+    { key: 'revenue',   width: 18 },
+    { key: 'cost',      width: 18 },
+    { key: 'budget',    width: 18 },
+    { key: 'retained',  width: 18 },
+    { key: 'dept',      width: 22 },
+    { key: 'note',      width: 20 },
+  ];
+
+  const headerRow = ws.addRow([
+    'STT', 'Mã tài sản', 'Tên tài sản', 'Loại tài sản',
+    'ĐVT', 'Số lượng', 'Nguyên giá\n(đồng)', 'Giá trị còn lại\n(đồng)',
+    'Mục đích\nkhai thác', 'Số hợp đồng',
+    'Doanh thu\n(đồng)', 'Chi phí\n(đồng)',
+    'Nộp NS\n(đồng)', 'Giữ lại\n(đồng)',
+    'Đơn vị', 'Ghi chú',
+  ]);
+  applyHeaderStyle(headerRow, 'FF17375E');
+
+  const purposeText = (p: string | null) => {
+    const m: Record<string, string> = {
+      business: 'Kinh doanh', kinh_doanh: 'Kinh doanh',
+      lease: 'Cho thuê', cho_thue: 'Cho thuê',
+      joint_venture: 'Liên doanh', lien_doanh: 'Liên doanh',
+      lien_ket: 'Liên kết',
+      other: 'Khác',
+    };
+    return p ? (m[p] ?? p) : '—';
+  };
+
+  let idx = 1;
+  let totalRevenue = 0, totalCost = 0, totalBudget = 0, totalRetained = 0;
+  for (const a of items) {
+    const rev = VND(a.revenue);
+    const cost = VND(a.cost);
+    const budget = VND(a.budget_paid);
+    const retained = VND(a.retained);
+    totalRevenue += rev;
+    totalCost += cost;
+    totalBudget += budget;
+    totalRetained += retained;
+    const row = ws.addRow({
+      stt:      idx++,
+      code:     a.asset_code,
+      name:     a.name,
+      type:     assetTypeName(a),
+      unit:     a.unit ?? 'Cái',
+      qty:      VND(a.quantity) || 1,
+      price:    VND(a.purchase_price),
+      residual: VND(a.residual_value),
+      purpose:  purposeText(a.purpose ?? a.usage_purpose),
+      contract: a.contract_no ?? '',
+      revenue:  rev,
+      cost:     cost,
+      budget:   budget,
+      retained: retained,
+      dept:     a.department_name ?? '—',
+      note:     '',
+    });
+    applyDataRowStyle(row);
+    ['price', 'residual', 'revenue', 'cost', 'budget', 'retained'].forEach((k) => {
+      const c = row.getCell(k);
+      c.numFmt = '#,##0';
+      c.alignment = { ...c.alignment, horizontal: 'right' };
+    });
+  }
+
+  // Totals
+  const tot = ws.addRow({
+    stt: '', code: '', name: 'TỔNG CỘNG', type: '', unit: '', qty: '',
+    price: items.reduce((s, a) => s + VND(a.purchase_price), 0),
+    residual: items.reduce((s, a) => s + VND(a.residual_value), 0),
+    purpose: '', contract: '',
+    revenue: totalRevenue, cost: totalCost, budget: totalBudget, retained: totalRetained,
+    dept: '', note: '',
+  });
+  ['price', 'residual', 'revenue', 'cost', 'budget', 'retained'].forEach((k) => {
+    tot.getCell(k).numFmt = '#,##0';
+    tot.getCell(k).font = { bold: true };
+    tot.getCell(k).alignment = { horizontal: 'right', vertical: 'middle' };
+  });
+  tot.getCell('name').font = { bold: true };
+  applyDataRowStyle(tot);
+
+  ws.spliceRows(1, 0,
+    ['TRƯỜNG CAO ĐẲNG KINH TẾ - KỸ THUẬT CẦN THƠ'],
+    [`Mẫu số 04d-CK/TSC – CÔNG KHAI TÌNH HÌNH KHAI THÁC NGUỒN LỰC TSC (TT120/2025/TT-BTC)`],
+    [],
+    [`NĂM ${year}`],
+    [],
+  );
+  ws.getCell('A1').font = { bold: true, size: 11 };
+  ws.getCell('A2').font = { italic: true, size: 10 };
+  ws.mergeCells('A4:P4');
   ws.getCell('A4').font = { bold: true, size: 13 };
   ws.getCell('A4').alignment = { horizontal: 'center', vertical: 'middle' };
   ws.getRow(4).height = 32;

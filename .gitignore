@@ -70,3 +70,5 @@ pm2-*.log
 *.key
 *.crt
 secrets/
+cloudflared/
+nginx/ssl/

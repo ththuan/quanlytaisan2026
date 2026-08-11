@@ -47,6 +47,31 @@ export async function generateUserImportTemplate(): Promise<Buffer> {
     department: 'Phòng Công nghệ thông tin',
   });
 
+  const departments = await Department.findAll({ order: [['name', 'ASC']] });
+  const roleFormula = '"admin,director,department_head,staff"';
+
+  for (let row = 2; row <= 101; row++) {
+    dataSheet.getCell(`E${row}`).dataValidation = {
+      type: 'list',
+      allowBlank: false,
+      formulae: [roleFormula],
+      showErrorMessage: true,
+      errorTitle: 'Lỗi',
+      error: 'Vui lòng chọn vai trò từ danh sách: admin, director, department_head, staff',
+    };
+
+    if (departments.length > 0) {
+      dataSheet.getCell(`F${row}`).dataValidation = {
+        type: 'list',
+        allowBlank: true,
+        formulae: [`='Danh sách đơn vị'!$A$2:$A$${departments.length + 1}`],
+        showErrorMessage: true,
+        errorTitle: 'Lỗi',
+        error: 'Vui lòng chọn đơn vị từ danh sách',
+      };
+    }
+  }
+
   const guideSheet = workbook.addWorksheet('Hướng dẫn');
   guideSheet.columns = [{ header: 'Nội dung', key: 'content', width: 80 }];
   const guideLines = [
@@ -75,7 +100,6 @@ export async function generateUserImportTemplate(): Promise<Buffer> {
     pattern: 'solid',
     fgColor: { argb: 'FFE0E0E0' },
   };
-  const departments = await Department.findAll({ order: [['name', 'ASC']] });
   departments.forEach((d) => deptSheet.addRow({ name: d.name }));
 
   const buffer = await workbook.xlsx.writeBuffer();

@@ -94,12 +94,9 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = null;
       accessToken.value = null;
       refreshToken.value = null;
-
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
-      localStorage.removeItem('lastActivity');
-
       ElMessage.success('Logged out successfully');
     }
   }
@@ -113,7 +110,6 @@ export const useAuthStore = defineStore('auth', () => {
       refreshToken.value = localStorage.getItem('refreshToken');
       user.value = JSON.parse(storedUser);
 
-      // Optionally verify token with backend
       try {
         const response = await authService.getCurrentUser();
         if (response.success && response.data) {
@@ -121,8 +117,6 @@ export const useAuthStore = defineStore('auth', () => {
           localStorage.setItem('user', JSON.stringify(response.data));
         }
       } catch (error: any) {
-        // Only clear auth on explicit 401 (expired/invalid token).
-        // Do NOT logout on network errors — the user's cached session is still valid.
         if (error?.response?.status === 401) {
           logout();
         }
@@ -131,7 +125,6 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   // Clears auth state synchronously WITHOUT calling the backend logout API.
-  // Called by the API interceptor on 401 to keep Pinia in sync with localStorage.
   function clearAuth() {
     user.value = null;
     accessToken.value = null;
@@ -139,7 +132,6 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
-    localStorage.removeItem('lastActivity');
   }
 
   function _applyAuthResponse(data: AuthResponse) {
@@ -149,8 +141,10 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem('accessToken', data.accessToken);
     localStorage.setItem('refreshToken', data.refreshToken);
     localStorage.setItem('user', JSON.stringify(data.user));
-    // Reset idle timer khi đăng nhập
-    localStorage.setItem('lastActivity', Date.now().toString());
+
+    setTimeout(() => {
+      window.location.href = '/?_t=' + Date.now();
+    }, 300);
   }
 
   return {

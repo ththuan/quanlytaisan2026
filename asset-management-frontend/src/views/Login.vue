@@ -1,120 +1,88 @@
 <template>
   <div class="login-container">
-    <!-- Full-screen particle background -->
-    <canvas ref="canvasRef" class="particle-canvas" />
+    <canvas ref="canvasRef" id="particle-canvas" />
 
-    <!-- Centered login card -->
     <div class="login-center">
       <div class="form-card">
         <div class="login-header">
           <div class="logo-wrapper">
             <img
               :src="logoUrl"
-              alt="School Logo"
+              alt="Logo CTEC"
               class="school-logo"
               @error="onLogoError"
             >
           </div>
-          <p class="sub-welcome">
-            Hệ thống Quản lý Tài sản
-          </p>
+          <p class="sub-welcome">Phần mềm Quản lý Tài sản</p>
+          <p class="school-name">Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ</p>
         </div>
 
-        <div class="form-wrapper">
-          <el-form
-            v-if="step === 'credentials'"
-            ref="loginFormRef"
-            :model="loginForm"
-            :rules="rules"
-            label-position="top"
-            class="premium-form"
-            @submit.prevent="handleLogin"
-          >
-            <el-form-item
-              label="Tên đăng nhập"
-              prop="username"
-            >
-              <el-input
+        <form id="login-form" novalidate @submit.prevent="handleLogin">
+          <div class="form-group">
+            <label class="form-label" for="f-username"><span class="required">*</span> Tên đăng nhập</label>
+            <div class="input-wrap">
+              <span class="material-symbols-rounded input-icon">person</span>
+              <input
+                ref="usernameRef"
                 v-model="loginForm.username"
+                class="input-field"
+                type="text"
+                id="f-username"
                 placeholder="Nhập tên đăng nhập"
-                size="large"
-                :prefix-icon="User"
-              />
-            </el-form-item>
-
-            <el-form-item
-              label="Mật khẩu"
-              prop="password"
-            >
-              <el-input
-                v-model="loginForm.password"
-                type="password"
-                placeholder="••••••••"
-                size="large"
-                :prefix-icon="Lock"
-                show-password
-                @keyup.enter="handleLogin"
-              />
-            </el-form-item>
-
-            <div class="form-actions-row">
-              <el-checkbox v-model="rememberMe">
-                Ghi nhớ phiên đăng nhập
-              </el-checkbox>
+                autocomplete="username"
+                autofocus
+              >
             </div>
-
-            <el-button
-              type="primary"
-              :loading="authStore.loading"
-              class="premium-submit-btn"
-              @click="handleLogin"
-            >
-              Đăng nhập ngay
-            </el-button>
-          </el-form>
-
-          <!-- Step 2: 2FA -->
-          <div
-            v-else
-            class="totp-step"
-          >
-            <div class="totp-icon-box">
-              <div class="shield-icon">
-                🛡️
-              </div>
-            </div>
-            <h3 class="totp-title">
-              Xác thực bảo mật
-            </h3>
-            <p class="totp-hint">
-              Nhập mã xác thực từ ứng dụng của bạn
-            </p>
-            <el-input
-              v-model="totpCode"
-              placeholder="0 0 0 0 0 0"
-              size="large"
-              maxlength="6"
-              class="totp-input"
-              @keyup.enter="handleVerify2FA"
-            />
-            <el-button
-              type="primary"
-              :loading="authStore.loading"
-              class="premium-submit-btn"
-              style="margin-top: 30px"
-              @click="handleVerify2FA"
-            >
-              Xác thực ngay
-            </el-button>
-            <el-button
-              link
-              class="back-btn"
-              @click="step = 'credentials'"
-            >
-              Quay về bước trước
-            </el-button>
+            <p class="field-hint">Vui lòng nhập tên đăng nhập</p>
           </div>
-        </div>
+
+          <div class="form-group">
+            <label class="form-label" for="f-password"><span class="required">*</span> Mật khẩu</label>
+            <div class="input-wrap">
+              <span class="material-symbols-rounded input-icon">lock</span>
+              <input
+                ref="passwordRef"
+                v-model="loginForm.password"
+                class="input-field pw-field"
+                :type="showPassword ? 'text' : 'password'"
+                id="f-password"
+                placeholder="••••••••"
+                autocomplete="current-password"
+                @keyup.enter="handleLogin"
+              >
+              <button type="button" class="toggle-pw" @click="showPassword = !showPassword" title="Hiện/ẩn mật khẩu">
+                <span class="material-symbols-rounded">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+              </button>
+            </div>
+            <p class="field-hint">Vui lòng nhập mật khẩu</p>
+          </div>
+
+          <div class="form-row">
+            <label class="remember-wrap">
+              <input type="checkbox" v-model="rememberMe" id="remember-me">
+              <span>Ghi nhớ phiên đăng nhập</span>
+            </label>
+            <button type="button" class="forgot-link" @click="toggleForgotPassword">
+              <span class="material-symbols-rounded">help_outline</span>
+              Quên mật khẩu?
+            </button>
+          </div>
+
+          <div id="admin-help" class="admin-help" :class="{ show: showForgotPassword }" role="status">
+            <strong>Liên hệ Admin để được hỗ trợ:</strong><br>
+            Trần Thuận - <span class="phone">0944 300 848</span>
+          </div>
+
+          <div v-if="errorMessage" class="login-error" role="alert">
+            <span class="material-symbols-rounded">error</span>
+            <span>{{ errorMessage }}</span>
+          </div>
+
+          <button type="submit" class="btn-login" :disabled="loading">
+            <span v-if="loading" class="spinner" />
+            <span id="btn-login-text">{{ loading ? 'Đang xử lý...' : 'Đăng nhập ngay' }}</span>
+          </button>
+        </form>
 
         <div class="login-footer">
           <p>&copy; 2026 Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ</p>
@@ -125,57 +93,65 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { User, Lock } from '@element-plus/icons-vue';
+import { reactive, ref, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '@/stores/auth.store';
-import type { FormInstance, FormRules } from '@/types/element-plus';
 
 import logoUrl from '@/login/logo-truong.jpg';
 
-const router = useRouter();
 const authStore = useAuthStore();
-const loginFormRef = ref<FormInstance>();
-const rememberMe = ref(false);
 const canvasRef = ref<HTMLCanvasElement | null>(null);
+const passwordRef = ref<HTMLInputElement | null>(null);
+const rememberMe = ref(false);
+const showPassword = ref(false);
+const showForgotPassword = ref(false);
+const loading = ref(false);
+const errorMessage = ref('');
+
+const loginForm = reactive({ username: '', password: '' });
 
 const onLogoError = (e: Event) => {
   const img = e.target as HTMLImageElement | null;
   if (img) img.style.display = 'none';
 };
 
-const loginForm = reactive({ username: '', password: '' });
-const step = ref<'credentials' | '2fa'>('credentials');
-const totpCode = ref('');
-
-const rules = computed<FormRules>(() => ({
-  username: [{ required: true, message: 'Vui lòng nhập tên đăng nhập', trigger: 'blur' }],
-  password: [
-    { required: true, message: 'Vui lòng nhập mật khẩu', trigger: 'blur' },
-    { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự', trigger: 'blur' },
-  ],
-}));
+const toggleForgotPassword = () => {
+  showForgotPassword.value = !showForgotPassword.value;
+};
 
 const handleLogin = async () => {
-  if (!loginFormRef.value) return;
-  await loginFormRef.value.validate(async (valid: boolean) => {
-    if (valid) {
-      const result = await authStore.login(loginForm.username, loginForm.password);
-      if (result === true) {
-        router.push('/');
-      } else if (result === '2fa_required') {
-        step.value = '2fa';
-        totpCode.value = '';
-      }
+  const username = loginForm.username.trim();
+  const password = loginForm.password;
+
+  if (!username || !password) {
+    errorMessage.value = !username ? 'Vui lòng nhập tên đăng nhập' : 'Vui lòng nhập mật khẩu';
+    return;
+  }
+
+  errorMessage.value = '';
+  loading.value = true;
+
+  try {
+    const result = await authStore.login(username, password);
+    loading.value = false;
+    if (result === true) {
+      // _applyAuthResponse handles localStorage clear + full page reload
+    } else if (result === '2fa_required') {
+      errorMessage.value = 'Yêu cầu xác thực 2 lớp. Vui lòng liên hệ Admin.';
     }
-  });
+  } catch (err: any) {
+    loading.value = false;
+    const msg = err?.response?.data?.error || err?.message || 'Sai tên đăng nhập hoặc mật khẩu';
+    errorMessage.value = msg;
+    loginForm.password = '';
+    passwordRef.value?.focus();
+  }
 };
 
-const handleVerify2FA = async () => {
-  if (!totpCode.value || totpCode.value.length !== 6) return;
-  const success = await authStore.verify2FA(totpCode.value);
-  if (success) router.push('/');
-};
+// Check existing session - show current user if any, but don't auto-redirect
+// This prevents account mixing when multiple users share the same device
+onMounted(async () => {
+  await authStore.checkAuth();
+});
 
 // Canvas particle network
 interface Particle { x: number; y: number; vx: number; vy: number; r: number; alpha: number; }
@@ -187,15 +163,17 @@ function initCanvas() {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
-  const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+  let w: number, h: number;
+  const COUNT = 100;
+  const MAX_DIST = 140;
+
+  const resize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; };
   resize();
   window.addEventListener('resize', resize);
 
-  const COUNT = 100;
-  const MAX_DIST = 140;
   const particles: Particle[] = Array.from({ length: COUNT }, () => ({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
+    x: Math.random() * w,
+    y: Math.random() * h,
     vx: (Math.random() - 0.5) * 0.45,
     vy: (Math.random() - 0.5) * 0.45,
     r: Math.random() * 1.8 + 0.5,
@@ -203,11 +181,11 @@ function initCanvas() {
   }));
 
   const draw = () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, w, h);
     for (const p of particles) {
       p.x += p.vx; p.y += p.vy;
-      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+      if (p.x < 0 || p.x > w) p.vx *= -1;
+      if (p.y < 0 || p.y > h) p.vy *= -1;
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(180, 210, 255, ${p.alpha})`;
@@ -230,19 +208,24 @@ function initCanvas() {
     }
     animFrameId = requestAnimationFrame(draw);
   };
-
   draw();
-  onUnmounted(() => { cancelAnimationFrame(animFrameId); window.removeEventListener('resize', resize); });
+
+  onUnmounted(() => {
+    cancelAnimationFrame(animFrameId);
+    window.removeEventListener('resize', resize);
+  });
 }
 
 onMounted(() => { initCanvas(); });
 </script>
 
-<style scoped>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0&display=swap');
+</style>
 
-/* ============================================================
-   LAYOUT – full screen background
-   ============================================================ */
+<style scoped>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
 .login-container {
   position: relative;
   min-height: 100vh;
@@ -253,11 +236,12 @@ onMounted(() => { initCanvas(); });
   justify-content: center;
   background: linear-gradient(135deg, #060d1f 0%, #0a1a35 40%, #0d2145 70%, #091828 100%);
   font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  color: #1e293b;
   overflow: hidden;
 }
 
-/* Canvas phủ toàn màn hình */
-.particle-canvas {
+#particle-canvas {
   position: fixed;
   inset: 0;
   width: 100%;
@@ -266,7 +250,6 @@ onMounted(() => { initCanvas(); });
   pointer-events: none;
 }
 
-/* Vùng chứa card login, nằm giữa màn hình */
 .login-center {
   position: relative;
   z-index: 10;
@@ -280,23 +263,15 @@ onMounted(() => { initCanvas(); });
   -webkit-overflow-scrolling: touch;
 }
 
-/* The white card */
 .form-card {
   width: 100%;
   max-width: 440px;
   background: #ffffff;
   border-radius: 20px;
   padding: 40px 36px 32px;
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.35),
-    0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-@media (max-width: 480px) {
-  .form-card { padding: 28px 20px 24px; border-radius: 16px; }
-}
-
-/* Header */
 .login-header {
   text-align: center;
   margin-bottom: 8px;
@@ -314,64 +289,211 @@ onMounted(() => { initCanvas(); });
   border-radius: 50%;
   background: #fff;
   padding: 4px;
-  box-shadow: 0 0 0 3px #e2e8f0, 0 8px 20px rgba(0,0,0,0.08);
-  object-fit: cover;
+  box-shadow: 0 0 0 3px #e2e8f0, 0 8px 20px rgba(0, 0, 0, 0.08);
+  object-fit: contain;
 }
 
 .sub-welcome {
-  color: #475569;
-  font-size: 0.95rem;
-  font-weight: 500;
-  margin: 0 0 28px;
+  color: #1e293b;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 4px;
   line-height: 1.5;
 }
 
-/* Form items */
-.premium-form :deep(.el-form-item) {
+.school-name {
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 400;
+  margin: 0 0 28px;
+  line-height: 1.4;
+}
+
+.form-group {
   margin-bottom: 20px;
 }
 
-.premium-form :deep(.el-form-item__label) {
+.form-label {
+  display: block;
   font-weight: 600;
   color: #1e293b;
   font-size: 0.9rem;
   padding-bottom: 6px;
 }
 
-.premium-form :deep(.el-input__wrapper) {
+.form-label .required {
+  color: #dc2626;
+  font-weight: 700;
+  margin-right: 2px;
+}
+
+.field-hint {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin: 4px 0 0 0;
+  line-height: 1.4;
+}
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 14px;
+  color: #94a3b8;
+  font-size: 20px;
+  pointer-events: none;
+}
+
+.input-field {
+  width: 100%;
+  height: 46px;
+  padding: 0 14px 0 42px;
   background: #f8fafc;
   border: 1.5px solid #e2e8f0;
-  box-shadow: none !important;
   border-radius: 10px;
-  height: 46px;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.premium-form :deep(.el-input__inner) {
-  font-size: 16px !important;
   color: #1e293b;
+  font-family: inherit;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
-.premium-form :deep(.el-input__wrapper.is-focus) {
+.input-field::placeholder {
+  color: #94a3b8;
+}
+
+.input-field:focus {
   border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
   background: #fff;
 }
 
-/* Remember row */
-.form-actions-row {
+.pw-field {
+  padding-right: 44px;
+}
+
+.toggle-pw {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
-  margin: -4px 0 20px;
+  transition: color 0.2s;
 }
 
-.form-actions-row :deep(.el-checkbox__label) {
+.toggle-pw:hover {
+  color: #475569;
+}
+
+.toggle-pw .material-symbols-rounded {
+  font-size: 20px;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -6px 0 20px;
+}
+
+.remember-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 0.875rem;
   color: #64748b;
+  cursor: pointer;
+  user-select: none;
 }
 
-/* Submit button */
-.premium-submit-btn {
+.remember-wrap input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.forgot-link {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.2s;
+}
+
+.forgot-link:hover {
+  color: #3b82f6;
+}
+
+.forgot-link .material-symbols-rounded {
+  font-size: 16px;
+}
+
+.admin-help {
+  display: none;
+  padding: 10px 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  color: #1e293b;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.admin-help.show {
+  display: block;
+}
+
+.admin-help strong {
+  color: #2563eb;
+}
+
+.admin-help .phone {
+  font-weight: 700;
+}
+
+.login-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  color: #dc2626;
+  margin-bottom: 16px;
+  animation: shake 0.4s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+.login-error .material-symbols-rounded {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.btn-login {
   width: 100%;
   height: 50px;
   border-radius: 12px;
@@ -382,20 +504,43 @@ onMounted(() => { initCanvas(); });
   color: #fff;
   letter-spacing: 0.3px;
   box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
-  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
-.premium-submit-btn:hover {
+.btn-login:hover {
   background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
   transform: translateY(-1px);
   box-shadow: 0 8px 20px rgba(37, 99, 235, 0.45);
 }
 
-.premium-submit-btn:active {
+.btn-login:active {
   transform: translateY(0);
 }
 
-/* Footer */
+.btn-login:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .login-footer {
   text-align: center;
   margin-top: 20px;
@@ -403,57 +548,11 @@ onMounted(() => { initCanvas(); });
   font-size: 0.8rem;
 }
 
-/* ============================================================
-   2FA STEP
-   ============================================================ */
-.totp-step { text-align: center; }
-
-.totp-icon-box {
-  width: 72px;
-  height: 72px;
-  background: #f1f5f9;
-  border-radius: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 20px;
-  font-size: 2.2rem;
-}
-
-.totp-title {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin-bottom: 8px;
-}
-
-.totp-hint {
-  color: #64748b;
-  font-size: 0.9rem;
-  margin-bottom: 24px;
-}
-
-.totp-input :deep(.el-input__inner) {
-  text-align: center;
-  font-size: 2rem;
-  letter-spacing: 12px;
-  font-weight: 800;
-}
-
-.back-btn {
-  width: 100%;
-  margin-top: 12px;
-  color: #94a3b8;
-  font-size: 0.875rem;
-}
-
-/* ============================================================
-   MOBILE ADJUSTMENTS
-   ============================================================ */
 @media (max-width: 480px) {
+  .form-card { padding: 28px 20px 24px; border-radius: 16px; }
   .school-logo { height: 60px; width: 60px; }
   .sub-welcome { font-size: 0.875rem; margin-bottom: 20px; }
-  .premium-submit-btn { height: 44px; font-size: 0.95rem; }
+  .btn-login { height: 44px; font-size: 0.95rem; }
   .login-footer { font-size: 0.75rem; }
 }
 </style>

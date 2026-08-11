@@ -21,6 +21,22 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: asset-management-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - asset-management-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./asset-management-backend
@@ -39,9 +55,10 @@ services:
       DB_NAME: ${DB_NAME:-asset_management}
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:4000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4000}
       JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     depends_on:
       postgres:
@@ -77,9 +94,10 @@ services:
     container_name: asset-management-frontend
     restart: unless-stopped
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+      - "${FRONTEND_PORT:-4000}:4000"
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+      VITE_HTTPS: ${VITE_HTTPS:-true}
     depends_on:
       backend:
         condition: service_healthy
@@ -98,6 +116,9 @@ volumes:
   postgres_data:
     external: true
     name: quanlytaisan_postgres_data
+  redis_data:
+    external: true
+    name: quanlytaisan_redis_data
 
 networks:
   asset-management-network:

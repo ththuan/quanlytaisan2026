@@ -305,9 +305,8 @@ export default {
     },
   },
 
-  // Dashboard
-  dashboard: {
-    title: 'Bảng điều khiển',
+  // Dashboard overview
+  dashboardOverview: {
     overview: 'Tổng quan',
     approvals: 'Phê duyệt',
     reports: 'Báo cáo',
@@ -498,7 +497,7 @@ export default {
   // Dashboard
   dashboard: {
     title: 'Bảng điều khiển',
-    welcome: 'Chào mừng đến với Hệ thống Quản lý Tài sản',
+    welcome: 'Chào mừng đến với Phần mềm Quản lý Tài sản | Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ',
     totalAssets: 'Tổng tài sản',
     totalDepartments: 'Tổng phòng ban',
     totalUsers: 'Tổng người dùng',

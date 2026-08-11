@@ -8,9 +8,9 @@ const swaggerOptions = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Asset Management API',
+      title: 'Phần mềm Quản lý tài sản - API',
       version: '1.0.0',
-      description: 'API Documentation cho hệ thống Quản lý Tài sản',
+      description: 'API Documentation - Phần mềm Quản lý tài sản | Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ',
       contact: {
         name: 'Support',
         email: 'support@example.com'
@@ -43,7 +43,7 @@ export function setupSwagger(app: Express): void {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     explorer: true,
     customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'Asset Management API Docs'
+    customSiteTitle: 'Phần mềm Quản lý tài sản - API Docs'
   }));
 
   // Serve swagger spec as JSON

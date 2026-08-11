@@ -27,6 +27,12 @@ export interface AssetDisposalCaseAttributes {
   destruction_method?: DestructionMethod;   // hình thức tiêu hủy
   disposal_method?: DisposalMethod;         // hình thức thanh lý
   revenue?: number;                         // tiền thu được
+  // Workflow dates theo quy trình xử lý tài sản (TT120/2025)
+  recovery_date?: Date;                     // ngày thu hồi
+  sale_date?: Date;                         // ngày bán
+  liquidation_date?: Date;                  // ngày thanh lý
+  destruction_date?: Date;                  // ngày tiêu hủy
+  completed_date?: Date;                    // ngày hoàn tất xử lý
   created_at?: Date;
   updated_at?: Date;
 }
@@ -59,6 +65,11 @@ class AssetDisposalCase
   public destruction_method?: DestructionMethod;
   public disposal_method?: DisposalMethod;
   public revenue?: number;
+  public recovery_date?: Date;
+  public sale_date?: Date;
+  public liquidation_date?: Date;
+  public destruction_date?: Date;
+  public completed_date?: Date;
   public readonly created_at!: Date;
   public readonly updated_at!: Date;
 }
@@ -158,6 +169,31 @@ AssetDisposalCase.init(
       type: DataTypes.DECIMAL(18, 0),
       allowNull: true,
       defaultValue: 0,
+    },
+    recovery_date: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+      comment: 'Ngày thu hồi tài sản',
+    },
+    sale_date: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+      comment: 'Ngày bán tài sản',
+    },
+    liquidation_date: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+      comment: 'Ngày thanh lý tài sản',
+    },
+    destruction_date: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+      comment: 'Ngày tiêu hủy tài sản',
+    },
+    completed_date: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+      comment: 'Ngày hoàn tất xử lý',
     },
   },
   {

@@ -11,6 +11,7 @@ import App from './App.vue';
 import router from './router';
 import i18n from './i18n';
 import { useAuthStore } from '@/stores/auth.store';
+import { initPWA } from '@/pwa';
 
 import { use } from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -49,6 +50,9 @@ try {
 app.use(router);
 app.use(ElementPlus);
 app.use(i18n);
+
+// Initialize PWA (service worker registration, update prompts)
+initPWA();
 
 // Frontend observability: log lỗi JS để debug (có thể mở rộng gửi lên backend sau)
 app.config.errorHandler = (err: unknown, _instance, info) => {

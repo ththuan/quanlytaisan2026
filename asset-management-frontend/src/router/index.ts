@@ -91,13 +91,13 @@ const routes: RouteRecordRaw[] = [
         path: '/purchase-requests',
         name: 'PurchaseRequests',
         component: () => import('@/views/Maintenance/PurchaseRequestView.vue'),
-        meta: { titleKey: 'menu.purchaseRequests' },
+        meta: { requiresAdminOrDirector: true, titleKey: 'menu.purchaseRequests' },
       },
       {
         path: '/maintenance',
         name: 'Maintenance',
         component: () => import('@/views/Maintenance/RepairRequestView.vue'),
-        meta: { titleKey: 'menu.repairTracking' },
+        meta: { requiresAdminOrDirector: true, titleKey: 'menu.repairTracking' },
       },
       {
         path: '/stock',
@@ -179,6 +179,24 @@ const router = createRouter({
   routes,
 });
 
+// Xử lý lỗi khi module bị lazy-load thất bại (thường do server đã build lại
+// hoặc restart trong khi tab trình duyệt vẫn đang mở, khiến chunk cũ không còn tồn tại).
+// Trong trường hợp này, tự động reload lại trang (1 lần) để lấy bản build mới nhất
+// thay vì hiển thị lỗi trắng màn hình cho người dùng.
+const CHUNK_LOAD_ERROR_REGEX = /Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed/i;
+router.onError((error, to) => {
+  if (CHUNK_LOAD_ERROR_REGEX.test(error.message)) {
+    const reloadKey = 'chunk-reload-retried';
+    const alreadyRetried = sessionStorage.getItem(reloadKey);
+    if (!alreadyRetried) {
+      sessionStorage.setItem(reloadKey, '1');
+      window.location.href = to.fullPath;
+    } else {
+      sessionStorage.removeItem(reloadKey);
+    }
+  }
+});
+
 const getLandingPathByRole = () => {
   // Tất cả các role giờ đây đều có Dashboard là trang lending
   return '/';
@@ -194,12 +212,13 @@ router.beforeEach((to, _from, next) => {
     return next('/login');
   }
 
-  if (to.path === '/login' && isAuthed) {
+  // Kiểm tra quyền admin cho các route có meta.requiresAdmin
+  if (to.meta.requiresAdmin && !['admin', 'director'].includes(userRole || '')) {
     return next(getLandingPathByRole());
   }
 
-  // Kiểm tra quyền admin cho các route có meta.requiresAdmin
-  if (to.meta.requiresAdmin && !['admin', 'director'].includes(userRole || '')) {
+  // Kiểm tra quyền admin hoặc director cho các route có meta.requiresAdminOrDirector
+  if (to.meta.requiresAdminOrDirector && !['admin', 'director'].includes(userRole || '')) {
     return next(getLandingPathByRole());
   }
 
@@ -216,6 +235,12 @@ router.beforeEach((to, _from, next) => {
   }
 
   return next();
+});
+
+// Xóa cờ retry sau khi điều hướng thành công, để lần lazy-load lỗi tiếp theo
+// (do một lần restart/deploy khác) vẫn có thể tự động reload lại 1 lần.
+router.afterEach(() => {
+  sessionStorage.removeItem('chunk-reload-retried');
 });
 
 export default router;

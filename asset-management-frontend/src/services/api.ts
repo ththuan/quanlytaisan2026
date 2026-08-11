@@ -59,7 +59,19 @@ api.interceptors.response.use(
   },
   async (error: AxiosError) => {
     const now = Date.now();
-    
+
+    // Retry proxy/connection errors (backend restarting) - up to 3 times with delay
+    const config = error.config;
+    if (config && (!error.response || error.response.status >= 502)) {
+      const retryCount = (config as any).__retryCount || 0;
+      if (retryCount < 3) {
+        (config as any).__retryCount = retryCount + 1;
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 8000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return api(config);
+      }
+    }
+
     // Xử lý lỗi mạng
     if (!error.response) {
       consecutiveNetworkErrors++;
@@ -93,14 +105,27 @@ api.interceptors.response.use(
         if (storedRefreshToken && !isRefreshing) {
           isRefreshing = true;
           try {
+            const authStore = useAuthStore();
+            const currentUserId = authStore.user?.id;
             const res = await axios.post(`${API_BASE_URL}/auth/refresh`, { refresh_token: storedRefreshToken });
-            // Backend trả về { success: true, data: { accessToken: "..." } }
             const newAccessToken: string = (res as any)?.data?.data?.accessToken || (res as any)?.data?.accessToken;
             const newRefreshToken: string | undefined = (res as any)?.data?.data?.refreshToken || (res as any)?.data?.refreshToken;
             if (newAccessToken) {
+              // Decode JWT to verify this token still belongs to the same user
+              try {
+                const payload = JSON.parse(atob(newAccessToken.split('.')[1]));
+                if (currentUserId && payload.id && currentUserId !== payload.id) {
+                  console.warn('[Auth] Token refresh returned different user — session overwritten by another tab');
+                  authStore.clearAuth();
+                  router.replace('/login');
+                  isRefreshing = false;
+                  refreshSubscribers = [];
+                  return Promise.reject(error);
+                }
+              } catch { /* ignore decode errors */ }
               localStorage.setItem('accessToken', newAccessToken);
               if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
-              try { useAuthStore().accessToken = newAccessToken; } catch { /* pinia not ready */ }
+              authStore.accessToken = newAccessToken;
               onRefreshed(newAccessToken);
               isRefreshing = false;
               // Retry the original failed request

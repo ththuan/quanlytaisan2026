@@ -236,56 +236,61 @@
     <!-- Camera Scanner Dialog -->
     <el-dialog
       v-model="showCameraDialog"
-      title="Quét QR Code từ Camera"
-      width="90%"
+      :fullscreen="true"
       :close-on-click-modal="false"
+      :destroy-on-close="true"
+      :show-close="false"
       class="camera-dialog"
       @close="stopCameraScanner"
     >
       <div class="camera-scanner-container">
-        <div
-          :id="'qr-reader'"
-          :key="cameraKey"
-          class="qr-reader"
-        />
-        <div
-          v-if="cameraScanning"
-          class="camera-status"
-        >
-          <el-icon class="is-loading">
-            <Loading />
-          </el-icon>
-          <span>Đang quét QR code...</span>
+        <!-- Header bar -->
+        <div class="camera-top-bar">
+          <button class="camera-close-btn" @click="stopCameraScanner">
+            <span class="close-icon">&times;</span>
+          </button>
+          <span class="camera-title">Quét mã QR</span>
+          <button v-if="hasMultipleCameras" class="camera-switch-btn" @click="switchCamera" title="Đổi camera">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20 7h-6m0 0l-3-3m3 3l-3 3M4 17h6m0 0l3 3m-3-3l3-3"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
         </div>
-        <div
-          v-if="cameraError"
-          class="camera-error"
-        >
-          <el-alert
-            type="error"
-            :closable="false"
-            show-icon
-          >
-            <template #title>
-              <div style="white-space: pre-line;">
-                {{ cameraError }}
-              </div>
-            </template>
-          </el-alert>
+
+        <!-- Camera view -->
+        <div class="camera-view">
+          <div :id="'qr-reader'" :key="cameraKey" class="qr-reader" />
+
+          <!-- Scan frame overlay -->
+          <div v-if="cameraScanning" class="scan-frame-overlay">
+            <div class="scan-frame">
+              <div class="scan-corner tl" />
+              <div class="scan-corner tr" />
+              <div class="scan-corner bl" />
+              <div class="scan-corner br" />
+              <div class="scan-line" />
+            </div>
+            <p class="scan-hint">Đưa mã QR vào khung hình</p>
+          </div>
+
+          <!-- Processing overlay -->
+          <div v-if="scanning" class="scan-processing-overlay">
+            <div class="processing-ring" />
+            <p>Đang xử lý...</p>
+          </div>
+
+          <!-- Success flash -->
+          <transition name="scan-flash">
+            <div v-if="scanSuccessMessage" class="scan-success-flash">
+              <svg class="success-check" viewBox="0 0 52 52"><circle cx="26" cy="26" r="25" fill="none" stroke="#4caf50" stroke-width="2"/><path fill="none" stroke="#4caf50" stroke-width="3" d="M14 27l7 7 16-16"/></svg>
+              <span>{{ scanSuccessMessage }}</span>
+            </div>
+          </transition>
+        </div>
+
+        <!-- Error banner -->
+        <div v-if="cameraError" class="camera-error-banner">
+          <span>{{ cameraError }}</span>
         </div>
       </div>
-      <template #footer>
-        <el-button @click="stopCameraScanner">
-          Đóng
-        </el-button>
-        <el-button
-          v-if="hasMultipleCameras"
-          type="primary"
-          @click="switchCamera"
-        >
-          Đổi Camera
-        </el-button>
-      </template>
     </el-dialog>
 
     <!-- Asset List for Inventory -->
@@ -934,12 +939,12 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { ArrowLeft, DocumentCopy, Select, Search, InfoFilled, Camera, Loading, Calendar, Timer, OfficeBuilding, Warning, Box } from '@element-plus/icons-vue';
+import { ArrowLeft, DocumentCopy, Select, Search, InfoFilled, Camera, Calendar, Timer, OfficeBuilding, Warning, Box } from '@element-plus/icons-vue';
 import { useAuthStore } from '@/stores/auth.store';
 import inventoryService, { type InventoryRound, type InventoryReport } from '@/services/inventory.service';
 import { assetService } from '@/services/asset.service';
 import { assetCategoryService } from '@/services/assetCategory.service';
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 
 const route = useRoute();
 const router = useRouter();
@@ -975,11 +980,13 @@ const scannerInputRef = ref();
 const showCameraDialog = ref(false);
 const cameraScanning = ref(false);
 const cameraError = ref('');
+const scanSuccessMessage = ref(''); // Thông báo quét thành công hiển thị trong camera
 const html5QrCode = ref<Html5Qrcode | null>(null);
 const hasMultipleCameras = ref(false);
 const availableCameras = ref<any[]>([]);
 const currentCameraIndex = ref(0);
 const cameraKey = ref(0); // Thay đổi key = Vue xóa DOM và tạo lại hoàn toàn
+const pendingTimeouts = new Set<ReturnType<typeof setTimeout>>();
 
 // Check Dialog
 const showCheckDialog = ref(false);
@@ -1526,6 +1533,14 @@ const handleScanCode = async () => {
         const decodeResult = await assetService.decodeQRCode(scannedValue);
         assetData = decodeResult.data?.asset;
         
+        if (!assetData) {
+          ElMessage.error('Không tìm thấy tài sản với mã QR này');
+          scannedCode.value = '';
+          scanning.value = false;
+          if (showCameraDialog.value) await restartCamera();
+          return;
+        }
+        
         // Validate số lượng từ QR code
         if (qrData.quantity !== 1) {
           ElMessage.warning({
@@ -1545,12 +1560,17 @@ const handleScanCode = async () => {
       // Không phải JSON - có thể là URL format (https://domain/scan/ASSET_CODE) hoặc mã thô
       let codeToLookup = scannedValue;
       if (scannedValue.startsWith('http://') || scannedValue.startsWith('https://')) {
-        const urlParts = scannedValue.split('/');
+        const urlParts = scannedValue.replace(/\/$/, '').split('/');
+        // Try to find asset code in URL: /scan/CODE or /assets/CODE or last segment
         const scanIndex = urlParts.indexOf('scan');
-        codeToLookup = scanIndex !== -1 && urlParts[scanIndex + 1]
-          ? urlParts[scanIndex + 1]
-          : urlParts[urlParts.length - 1];
+        if (scanIndex !== -1 && urlParts[scanIndex + 1]) {
+          codeToLookup = urlParts[scanIndex + 1];
+        } else {
+          codeToLookup = urlParts[urlParts.length - 1];
+        }
       }
+      // Clean up the code (remove URL encoding, query params)
+      codeToLookup = decodeURIComponent(codeToLookup).split('?')[0].trim();
       assetData = await inventoryService.findAssetByCode(codeToLookup);
     }
     
@@ -1608,7 +1628,7 @@ const handleScanCode = async () => {
           actual_quantity: bookQuantity, // Phải = số lượng sổ sách (chứng minh tài sản còn tồn tại)
           asset_condition: 'good', // Mặc định: Tốt - Còn sử dụng được và đang sử dụng
           check_status: 'matched', // Chắc chắn khớp với sổ sách (đã quét QR = tài sản còn tồn tại)
-          scan_method: 'qr_scan', // Phương thức: quét mã QR
+          scan_method: 'qr_scan' as const, // Phương thức: quét mã QR
           notes: 'Đã quét QR code - Tài sản còn tồn tại tại đơn vị. Số lượng và kết quả kiểm kê không thể chỉnh sửa.',
         };
         
@@ -1632,12 +1652,23 @@ const handleScanCode = async () => {
         }
         
         hasChanges.value = true;
+        
+        // Hiển thị thông báo thành công trong camera dialog
+        if (showCameraDialog.value) {
+          scanSuccessMessage.value = `✓ ${foundAsset.name || foundAsset.asset_code} - Khớp sổ sách`;
+          // Tự động ẩn sau 1.5 giây
+          setTimeout(() => {
+            scanSuccessMessage.value = '';
+          }, 1500);
+        } else {
+          // Nếu không dùng camera thì vẫn hiển thị ElMessage như cũ
           ElMessage.success({
             message: `✓ ${foundAsset.name || foundAsset.asset_code} - Khớp sổ sách`,
             duration: 2000,
             showClose: true,
             offset: 60
           });
+        }
       } catch (error: any) {
         console.error('Error auto-saving scan result:', error);
         // Nếu lỗi, mở dialog để người dùng nhập thủ công
@@ -1648,10 +1679,12 @@ const handleScanCode = async () => {
       openCheckDialog(foundAsset, true);
     }
     
-    // Xóa mã đã quét và focus lại input
+    // Xóa mã đã quét và focus lại input (only when camera is closed)
     scannedCode.value = '';
-    await nextTick();
-    scannerInputRef.value?.focus();
+    if (!showCameraDialog.value) {
+      await nextTick();
+      scannerInputRef.value?.focus();
+    }
     
   } catch (error: any) {
     ElMessage.error({
@@ -1660,10 +1693,11 @@ const handleScanCode = async () => {
       showClose: true,
       offset: 60
     });
-    // Xóa mã và focus lại input
     scannedCode.value = '';
-    await nextTick();
-    scannerInputRef.value?.focus();
+    if (!showCameraDialog.value) {
+      await nextTick();
+      scannerInputRef.value?.focus();
+    }
   } finally {
     scanning.value = false;
   }
@@ -1891,23 +1925,17 @@ const submitReport = async () => {
           const data = {
             asset_id: asset.id,
             actual_quantity: 0,
-            asset_condition: 'damaged', // Hư hỏng nặng (tài sản mất)
+            asset_condition: 'damaged',
             check_status: 'missing',
             notes: 'Tài sản có mã QR nhưng không quét được - coi như mất',
           };
           
-          await inventoryService.addDetail(report.value.id, data);
+          const detailResult = await inventoryService.addDetail(report.value.id, data);
           
-          // Update local state
+          // Update local state directly from addDetail response
           const index = assets.value.findIndex(a => a.id === asset.id);
-          if (index !== -1) {
-            const detail = await inventoryService.getReportById(report.value.id);
-            if (detail.details) {
-              const assetDetail = detail.details.find((d: any) => d.asset_id === asset.id);
-              if (assetDetail) {
-                assets.value[index].inventory_detail = assetDetail;
-              }
-            }
+          if (index !== -1 && detailResult) {
+            assets.value[index].inventory_detail = detailResult;
           }
           
           markedCount++;
@@ -2080,34 +2108,51 @@ const getReportStatusLabel = (status: string | undefined) => {
 };
 
 // Camera Scanner Functions
+
+// Detect iOS/Safari
+const isIOS = () => {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+};
+
+const isAndroid = () => {
+  return /Android/.test(navigator.userAgent);
+};
+
+const isMobileDevice = () => {
+  return isIOS() || isAndroid() || window.innerWidth <= 768;
+};
+
 const startCameraWithIndex = async (index: number) => {
   const devices = availableCameras.value;
   if (!devices.length) return;
   
   const qrCodeInstance = html5QrCode.value!;
-  const config = {
-    fps: 15,
-    // Khung quét 75% chiều nhỏ nhất - đủ lớn và nhạy
-    qrbox: (w: number, h: number) => {
-      const size = Math.floor(Math.min(w, h) * 0.75);
-      return { width: size, height: size };
-    },
-    disableFlip: false,
-    // Chỉ scan QR_CODE - không scan barcode/DataMatrix/... nhanh hơn nhiều lần
-    formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-    experimentalFeatures: {
-      useBarCodeDetectorIfSupported: true,
-    },
-  };
-  
   const cameraId = devices[index]?.id;
-  await qrCodeInstance.start(
-    cameraId || { facingMode: 'environment' },
-    config,
-    onQRCodeScanned,
-    onCameraError
-  );
-  cameraScanning.value = true;
+  
+  console.log('[Camera] Starting with device:', devices[index]?.label, cameraId);
+  
+  try {
+    await qrCodeInstance.start(
+      cameraId || { facingMode: 'environment' },
+      { fps: 10, qrbox: 250 },
+      (decodedText: string) => {
+        console.log('[Camera] QR detected:', decodedText.substring(0, 50));
+        onQRCodeScanned(decodedText);
+      },
+      (err: string) => {
+        if (!err.includes('No QR code found') && !err.includes('No MultiFormat')) {
+          console.warn('[Camera] Error:', err);
+        }
+        onCameraError(err);
+      }
+    );
+    console.log('[Camera] Started successfully');
+    cameraScanning.value = true;
+  } catch (e: any) {
+    console.error('[Camera] Start failed:', e.message || e);
+    throw e;
+  }
 };
 
 const openCameraScanner = async () => {
@@ -2115,41 +2160,46 @@ const openCameraScanner = async () => {
   cameraError.value = '';
   await nextTick();
   
-  // Kiểm tra Secure Context (HTTPS/localhost)
   if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    cameraError.value = 'Truy cập Camera yêu cầu môi trường an toàn (HTTPS hoặc localhost). \n\n' +
-                       'Cách khắc phục: \n' +
-                       '1. Sử dụng HTTPS (nếu có)\n' +
-                       '2. Nếu đang test trên điện thoại, truy cập: chrome://flags/#unsafely-treat-insecure-origin-as-secure và thêm địa chỉ IP này vào danh sách.';
-    cameraScanning.value = false;
+    cameraError.value = 'Camera yêu cầu kết nối an toàn (HTTPS hoặc localhost). Vui lòng truy cập qua HTTPS.';
     return;
   }
+
+  // Lock page scroll when camera is open
+  document.body.style.overflow = 'hidden';
+  document.body.style.position = 'fixed';
+  document.body.style.width = '100%';
   
   try {
     const devices = await Html5Qrcode.getCameras();
     availableCameras.value = devices;
     hasMultipleCameras.value = devices.length > 1;
     
-    // Ưu tiên camera sau (environment/back/rear)
-    const backIdx = devices.findIndex((d: any) => 
-      d.label.toLowerCase().includes('back') || 
-      d.label.toLowerCase().includes('rear') ||
-      d.label.toLowerCase().includes('environment')
-    );
+    if (devices.length === 0) {
+      cameraError.value = 'Không tìm thấy camera nào trên thiết bị. Vui lòng kiểm tra kết nối camera.';
+      return;
+    }
+    
+    // Find back/environment camera
+    const backIdx = devices.findIndex((d: any) => {
+      const label = (d.label || '').toLowerCase();
+      return label.includes('back') || label.includes('rear') || 
+             label.includes('environment') || label.includes('mặt sau');
+    });
     currentCameraIndex.value = backIdx >= 0 ? backIdx : 0;
     
-    const qrCodeInstance = new Html5Qrcode('qr-reader');
-    html5QrCode.value = qrCodeInstance;
-    
+    html5QrCode.value = new Html5Qrcode('qr-reader');
     await startCameraWithIndex(currentCameraIndex.value);
   } catch (error: any) {
     console.error('Error starting camera:', error);
-    let msg = error.message || error.toString();
+    const msg = error.message || String(error);
     
-    if (msg.includes('secure context')) {
-      cameraError.value = 'Truy cập Camera chỉ được hỗ trợ trong môi trường an toàn (HTTPS hoặc localhost).';
-    } else if (msg.includes('NotAllowedError') || msg.includes('Permission denied')) {
+    if (msg.includes('NotAllowedError') || msg.includes('Permission denied')) {
       cameraError.value = 'Bạn đã từ chối quyền truy cập camera. Vui lòng cấp quyền trong cài đặt trình duyệt.';
+    } else if (msg.includes('NotFoundError') || msg.includes('No cameras')) {
+      cameraError.value = 'Không tìm thấy camera. Vui lòng kiểm tra thiết bị.';
+    } else if (msg.includes('NotReadableError') || msg.includes('Could not start')) {
+      cameraError.value = 'Camera đang được sử dụng bởi ứng dụng khác. Vui lòng đóng ứng dụng khác và thử lại.';
     } else {
       cameraError.value = 'Không thể mở camera: ' + msg;
     }
@@ -2158,51 +2208,37 @@ const openCameraScanner = async () => {
 };
 
 const onQRCodeScanned = async (decodedText: string) => {
-  if (scanning.value) return; // Đang xử lý, bỏ qua
+  if (scanning.value) return;
   
   try {
-    // Tạm dừng camera để tránh quét lặp cùng mã
-    if (html5QrCode.value) {
-      try {
-        await html5QrCode.value.pause();
-      } catch (e) {
-        console.warn('Pause error:', e);
-      }
-    }
-    
     scanning.value = true;
     scannedCode.value = decodedText;
     
-    // Xử lý mã QR và mở dialog kiểm kê (nếu cần)
     await handleScanCode();
     
-    // Nếu không mở dialog kiểm kê (tức là đã auto-save thành công)
-    // thì tự động resume camera sau 1.5 giây để quét tiếp
+    // Resume camera after processing
+    const resumeDelay = isIOS() ? 2500 : 1000;
     if (!showCheckDialog.value && showCameraDialog.value) {
       setTimeout(async () => {
-        // Chỉ resume nếu camera dialog vẫn đang mở và không có dialog kiểm kê nào hiện lên
         if (html5QrCode.value && !showCheckDialog.value && showCameraDialog.value) {
-          try {
-            await html5QrCode.value.resume();
-            scanning.value = false;
-            scannedCode.value = '';
-          } catch (e) {
-            console.error('Error resuming camera:', e);
-            await restartCamera(); // Fallback nếu không resume được
+          scanning.value = false;
+          scannedCode.value = '';
+          // Always restart on mobile instead of pause/resume (more reliable)
+          if (isMobileDevice()) {
+            await restartCamera();
+          } else {
+            try {
+              await html5QrCode.value.resume();
+            } catch {
+              await restartCamera();
+            }
           }
         }
-      }, 1500);
+      }, resumeDelay);
     }
     
   } catch (error: any) {
     console.error('Error processing scanned code:', error);
-    ElMessage.error({
-      message: 'Lỗi khi xử lý mã QR: ' + (error.message || 'Không xác định'),
-      duration: 2000,
-      showClose: true,
-      offset: 60
-    });
-    // Restart camera để reset state và tiếp tục quét
     scannedCode.value = '';
     scanning.value = false;
     if (showCameraDialog.value) {
@@ -2211,21 +2247,33 @@ const onQRCodeScanned = async (decodedText: string) => {
   }
 };
 
-// Restart camera: tăng cameraKey → Vue xóa hẳn DOM element cũ và tạo mới
+// Restart camera completely - fresh instance, fresh DOM element
 const restartCamera = async () => {
-  // Dừng instance hiện tại
+  // Stop existing instance
   if (html5QrCode.value) {
     try { await html5QrCode.value.stop(); } catch { /* ignore */ }
     try { await html5QrCode.value.clear(); } catch { /* ignore */ }
     html5QrCode.value = null;
   }
-  // Tăng key → Vue destroy DOM element qr-reader và recreate hoàn toàn mới
+  
+  scanning.value = false;
+  scannedCode.value = '';
+  
+  // Force DOM recreation via key change
   cameraKey.value++;
-  // Đợi 2 ticks: tick 1 Vue xóa DOM, tick 2 Vue tạo DOM mới
+  
+  // Wait for DOM cleanup + recreation
+  await new Promise(resolve => setTimeout(resolve, 300));
   await nextTick();
   await nextTick();
-  html5QrCode.value = new Html5Qrcode('qr-reader');
-  await startCameraWithIndex(currentCameraIndex.value);
+  
+  try {
+    html5QrCode.value = new Html5Qrcode('qr-reader');
+    await startCameraWithIndex(currentCameraIndex.value);
+  } catch (error) {
+    console.error('Error restarting camera:', error);
+    cameraError.value = 'Không thể khởi động lại camera. Vui lòng đóng và mở lại.';
+  }
 };
 
 const onCheckDialogClose = async () => {
@@ -2233,23 +2281,13 @@ const onCheckDialogClose = async () => {
   scanning.value = false;
   scannedCode.value = '';
   
-  // Khi dialog đóng, nếu camera đang mở và đang bị pause thì resume lại
-  if (showCameraDialog.value && html5QrCode.value) {
-    try {
-      // Đợi một chút để dialog biến mất hoàn toàn
-      setTimeout(async () => {
-        if (html5QrCode.value) {
-          try {
-            await html5QrCode.value.resume();
-          } catch (e) {
-            // Nếu resume lỗi (do instance bị chết trên mobile), thực hiện restart
-            await restartCamera();
-          }
-        }
-      }, 300);
-    } catch (e) {
-      console.warn('onCheckDialogClose resume error:', e);
-    }
+  // After check dialog closes, restart camera fresh (most reliable)
+  if (showCameraDialog.value) {
+    setTimeout(async () => {
+      if (showCameraDialog.value && !html5QrCode.value?.isScanning) {
+        await restartCamera();
+      }
+    }, isMobileDevice() ? 400 : 200);
   }
 };
 
@@ -2310,12 +2348,42 @@ const stopCameraScanner = async () => {
     showCameraDialog.value = false;
     cameraScanning.value = false;
     cameraError.value = '';
+    scanSuccessMessage.value = '';
+    scanning.value = false;
+    scannedCode.value = '';
+    // Unlock page scroll
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
   }
+};
+
+// Handle orientation change on mobile only
+let orientationChangeTimeout: any = null;
+const handleOrientationChange = () => {
+  if (!showCameraDialog.value || !html5QrCode.value) return;
+  if (!isMobileDevice()) return;
+  
+  if (orientationChangeTimeout) clearTimeout(orientationChangeTimeout);
+  
+  orientationChangeTimeout = setTimeout(async () => {
+    if (showCameraDialog.value) {
+      await restartCamera();
+    }
+  }, 500);
 };
 
 onMounted(async () => {
   // Kiểm tra quyền: Admin không được thực hiện kiểm kê trực tiếp
   const isAdmin = authStore.user?.role === 'admin';
+  
+  // Thêm listener cho orientation change trên mobile
+  if (window.screen && window.screen.orientation) {
+    window.screen.orientation.addEventListener('change', handleOrientationChange);
+  } else {
+    // Fallback cho các browser không hỗ trợ screen.orientation
+    window.addEventListener('orientationchange', handleOrientationChange);
+  }
   const hasDepartment = !!authStore.user?.department_id;
   const roundId = route.query.round_id as string | undefined;
   const reportId = route.query.report_id as string | undefined;
@@ -2348,8 +2416,24 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  // Clear all pending timeouts
+  pendingTimeouts.forEach(id => clearTimeout(id));
+  pendingTimeouts.clear();
+
   // Đảm bảo dừng camera khi component bị unmount
   stopCameraScanner();
+  
+  // Cleanup orientation change listeners
+  if (window.screen && window.screen.orientation) {
+    window.screen.orientation.removeEventListener('change', handleOrientationChange);
+  } else {
+    window.removeEventListener('orientationchange', handleOrientationChange);
+  }
+  
+  // Clear timeout nếu có
+  if (orientationChangeTimeout) {
+    clearTimeout(orientationChangeTimeout);
+  }
 });
 </script>
 
@@ -2684,44 +2768,254 @@ onUnmounted(() => {
   background-color: #ecf5ff !important;
 }
 
-/* Camera Scanner Dialog */
+/* Camera Scanner Dialog - Redesigned */
+.camera-dialog :deep(.el-dialog) {
+  margin: 0 !important;
+  background: #000 !important;
+  border-radius: 0 !important;
+}
+
+.camera-dialog :deep(.el-dialog__header) {
+  display: none;
+}
+
+.camera-dialog :deep(.el-dialog__title) {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.camera-dialog :deep(.el-dialog__headerbtn .el-dialog__close) {
+  color: white;
+  font-size: 24px;
+}
+
 .camera-dialog :deep(.el-dialog__body) {
-  padding: 20px;
+  padding: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .camera-scanner-container {
   position: relative;
   display: flex;
   flex-direction: column;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: #000;
+}
+
+/* Top bar */
+.camera-top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
   align-items: center;
-  gap: 16px;
-  min-height: 400px;
+  justify-content: space-between;
+  padding: 12px 16px;
+  padding-top: max(12px, env(safe-area-inset-top));
+  background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, transparent 100%);
+}
+
+.camera-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.15);
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+
+.close-icon {
+  line-height: 1;
+  margin-top: -1px;
+}
+
+.camera-title {
+  color: white;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.camera-switch-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.15);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+
+/* Camera view */
+.camera-view {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.camera-hint {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #409eff;
+  border-radius: 8px;
+  color: #409eff;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+}
+
+.camera-dialog :deep(.el-dialog__footer) {
+  padding: 16px 20px;
+  background: #f5f7fa;
+  border-top: 1px solid #e4e7ed;
+}
+
+.camera-dialog-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  width: 100%;
+}
+
+.scan-success-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.85);
+  border-radius: 12px;
+  padding: 24px 32px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+}
+
+.success-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.success-icon {
+  font-size: 48px;
+  color: #67c23a;
+  animation: successPulse 0.5s ease-out;
+}
+
+.success-text {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+@keyframes successPulse {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 #qr-reader {
   width: 100%;
-  max-width: 500px;
-  border-radius: 8px;
+  max-width: 100%;
+  flex: 1;
+  min-height: 0;
+  border-radius: 0;
   overflow: hidden;
+  background: #000;
 }
 
 #qr-reader video {
-  width: 100%;
-  height: auto;
-  border-radius: 8px;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: cover;
+  border-radius: 0;
+  display: block;
+  /* Cai thien hien thi video tren iOS */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 .camera-status {
+  position: absolute;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #409eff;
-  font-size: 14px;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 10px 20px;
+  background: rgba(64, 158, 255, 0.9);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+}
+
+.camera-status.processing {
+  background: rgba(230, 162, 60, 0.9);
+  color: white;
 }
 
 .camera-error {
-  width: 100%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
   max-width: 500px;
+  z-index: 100;
 }
 
 /* Camera scanner responsive */
@@ -2737,17 +3031,144 @@ onUnmounted(() => {
   .camera-btn {
     width: 100%;
   }
-
-  .camera-dialog {
-    width: 95% !important;
+  
+  .camera-dialog-footer {
+    flex-direction: column;
   }
   
-  #qr-reader {
-    max-width: 100%;
+  .camera-dialog-footer .el-button {
+    width: 100%;
+    font-size: 16px;
+    padding: 12px 20px;
   }
-
-  .camera-scanner-container {
-    min-height: 300px;
+  
+  .camera-hint {
+    font-size: 14px;
+    padding: 10px 16px;
+    top: 10px;
+  }
+  
+  .success-text {
+    font-size: 16px;
+  }
+  
+  .scan-success-overlay {
+    padding: 20px 28px;
+    max-width: 90%;
   }
 }
+
+/* Tablet (iPad) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .camera-dialog-footer .el-button {
+    font-size: 18px;
+    padding: 14px 28px;
+  }
+  
+  .camera-hint {
+    font-size: 18px;
+    padding: 14px 24px;
+  }
+}
+
+/* iPhone/iPad specific optimizations */
+@supports (-webkit-touch-callout: none) {
+  /* CSS cho iOS/Safari */
+  .camera-dialog :deep(.el-dialog) {
+    /* Safe area cho iPhone co notch va iPad */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+  }
+  
+  .camera-dialog :deep(.el-dialog__body) {
+    height: calc(100dvh - 140px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+  
+  #qr-reader video {
+    /* Toi uu rendering tren iOS */
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-perspective: 1000px;
+    perspective: 1000px;
+  }
+  
+  .camera-scanner-container {
+    /* Tranh van de scroll tren iOS */
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Scan frame overlay */
+.scan-frame-overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  pointer-events: none;
+}
+
+.scan-frame { position: relative; width: 250px; height: 250px; }
+
+.scan-corner { position: absolute; width: 30px; height: 30px; border-color: #409eff; border-style: solid; }
+.scan-corner.tl { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+.scan-corner.tr { top: 0; right: 0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+.scan-corner.bl { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+.scan-corner.br { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+.scan-line {
+  position: absolute; left: 10px; right: 10px; height: 2px;
+  background: linear-gradient(90deg, transparent, #409eff, transparent);
+  animation: scanLineMove 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(64,158,255,0.6);
+}
+
+@keyframes scanLineMove {
+  0%, 100% { top: 10px; opacity: 0; }
+  10%, 90% { opacity: 1; }
+  100% { top: calc(100% - 10px); opacity: 0; }
+}
+
+.scan-hint { color: rgba(255,255,255,0.7); font-size: 14px; margin-top: 24px; text-align: center; }
+
+.scan-processing-overlay {
+  position: absolute; inset: 0; background: rgba(0,0,0,0.6);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; color: white; font-size: 16px; z-index: 50;
+}
+
+.processing-ring {
+  width: 48px; height: 48px; border: 3px solid rgba(255,255,255,0.2);
+  border-top-color: #409eff; border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.scan-success-flash {
+  position: absolute; inset: 0; background: rgba(0,0,0,0.75);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; color: white; font-size: 16px; font-weight: 600; z-index: 60;
+}
+
+.success-check { width: 64px; height: 64px; }
+.success-check circle { stroke-dasharray: 157; stroke-dashoffset: 157; animation: drawCircle 0.5s ease forwards; }
+.success-check path { stroke-dasharray: 50; stroke-dashoffset: 50; animation: drawCheck 0.3s 0.3s ease forwards; }
+
+@keyframes drawCircle { to { stroke-dashoffset: 0; } }
+@keyframes drawCheck { to { stroke-dashoffset: 0; } }
+
+.scan-flash-enter-active { transition: opacity .2s; }
+.scan-flash-leave-active { transition: opacity .3s; }
+.scan-flash-enter-from, .scan-flash-leave-to { opacity: 0; }
+
+.camera-error-banner {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 100;
+  padding: 16px 20px; padding-bottom: max(16px, env(safe-area-inset-bottom));
+  background: rgba(220,38,38,0.95); color: white;
+  font-size: 14px; font-weight: 500; text-align: center;
+}
+
+@media (max-width: 480px) { .scan-frame { width: 200px; height: 200px; } .scan-corner { width: 24px; height: 24px; } }
+@media (min-width: 768px) { .scan-frame { width: 300px; height: 300px; } }
+
 </style>

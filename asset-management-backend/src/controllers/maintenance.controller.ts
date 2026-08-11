@@ -46,16 +46,16 @@ class MaintenanceController {
     try {
       const user = req.user!;
       
-      // Chỉ cán bộ (staff) mới được tạo yêu cầu sửa chữa
-      if (user.role !== 'staff') {
-        return res.status(403).json({
+      // All authenticated users can create maintenance requests
+      if (!user.department_id) {
+        return res.status(400).json({
           success: false,
-          message: 'Chỉ cán bộ mới được tạo yêu cầu sửa chữa. Trưởng đơn vị chỉ có thể xem và phê duyệt.',
+          message: 'Bạn chưa được phân công vào phòng ban nào.',
         });
       }
-      
+
       const userId = user.id;
-      
+
       // CRITICAL: Log detailed info about damage_images in request
       const damageImagesInBody = req.body.damage_images;
       const damageImagesType = typeof damageImagesInBody;
@@ -107,15 +107,14 @@ class MaintenanceController {
     try {
       const user = req.user!;
       const id = parseInt(req.params.id);
-      
-      // Chỉ cán bộ (staff) mới được sửa yêu cầu sửa chữa
-      if (user.role !== 'staff') {
-        return res.status(403).json({
+
+      if (!user.department_id) {
+        return res.status(400).json({
           success: false,
-          message: 'Chỉ cán bộ mới được sửa yêu cầu sửa chữa. Trưởng đơn vị chỉ có thể xem và phê duyệt.',
+          message: 'Bạn chưa được phân công vào phòng ban nào.',
         });
       }
-      
+
       const maintenance = await maintenanceService.updateMaintenance(id, req.body, {
         id: user.id,
         role: user.role as any,
@@ -369,15 +368,14 @@ class MaintenanceController {
     try {
       const user = req.user!;
       const id = parseInt(req.params.id);
-      
-      // Chỉ cán bộ (staff) mới được xóa yêu cầu sửa chữa
-      if (user.role !== 'staff') {
-        return res.status(403).json({
+
+      if (!user.department_id) {
+        return res.status(400).json({
           success: false,
-          message: 'Chỉ cán bộ mới được xóa yêu cầu sửa chữa. Trưởng đơn vị chỉ có thể xem và phê duyệt.',
+          message: 'Bạn chưa được phân công vào phòng ban nào.',
         });
       }
-      
+
       await maintenanceService.deleteMaintenance(id, {
         id: user.id,
         role: user.role as any,

@@ -1,19 +1,16 @@
 <template>
   <div id="app">
     <router-view />
+    <PWAUpdatePrompt />
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount } from 'vue';
-import { useIdleTimeout } from '@/composables/useIdleTimeout';
-
-// Tự động logout sau 30 phút không hoạt động
-useIdleTimeout();
+import PWAUpdatePrompt from '@/components/PWAUpdatePrompt.vue';
 
 // Global dialog close optimization - fixes flash on ALL dialogs
 let dialogCloseHandler: ((e: Event) => void) | null = null;
-let overlayClickHandler: ((e: MouseEvent) => void) | null = null;
 
 // Desktop Chrome/Edge specific optimizations to prevent tab-switch flash
 onMounted(() => {

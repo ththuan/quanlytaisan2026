@@ -4,7 +4,7 @@
       <div>
         <h2>{{ $t('dashboard.title') }}</h2>
         <p class="header-subtitle">
-          Tổng quan hoạt động quản lý tài sản
+          Tổng quan hoạt động - Phần mềm Quản lý tài sản
         </p>
       </div>
     </div>
@@ -56,8 +56,9 @@
         </el-card>
       </el-col>
 
-      <!-- 2. Mua sắm -->
+      <!-- 2. Mua sắm (chỉ admin và director) -->
       <el-col
+        v-if="isAdminOrDirector"
         :xs="12"
         :sm="8"
         :md="4"
@@ -90,8 +91,9 @@
         </el-card>
       </el-col>
 
-      <!-- 3. Sửa chữa -->
+      <!-- 3. Sửa chữa (chỉ admin và director) -->
       <el-col
+        v-if="isAdminOrDirector"
         :xs="12"
         :sm="8"
         :md="4"
@@ -377,7 +379,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { Box, ShoppingCart, Setting, Sort, List, Delete } from '@element-plus/icons-vue';
@@ -438,12 +440,20 @@ onMounted(async () => {
   await loadDashboardData();
 });
 
+// Watch for user change - refetch dashboard data for the correct role
+watch(() => authStore.user?.id, () => {
+  if (authStore.isAuthenticated) {
+    loadDashboardData();
+  }
+});
+
 
 
 
 const loadDashboardData = async () => {
   loading.value = true;
   try {
+    const isAdminOrDir = authStore.isAdmin || authStore.isDirector;
     const [overviewRes, statusRes, deptRes, stockRes, catRes, auditRes, maintRes, inventoryRes, hierarchyRes] = await Promise.all([
       dashboardService.getOverviewStats({}),
       dashboardService.getAssetStatusStats({}),
@@ -451,7 +461,7 @@ const loadDashboardData = async () => {
       dashboardService.getStockStats({}),
       dashboardService.getCategoryBreakdown({ limit: 8 }),
       dashboardService.getAuditLogs({ limit: 10, page: 1 }),
-      dashboardService.getMaintenanceStats({}),
+      isAdminOrDir ? dashboardService.getMaintenanceStats({}) : Promise.resolve({ data: [] }),
       inventoryService.getPendingReportsCount(),
       dashboardService.getHierarchyStats({}),
     ]);

@@ -8,6 +8,15 @@ import qrcodeService from '../services/qrcode.service';
 import envConfig from '../config/env';
 import { AuthRequest } from '../middleware/auth.middleware';
 
+// Helper: check if a non-admin/director user can access an asset's data
+async function checkAssetDeptAccess(assetId: number, user: { role: string; department_id?: number | null }): Promise<boolean> {
+  if (user.role === 'admin' || user.role === 'director') return true;
+  if (!user.department_id) return false;
+  const asset = await assetService.getAssetById(assetId);
+  if (!asset) return false;
+  return (asset as any).current_department_id === user.department_id;
+}
+
 export const getAllAssets = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const user = req.user!;
@@ -180,8 +189,13 @@ export const deleteAsset = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-export const getAssetHistory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getAssetHistory = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const user = req.user!;
+    if (!await checkAssetDeptAccess(parseInt(req.params.id), user)) {
+      res.status(403).json({ success: false, message: 'Bạn không có quyền truy cập tài sản này' });
+      return;
+    }
     const history = await assetService.getAssetHistory(parseInt(req.params.id));
 
     res.status(200).json({
@@ -210,8 +224,13 @@ export const getPendingDisposalGrouped = async (req: Request, res: Response, nex
 /**
  * Lấy lịch sử sửa chữa của tài sản
  */
-export const getRepairHistory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getRepairHistory = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const user = req.user!;
+    if (!await checkAssetDeptAccess(parseInt(req.params.id), user)) {
+      res.status(403).json({ success: false, message: 'Bạn không có quyền truy cập tài sản này' });
+      return;
+    }
     const history = await assetService.getRepairHistory(parseInt(req.params.id));
 
     res.status(200).json({
@@ -226,8 +245,13 @@ export const getRepairHistory = async (req: Request, res: Response, next: NextFu
 /**
  * Lấy lịch sử khấu hao theo từng năm của tài sản
  */
-export const getDepreciationHistory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getDepreciationHistory = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const user = req.user!;
+    if (!await checkAssetDeptAccess(parseInt(req.params.id), user)) {
+      res.status(403).json({ success: false, message: 'Bạn không có quyền truy cập tài sản này' });
+      return;
+    }
     const history = await assetService.getDepreciationHistory(parseInt(req.params.id));
 
     res.status(200).json({
@@ -495,13 +519,19 @@ export const decodeQRCode = async (req: AuthRequest, res: Response, _next: NextF
  */
 export const getQRCode = async (req: AuthRequest, res: Response, _next: NextFunction): Promise<void> => {
   try {
+    const user = req.user!;
     const assetId = parseInt(req.params.id);
-    
+
     if (isNaN(assetId)) {
       res.status(400).json({
         success: false,
         message: 'Invalid asset ID',
       });
+      return;
+    }
+
+    if (!await checkAssetDeptAccess(assetId, user)) {
+      res.status(403).json({ success: false, message: 'Bạn không có quyền truy cập tài sản này' });
       return;
     }
 

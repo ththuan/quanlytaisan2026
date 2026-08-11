@@ -10,7 +10,7 @@ export const setupSwagger = (app: Express) => {
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerJson, {
     explorer: true,
     customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'Asset Management API',
+    customSiteTitle: 'Phần mềm Quản lý tài sản - API',
   }));
 
   // Serve raw swagger JSON

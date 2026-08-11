@@ -1,9 +1,11 @@
 import { defineConfig, loadEnv } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import viteCompression from 'vite-plugin-compression';
 import basicSsl from '@vitejs/plugin-basic-ssl';
+import { VitePWA } from 'vite-plugin-pwa';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -12,10 +14,29 @@ export default defineConfig(({ mode }) => {
   const localEnv = loadEnv(mode, __dirname, '');
   const env = { ...rootEnv, ...localEnv };
   const useHttps = String(process.env.VITE_HTTPS || env.VITE_HTTPS || '').toLowerCase().trim() === 'true';
-  const port = Number(env.FRONTEND_PORT || env.VITE_FRONTEND_PORT) || 3000;
+  const port = Number(env.FRONTEND_PORT || env.VITE_FRONTEND_PORT) || 4000;
   const protocol = useHttps ? 'https' : 'http';
   if (useHttps) {
     console.log('[vite] HTTPS mode: VITE_HTTPS=true detected');
+  }
+
+  // Try to use custom SSL certs from nginx/ssl (with LAN IP SAN)
+  let httpsConfig: any = useHttps;
+  let hasCustomCert = false;
+  if (useHttps) {
+    const certDir = path.resolve(__dirname, '..', 'nginx', 'ssl');
+    const certFile = path.join(certDir, 'server.crt');
+    const keyFile = path.join(certDir, 'server.key');
+    if (fs.existsSync(certFile) && fs.existsSync(keyFile)) {
+      httpsConfig = {
+        cert: fs.readFileSync(certFile, 'utf-8'),
+        key: fs.readFileSync(keyFile, 'utf-8'),
+      };
+      hasCustomCert = true;
+      console.log('[vite] Using custom SSL cert from nginx/ssl/');
+    } else {
+      console.log('[vite] Using auto-generated basic-ssl cert');
+    }
   }
 
   return {
@@ -26,7 +47,59 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       vue(),
-      useHttps ? basicSsl() : null,
+      VitePWA({
+        registerType: 'prompt',
+        includeAssets: ['logo-truong.ico', 'logo-truong.jpg'],
+        manifest: {
+          name: 'Quản lý tài sản - CTEC',
+          short_name: 'QLTS CTEC',
+          description: 'Phần mềm Quản lý tài sản - Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ',
+          theme_color: '#409eff',
+          background_color: '#f0f2f5',
+          display: 'standalone',
+          orientation: 'portrait-primary',
+          scope: '/',
+          start_url: '/',
+          lang: 'vi',
+          icons: [
+            {
+              src: '/logo-truong.jpg',
+              sizes: '192x192',
+              type: 'image/jpeg',
+              purpose: 'any maskable',
+            },
+            {
+              src: '/logo-truong.jpg',
+              sizes: '512x512',
+              type: 'image/jpeg',
+              purpose: 'any maskable',
+            },
+          ],
+        },
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,jpg,png,svg,woff,woff2,ttf,eot}'],
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'google-fonts',
+                expiration: { maxEntries: 20, maxAgeSeconds: 365 * 24 * 60 * 60 },
+              },
+            },
+            {
+              urlPattern: /\/api\/(?!public\/)/,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'api-calls',
+                networkTimeoutSeconds: 10,
+                expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 },
+              },
+            },
+          ],
+        },
+      }),
+      (useHttps && !hasCustomCert) ? basicSsl() : null,
       viteCompression({
         algorithm: 'gzip',
         ext: '.gz',
@@ -54,10 +127,10 @@ export default defineConfig(({ mode }) => {
             const actualPort = typeof addr === 'object' && addr && 'port' in addr ? addr.port : port;
             const actualUrl = `${protocol}://localhost:${actualPort}`;
             console.log('\n  ' + '='.repeat(50));
-            console.log('  >>> Mở trình duyệt: ' + actualUrl);
+            console.log('  >>> Mo trinh duyet: ' + actualUrl);
             console.log('  ' + '='.repeat(50) + '\n');
             if (useHttps) {
-              console.log('  Trình duyệt báo "Không bảo mật" → Nâng cao → Truy cập localhost\n');
+              console.log('  Trinh duyet bao "Khong bao mat" -> Nang cao -> Truy cap localhost\n');
             }
             import('open').then(({ default: open }) => open(actualUrl));
           });
@@ -65,18 +138,15 @@ export default defineConfig(({ mode }) => {
       },
     ].filter(Boolean) as any,
     server: {
-      host: '0.0.0.0', // Allow external access (IP-based)
+      host: '0.0.0.0',
       port,
-      https: useHttps,
+      https: httpsConfig,
       allowedHosts: true,
       open: false,
       hmr: {
-        // Let browser auto-detect the correct host (localhost or IP)
-        // When accessing via IP, WebSocket will connect to that IP
         protocol: useHttps ? 'wss' : 'ws',
-        // Don't specify host - let Vite use the browser's current host
         port: port,
-        overlay: false, // Disable error overlay to avoid WebSocket error popup
+        overlay: false,
       },
       proxy: {
         '/storage': {

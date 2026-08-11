@@ -20,6 +20,23 @@ services:
       timeout: 5s
       retries: 5
 
+  # Cache & Session (Redis)
+  redis:
+    image: redis:7-alpine
+    container_name: asset-management-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - asset-management-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Backend API
   backend:
     build:
@@ -40,16 +57,17 @@ services:
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4000}
       JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
       DEFAULT_PASSWORD: ${DEFAULT_PASSWORD:-Ctec@123}
       BODY_LIMIT: ${BODY_LIMIT:-10mb}
       LOG_LEVEL: ${LOG_LEVEL:-info}
-      FRONTEND_PORT: ${FRONTEND_PORT:-3000}
+      FRONTEND_PORT: ${FRONTEND_PORT:-4000}
       DB_POOL_MAX: ${DB_POOL_MAX:-10}
       DB_POOL_MIN: ${DB_POOL_MIN:-2}
       DB_POOL_IDLE: ${DB_POOL_IDLE:-30000}
       DB_POOL_ACQUIRE: ${DB_POOL_ACQUIRE:-30000}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
     depends_on:
       postgres:
         condition: service_healthy
@@ -81,10 +99,11 @@ services:
     container_name: asset-management-frontend
     restart: unless-stopped
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+      - "${FRONTEND_PORT:-4000}:4000"
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
       NODE_ENV: ${NODE_ENV:-development}
+      VITE_HTTPS: ${VITE_HTTPS:-true}
     depends_on:
       backend:
         condition: service_healthy
@@ -93,18 +112,21 @@ services:
     volumes:
       - ./asset-management-frontend/src:/app/src
       - ./asset-management-frontend/public:/app/public
+      - ./asset-management-frontend/index.html:/app/index.html
       - ./asset-management-frontend/package.json:/app/package.json
-      - /app/node_modules
+      - ./asset-management-frontend/vite.config.ts:/app/vite.config.ts
+      - ./nginx/ssl:/nginx/ssl:ro
+    command: sh -c "npm run dev -- --host 0.0.0.0"
 
   # Cloudflare Quick Tunnel - miễn phí, chạy ngay, không cần tài khoản
-  # Nginx reverse proxy - HTTPS trên cổng 443, HTTP redirect trên cổng 80
+  # Nginx reverse proxy - HTTPS trên cổng 8443, HTTP redirect trên cổng 8080
   nginx:
     image: nginx:alpine
     container_name: asset-management-nginx
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:80"
+      - "8443:443"
     volumes:
       - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
@@ -120,7 +142,9 @@ services:
     image: cloudflare/cloudflared:latest
     container_name: asset-management-cloudflared
     restart: unless-stopped
-    command: tunnel --no-autoupdate --url http://frontend:3000
+    command: tunnel --no-autoupdate run --token ${CF_TUNNEL_TOKEN}
+    environment:
+      CF_TUNNEL_TOKEN: ${CF_TUNNEL_TOKEN:-}
     depends_on:
       - frontend
     networks:
@@ -136,4 +160,7 @@ volumes:
   postgres_data:
     external: true
     name: quanlytaisan_postgres_data
+  redis_data:
+    external: true
+    name: quanlytaisan_redis_data
   backend_backups:

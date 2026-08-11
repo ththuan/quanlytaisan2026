@@ -296,9 +296,8 @@ const statuses = computed(() => [
   { value: 'rejected', label: t('reports.status.rejected') },
 ]);
 
-onMounted(async () => {
-  await reportStore.fetchReports();
-  // Departments tự động load qua composable
+onMounted(() => {
+  reportStore.fetchReports();
 });
 
 const handleFilter = () => {

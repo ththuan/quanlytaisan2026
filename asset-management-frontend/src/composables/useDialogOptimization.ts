@@ -1,4 +1,4 @@
-import { ref, watch, nextTick } from 'vue';
+import { ref, watch } from 'vue';
 
 /**
  * Composable for smooth dialog open/close without flash

@@ -335,6 +335,12 @@ const loadSummary = async () => {
       total_quantity: Number(r?.total_quantity ?? r?.totalQuantity ?? r?.quantity ?? 0),
       total_amount: Number(r?.total_amount ?? r?.totalAmount ?? r?.amount ?? 0),
     }));
+
+    // Chờ DOM patch xong với dữ liệu mới rồi mới tắt trạng thái loading.
+    // Nếu tắt loading cùng lúc với việc thay đổi dữ liệu bảng (trong cùng 1 tick),
+    // lớp phủ (mask) của v-loading có thể bị "kẹt" lại (render dở dang, mờ mờ)
+    // do tranh chấp với việc re-render của el-table.
+    await nextTick();
   } finally {
     summaryLoading.value = false;
   }
@@ -467,18 +473,16 @@ watch(
   }
 );
 
-onMounted(async () => {
-  // Handle openId passed via query (e.g. Maintenance -> "Xem phiếu Tăng TS").
-  // Use nextTick so router.replace() runs AFTER the navigation has completed,
-  // preventing a concurrent replace from aborting the in-progress navigation.
-  const openId = route.query.openId;
-  if (openId) {
-    await nextTick();
-    openDetail(Number(String(openId)));
-    router.replace({ query: { ...route.query, openId: undefined } });
-  }
+onMounted(() => {
   load();
   loadSummary();
+  const openId = route.query.openId;
+  if (openId) {
+    nextTick().then(() => {
+      openDetail(Number(String(openId)));
+      router.replace({ query: { ...route.query, openId: undefined } });
+    });
+  }
 });
 </script>
 

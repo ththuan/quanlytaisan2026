@@ -268,9 +268,9 @@ const statuses = computed(() => [
   { value: 'rejected_by_director', label: 'Giám hiệu từ chối' },
 ]);
 
-onMounted(async () => {
-  await fetchData();
-  await departmentStore.fetchDepartments();
+onMounted(() => {
+  fetchData();
+  departmentStore.fetchDepartments();
 });
 
 let isFetching = false;

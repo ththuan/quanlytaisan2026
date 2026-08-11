@@ -400,9 +400,9 @@ const statuses = computed(() => [
   { value: 'rejected_due_to_high_cost', label: 'Từ chối do chi phí cao' },
 ]);
 
-onMounted(async () => {
-  await fetchData();
-  await departmentStore.fetchDepartments();
+onMounted(() => {
+  fetchData();
+  departmentStore.fetchDepartments();
 });
 
 let isFetching = false;

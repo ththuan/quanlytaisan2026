@@ -21,6 +21,7 @@ import assetImagesRoutes from './assetImages.routes';
 import notificationsRoutes from './notifications.routes';
 import systemAdminRoutes from './systemAdmin.routes';
 import searchRoutes from './search.routes';
+import tt120ExportRoutes from './tt120Export.routes';
 
 const router = Router();
 
@@ -50,6 +51,7 @@ router.use('/dashboard', dashboardRoutes);
 router.use('/notifications', notificationsRoutes);
 router.use('/search', searchRoutes);
 router.use('/system-admin', systemAdminRoutes);
+router.use('/export/tt120', tt120ExportRoutes);
 
 // Health check route
 router.get('/health', (_req, res) => {

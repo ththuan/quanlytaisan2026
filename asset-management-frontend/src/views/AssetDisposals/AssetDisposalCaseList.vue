@@ -206,13 +206,14 @@ const formatDateTime = (v: string) => {
   return d.toLocaleString();
 };
 
-onMounted(async () => {
+onMounted(() => {
   load();
   const openId = route.query.openId;
   if (openId) {
-    await nextTick();
-    openDetail(Number(String(openId)));
-    router.replace({ query: { ...route.query, openId: undefined } });
+    nextTick().then(() => {
+      openDetail(Number(String(openId)));
+      router.replace({ query: { ...route.query, openId: undefined } });
+    });
   }
 });
 </script>

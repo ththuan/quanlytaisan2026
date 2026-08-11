@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Asset Management System API",
-    "description": "Comprehensive API documentation for the Asset Management System\n\n## Authentication\n\nAll protected endpoints require a JWT token in the Authorization header:\n```\nAuthorization: Bearer <your-jwt-token>\n```\n\n## User Roles\n\n- **admin**: Full system access\n- **director**: Department-level management\n- **staff**: Basic operations\n- **department_head**: Manage own department assets",
+    "title": "Phần mềm Quản lý tài sản - API",
+    "description": "API Documentation - Phần mềm Quản lý tài sản | Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ",
     "version": "1.0.0",
     "contact": {
       "name": "API Support"
@@ -10,7 +10,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:3000",
+      "url": "http://localhost:4000",
       "description": "Local Development Server"
     }
   ],

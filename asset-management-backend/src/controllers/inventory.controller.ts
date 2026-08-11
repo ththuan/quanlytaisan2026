@@ -197,9 +197,17 @@ export const getInventoryReportById = async (req: AuthRequest, res: Response, ne
  */
 export const addInventoryDetail = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    const user = req.user!;
     const reportId = parseInt(req.params.id);
     const { asset_id, ...detailData } = req.body;
-    
+
+    // Check ownership - only report creator or admin/director
+    const report = await InventoryService.getInventoryReportById(reportId);
+    if (!report) throw new ForbiddenError('Báo cáo không tồn tại');
+    if (user.role !== 'admin' && user.role !== 'director' && (report as any).created_by !== user.id) {
+      throw new ForbiddenError('Bạn không có quyền thêm chi tiết vào báo cáo này');
+    }
+
     const detail = await InventoryService.addInventoryDetail(reportId, asset_id, detailData);
     res.status(201).json({
       success: true,
@@ -216,7 +224,17 @@ export const addInventoryDetail = async (req: AuthRequest, res: Response, next: 
  */
 export const updateInventoryDetail = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    const user = req.user!;
     const detailId = parseInt(req.params.detailId);
+    const reportId = parseInt(req.params.id);
+
+    // Check ownership
+    const report = await InventoryService.getInventoryReportById(reportId);
+    if (!report) throw new ForbiddenError('Báo cáo không tồn tại');
+    if (user.role !== 'admin' && user.role !== 'director' && (report as any).created_by !== user.id) {
+      throw new ForbiddenError('Bạn không có quyền cập nhật chi tiết báo cáo này');
+    }
+
     const detail = await InventoryService.updateInventoryDetail(detailId, req.body);
     res.json({
       success: true,
@@ -233,12 +251,21 @@ export const updateInventoryDetail = async (req: AuthRequest, res: Response, nex
  */
 export const submitInventoryReport = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    const user = req.user!;
     const reportId = parseInt(req.params.id);
-    const report = await InventoryService.submitInventoryReport(reportId, req.user!.id);
+
+    // Check ownership
+    const report = await InventoryService.getInventoryReportById(reportId);
+    if (!report) throw new ForbiddenError('Báo cáo không tồn tại');
+    if (user.role !== 'admin' && user.role !== 'director' && (report as any).created_by !== user.id) {
+      throw new ForbiddenError('Bạn không có quyền nộp báo cáo này');
+    }
+
+    const result = await InventoryService.submitInventoryReport(reportId, user.id);
     res.json({
       success: true,
       message: 'Inventory report submitted successfully',
-      data: report,
+      data: result,
     });
   } catch (error) {
     next(error);

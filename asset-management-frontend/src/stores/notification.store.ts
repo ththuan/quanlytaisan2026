@@ -58,18 +58,13 @@ function getNotificationKey(notification: Notification): string {
   return `notification-${notification.id}`;
 }
 
-// Load dismissed notifications from localStorage
+// Load dismissed notifications from localStorage (permanent)
 function loadDismissedNotifications(): Set<string> {
   try {
     const stored = localStorage.getItem('dismissed_notifications');
     if (stored) {
       const parsed = JSON.parse(stored);
-      // Only keep dismissals from last 30 days
-      const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-      const filtered = Object.entries(parsed)
-        .filter(([_, timestamp]) => (timestamp as number) > thirtyDaysAgo)
-        .map(([key]) => key);
-      return new Set(filtered);
+      return new Set(Object.keys(parsed));
     }
   } catch (e) {
     console.error('Error loading dismissed notifications:', e);
