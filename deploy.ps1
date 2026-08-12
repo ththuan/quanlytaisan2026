@@ -27,8 +27,9 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-# Rebuild & restart with Cloudflare tunnel
-docker compose --profile cloudflare up -d --build
+# Rebuild app containers, force recreate cloudflared (uses external image)
+docker compose up -d --build backend frontend
+docker compose --profile cloudflare up -d --force-recreate cloudflared
 if ($LASTEXITCODE -ne 0) {
     Write-Host "ERROR: Docker compose failed!"
     exit 1
