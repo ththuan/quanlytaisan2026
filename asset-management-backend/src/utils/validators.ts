@@ -1,6 +1,8 @@
 import Joi from 'joi';
 
 // User validation schemas
+// Public registration: chỉ cho phép staff, KHÔNG nhận role/department_id từ client
+// (chống leo thang đặc quyền - department_head chỉ được tạo bởi admin)
 export const registerSchema = Joi.object({
   username: Joi.string().alphanum().min(3).max(100).required(),
   email: Joi.string().email().required(),
@@ -12,8 +14,6 @@ export const registerSchema = Joi.object({
       'string.pattern.base': 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
     }),
   fullname: Joi.string().max(255).optional(),
-  role: Joi.string().valid('admin', 'director', 'department_head', 'staff').optional(),
-  department_id: Joi.number().integer().positive().optional(),
 });
 
 export const loginSchema = Joi.object({

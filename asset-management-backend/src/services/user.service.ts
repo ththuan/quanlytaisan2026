@@ -24,6 +24,14 @@ export interface UpdateUserInput {
 // Default password for new users (configurable via env)
 const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || 'Ctec@123';
 
+// Production: cấm dùng mật khẩu mặc định dễ đoán
+if (process.env.NODE_ENV === 'production' && DEFAULT_PASSWORD === 'Ctec@123') {
+  throw new Error(
+    '⚠️  DEFAULT_PASSWORD phải được đặt (mật khẩu mạnh) trong môi trường production. ' +
+    'Không dùng mật khẩu mặc định Ctec@123.'
+  );
+}
+
 class UserService {
   async getAllUsers(query: any): Promise<PaginationResult<User>> {
     const { page, limit, sortBy, sortOrder } = getPaginationParams(query);

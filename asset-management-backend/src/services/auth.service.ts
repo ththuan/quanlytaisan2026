@@ -20,8 +20,6 @@ export interface RegisterInput {
   email: string;
   password: string;
   fullname?: string;
-  role?: 'admin' | 'director' | 'department_head' | 'staff';
-  department_id?: number;
 }
 
 export interface LoginInput {
@@ -58,13 +56,15 @@ class AuthService {
     // Hash password
     const password_hash = await User.hashPassword(data.password);
 
-    // Create user — public registration always gets 'staff' role (admin/director only via user management)
-    const allowedPublicRoles = ['staff', 'department_head'];
-    const assignedRole = (data.role && allowedPublicRoles.includes(data.role)) ? data.role : 'staff';
+    // Public registration: LUÔN role 'staff', không department_id
+    // (department_head/director/admin chỉ được tạo bởi quản trị viên qua user management)
     const user = await User.create({
-      ...data,
+      username: data.username,
+      email: data.email,
+      fullname: data.fullname,
       password_hash,
-      role: assignedRole,
+      role: 'staff',
+      department_id: null,
       is_active: true,
     });
 

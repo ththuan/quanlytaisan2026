@@ -20,7 +20,31 @@ app.set('trust proxy', 1);
 app.disable('etag');
 
 // Security middleware
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        // Scan page & Element Plus dùng inline style → cho phép style inline
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        // Ảnh: từ self, data URI (QR base64), storage
+        imgSrc: ["'self'", 'data:', 'blob:'],
+        // Font Google
+        fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+        // Script: CHỈ từ self (chặn XSS inline script)
+        scriptSrc: ["'self'"],
+        // API calls same-origin
+        connectSrc: ["'self'"],
+        // Không cho phép frame nhúng ngoài
+        frameSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+      },
+    },
+    crossOriginResourcePolicy: { policy: 'same-origin' },
+  })
+);
 
 // Caching middleware - applied after security, before routes
 app.use(cachingMiddleware);
@@ -174,6 +198,8 @@ app.use(
     lastModified: true,
     // Set cache control headers
     setHeaders: (res, filePath) => {
+      // Chặn MIME sniffing (ngăn SVG/HTML giả mạo chạy script)
+      res.setHeader('X-Content-Type-Options', 'nosniff');
       // Set appropriate cache headers based on file type
       if (filePath.endsWith('.png') || filePath.endsWith('.jpg') || filePath.endsWith('.jpeg') || filePath.endsWith('.gif') || filePath.endsWith('.svg')) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');

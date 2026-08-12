@@ -11,11 +11,12 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB
   },
   fileFilter: (_req, file, cb) => {
-    // Only allow image files
-    if (file.mimetype.startsWith('image/')) {
+    // Chỉ cho phép ảnh raster an toàn — CẤM SVG (chứa script → XSS)
+    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowed.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Chỉ cho phép upload file ảnh (JPEG, PNG, GIF)') as any, false);
+      cb(new Error('Chỉ cho phép upload ảnh (JPEG, PNG, GIF, WebP)') as any, false);
     }
   }
 });

@@ -7,8 +7,8 @@ const bcrypt = require('bcryptjs');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
-/** Đồng bộ với src/config/adminCredentials.ts */
-const ADMIN_PASSWORD = 'Admin@123';
+/** Đồng bộ với src/config/adminCredentials.ts — đọc mật khẩu từ env */
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || process.env.SYSTEM_ADMIN_PASSWORD || 'Admin@123';
 
 /** Chỉ tạo tài khoản admin nếu chưa có (idempotent). Mật khẩu cố định Admin@123. */
 module.exports = {

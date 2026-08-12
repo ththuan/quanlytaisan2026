@@ -60,6 +60,7 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4000}
       JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
       DEFAULT_PASSWORD: ${DEFAULT_PASSWORD:-Ctec@123}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@123}
       BODY_LIMIT: ${BODY_LIMIT:-10mb}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       FRONTEND_PORT: ${FRONTEND_PORT:-4000}

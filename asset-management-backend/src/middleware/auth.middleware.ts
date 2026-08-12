@@ -20,7 +20,10 @@ export const authMiddleware = async (
       token = authHeader.substring(7);
     }
 
-    if (!token) {
+    // Token qua URL chỉ chấp nhận cho GET (download tài liệu mở tab mới).
+    // KHÔNG cho phép trên POST/PUT/DELETE — tránh lộ token trong log/Referer
+    // và chặn thao tác thay đổi dữ liệu qua URL bị rò rỉ.
+    if (!token && req.method === 'GET') {
       const tokenFromQuery = typeof req.query.token === 'string' ? req.query.token : null;
       if (tokenFromQuery) token = tokenFromQuery;
     }

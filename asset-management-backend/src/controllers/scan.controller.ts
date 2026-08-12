@@ -35,13 +35,23 @@ const CONDITION_LABELS: Record<string, string> = {
   disposed: 'Đã thanh lý',
 };
 
+/** Chống XSS: escape toàn bộ dữ liệu do người dùng / DB cung cấp trước khi đưa vào HTML */
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function renderPage(title: string, bodyContent: string): string {
   return `<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<title>${title}</title>
+<title>${escapeHtml(title)}</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f1f5f9;color:#1e293b;min-height:100vh}
@@ -133,7 +143,7 @@ export const scanAssetPage = async (req: Request, res: Response): Promise<void> 
         <div class="card error-card">
           <div class="error-icon">🔍</div>
           <div class="error-title">Không tìm thấy tài sản</div>
-          <div class="error-msg">Không có tài sản với mã: <strong>${code}</strong></div>
+          <div class="error-msg">Không có tài sản với mã: <strong>${escapeHtml(code)}</strong></div>
         </div>`));
       return;
     }
@@ -146,36 +156,36 @@ export const scanAssetPage = async (req: Request, res: Response): Promise<void> 
     const deptName = d.current_department?.name || '';
 
     const rows: Array<[string, string]> = [];
-    if (categoryName) rows.push(['Loại tài sản', categoryName]);
-    if (deptName) rows.push(['Phòng ban', deptName]);
-    if (d.location) rows.push(['Vị trí', d.location]);
-    if (d.year_in_use) rows.push(['Năm sử dụng', String(d.year_in_use)]);
-    if (d.quantity) rows.push(['Số lượng', `${d.quantity}${d.unit ? ' ' + d.unit : ''}`]);
-    if (d.serial_number) rows.push(['Số sê-ri', d.serial_number]);
-    if (d.warranty_date) rows.push(['Bảo hành đến', new Date(d.warranty_date).toLocaleDateString('vi-VN')]);
-    if (d.description) rows.push(['Mô tả', d.description]);
+    if (categoryName) rows.push(['Loại tài sản', escapeHtml(categoryName)]);
+    if (deptName) rows.push(['Phòng ban', escapeHtml(deptName)]);
+    if (d.location) rows.push(['Vị trí', escapeHtml(d.location)]);
+    if (d.year_in_use) rows.push(['Năm sử dụng', escapeHtml(d.year_in_use)]);
+    if (d.quantity) rows.push(['Số lượng', `${escapeHtml(d.quantity)}${d.unit ? ' ' + escapeHtml(d.unit) : ''}`]);
+    if (d.serial_number) rows.push(['Số sê-ri', escapeHtml(d.serial_number)]);
+    if (d.warranty_date) rows.push(['Bảo hành đến', escapeHtml(new Date(d.warranty_date).toLocaleDateString('vi-VN'))]);
+    if (d.description) rows.push(['Mô tả', escapeHtml(d.description)]);
 
     const infoRows = rows.map(([label, value]) => `
       <div class="info-row">
-        <span class="info-label">${label}</span>
+        <span class="info-label">${escapeHtml(label)}</span>
         <span class="info-value">${value}</span>
       </div>`).join('');
 
     const conditionBadge = conditionLabel
-      ? `<span class="badge" style="background:#f0f9ff;color:#0369a1">${conditionLabel}</span>`
+      ? `<span class="badge" style="background:#f0f9ff;color:#0369a1">${escapeHtml(conditionLabel)}</span>`
       : '';
 
     const imageHtml = d.image_url
-      ? `<img class="asset-img" src="${d.image_url}" alt="${d.name}" loading="lazy" />`
+      ? `<img class="asset-img" src="${escapeHtml(d.image_url)}" alt="${escapeHtml(d.name)}" loading="lazy" />`
       : '';
 
     const body = `
       <div class="card">
         ${imageHtml}
-        <div class="asset-name">${d.name}</div>
-        <div class="asset-code">${d.asset_code}</div>
+        <div class="asset-name">${escapeHtml(d.name)}</div>
+        <div class="asset-code">${escapeHtml(d.asset_code)}</div>
         <div class="badges">
-          <span class="badge" style="background:${statusColor}20;color:${statusColor}">${statusLabel}</span>
+          <span class="badge" style="background:${statusColor}20;color:${statusColor}">${escapeHtml(statusLabel)}</span>
           ${conditionBadge}
         </div>
       </div>

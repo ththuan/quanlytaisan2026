@@ -14,9 +14,14 @@ class AssetImagesController {
     const asset = await Asset.findByPk(id);
     if (!asset) throw new NotFoundError('Tài sản không tồn tại');
 
-    // Generate filename with timestamp
-    const extFromOriginal = (file.originalname || '').split('.').pop() || 'jpg';
-    const safeExt = extFromOriginal.toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    // Extension từ MIME đã validate (KHÔNG dùng originalname — chống spoof)
+    const mimeToExt: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/gif': 'gif',
+      'image/webp': 'webp',
+    };
+    const safeExt = mimeToExt[file.mimetype] || 'jpg';
     const filename = `asset_${id}_${Date.now()}.${safeExt}`;
 
     // Save file to storage
