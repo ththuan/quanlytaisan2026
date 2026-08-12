@@ -306,7 +306,7 @@ class DashboardService {
         sequelize.query(`SELECT id FROM asset_transfers WHERE from_department_id = :deptId OR to_department_id = :deptId`, { replacements: { deptId }, type: QueryTypes.SELECT }),
         sequelize.query(`SELECT id FROM asset_disposal_cases WHERE origin_department_id = :deptId`, { replacements: { deptId }, type: QueryTypes.SELECT }),
         sequelize.query(`SELECT id FROM procurements WHERE receiving_department_id = :deptId`, { replacements: { deptId }, type: QueryTypes.SELECT }),
-        sequelize.query(`SELECT id FROM inventory_rounds WHERE department_id = :deptId`, { replacements: { deptId }, type: QueryTypes.SELECT }),
+        sequelize.query(`SELECT id FROM inventory_reports WHERE department_id = :deptId`, { replacements: { deptId }, type: QueryTypes.SELECT }),
         User.findAll({ where: { department_id: deptId }, attributes: ['id'], raw: true }),
       ]);
       // Ghép tất cả các log entry liên quan đến đơn vị

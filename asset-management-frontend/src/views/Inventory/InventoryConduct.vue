@@ -681,6 +681,8 @@
       v-model="showCheckDialog"
       title="Kiểm kê tài sản"
       width="600"
+      :close-on-click-modal="false"
+      append-to-body
       @close="onCheckDialogClose"
     >
       <div
@@ -2623,8 +2625,8 @@ onUnmounted(() => {
 
 .summary-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
   margin-bottom: 20px;
 }
 
@@ -2689,6 +2691,12 @@ onUnmounted(() => {
 /* Summary stats responsive - đã xử lý trong responsive.scss */
 @media (max-width: 1200px) {
   .summary-stats {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .summary-stats {
     grid-template-columns: repeat(3, 1fr);
   }
 }
@@ -2748,6 +2756,8 @@ onUnmounted(() => {
 
 .check-dialog-content {
   padding: 10px 0;
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
 .asset-info {

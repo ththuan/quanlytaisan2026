@@ -295,7 +295,7 @@ onMounted(() => { initCanvas(); });
 
 .sub-welcome {
   color: #1e293b;
-  font-size: 1.1rem;
+  font-size: 17.6px;
   font-weight: 600;
   margin: 0 0 4px;
   line-height: 1.5;
@@ -303,7 +303,7 @@ onMounted(() => { initCanvas(); });
 
 .school-name {
   color: #64748b;
-  font-size: 0.85rem;
+  font-size: 13.6px;
   font-weight: 400;
   margin: 0 0 28px;
   line-height: 1.4;
@@ -317,7 +317,7 @@ onMounted(() => { initCanvas(); });
   display: block;
   font-weight: 600;
   color: #1e293b;
-  font-size: 0.9rem;
+  font-size: 14.4px;
   padding-bottom: 6px;
 }
 
@@ -328,7 +328,7 @@ onMounted(() => { initCanvas(); });
 }
 
 .field-hint {
-  font-size: 0.72rem;
+  font-size: 11.5px;
   color: #94a3b8;
   margin: 4px 0 0 0;
   line-height: 1.4;
@@ -409,7 +409,7 @@ onMounted(() => { initCanvas(); });
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.875rem;
+  font-size: 14px;
   color: #64748b;
   cursor: pointer;
   user-select: none;
@@ -426,7 +426,7 @@ onMounted(() => { initCanvas(); });
   background: none;
   border: none;
   color: #94a3b8;
-  font-size: 0.8rem;
+  font-size: 12.8px;
   font-family: inherit;
   cursor: pointer;
   padding: 4px 0;
@@ -450,7 +450,7 @@ onMounted(() => { initCanvas(); });
   background: #eff6ff;
   border: 1px solid #bfdbfe;
   border-radius: 10px;
-  font-size: 0.82rem;
+  font-size: 13.1px;
   color: #1e293b;
   line-height: 1.6;
   margin-bottom: 16px;
@@ -476,7 +476,7 @@ onMounted(() => { initCanvas(); });
   background: #fef2f2;
   border: 1px solid #fecaca;
   border-radius: 10px;
-  font-size: 0.82rem;
+  font-size: 13.1px;
   color: #dc2626;
   margin-bottom: 16px;
   animation: shake 0.4s ease;
@@ -499,7 +499,7 @@ onMounted(() => { initCanvas(); });
   border-radius: 12px;
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   border: none;
-  font-size: 1rem;
+  font-size: 16px;
   font-weight: 700;
   color: #fff;
   letter-spacing: 0.3px;
@@ -545,14 +545,14 @@ onMounted(() => { initCanvas(); });
   text-align: center;
   margin-top: 20px;
   color: #94a3b8;
-  font-size: 0.8rem;
+  font-size: 12.8px;
 }
 
 @media (max-width: 480px) {
   .form-card { padding: 28px 20px 24px; border-radius: 16px; }
   .school-logo { height: 60px; width: 60px; }
-  .sub-welcome { font-size: 0.875rem; margin-bottom: 20px; }
-  .btn-login { height: 44px; font-size: 0.95rem; }
-  .login-footer { font-size: 0.75rem; }
+  .sub-welcome { font-size: 14px; }
+  .btn-login { height: 44px; font-size: 15.2px; }
+  .login-footer { font-size: 12px; }
 }
 </style>

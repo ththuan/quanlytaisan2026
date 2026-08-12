@@ -1140,13 +1140,42 @@ const downloadQRCode = () => {
   }
 
   try {
-    const link = document.createElement('a');
-    link.href = qrCodeImage.value;
-    link.download = `QR_${assetStore.currentAsset?.asset_code || 'asset'}_${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    ElMessage.success('Đã tải QR code');
+    const asset = assetStore.currentAsset;
+    const qrSize = 300;
+    const padding = 16;
+    const lineHeight = 22;
+    const lines = [
+      `Mã TS: ${asset?.asset_code || ''}`,
+      `Tên: ${asset?.name || ''}`,
+      `Loại: ${asset?.category_code || 'Chưa phân loại'}`,
+      `SL: ${asset?.quantity || 1}${asset?.unit ? ' ' + asset.unit : ''}`,
+    ];
+
+    const canvas = document.createElement('canvas');
+    canvas.width = qrSize + padding * 2;
+    canvas.height = qrSize + padding + lines.length * lineHeight + padding;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const img = new Image();
+    img.src = qrCodeImage.value;
+    img.onload = () => {
+      ctx.drawImage(img, padding, padding, qrSize, qrSize);
+      ctx.fillStyle = '#000000';
+      lines.forEach((line, idx) => {
+        ctx.font = idx === 0 ? 'bold 14px Arial, sans-serif' : '13px Arial, sans-serif';
+        ctx.fillText(line, padding, qrSize + padding + (idx + 1) * lineHeight);
+      });
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = `QR_${asset?.asset_code || 'asset'}_${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      ElMessage.success('Đã tải QR code');
+    };
+    img.onerror = () => ElMessage.error('Không thể tải QR code');
   } catch (error) {
     ElMessage.error('Không thể tải QR code');
   }
