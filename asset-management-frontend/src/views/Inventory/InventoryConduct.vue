@@ -989,6 +989,7 @@ const availableCameras = ref<any[]>([]);
 const currentCameraIndex = ref(0);
 const cameraKey = ref(0); // Thay đổi key = Vue xóa DOM và tạo lại hoàn toàn
 const pendingTimeouts = new Set<ReturnType<typeof setTimeout>>();
+const lastScanTime = ref(0); // Prevent rapid duplicate scans
 
 // Check Dialog
 const showCheckDialog = ref(false);
@@ -1592,12 +1593,21 @@ const handleScanCode = async () => {
     let foundAsset = assets.value.find(a => a.id === assetData.id);
     
     if (!foundAsset) {
-      // Nếu không tìm thấy trong danh sách, thêm vào
       foundAsset = {
         ...assetData,
         inventory_detail: null,
       };
       assets.value.push(foundAsset);
+    }
+
+    // Check if this asset has already been scanned
+    if (foundAsset.inventory_detail) {
+      scanSuccessMessage.value = `⏭ ${foundAsset.name || foundAsset.asset_code} - Đã kiểm kê rồi`;
+      scanning.value = false;
+      scannedCode.value = '';
+      setTimeout(() => { scanSuccessMessage.value = ''; }, 1500);
+      if (showCameraDialog.value) await restartCamera();
+      return;
     }
     
     // Đảm bảo quantity = 1
@@ -1658,10 +1668,10 @@ const handleScanCode = async () => {
         // Hiển thị thông báo thành công trong camera dialog
         if (showCameraDialog.value) {
           scanSuccessMessage.value = `✓ ${foundAsset.name || foundAsset.asset_code} - Khớp sổ sách`;
-          // Tự động ẩn sau 1.5 giây
+          // Tự động ẩn sau 1 giây
           setTimeout(() => {
             scanSuccessMessage.value = '';
-          }, 1500);
+          }, 1000);
         } else {
           // Nếu không dùng camera thì vẫn hiển thị ElMessage như cũ
           ElMessage.success({
@@ -2143,9 +2153,14 @@ const startCameraWithIndex = async (index: number) => {
         onQRCodeScanned(decodedText);
       },
       (err: string) => {
-        if (!err.includes('No QR code found') && !err.includes('No MultiFormat')) {
-          console.warn('[Camera] Error:', err);
+        // Suppress harmless frame-level scanner errors
+        if (err.includes('No QR code found') || 
+            err.includes('No MultiFormat') ||
+            err.includes('IndexSizeError') ||
+            err.includes('index is not in the allowed range')) {
+          return;
         }
+        console.warn('[Camera] Error:', err);
         onCameraError(err);
       }
     );
@@ -2212,28 +2227,31 @@ const openCameraScanner = async () => {
 const onQRCodeScanned = async (decodedText: string) => {
   if (scanning.value) return;
   
+  // Prevent duplicate scans within 1200ms
+  const now = Date.now();
+  if (now - lastScanTime.value < 1200) return;
+  lastScanTime.value = now;
+  
+  // Pause camera immediately to prevent frame errors during processing
+  try { await html5QrCode.value?.pause(); } catch { /* ignore */ }
+  scanning.value = true;
+  scannedCode.value = decodedText;
+  
   try {
-    scanning.value = true;
-    scannedCode.value = decodedText;
-    
     await handleScanCode();
     
-    // Resume camera after processing
-    const resumeDelay = isIOS() ? 2500 : 1000;
+    // Resume camera after processing with minimal flicker
+    const resumeDelay = isIOS() ? 2000 : 800;
     if (!showCheckDialog.value && showCameraDialog.value) {
       setTimeout(async () => {
         if (html5QrCode.value && !showCheckDialog.value && showCameraDialog.value) {
           scanning.value = false;
           scannedCode.value = '';
-          // Always restart on mobile instead of pause/resume (more reliable)
-          if (isMobileDevice()) {
+          // Prefer resume() over restart to avoid flicker
+          try {
+            await html5QrCode.value.resume();
+          } catch {
             await restartCamera();
-          } else {
-            try {
-              await html5QrCode.value.resume();
-            } catch {
-              await restartCamera();
-            }
           }
         }
       }, resumeDelay);
@@ -2249,32 +2267,24 @@ const onQRCodeScanned = async (decodedText: string) => {
   }
 };
 
-// Restart camera completely - fresh instance, fresh DOM element
+// Restart camera - reuse existing instance to avoid re-requesting permission
 const restartCamera = async () => {
-  // Stop existing instance
-  if (html5QrCode.value) {
-    try { await html5QrCode.value.stop(); } catch { /* ignore */ }
-    try { await html5QrCode.value.clear(); } catch { /* ignore */ }
-    html5QrCode.value = null;
-  }
-  
   scanning.value = false;
   scannedCode.value = '';
   
-  // Force DOM recreation via key change
-  cameraKey.value++;
-  
-  // Wait for DOM cleanup + recreation
-  await new Promise(resolve => setTimeout(resolve, 300));
-  await nextTick();
-  await nextTick();
+  if (!html5QrCode.value) return;
   
   try {
-    html5QrCode.value = new Html5Qrcode('qr-reader');
+    // Stop current scan, keep same instance (preserves camera permission)
+    if (html5QrCode.value.isScanning) {
+      try { await html5QrCode.value.stop(); } catch { /* ignore */ }
+    }
+    // Small delay for camera to fully stop
+    await new Promise(resolve => setTimeout(resolve, 200));
+    // Restart on same instance
     await startCameraWithIndex(currentCameraIndex.value);
   } catch (error) {
     console.error('Error restarting camera:', error);
-    cameraError.value = 'Không thể khởi động lại camera. Vui lòng đóng và mở lại.';
   }
 };
 

@@ -228,20 +228,6 @@
           </router-view>
         </el-main>
         <footer class="app-footer">
-          <div class="footer-actions">
-            <el-button
-              class="footer-help-btn"
-              @click="showGuideDialog = true"
-            >
-              {{ $t('menu.documentation') }}
-            </el-button>
-            <el-button
-              class="footer-help-btn"
-              @click="showSupportDialog = true"
-            >
-              {{ $t('menu.support') }}
-            </el-button>
-          </div>
           <div class="footer-copyright">
             Copyright &copy; 2026 Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ.
           </div>
@@ -251,107 +237,6 @@
 
     <TotpSetupDialog v-model="showTotpDialog" />
     <ChangePasswordDialog v-model="showChangePasswordDialog" />
-
-    <el-dialog
-      v-model="showGuideDialog"
-      title="Hướng dẫn sử dụng"
-      width="760px"
-      class="footer-help-dialog"
-      :lock-scroll="false"
-    >
-      <div class="footer-help-content footer-guide-content">
-        <p class="dialog-subtitle">{{ $t('helpDocs.subtitle') }}</p>
-        <el-tabs v-model="activeGuideRole" class="dialog-role-tabs" type="border-card">
-          <el-tab-pane :label="$t('helpDocs.tabStaff')" name="staff">
-            <p class="tab-intro">{{ $t('helpDocs.staff.intro') }}</p>
-            <el-collapse v-model="openGuideStaff" class="help-collapse">
-              <el-collapse-item v-for="sec in guideStaffSections" :key="sec.name" :title="$t(sec.titleKey)" :name="sec.name">
-                <div class="help-body">{{ $t(sec.bodyKey) }}</div>
-              </el-collapse-item>
-            </el-collapse>
-          </el-tab-pane>
-
-          <el-tab-pane :label="$t('helpDocs.tabHead')" name="head" lazy>
-            <p class="tab-intro">{{ $t('helpDocs.head.intro') }}</p>
-            <el-collapse v-model="openGuideHead" class="help-collapse">
-              <el-collapse-item v-for="sec in guideHeadSections" :key="sec.name" :title="$t(sec.titleKey)" :name="sec.name">
-                <div class="help-body">{{ $t(sec.bodyKey) }}</div>
-              </el-collapse-item>
-            </el-collapse>
-          </el-tab-pane>
-
-          <el-tab-pane :label="$t('helpDocs.tabDirector')" name="director" lazy>
-            <p class="tab-intro">{{ $t('helpDocs.director.intro') }}</p>
-            <el-collapse v-model="openGuideDirector" class="help-collapse">
-              <el-collapse-item v-for="sec in guideDirectorSections" :key="sec.name" :title="$t(sec.titleKey)" :name="sec.name">
-                <div class="help-body">{{ $t(sec.bodyKey) }}</div>
-              </el-collapse-item>
-            </el-collapse>
-          </el-tab-pane>
-
-          <el-tab-pane :label="$t('helpDocs.tabAdmin')" name="admin" lazy>
-            <p class="tab-intro">{{ $t('helpDocs.admin.intro') }}</p>
-            <el-collapse v-model="openGuideAdmin" class="help-collapse">
-              <el-collapse-item v-for="sec in guideAdminSections" :key="sec.name" :title="$t(sec.titleKey)" :name="sec.name">
-                <div class="help-body">{{ $t(sec.bodyKey) }}</div>
-              </el-collapse-item>
-            </el-collapse>
-          </el-tab-pane>
-        </el-tabs>
-
-        <el-row :gutter="12" class="guide-overview-grid">
-          <el-col v-for="(block, i) in guideBlocks" :key="i" :xs="24" :md="12">
-            <el-card class="guide-card" shadow="hover">
-              <template #header>
-                <div class="guide-card-head">
-                  <el-icon class="guide-card-icon" :size="18">
-                    <component :is="block.icon" />
-                  </el-icon>
-                  <span>{{ $t(block.titleKey) }}</span>
-                </div>
-              </template>
-              <ul class="guide-card-list">
-                <li v-for="(lineKey, j) in block.lines" :key="j">{{ $t(lineKey) }}</li>
-              </ul>
-            </el-card>
-          </el-col>
-        </el-row>
-
-        <el-alert type="info" :closable="false" show-icon>
-          {{ $t('helpDocs.tip') }}
-        </el-alert>
-      </div>
-      <template #footer>
-        <el-button type="primary" @click="showGuideDialog = false">Đã hiểu</el-button>
-      </template>
-    </el-dialog>
-
-    <el-dialog
-      v-model="showSupportDialog"
-      title="Liên hệ hỗ trợ"
-      width="680px"
-      class="footer-help-dialog"
-      :lock-scroll="false"
-    >
-      <div class="footer-help-content">
-        <p><strong>{{ $t('helpSupport.contactTitle') }}:</strong> {{ $t('helpSupport.contactLabel') }}</p>
-        <p>{{ $t('helpSupport.contactHint') }}</p>
-        <p>
-          <strong>{{ $t('helpSupport.emailLabel') }}</strong>
-          ththuan@ctec.edu.vn
-        </p>
-        <p>
-          <strong>{{ $t('helpSupport.phoneLabel') }}</strong>
-          0944300848
-        </p>
-        <div class="help-support-note">
-          Vui lòng cung cấp ảnh chụp màn hình, thời điểm xảy ra lỗi và tài khoản sử dụng để được xử lý nhanh hơn.
-        </div>
-      </div>
-      <template #footer>
-        <el-button type="primary" @click="showSupportDialog = false">Đã hiểu</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -360,7 +245,7 @@ import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
-import { House, HomeFilled, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, List } from '@element-plus/icons-vue';
+import { House, HomeFilled, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid } from '@element-plus/icons-vue';
 import NotificationBell from '@/components/Notifications/NotificationBell.vue';
 import TotpSetupDialog from '@/components/Auth/TotpSetupDialog.vue';
 import ChangePasswordDialog from '@/components/Auth/ChangePasswordDialog.vue';
@@ -371,76 +256,6 @@ const authStore = useAuthStore();
 const { t } = useI18n();
 const showTotpDialog = ref(false);
 const showChangePasswordDialog = ref(false);
-const showGuideDialog = ref(false);
-const showSupportDialog = ref(false);
-
-const activeGuideRole = ref('staff');
-const openGuideStaff = ref(['s1', 's2', 's3']);
-const openGuideHead = ref(['h1', 'h2']);
-const openGuideDirector = ref(['d1', 'd2']);
-const openGuideAdmin = ref(['a1', 'a2']);
-
-const guideStaffSections = [
-  { name: 's1', titleKey: 'helpDocs.staff.sec1Title', bodyKey: 'helpDocs.staff.sec1Body' },
-  { name: 's2', titleKey: 'helpDocs.staff.sec2Title', bodyKey: 'helpDocs.staff.sec2Body' },
-  { name: 's3', titleKey: 'helpDocs.staff.sec3Title', bodyKey: 'helpDocs.staff.sec3Body' },
-  { name: 's4', titleKey: 'helpDocs.staff.sec4Title', bodyKey: 'helpDocs.staff.sec4Body' },
-  { name: 's5', titleKey: 'helpDocs.staff.sec5Title', bodyKey: 'helpDocs.staff.sec5Body' },
-  { name: 's6', titleKey: 'helpDocs.staff.sec6Title', bodyKey: 'helpDocs.staff.sec6Body' },
-  { name: 's7', titleKey: 'helpDocs.staff.sec7Title', bodyKey: 'helpDocs.staff.sec7Body' },
-  { name: 's8', titleKey: 'helpDocs.staff.sec8Title', bodyKey: 'helpDocs.staff.sec8Body' },
-];
-
-const guideHeadSections = [
-  { name: 'h1', titleKey: 'helpDocs.head.sec1Title', bodyKey: 'helpDocs.head.sec1Body' },
-  { name: 'h2', titleKey: 'helpDocs.head.sec2Title', bodyKey: 'helpDocs.head.sec2Body' },
-  { name: 'h3', titleKey: 'helpDocs.head.sec3Title', bodyKey: 'helpDocs.head.sec3Body' },
-  { name: 'h4', titleKey: 'helpDocs.head.sec4Title', bodyKey: 'helpDocs.head.sec4Body' },
-  { name: 'h5', titleKey: 'helpDocs.head.sec5Title', bodyKey: 'helpDocs.head.sec5Body' },
-  { name: 'h6', titleKey: 'helpDocs.head.sec6Title', bodyKey: 'helpDocs.head.sec6Body' },
-  { name: 'h7', titleKey: 'helpDocs.head.sec7Title', bodyKey: 'helpDocs.head.sec7Body' },
-];
-
-const guideDirectorSections = [
-  { name: 'd1', titleKey: 'helpDocs.director.sec1Title', bodyKey: 'helpDocs.director.sec1Body' },
-  { name: 'd2', titleKey: 'helpDocs.director.sec2Title', bodyKey: 'helpDocs.director.sec2Body' },
-  { name: 'd3', titleKey: 'helpDocs.director.sec3Title', bodyKey: 'helpDocs.director.sec3Body' },
-  { name: 'd4', titleKey: 'helpDocs.director.sec4Title', bodyKey: 'helpDocs.director.sec4Body' },
-  { name: 'd5', titleKey: 'helpDocs.director.sec5Title', bodyKey: 'helpDocs.director.sec5Body' },
-];
-
-const guideAdminSections = [
-  { name: 'a1', titleKey: 'helpDocs.admin.sec1Title', bodyKey: 'helpDocs.admin.sec1Body' },
-  { name: 'a2', titleKey: 'helpDocs.admin.sec2Title', bodyKey: 'helpDocs.admin.sec2Body' },
-  { name: 'a3', titleKey: 'helpDocs.admin.sec3Title', bodyKey: 'helpDocs.admin.sec3Body' },
-  { name: 'a4', titleKey: 'helpDocs.admin.sec4Title', bodyKey: 'helpDocs.admin.sec4Body' },
-  { name: 'a5', titleKey: 'helpDocs.admin.sec5Title', bodyKey: 'helpDocs.admin.sec5Body' },
-  { name: 'a6', titleKey: 'helpDocs.admin.sec6Title', bodyKey: 'helpDocs.admin.sec6Body' },
-];
-
-const guideBlocks = [
-  {
-    icon: Box,
-    titleKey: 'helpDocs.block1Title',
-    lines: ['helpDocs.block1a', 'helpDocs.block1b', 'helpDocs.block1c'],
-  },
-  {
-    icon: Switch,
-    titleKey: 'helpDocs.block2Title',
-    lines: ['helpDocs.block2a', 'helpDocs.block2b'],
-  },
-  {
-    icon: List,
-    titleKey: 'helpDocs.block3Title',
-    lines: ['helpDocs.block3a', 'helpDocs.block3b'],
-  },
-  {
-    icon: DataAnalysis,
-    titleKey: 'helpDocs.block4Title',
-    lines: ['helpDocs.block4a', 'helpDocs.block4b'],
-  },
-];
-
 const breadcrumbItems = computed(() => {
   const route = router.currentRoute.value;
   const meta = route.meta as { titleKey?: string; breadcrumbParent?: { path: string; titleKey: string } };
@@ -672,9 +487,6 @@ const toggleSidebar = () => {
   display: flex;
   align-items: center;
   padding: 0 20px;
-  /* iOS safe-area: tránh notch ở landscape */
-  padding-left: calc(20px + env(safe-area-inset-left, 0px));
-  padding-right: calc(20px + env(safe-area-inset-right, 0px));
   position: sticky;
   top: 0;
   z-index: 100;
@@ -880,8 +692,7 @@ const toggleSidebar = () => {
 .app-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: center;
   font-size: 12px;
   color: #64748b;
   padding: 8px 16px;
@@ -890,112 +701,10 @@ const toggleSidebar = () => {
   flex-shrink: 0;
 }
 
-.footer-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.footer-help-btn {
-  border: 1px solid #cbd5e1;
-  color: #1d4ed8;
-  background: #eef2ff;
-  border-radius: 999px;
-  padding: 7px 14px;
-  font-weight: 500;
-}
-
-.footer-help-btn:hover {
-  color: #1e40af;
-  background: #e0e7ff;
-  border-color: #93c5fd;
-}
-
 .footer-copyright {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.footer-help-content {
-  color: #475569;
-  line-height: 1.65;
-}
-
-.footer-guide-content {
-  max-height: 62vh;
-  overflow: auto;
-  padding-right: 2px;
-}
-
-.dialog-subtitle {
-  margin: 0 0 10px;
-  color: #64748b;
-}
-
-.dialog-role-tabs {
-  margin-bottom: 14px;
-}
-
-.tab-intro {
-  margin: 0 0 8px;
-  color: #475569;
-  font-size: 13px;
-}
-
-.help-collapse {
-  margin-bottom: 12px;
-}
-
-.help-body {
-  white-space: pre-line;
-  color: #334155;
-  line-height: 1.6;
-}
-
-.guide-overview-grid {
-  margin-bottom: 10px;
-}
-
-.guide-card-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 700;
-}
-
-.guide-card-icon {
-  color: #2563eb;
-}
-
-.guide-card-list {
-  margin: 0;
-  padding-left: 18px;
-  color: #334155;
-}
-
-.guide-card-list li {
-  margin-bottom: 5px;
-}
-
-.help-step {
-  margin-bottom: 10px;
-}
-
-.help-step-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #0f172a;
-  margin-bottom: 2px;
-}
-
-.help-support-note {
-  margin-top: 12px;
-  background: #eff6ff;
-  color: #1e3a8a;
-  border: 1px solid #bfdbfe;
-  border-radius: 12px;
-  padding: 10px 12px;
 }
 
 @media (max-width: 768px) {

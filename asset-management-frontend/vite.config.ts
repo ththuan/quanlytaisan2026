@@ -48,7 +48,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       vue(),
       VitePWA({
-        registerType: 'prompt',
+        registerType: 'autoUpdate',
         includeAssets: ['logo-truong.ico', 'logo-truong.jpg'],
         manifest: {
           name: 'Quản lý tài sản - CTEC',
@@ -78,7 +78,40 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,jpg,png,svg,woff,woff2,ttf,eot}'],
+          // SPA fallback khi offline
+          navigateFallback: '/index.html',
+          navigateFallbackDenylist: [/^\/api\//, /^\/scan\//, /^\/storage\//],
           runtimeCaching: [
+            // 1. HTML navigation — network-first: luôn lấy bản mới nhất từ server
+            {
+              urlPattern: ({ request }) => request.mode === 'navigate',
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'pages',
+                networkTimeoutSeconds: 5,
+                expiration: { maxEntries: 50, maxAgeSeconds: 24 * 60 * 60 },
+              },
+            },
+            // 2. Code JS/CSS — network-first: luôn tải mới, offline thì dùng cache
+            {
+              urlPattern: /\.(?:js|css)$/,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'code',
+                networkTimeoutSeconds: 5,
+                expiration: { maxEntries: 200, maxAgeSeconds: 7 * 24 * 60 * 60 },
+              },
+            },
+            // 3. Logo / ảnh tĩnh — cache-first: không đổi, tiết kiệm băng thông
+            {
+              urlPattern: /\.(?:png|jpg|jpeg|svg|ico)$/,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'images',
+                expiration: { maxEntries: 100, maxAgeSeconds: 365 * 24 * 60 * 60 },
+              },
+            },
+            // 4. Font Google — cache-first
             {
               urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
               handler: 'CacheFirst',
@@ -87,6 +120,7 @@ export default defineConfig(({ mode }) => {
                 expiration: { maxEntries: 20, maxAgeSeconds: 365 * 24 * 60 * 60 },
               },
             },
+            // 5. API — network-first (không cache public API)
             {
               urlPattern: /\/api\/(?!public\/)/,
               handler: 'NetworkFirst',

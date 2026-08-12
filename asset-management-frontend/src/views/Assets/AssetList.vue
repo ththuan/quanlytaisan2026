@@ -1056,20 +1056,20 @@ const handleGenerateAllQR = () => {
 };
 
 const buildPrintHTML = (items: Array<{ asset_code: string; name: string; category_name: string; quantity: number; unit: string; qr_image: string }>, deptName: string): string => {
-  const cells = items.map(a => `
-    <div class="qr-cell">
-      ${a.qr_image
-        ? `<img src="${a.qr_image}" alt="QR" />`
-        : `<div class="qr-placeholder">No QR</div>`
-      }
-      <div class="qr-info">
+  const cells = items.map((a, idx) => {
+    const row = Math.floor(idx / 4);
+    const flip = row % 2 === 1; // hàng chẵn: text trên, QR dưới
+    const qrBlock = a.qr_image
+      ? `<img src="${a.qr_image}" alt="QR" />`
+      : `<div class="qr-placeholder">No QR</div>`;
+    const infoBlock = `<div class="qr-info">
         <div class="qr-code">${a.asset_code}</div>
         <div class="qr-name">${a.name}</div>
         ${a.category_name ? `<div class="qr-cat">${a.category_name}</div>` : ''}
         <div class="qr-qty">SL: ${a.quantity}${a.unit ? ' ' + a.unit : ''}</div>
-      </div>
-    </div>
-  `).join('');
+      </div>`;
+    return `<div class="qr-cell">${flip ? infoBlock + qrBlock : qrBlock + infoBlock}</div>`;
+  }).join('');
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
 <title>QR Code – ${deptName}</title>
@@ -1077,18 +1077,18 @@ const buildPrintHTML = (items: Array<{ asset_code: string; name: string; categor
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', sans-serif; background: #fff; }
   h2 { text-align: center; font-size: 14pt; padding: 6mm 0 3mm; }
-  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4mm; padding: 6mm 8mm; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; padding: 8mm; }
   .qr-cell {
-    width: 47mm; border: 0.5pt solid #ccc; padding: 2mm;
+    border: 0.5pt dashed #ddd; padding: 1.5mm;
     page-break-inside: avoid; text-align: center;
   }
-  .qr-cell img { width: 43mm; height: 43mm; display: block; margin: 0 auto; }
-  .qr-placeholder { width: 43mm; height: 43mm; display: flex; align-items: center; justify-content: center; background: #eee; font-size: 9pt; color: #888; margin: 0 auto; }
-  .qr-info { margin-top: 1.5mm; line-height: 1.4; }
-  .qr-code { font-weight: bold; font-size: 9pt; word-break: break-all; }
-  .qr-name { font-size: 8pt; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-  .qr-cat { font-size: 7.5pt; color: #555; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-  .qr-qty { font-size: 7.5pt; }
+  .qr-cell img { width: 35mm; height: 35mm; display: block; margin: 0 auto; }
+  .qr-placeholder { width: 35mm; height: 35mm; display: flex; align-items: center; justify-content: center; background: #eee; font-size: 9pt; color: #888; margin: 0 auto; }
+  .qr-info { margin: 1.5mm 0; line-height: 1.3; min-height: 12mm; }
+  .qr-code { font-weight: bold; font-size: 8pt; word-break: break-all; }
+  .qr-name { font-size: 7.5pt; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .qr-cat { font-size: 7pt; color: #555; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .qr-qty { font-size: 7pt; }
   @media print {
     @page { size: A4 portrait; margin: 6mm; }
     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }

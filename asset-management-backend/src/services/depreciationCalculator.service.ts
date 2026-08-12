@@ -15,11 +15,11 @@ import Asset from '../models/Asset';
 /**
  * Công cụ dụng cụ — theo **năm dương lịch** (năm của máy chủ khi gọi API):
  * - `delta = năm hiện tại − năm đưa vào sử dụng` (chỉ so sánh số năm, không dùng ngày tháng cụ thể).
- * - Trong khi `delta <= 3` (tức đến hết năm `yearInUse + 3`): giữ **nguyên giá**.
- * - Khi `delta > 3` (từ năm dương lịch `yearInUse + 4` trở đi): **GTCL = 0**.
- * Ví dụ: đưa vào SD **2023** → 2023…2026 vẫn nguyên giá; **từ 2027** GTCL = 0.
+ * - Năm đưa vào sử dụng (delta = 0): giữ **nguyên giá**.
+ * - Từ năm sau (delta >= 1): **GTCL = 0** (phân bổ 100% trong năm đầu).
+ * Ví dụ: đưa vào SD **2025** → năm 2025 nguyên giá; **từ 2026** GTCL = 0.
  */
-const TOOLS_FULL_VALUE_MAX_YEARS = 3;
+const TOOLS_FULL_VALUE_MAX_YEARS = 0;
 
 /** Dùng khi đã JOIN sẵn asset_categories (tránh N+1 query trên API danh sách) */
 export interface DepreciationPrecachedCategory {
@@ -213,8 +213,8 @@ class DepreciationCalculatorService {
                 } : undefined,
                 calculationMethod,
                 calculationNotes: overToolsLimit
-                    ? `Công cụ dụng cụ: năm dương lịch hiện tại > năm SD + ${TOOLS_FULL_VALUE_MAX_YEARS} — GTCL = 0 (vd. SD 2023 → từ 2027)`
-                    : `Công cụ dụng cụ: đến hết năm SD + ${TOOLS_FULL_VALUE_MAX_YEARS} vẫn nguyên giá (vd. SD 2023 → đến hết 2026)`,
+                    ? `Công cụ dụng cụ: năm hiện tại > năm SD — GTCL = 0 (phân bổ 100% năm đầu)`
+                    : `Công cụ dụng cụ: năm đưa vào SD vẫn nguyên giá`,
             };
         }
 
