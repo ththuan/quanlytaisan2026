@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyToken, JWTPayload } from '../utils/jwt.utils';
-import { UnauthorizedError } from '../utils/errorHandler';
+import { verifyAccessToken, JWTPayload } from '../utils/jwt.utils';
+import { ForbiddenError, UnauthorizedError } from '../utils/errorHandler';
+import { AuthSession } from '../models';
 
 export interface AuthRequest extends Request {
   user?: JWTPayload;
@@ -33,7 +34,14 @@ export const authMiddleware = async (
     }
 
     // Verify token
-    const decoded = verifyToken(token);
+    const decoded = verifyAccessToken(token);
+
+    const session = await AuthSession.findByPk(decoded.sid, {
+      attributes: ['id', 'user_id', 'expires_at', 'revoked_at'],
+    });
+    if (!session || session.user_id !== decoded.id || session.revoked_at || session.expires_at <= new Date()) {
+      throw new UnauthorizedError('Session is no longer active');
+    }
 
     // Attach user to request
     req.user = decoded;
@@ -58,8 +66,13 @@ export const optionalAuthMiddleware = async (
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
-      const decoded = verifyToken(token);
-      req.user = decoded;
+      const decoded = verifyAccessToken(token);
+      const session = await AuthSession.findByPk(decoded.sid, {
+        attributes: ['id', 'user_id', 'expires_at', 'revoked_at'],
+      });
+      if (session && session.user_id === decoded.id && !session.revoked_at && session.expires_at > new Date()) {
+        req.user = decoded;
+      }
     }
 
     next();
@@ -82,7 +95,7 @@ export const requireRoles = (roles: string[]) => {
     }
 
     if (!roles.includes(req.user.role)) {
-      next(new UnauthorizedError(`Access denied. Required roles: ${roles.join(', ')}`));
+      next(new ForbiddenError(`Access denied. Required roles: ${roles.join(', ')}`));
       return;
     }
 

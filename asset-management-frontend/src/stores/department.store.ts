@@ -41,8 +41,20 @@ export const useDepartmentStore = defineStore('department', {
       this.error = null;
       try {
         const response = await departmentService.getAll(params);
-        this.departments = response.data;
-        this.pagination = response.pagination;
+        // API responses may be returned either as { data: [...] } or as the
+        // already-unwrapped array, depending on the proxy/interceptor path.
+        const departments = Array.isArray((response as any)?.data)
+          ? (response as any).data
+          : Array.isArray(response as any)
+            ? response as any
+            : [];
+        this.departments = departments;
+        this.pagination = (response as any)?.pagination || {
+          total: departments.length,
+          page: 1,
+          limit: departments.length || 10,
+          totalPages: departments.length ? 1 : 0,
+        };
       } catch (error: any) {
         this.error = error.response?.data?.message || 'Failed to fetch departments';
         throw error;

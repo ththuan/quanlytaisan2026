@@ -2,15 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import logger from '../utils/logger';
 import { AuditLog } from '../models';
 import crypto from 'crypto';
+import { getClientIp } from '../utils/clientIp';
 
 type AuthenticatedRequest = Request & { user?: { id: number }; requestId?: string };
-
-// Helper: extract real client IP, stripping IPv4-mapped IPv6 prefix
-const getClientIp = (req: Request): string => {
-  const forwarded = req.headers['x-forwarded-for'];
-  const raw = (Array.isArray(forwarded) ? forwarded[0] : forwarded?.split(',')[0]?.trim()) || req.ip || '';
-  return raw.replace(/^::ffff:/, '');
-};
 
 // Logging middleware for HTTP requests with correlation ID
 export const requestLogger = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {

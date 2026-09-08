@@ -9,6 +9,7 @@ const router = Router();
 
 // Apply authentication to all routes
 router.use(authenticateToken);
+router.use(requireRole('admin'));
 
 // Statistics (all authenticated users can view)
 router.get('/statistics', reportsController.getStatistics);
@@ -18,7 +19,7 @@ router.get('/procurement', reportsController.getProcurementSummary);
 
 router.post(
   '/bulk-approve',
-  requireRole('admin', 'director'),
+  requireRole('admin'),
   reportsController.bulkApproveReports
 );
 
@@ -29,14 +30,14 @@ router.get('/:id', reportsController.getReportById);
 // Create/Update reports (Manager/Admin only)
 router.post(
   '/',
-  requireRole('admin', 'department_head'),
+  requireRole('admin'),
   validateRequest(createReportSchema),
   reportsController.createReport
 );
 
 router.put(
   '/:id',
-  requireRole('admin', 'department_head'),
+  requireRole('admin'),
   validateRequest(updateReportSchema),
   reportsController.updateReport
 );
@@ -44,20 +45,20 @@ router.put(
 // Submit report for approval
 router.post(
   '/:id/submit',
-  requireRole('admin', 'department_head'),
+  requireRole('admin'),
   reportsController.submitReport
 );
 
 // Approve/Reject reports (Admin + Giám hiệu — khớp quyền trên giao diện)
 router.post(
   '/:id/approve',
-  requireRole('admin', 'director'),
+  requireRole('admin'),
   reportsController.approveReport
 );
 
 router.post(
   '/:id/reject',
-  requireRole('admin', 'director'),
+  requireRole('admin'),
   reportsController.rejectReport
 );
 

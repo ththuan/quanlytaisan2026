@@ -5,9 +5,9 @@ import * as tt120Controller from '../controllers/tt120Export.controller';
 
 const router = Router();
 
-// All TT120 export routes require admin or director
+// All TT120 export routes require admin
 router.use(authenticateToken);
-router.use(requireRole('admin', 'director'));
+router.use(requireRole('admin'));
 
 // Mẫu 04a-CK/TSC – Công khai hình thành tài sản công
 router.get('/04a', tt120Controller.exportReport04a);

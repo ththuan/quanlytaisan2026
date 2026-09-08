@@ -55,6 +55,10 @@ export const assetService = {
     return api.get(`/assets/${id}/repair-history`);
   },
 
+  async getDisposalHistory(id: number): Promise<ApiResponse<any[]>> {
+    return api.get(`/assets/${id}/disposal-history`);
+  },
+
   async getStatistics(params?: AssetQueryParams): Promise<ApiResponse<any>> {
     return api.get('/assets/statistics', { params });
   },

@@ -63,9 +63,9 @@
     <div class="stats-section">
       <el-row :gutter="12">
         <el-col
-          :xs="8"
+          :xs="12"
           :sm="8"
-          :md="3"
+          :md="4"
         >
           <div
             class="stat-card total"
@@ -86,9 +86,9 @@
           </div>
         </el-col>
         <el-col
-          :xs="8"
+          :xs="12"
           :sm="8"
-          :md="3"
+          :md="4"
         >
           <div
             class="stat-card active"
@@ -109,9 +109,9 @@
           </div>
         </el-col>
         <el-col
-          :xs="8"
+          :xs="12"
           :sm="8"
-          :md="3"
+          :md="4"
         >
           <div
             class="stat-card inactive"
@@ -132,55 +132,9 @@
           </div>
         </el-col>
         <el-col
-          :xs="8"
+          :xs="12"
           :sm="8"
-          :md="3"
-        >
-          <div
-            class="stat-card damaged"
-            :class="{ 'is-active': filterStatus === 'damaged' }"
-            @click="handleStatClick('damaged')"
-          >
-            <div class="stat-icon">
-              <el-icon><Warning /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">
-                {{ statistics.damaged }}
-              </div>
-              <div class="stat-label">
-                Hỏng
-              </div>
-            </div>
-          </div>
-        </el-col>
-        <el-col
-          :xs="8"
-          :sm="8"
-          :md="3"
-        >
-          <div
-            class="stat-card maintenance"
-            :class="{ 'is-active': filterStatus === 'pending_repair' }"
-            @click="handleStatClick('pending_repair')"
-          >
-            <div class="stat-icon">
-              <el-icon><Setting /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">
-                {{ statistics.pending_repair || 0 }}
-              </div>
-              <div class="stat-label">
-                Sửa chữa
-              </div>
-            </div>
-          </div>
-        </el-col>
-        <el-col
-          :xs="8"
-          :sm="8"
-          :md="3"
+          :md="4"
         >
           <div
             class="stat-card pending-disposal"
@@ -201,9 +155,9 @@
           </div>
         </el-col>
         <el-col
-          :xs="8"
+          :xs="12"
           :sm="8"
-          :md="3"
+          :md="4"
         >
           <div
             class="stat-card lost"
@@ -224,9 +178,9 @@
           </div>
         </el-col>
         <el-col
-          :xs="8"
+          :xs="12"
           :sm="8"
-          :md="3"
+          :md="4"
         >
           <div
             class="stat-card disposed"
@@ -291,7 +245,7 @@
           </div>
           <div class="filter-item filter-item--dept">
             <DepartmentTreeSelect
-              v-if="authStore.isAdmin || authStore.isDirector"
+              v-if="authStore.isAdmin"
               v-model="filterDepartment"
               :placeholder="$t('assets.filterByDepartment')"
               size="large"
@@ -689,7 +643,7 @@ import { useI18n } from 'vue-i18n';
 import { useAssetStore } from '@/stores/asset.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useDepartments } from '@/composables/useDepartments';
-import { Plus, Search, Delete, Box, CircleCheck, Warning, Refresh, Upload, Download, CircleClose, QuestionFilled, Sunny, Setting, DeleteFilled } from '@element-plus/icons-vue';
+import { Plus, Search, Delete, Box, CircleCheck, Refresh, Upload, Download, CircleClose, QuestionFilled, Sunny, DeleteFilled } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import AssetFormDialog from '@/components/Assets/AssetFormDialog.vue';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
@@ -784,7 +738,7 @@ const fetchCategories = async () => {
 
 const fetchStatistics = async () => {
   try {
-    const departmentId = (authStore.isAdmin || authStore.isDirector) ? (filterDepartment.value || undefined) : authStore.userDepartmentId;
+    const departmentId = authStore.isAdmin ? (filterDepartment.value || undefined) : authStore.userDepartmentId;
     const response = await assetService.getStatistics({
       category_code: filterCategory.value || undefined,
       status: filterStatus.value || undefined,
@@ -799,10 +753,13 @@ const fetchStatistics = async () => {
 };
 
 const getListFetchParams = (overrides: Partial<AssetQueryParams> = {}): AssetQueryParams => {
-  const departmentId = (authStore.isAdmin || authStore.isDirector)
+  const DEFAULT_PAGE_SIZE = 50;
+  const departmentId = authStore.isAdmin
     ? (filterDepartment.value ?? undefined)
     : authStore.userDepartmentId;
   return {
+    page: 1,
+    limit: DEFAULT_PAGE_SIZE,
     search: searchQuery.value,
     category_code: filterCategory.value,
     status: filterStatus.value,
@@ -847,7 +804,7 @@ onMounted(async () => {
     filterCategory.value = q.category_code;
   }
 
-  if (!authStore.isAdmin && !authStore.isDirector && authStore.userDepartmentId) {
+  if (!authStore.isAdmin && authStore.userDepartmentId) {
     filterDepartment.value = authStore.userDepartmentId;
   }
 
@@ -878,7 +835,7 @@ const handleReset = async () => {
   searchQuery.value = '';
   filterCategory.value = '';
   filterStatus.value = '';
-  if (authStore.isAdmin || authStore.isDirector) {
+  if (authStore.isAdmin) {
     filterDepartment.value = null;
   } else {
     filterDepartment.value = authStore.userDepartmentId ?? null;
@@ -1240,12 +1197,99 @@ const handleExportQRPDF = async () => {
 }
 
 .stats-section .el-row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
 }
 
 .stats-section .el-col {
   display: flex;
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+@media (min-width: 600px) {
+  .stats-section .el-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .stats-section .el-row {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+
+/* Keep summary cards comfortably sized on large and ultrawide displays. */
+@media (min-width: 1366px) {
+
+  .stats-section .stat-card {
+    margin-bottom: 0;
+    min-height: 84px;
+    height: 84px;
+    padding: 16px 18px;
+  }
+
+  .stats-section .stat-icon {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    font-size: 23px;
+  }
+
+  .stats-section .stat-value {
+    font-size: 1.45rem;
+  }
+
+  .stats-section .stat-label {
+    font-size: 13px;
+  }
+
+  .main-card :deep(.el-card__body) {
+    padding: 28px;
+  }
+
+  .filter-row {
+    gap: 16px;
+  }
+
+  .asset-table :deep(.el-table__header th) {
+    font-size: 14px;
+    padding: 16px 10px;
+  }
+
+  .asset-table :deep(.el-table__row td) {
+    padding: 14px 10px;
+  }
+
+  .asset-table :deep(.cell),
+  .asset-name,
+  .asset-code {
+    font-size: 15px;
+  }
+
+  .pagination-info {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 1920px) {
+  .stats-section .el-row {
+    gap: 20px;
+  }
+
+  .stats-section .stat-card {
+    min-height: 96px;
+    height: 96px;
+    padding: 18px 20px;
+  }
 }
 
 .stat-card {
@@ -1602,12 +1646,6 @@ const handleExportQRPDF = async () => {
 
 /* ── Mobile responsive ── */
 @media (max-width: 767px) {
-  /* Stat cards: 2 per row */
-  .stats-section :deep(.el-col) {
-    max-width: 50% !important;
-    flex: 0 0 50% !important;
-  }
-
   /* Header buttons: wrap to 2 per row */
   .header-right {
     flex-wrap: wrap;

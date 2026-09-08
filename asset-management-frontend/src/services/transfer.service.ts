@@ -10,7 +10,7 @@ export interface Transfer {
   transfer_date: string;
   reason?: string;
   notes?: string;
-  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  status: 'pending' | 'approved' | 'rejected' | 'completed' | 'approved_by_head' | 'rejected_by_head';
   created_at: string;
   updated_at: string;
 }
@@ -52,6 +52,15 @@ class TransferService {
 
   async reject(id: number, notes?: string) {
     const response: any = await api.post(`/transfers/${id}/reject`, { notes });
+    return response;
+  }
+
+  async processApproval(id: number, decision: 'approved' | 'rejected', reason?: string, notes?: string) {
+    const response: any = await api.post(`/transfers/${id}/process-approval`, {
+      decision,
+      reason,
+      notes,
+    });
     return response;
   }
 }

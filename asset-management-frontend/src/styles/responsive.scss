@@ -31,6 +31,133 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 
+/* Large desktop / 2K-4K displays. The previous scale stopped at 1440px,
+   leaving text and controls at laptop size on 27-32 inch monitors. */
+@media (min-width: 1366px) {
+  :root {
+    --font-size-xs: 13px;
+    --font-size-sm: 14px;
+    --font-size-base: 15px;
+    --font-size-lg: 17px;
+    --font-size-xl: 20px;
+    --font-size-2xl: 25px;
+    --el-font-size-base: 15px;
+  }
+
+  html { font-size: 15px; }
+
+  .el-main { padding: clamp(28px, 1.7vw, 40px) !important; }
+
+  .page-header,
+  .dashboard-header { margin-bottom: 28px !important; }
+
+  .page-title,
+  .dashboard-header h2 { font-size: var(--font-size-2xl) !important; }
+
+  .page-subtitle,
+  .header-subtitle { font-size: var(--font-size-base) !important; }
+
+  .el-button {
+    min-height: 40px;
+    font-size: 15px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .el-input--large,
+  .el-select--large { --el-component-size-large: 46px; }
+
+  .el-input__inner,
+  .el-select__placeholder,
+  .el-form-item__label,
+  .el-checkbox__label,
+  .el-radio__label,
+  .el-tabs__item,
+  .el-descriptions__label,
+  .el-descriptions__content,
+  .el-dropdown-menu__item,
+  .el-tag {
+    font-size: 15px;
+  }
+
+  .el-tabs__item {
+    min-height: 46px;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .el-form-item {
+    margin-bottom: 22px;
+  }
+
+  .el-dialog {
+    font-size: 15px;
+  }
+
+  .el-dialog__header {
+    padding: 22px 26px 16px;
+  }
+
+  .el-dialog__title {
+    font-size: 20px;
+  }
+
+  .el-dialog__body {
+    padding: 22px 26px 26px;
+  }
+
+  .el-card__header { padding: 20px 24px; }
+
+  .main-card > .el-card__body,
+  .chart-card > .el-card__body { padding: 26px; }
+
+  .filter-section { padding: 24px !important; }
+
+  .el-table { font-size: 15px; }
+
+  .el-table .cell {
+    line-height: 1.5;
+  }
+
+  .el-table th.el-table__cell,
+  .el-table td.el-table__cell {
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+
+  .el-pagination {
+    --el-pagination-font-size: 15px;
+    --el-pagination-button-width: 36px;
+    --el-pagination-button-height: 36px;
+  }
+}
+
+@media (min-width: 1920px) {
+  :root {
+    --font-size-xs: 14px;
+    --font-size-sm: 15px;
+    --font-size-base: 16px;
+    --font-size-lg: 18px;
+    --font-size-xl: 22px;
+    --font-size-2xl: 28px;
+    --el-font-size-base: 16px;
+  }
+
+  html { font-size: 16px; }
+  .el-main { padding: clamp(36px, 1.8vw, 64px) !important; }
+
+  .el-button {
+    min-height: 40px;
+    font-size: 15px;
+  }
+
+  .el-input--large,
+  .el-select--large { --el-component-size-large: 48px; }
+
+  .el-table { font-size: 15px; }
+  .responsive-table .el-table { min-width: 100%; }
+}
+
 /* ─────────────────────────────────────────────────────────
    TABLES: Responsive wrapper cho tất cả bảng
    ───────────────────────────────────────────────────────── */
@@ -243,11 +370,17 @@ body {
    STATISTICS CARDS: Dashboard và Summary Stats
    ───────────────────────────────────────────────────────── */
 
-/* Desktop lớn: 8 cột */
+/* Desktop lớn: các trang dùng stats-section tự phân bố cột */
 @media (min-width: 1440px) {
   .stats-section .el-row {
     display: grid;
-    grid-template-columns: repeat(8, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+@media (min-width: 2200px) {
+  .stats-section .el-row {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   }
 }
 

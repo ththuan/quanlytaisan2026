@@ -1,10 +1,9 @@
 import { Router } from 'express';
 import maintenanceController from '../controllers/maintenance.controller';
 import { authenticateToken } from '../middleware/auth.middleware';
-import { 
-  requireRole, 
+import {
+  requireRole,
   canApproveMaintenanceRequest,
-  canViewMaintenanceRequest 
 } from '../middleware/authorization.middleware';
 import { validateRequest } from '../middleware/validation';
 import { createMaintenanceSchema, updateMaintenanceSchema, processApprovalSchema } from '../utils/validators';
@@ -16,23 +15,23 @@ const router = Router();
 // Apply authentication to all routes
 router.use(authenticateToken);
 
-// Get pending counts - admin, director only
-router.get('/pending-counts', requireRole('admin', 'director'), maintenanceController.getPendingCounts);
+// Get pending counts - admin only
+router.get('/pending-counts', requireRole('admin'), maintenanceController.getPendingCounts);
 
-// List/create/view - all authenticated users (service filters by role/department)
-router.get('/', maintenanceController.getAllMaintenance);
-router.post('/', validateRequest(createMaintenanceSchema), auditLog('create'), maintenanceController.createMaintenance);
-router.get('/:id', canViewMaintenanceRequest, maintenanceController.getMaintenanceById);
+// List - admin only (ẩn khỏi director, sau này cần bật lại → mở lại requireRole)
+router.get('/', requireRole('admin'), maintenanceController.getAllMaintenance);
+router.post('/', requireRole('admin'), validateRequest(createMaintenanceSchema), auditLog('create'), maintenanceController.createMaintenance);
+router.get('/:id', requireRole('admin'), maintenanceController.getMaintenanceById);
 
 // Get approval history for a request
-router.get('/:id/approval-history', canViewMaintenanceRequest, maintenanceController.getApprovalHistory);
+router.get('/:id/approval-history', requireRole('admin'), maintenanceController.getApprovalHistory);
 
 // Submit for approval - all authenticated users
-router.post('/:id/submit', auditLog('approve'), maintenanceController.submitForApproval);
+router.post('/:id/submit', requireRole('admin'), auditLog('approve'), maintenanceController.submitForApproval);
 
 // Update/delete - all authenticated users (controller checks ownership/permission)
-router.put('/:id', validateRequest(updateMaintenanceSchema), auditLog('update'), maintenanceController.updateMaintenance);
-router.delete('/:id', auditLog('delete'), maintenanceController.deleteMaintenance);
+router.put('/:id', requireRole('admin'), validateRequest(updateMaintenanceSchema), auditLog('update'), maintenanceController.updateMaintenance);
+router.delete('/:id', requireRole('admin'), auditLog('delete'), maintenanceController.deleteMaintenance);
 
 // Admin starts repair: approved_by_director -> in_progress
 router.post(
@@ -53,7 +52,7 @@ router.post(
 // Fulfill procurement (create assets & allocate) - Admin/Director only
 router.post(
   '/:id/fulfill-procurement',
-  requireRole('admin', 'director'),
+  requireRole('admin'),
   validateRequest(fulfillProcurementSchema),
   auditLog('approve'),
   maintenanceController.fulfillProcurement

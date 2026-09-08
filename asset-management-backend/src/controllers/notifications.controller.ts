@@ -170,13 +170,12 @@ export const getPendingApprovals = async (req: AuthenticatedRequest, res: Respon
     let transferWhere: any | null = null;
     if (role === 'department_head' && departmentId) {
       transferWhere = {
-        status: 'pending',
         [Op.or]: [
-          { from_department_id: departmentId },
-          { to_department_id: departmentId },
+          { status: 'pending', from_department_id: departmentId },
+          { status: 'approved_by_head', to_department_id: departmentId },
         ],
       };
-    } else if (role === 'admin' || role === 'director') {
+    } else if (role === 'admin') {
       transferWhere = { status: { [Op.in]: ['pending', 'approved_by_head'] } };
     }
 
@@ -194,7 +193,9 @@ export const getPendingApprovals = async (req: AuthenticatedRequest, res: Respon
 
       transferItems.forEach((item: any) => {
         const d = item.toJSON ? item.toJSON() : item;
-        const statusLabel = d.status === 'approved_by_head' ? 'chờ duyệt (Quản trị viên/Giám hiệu)' : 'chờ duyệt (Trưởng Đơn vị)';
+        const statusLabel = d.status === 'approved_by_head'
+          ? 'chờ Trưởng đơn vị nhận duyệt'
+          : 'chờ Trưởng đơn vị giao duyệt';
         notifications.push({
           id: d.id,
           type: 'transfer',

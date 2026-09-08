@@ -790,14 +790,12 @@ class InventoryService {
     });
 
     // undefined = admin did not make an explicit selection → approve all repair suggestions
-    const approveAllRepairs = repairApprovedAssetIds == null;
+    const approveAllRepairs = false;
 
     let disposalCaseId: number | null = null;
     if (approvedBy) {
-      const hasDisposal = details.some((d: any) => d.suggest_disposal);
-      const hasRepairRejected = !approveAllRepairs && details.some(
-        (d: any) => d.suggest_repair && !repairApprovedAssetIds!.includes(d.asset_id)
-      );
+      const hasDisposal = details.some((d: any) => d.suggest_disposal || d.suggest_repair);
+      const hasRepairRejected = false;
       if (hasDisposal || hasRepairRejected) {
         const disposalCase = await assetDisposalService.ensureDisposalCaseFromInventoryReport(reportId, approvedBy, transaction);
         disposalCaseId = (disposalCase as any).id;
@@ -837,7 +835,7 @@ class InventoryService {
           );
         }
       } else if (detail.suggest_repair) {
-        const approvedForRepair = approveAllRepairs || repairApprovedAssetIds!.includes((detail as any).asset_id);
+        const approvedForRepair = false;
         if (approvedForRepair) {
           updateData.status = 'pending_repair';
           updateData.asset_condition = 'needs_repair';

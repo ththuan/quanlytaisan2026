@@ -1,9 +1,10 @@
 import speakeasy from 'speakeasy';
 import qrcode from 'qrcode';
 import jwt from 'jsonwebtoken';
-import { User, Department, AuditLog } from '../models';
+import crypto from 'crypto';
+import { User, Department, AuditLog, AuthSession } from '../models';
 import { UnauthorizedError, ConflictError, NotFoundError, ValidationError } from '../utils/errorHandler';
-import { generateAccessToken, generateRefreshToken, verifyToken, JWTPayload } from '../utils/jwt.utils';
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken, JWTPayload } from '../utils/jwt.utils';
 import jwtConfig from '../config/jwt';
 import envConfig from '../config/env';
 
@@ -68,24 +69,7 @@ class AuthService {
       is_active: true,
     });
 
-    // Generate tokens
-    const payload: JWTPayload = {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      department_id: user.department_id,
-      fullname: user.fullname,
-    };
-
-    const accessToken = generateAccessToken(payload);
-    const refreshToken = generateRefreshToken(payload);
-
-    return {
-      user: user.toJSON(),
-      accessToken,
-      refreshToken,
-    };
+    return this._issueTokens(user);
   }
 
   async login(data: LoginInput, ipAddress?: string, userAgent?: string): Promise<AuthResponse | TotpPendingResponse> {
@@ -187,7 +171,7 @@ class AuthService {
     }
 
     // No 2FA — issue tokens directly
-    return await this._issueTokens(user);
+    return await this._issueTokens(user, ipAddress, userAgent);
   }
 
   async getCurrentUser(userId: number): Promise<Partial<User>> {
@@ -226,18 +210,54 @@ class AuthService {
 
     // Update password
     await user.update({ password_hash });
+
+    // A password change invalidates every existing device session.
+    await AuthSession.update({ revoked_at: new Date() }, { where: { user_id: userId, revoked_at: null } });
   }
 
   async refreshAccessToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
     try {
-      const payload = verifyToken(refreshToken);
-      // Re-issue both tokens (rotation: old refresh token is replaced by a new one)
-      const newAccessToken = generateAccessToken(payload);
-      const newRefreshToken = generateRefreshToken(payload);
+      const payload = verifyRefreshToken(refreshToken);
+      const session = await AuthSession.findByPk(payload.sid);
+      const submittedHash = this._hashToken(refreshToken);
+
+      if (!session || session.user_id !== payload.id || session.revoked_at || session.expires_at <= new Date()) {
+        throw new Error('Inactive session');
+      }
+      if (!crypto.timingSafeEqual(Buffer.from(session.refresh_token_hash), Buffer.from(submittedHash))) {
+        // Do not revoke here: two tabs of the same browser can refresh at nearly
+        // the same time. The stale request is rejected without killing the
+        // newly rotated session used by the other tab.
+        throw new Error('Refresh token mismatch');
+      }
+
+      // Reload identity/role from DB instead of trusting stale token claims.
+      const user = await User.findByPk(session.user_id);
+      if (!user || !user.is_active) {
+        await session.update({ revoked_at: new Date() });
+        throw new Error('Inactive user');
+      }
+
+      const claims = this._claimsFor(user, session.id);
+      const newAccessToken = generateAccessToken(claims);
+      const newRefreshToken = generateRefreshToken(claims);
+      const decoded = jwt.decode(newRefreshToken) as jwt.JwtPayload;
+      await session.update({
+        refresh_token_hash: this._hashToken(newRefreshToken),
+        expires_at: new Date((decoded.exp || 0) * 1000),
+      });
       return { accessToken: newAccessToken, refreshToken: newRefreshToken };
     } catch (error) {
       throw new UnauthorizedError('Invalid or expired refresh token');
     }
+  }
+
+  async logout(userId: number, sessionId?: string): Promise<void> {
+    if (!sessionId) return;
+    await AuthSession.update(
+      { revoked_at: new Date() },
+      { where: { id: sessionId, user_id: userId, revoked_at: null } }
+    );
   }
 
   // ── TOTP / Google Authenticator methods ────────────────────────────────────
@@ -321,27 +341,50 @@ class AuthService {
   }
 
   /** Internal: update last_login and issue JWT pair. */
-  private async _issueTokens(user: User): Promise<AuthResponse> {
+  private async _issueTokens(user: User, ipAddress?: string, userAgent?: string): Promise<AuthResponse> {
     try {
       await user.update({ last_login: new Date() });
     } catch (_e) {
       // Bỏ qua nếu cột last_login không tồn tại hoặc lỗi DB nhỏ
     }
 
-    const payload: JWTPayload = {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      department_id: user.department_id,
-      fullname: user.fullname,
-    };
+    const sessionId = crypto.randomUUID();
+    const payload = this._claimsFor(user, sessionId);
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
+    const decoded = jwt.decode(refreshToken) as jwt.JwtPayload;
+
+    await AuthSession.create({
+      id: sessionId,
+      user_id: user.id,
+      refresh_token_hash: this._hashToken(refreshToken),
+      expires_at: new Date((decoded.exp || 0) * 1000),
+      ip_address: ipAddress || null,
+      user_agent: userAgent || null,
+    });
 
     return {
       user: user.toJSON(),
-      accessToken: generateAccessToken(payload),
-      refreshToken: generateRefreshToken(payload),
+      accessToken,
+      refreshToken,
     };
+  }
+
+  private _claimsFor(user: User, sessionId: string): JWTPayload {
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email || '',
+      role: user.role,
+      department_id: user.department_id,
+      fullname: user.fullname,
+      sid: sessionId,
+      token_type: 'access',
+    };
+  }
+
+  private _hashToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
   }
 }
 

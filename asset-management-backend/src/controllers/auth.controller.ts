@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import authService from '../services/auth.service';
+import { getClientIp } from '../utils/clientIp';
 
-type AuthenticatedRequest = Request & { user?: { id: number } };
+type AuthenticatedRequest = Request & { user?: { id: number; sid?: string } };
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -19,7 +20,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
 
 export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const ipAddress = req.ip || req.socket?.remoteAddress;
+    const ipAddress = getClientIp(req);
     const userAgent = req.headers['user-agent'];
     const result = await authService.login(req.body ?? {}, ipAddress, userAgent);
 
@@ -63,8 +64,9 @@ export const changePassword = async (req: AuthenticatedRequest, res: Response, n
   }
 };
 
-export const logout = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const logout = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    await authService.logout(req.user!.id, req.user!.sid);
     res.status(200).json({
       success: true,
       message: 'Logout successful',

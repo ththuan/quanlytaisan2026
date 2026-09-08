@@ -4,6 +4,7 @@ import { authService } from '@/services/auth.service';
 import type { AuthResponse } from '@/services/auth.service';
 import type { User } from '@/types/models';
 import { ElMessage } from 'element-plus';
+import { decodeJwtPayload } from '@/utils/jwt';
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null);
@@ -106,6 +107,21 @@ export const useAuthStore = defineStore('auth', () => {
     const storedUser = localStorage.getItem('user');
 
     if (token && storedUser) {
+      let tokenUserId: number | null = null;
+      try {
+        const payload = decodeJwtPayload(token);
+        if (!payload) throw new Error('Invalid token payload');
+        tokenUserId = Number(payload.id) || null;
+        const parsedUser = JSON.parse(storedUser) as User;
+        if (!tokenUserId || Number(parsedUser.id) !== tokenUserId || payload.token_type !== 'access') {
+          clearAuth();
+          return;
+        }
+      } catch {
+        clearAuth();
+        return;
+      }
+
       accessToken.value = token;
       refreshToken.value = localStorage.getItem('refreshToken');
       user.value = JSON.parse(storedUser);
@@ -113,6 +129,12 @@ export const useAuthStore = defineStore('auth', () => {
       try {
         const response = await authService.getCurrentUser();
         if (response.success && response.data) {
+          // Never let a stale proxy/service-worker response silently switch the
+          // visible account. The JWT identity is authoritative for this session.
+          if (Number(response.data.id) !== tokenUserId) {
+            clearAuth();
+            return;
+          }
           user.value = response.data;
           localStorage.setItem('user', JSON.stringify(response.data));
         }

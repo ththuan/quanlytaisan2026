@@ -13,7 +13,7 @@ const router = Router();
 
 // Tất cả routes đều yêu cầu đăng nhập và quyền admin
 router.use(authMiddleware);
-router.use(authorize('admin', 'director'));
+router.use(authorize('admin'));
 
 // Download file mẫu
 router.get('/template', importController.downloadTemplate);

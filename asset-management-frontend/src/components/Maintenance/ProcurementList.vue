@@ -234,12 +234,6 @@ const { t } = useI18n();
 const authStore = useAuthStore();
 const notificationStore = useNotificationStore();
 
-const getNextApprovalStatus = (currentStatus: string, role: string): string | null => {
-  if (role === 'department_head' && (currentStatus === 'pending' || currentStatus === 'new')) return 'approved_by_head';
-  if (role === 'admin' && currentStatus === 'approved_by_head') return 'approved_by_admin';
-  if (role === 'director' && currentStatus === 'approved_by_admin') return 'approved_by_director';
-  return null;
-};
 const departmentStore = useDepartmentStore();
 const router = useRouter();
 
@@ -351,7 +345,7 @@ const handleView = async (item: any) => {
 const canFulfill = (row: any) => {
   const role = authStore.user?.role;
   if (role !== 'admin') return false;
-  return row.request_type === 'procurement' && row.status === 'approved_by_director' && !row.procurement_fulfilled && !row.linked_procurement_id;
+  return row.request_type === 'procurement' && ['approved_by_admin', 'approved_by_director'].includes(row.status) && !row.procurement_fulfilled && !row.linked_procurement_id;
 };
 
 const handleFulfill = async (row: any) => {
@@ -420,51 +414,20 @@ const handleSubmitForApproval = async (item: any) => {
 
 const canApproveAtCurrentLevel = (row: any) => {
   if (!authStore.user) return false;
-  
   const status = row.status;
   const userRole = authStore.user.role;
-  
-  // Department head can approve at level 1
-  if (userRole === 'department_head' && (status === 'pending' || status === 'new')) {
-    return authStore.user.department_id === row.department_id;
-  }
-  
-  // Admin can approve at level 2
-  if (userRole === 'admin' && status === 'approved_by_head') {
-    return true;
-  }
-  
-  // Director can approve at level 3
-  if (userRole === 'director' && status === 'approved_by_admin') {
-    return true;
-  }
-  
-  return false;
+  return userRole === 'admin' && ['new', 'pending', 'approved_by_head', 'approved_by_admin'].includes(status);
 };
 
-const getApproveButtonText = (row: any) => {
+const getApproveButtonText = (_row: any) => {
   if (!authStore.user) return 'Phê duyệt';
-  
-  const status = row.status;
-  const userRole = authStore.user.role;
-  
-  if (userRole === 'department_head' && (status === 'pending' || status === 'new')) {
-    return 'Phê duyệt (Trưởng Đơn vị)';
-  }
-  if (userRole === 'admin' && status === 'approved_by_head') {
-    return 'Phê duyệt (Quản trị viên)';
-  }
-  if (userRole === 'director' && status === 'approved_by_admin') {
-    return 'Phê duyệt (Giám hiệu)';
-  }
-  
-  return 'Phê duyệt';
+  return 'Phê duyệt (Admin)';
 };
 
 const handleApprove = async (id: number) => {
   try {
     await ElMessageBox.confirm(
-      'Bạn có chắc chắn muốn phê duyệt yêu cầu này? Yêu cầu sẽ được chuyển lên cấp trên tiếp theo.',
+      'Bạn có chắc chắn muốn Admin phê duyệt yêu cầu này?',
       'Xác nhận phê duyệt',
       {
         type: 'warning',
@@ -472,14 +435,12 @@ const handleApprove = async (id: number) => {
         cancelButtonText: 'Hủy',
       }
     );
-    await api.put(`/maintenance/${id}/approve`);
-    const userRole = authStore.user?.role;
+    const result: any = await api.put(`/maintenance/${id}/approve`);
     const aidx = requests.value.findIndex((r: any) => r.id === id);
-    if (aidx !== -1 && userRole) {
-      const next = getNextApprovalStatus(requests.value[aidx].status, userRole);
-      if (next) requests.value[aidx] = { ...requests.value[aidx], status: next };
+    if (aidx !== -1) {
+      requests.value[aidx] = result?.data || { ...requests.value[aidx], status: 'approved_by_admin' };
     }
-    ElMessage.success('Đã phê duyệt thành công. Yêu cầu đã được chuyển lên cấp trên.');
+    ElMessage.success('Admin đã phê duyệt thành công.');
     notificationStore.fetchNotifications(true);
     fetchData({}, true);
   } catch (error: any) {

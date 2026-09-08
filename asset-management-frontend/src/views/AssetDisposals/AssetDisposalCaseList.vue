@@ -8,12 +8,12 @@
         </div>
       </div>
       <el-button
-        v-if="authStore.isAdmin || authStore.isDirector || authStore.isDepartmentHead || authStore.isStaff"
+        v-if="authStore.isAdmin"
         type="danger"
         :icon="Delete"
         @click="destructionVisible = true"
       >
-        {{ authStore.isAdmin || authStore.isDirector ? $t('assetDisposals.createCase') : 'Gửi đề nghị thanh lý / tiêu hủy' }}
+        {{ $t('assetDisposals.createCase') }}
       </el-button>
     </div>
 
@@ -24,6 +24,8 @@
           :placeholder="$t('assetDisposals.searchPlaceholder')"
           clearable
           style="max-width: 280px"
+          @keyup.enter="load"
+          @clear="load"
         />
         <el-select
           v-model="filters.status"
@@ -56,16 +58,17 @@
         <el-table
           v-loading="loading"
           :data="rows"
+          class="disposal-table"
           style="width: 100%"
         >
           <el-table-column
             prop="code"
             :label="$t('assetDisposals.caseCode')"
-            width="170"
+            min-width="240"
           />
           <el-table-column
             :label="$t('common.status')"
-            width="160"
+            min-width="220"
           >
             <template #default="scope">
               <el-tag :type="statusTagType(scope.row.status)">
@@ -75,7 +78,7 @@
           </el-table-column>
           <el-table-column
             :label="$t('common.createdAt')"
-            width="180"
+            min-width="260"
           >
             <template #default="scope">
               <span>{{ formatDateTime(scope.row.created_at || scope.row.createdAt) }}</span>
@@ -83,8 +86,9 @@
           </el-table-column>
           <el-table-column
             :label="$t('common.actions')"
-            width="140"
-            fixed="right"
+            min-width="180"
+            align="center"
+            header-align="center"
           >
             <template #default="scope">
               <el-button
@@ -143,6 +147,7 @@ const limit = ref(10);
 
 const filters = reactive<{ search: string; status: any }>({
   search: '',
+  // Mở trang hiển thị toàn bộ hồ sơ, chỉ lọc khi người dùng chủ động chọn.
   status: '',
 });
 
@@ -157,8 +162,21 @@ const load = async () => {
   loading.value = true;
   try {
     const res: any = await assetDisposalService.listCases(params.value);
-    rows.value = res?.data?.data || res?.data?.rows || res?.data?.items || res?.data || [];
-    total.value = res?.data?.total || res?.data?.count || 0;
+    const data = Array.isArray(res?.data)
+      ? res.data
+      : Array.isArray(res?.data?.data)
+        ? res.data.data
+        : Array.isArray(res?.rows)
+          ? res.rows
+          : [];
+    rows.value = data;
+    total.value = Number(
+      res?.pagination?.total
+      ?? res?.data?.pagination?.total
+      ?? res?.total
+      ?? res?.count
+      ?? data.length
+    );
   } finally {
     loading.value = false;
   }
@@ -243,5 +261,47 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   margin-top: 12px;
+}
+
+.responsive-table {
+  width: 100%;
+}
+
+.disposal-table {
+  width: 100% !important;
+}
+
+.disposal-table :deep(.el-table__header),
+.disposal-table :deep(.el-table__body) {
+  width: 100% !important;
+}
+
+.disposal-table :deep(th.el-table__cell) {
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.disposal-table :deep(th.el-table__cell),
+.disposal-table :deep(td.el-table__cell) {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+@media (min-width: 1366px) {
+  .filters {
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .disposal-table :deep(th.el-table__cell),
+  .disposal-table :deep(td.el-table__cell) {
+    padding-top: 18px;
+    padding-bottom: 18px;
+  }
+
+  .pager {
+    margin-top: 20px;
+  }
 }
 </style>

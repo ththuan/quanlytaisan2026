@@ -22,8 +22,26 @@
       >
         <el-row :gutter="20">
           <el-col :span="8">
-            <el-form-item label="Đơn vị sử dụng trực tiếp">
+            <el-form-item
+              label="Đơn vị sử dụng trực tiếp"
+              prop="department_id"
+            >
+              <el-select
+                v-if="authStore.isAdmin"
+                v-model="formData.department_id"
+                filterable
+                placeholder="Chọn phòng, khoa nhận tài sản"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="department in departments"
+                  :key="department.id"
+                  :label="department.name"
+                  :value="department.id"
+                />
+              </el-select>
               <el-input
+                v-else
                 :value="userDepartmentName"
                 disabled
                 style="width: 100%"
@@ -476,6 +494,7 @@ const statuses = computed(() => [
 ]);
 
 const rules = computed<FormRules>(() => ({
+  department_id: [{ required: true, message: 'Vui lòng chọn đơn vị sử dụng trực tiếp', trigger: 'change' }],
   urgency: [{ required: true, message: t('validation.required'), trigger: 'change' }],
   justification: [{ required: true, message: t('validation.required'), trigger: 'blur' }],
 }));
@@ -573,7 +592,7 @@ watch(() => props.visible, async (val) => {
 });
 
 const resetForm = () => {
-  formData.department_id = authStore.userDepartmentId || null;
+  formData.department_id = authStore.isAdmin ? null : (authStore.userDepartmentId || null);
   formData.justification = '';
   formData.urgency = 'normal';
   formData.status = 'new';

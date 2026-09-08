@@ -159,7 +159,7 @@
               >
                 {{ $t('common.view') }}
               </el-button>
-              <template v-if="row.status === 'pending' && authStore.isManager">
+              <template v-if="canApprove(row)">
                 <el-button
                   size="small"
                   type="success"
@@ -202,6 +202,7 @@
     <TransferDetailDialog
       v-model:visible="detailDialogVisible"
       :transfer="currentTransfer"
+      @approved="handleDetailApproval"
     />
   </div>
 </template>
@@ -240,6 +241,8 @@ const statuses = computed(() => [
   { value: 'approved', label: t('transfers.status.approved') },
   { value: 'rejected', label: t('transfers.status.rejected') },
   { value: 'completed', label: t('transfers.status.completed') },
+  { value: 'approved_by_head', label: t('transfers.status.approved_by_head') },
+  { value: 'rejected_by_head', label: t('transfers.status.rejected_by_head') },
 ]);
 
 onMounted(() => {
@@ -283,14 +286,26 @@ const handleView = (transfer: any) => {
   detailDialogVisible.value = true;
 };
 
+const canApprove = (transfer: any) => {
+  if (authStore.isAdmin) return ['pending', 'approved_by_head'].includes(transfer.status);
+  if (!authStore.isDepartmentHead) return false;
+  if (transfer.status === 'pending') {
+    return Number(transfer.from_department_id) === Number(authStore.userDepartmentId);
+  }
+  if (transfer.status === 'approved_by_head') {
+    return Number(transfer.to_department_id) === Number(authStore.userDepartmentId);
+  }
+  return false;
+};
+
 const handleApprove = async (id: number) => {
   try {
     await ElMessageBox.confirm(t('transfers.approveConfirm'), t('common.confirm'), {
       type: 'warning',
     });
-    await transferStore.approveTransfer(id);
+    const updatedTransfer = await transferStore.processApproval(id, 'approved');
     const aidx = transferStore.transfers.findIndex((t: any) => t.id === id);
-    if (aidx !== -1) transferStore.transfers[aidx] = { ...transferStore.transfers[aidx], status: 'approved' };
+    if (aidx !== -1) transferStore.transfers[aidx] = updatedTransfer;
     ElMessage.success(t('transfers.approveSuccess'));
     notificationStore.fetchNotifications(true);
     transferStore.fetchTransfers({
@@ -311,10 +326,11 @@ const handleReject = async (id: number) => {
       confirmButtonText: t('common.confirm'),
       cancelButtonText: t('common.cancel'),
       inputPlaceholder: t('transfers.enterReason'),
+      inputValidator: (value: string) => String(value || '').trim() ? true : t('transfers.rejectReasonRequired'),
     });
-    await transferStore.rejectTransfer(id, value);
+    const updatedTransfer = await transferStore.processApproval(id, 'rejected', String(value).trim());
     const ridx = transferStore.transfers.findIndex((t: any) => t.id === id);
-    if (ridx !== -1) transferStore.transfers[ridx] = { ...transferStore.transfers[ridx], status: 'rejected' };
+    if (ridx !== -1) transferStore.transfers[ridx] = updatedTransfer;
     ElMessage.success(t('transfers.rejectSuccess'));
     notificationStore.fetchNotifications(true);
     transferStore.fetchTransfers({
@@ -334,12 +350,26 @@ const handleFormSuccess = () => {
   transferStore.fetchTransfers(undefined, true);
 };
 
+const handleDetailApproval = async (updatedTransfer: any) => {
+  const index = transferStore.transfers.findIndex((item: any) => item.id === updatedTransfer?.id);
+  if (index !== -1) transferStore.transfers[index] = updatedTransfer;
+  currentTransfer.value = updatedTransfer;
+  await transferStore.fetchTransfers({
+    search: searchQuery.value || undefined,
+    status: filterStatus.value || undefined,
+    to_department_id: filterDepartment.value ?? undefined,
+  }, true);
+  notificationStore.fetchNotifications(true);
+};
+
 const getStatusType = (status: string) => {
   const types: Record<string, string> = {
     pending: 'warning',
     approved: 'success',
     rejected: 'danger',
     completed: 'success',
+    approved_by_head: 'primary',
+    rejected_by_head: 'danger',
   };
   return types[status] || '';
 };

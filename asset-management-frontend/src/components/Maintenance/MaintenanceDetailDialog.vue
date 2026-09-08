@@ -554,29 +554,17 @@
         v-if="maintenanceData"
         class="approval-status"
       >
-        <h4>Trạng thái phê duyệt hiện tại</h4>
+        <h4>Trạng thái phê duyệt của Admin</h4>
         <el-steps
           :active="getApprovalStep(maintenanceData.status)"
           :finish-status="isRejected ? 'error' : 'success'"
           align-center
         >
           <el-step
-            :title="stepInfo.head.title"
-            description="Trưởng Đơn vị"
-            :status="stepInfo.head.status"
-            :icon="stepInfo.head.icon"
-          />
-          <el-step
             :title="stepInfo.admin.title"
-            description="Quản trị viên"
+            description="Admin"
             :status="stepInfo.admin.status"
             :icon="stepInfo.admin.icon"
-          />
-          <el-step
-            :title="stepInfo.director.title"
-            description="Giám hiệu"
-            :status="stepInfo.director.status"
-            :icon="stepInfo.director.icon"
           />
           <el-step
             v-if="maintenanceData.status === 'repair_completed' || maintenanceData.status === 'repair_approved'"
@@ -979,7 +967,7 @@ const fetchApprovalHistory = async () => {
 
 const canUpdateStatus = computed(() => {
   const data = maintenanceData.value;
-  return data && ['approved_by_director', 'in_progress'].includes(data.status);
+  return data && ['approved_by_admin', 'approved_by_director', 'in_progress'].includes(data.status);
 });
 
 // Check if current user can approve at current level
@@ -990,22 +978,10 @@ const canApprove = computed(() => {
   const status = data.status;
   const userRole = authStore.user.role;
   
-  // Department head can approve at level 1
-  if (userRole === 'department_head' && (status === 'pending' || status === 'new')) {
-    return authStore.user.department_id === data.department_id;
-  }
-  
-  // Admin can approve at level 2 (initial approval) or level 4 (repair completion)
-  if (userRole === 'admin' && (status === 'approved_by_head' || status === 'repair_completed')) {
-    return true;
-  }
-  
-  // Director can approve at level 3
-  if (userRole === 'director' && status === 'approved_by_admin') {
-    return true;
-  }
-  
-  return false;
+  return userRole === 'admin' && (
+    ['pending', 'new', 'approved_by_head', 'approved_by_admin'].includes(status)
+    || status === 'repair_completed'
+  );
 });
 
 const getApproveButtonText = computed(() => {
@@ -1015,17 +991,11 @@ const getApproveButtonText = computed(() => {
   const status = data.status;
   const userRole = authStore.user.role;
   
-  if (userRole === 'department_head' && (status === 'pending' || status === 'new')) {
-    return 'Phê duyệt (Trưởng Đơn vị)';
-  }
-  if (userRole === 'admin' && status === 'approved_by_head') {
-    return 'Phê duyệt (Quản trị viên)';
+  if (userRole === 'admin' && ['pending', 'new', 'approved_by_head', 'approved_by_admin'].includes(status)) {
+    return 'Phê duyệt (Admin)';
   }
   if (userRole === 'admin' && status === 'repair_completed') {
     return 'Duyệt hoàn thành sửa chữa';
-  }
-  if (userRole === 'director' && status === 'approved_by_admin') {
-    return 'Phê duyệt (Giám hiệu)';
   }
   
   return 'Phê duyệt';

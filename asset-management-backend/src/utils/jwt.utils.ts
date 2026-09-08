@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import jwtConfig from '../config/jwt';
 
 export interface JWTPayload {
@@ -8,11 +9,14 @@ export interface JWTPayload {
   role: string;
   department_id?: number;
   fullname?: string;
+  sid: string;
+  jti?: string;
+  token_type: 'access' | 'refresh';
 }
 
 export const generateAccessToken = (payload: JWTPayload): string => {
-  const { iat: _iat, exp: _exp, ...claims } = payload as any;
-  return jwt.sign(claims, jwtConfig.secret, {
+  const { iat: _iat, exp: _exp, jti: _jti, token_type: _type, ...claims } = payload as any;
+  return jwt.sign({ ...claims, token_type: 'access' }, jwtConfig.secret, {
     expiresIn: jwtConfig.accessExpiration as any,
     issuer: jwtConfig.issuer,
     algorithm: jwtConfig.algorithm,
@@ -20,12 +24,25 @@ export const generateAccessToken = (payload: JWTPayload): string => {
 };
 
 export const generateRefreshToken = (payload: JWTPayload): string => {
-  const { iat: _iat, exp: _exp, ...claims } = payload as any;
-  return jwt.sign(claims, jwtConfig.secret, {
+  const { iat: _iat, exp: _exp, jti: _jti, token_type: _type, ...claims } = payload as any;
+  return jwt.sign({ ...claims, token_type: 'refresh' }, jwtConfig.secret, {
     expiresIn: jwtConfig.refreshExpiration as any,
     issuer: jwtConfig.issuer,
     algorithm: jwtConfig.algorithm,
+    jwtid: crypto.randomUUID(),
   });
+};
+
+export const verifyAccessToken = (token: string): JWTPayload => {
+  const decoded = verifyToken(token);
+  if (decoded.token_type !== 'access' || !decoded.sid) throw new Error('Invalid access token');
+  return decoded;
+};
+
+export const verifyRefreshToken = (token: string): JWTPayload => {
+  const decoded = verifyToken(token);
+  if (decoded.token_type !== 'refresh' || !decoded.sid) throw new Error('Invalid refresh token');
+  return decoded;
 };
 
 export const verifyToken = (token: string): JWTPayload => {

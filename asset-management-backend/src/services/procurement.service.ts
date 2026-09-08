@@ -213,8 +213,8 @@ class ProcurementService {
     if (maintenance.request_type !== 'procurement') {
       throw new ConflictError('Chỉ áp dụng cho đề nghị mua sắm');
     }
-    if (maintenance.status !== 'approved_by_director') {
-      throw new ConflictError('Đề nghị phải ở trạng thái "Giám hiệu đã duyệt" mới có thể chuyển sang phiếu Tăng tài sản');
+    if (!['approved_by_admin', 'approved_by_director'].includes(maintenance.status)) {
+      throw new ConflictError('Đề nghị phải được Admin phê duyệt trước khi chuyển sang phiếu Tăng tài sản');
     }
     if ((maintenance as any).linked_procurement_id) {
       // Already linked – return existing procurement

@@ -85,6 +85,26 @@
     </template>
 
     <template #footer>
+      <el-button
+        v-if="canApprove"
+        type="success"
+        @click="handleApproval('approved')"
+      >
+        {{ $t('transfers.approve') }}
+      </el-button>
+      <el-button
+        v-if="canApprove"
+        type="danger"
+        @click="handleApproval('rejected')"
+      >
+        {{ $t('transfers.reject') }}
+      </el-button>
+      <el-button
+        :icon="Printer"
+        @click="handlePrint"
+      >
+        {{ $t('common.print') }}
+      </el-button>
       <el-button @click="$emit('update:visible', false)">
         {{ $t('common.close') }}
       </el-button>
@@ -97,18 +117,59 @@ import { ref, watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import moment from 'moment';
 import api from '@/services/api';
+import { Printer } from '@element-plus/icons-vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { useAuthStore } from '@/stores/auth.store';
+import { useTransferStore } from '@/stores/transfer.store';
 
 const props = defineProps<{
   visible: boolean;
   transfer: any;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   'update:visible': [value: boolean];
+  approved: [transfer: any];
 }>();
 
 const { t } = useI18n();
+const authStore = useAuthStore();
+const transferStore = useTransferStore();
 const approvalHistory = ref<any[]>([]);
+
+const canApprove = computed(() => {
+  const transfer = props.transfer;
+  if (!transfer) return false;
+  if (authStore.isAdmin) return ['pending', 'approved_by_head'].includes(transfer.status);
+  if (authStore.user?.role !== 'department_head') return false;
+  const departmentId = Number(authStore.user?.department_id);
+  return (transfer.status === 'pending' && departmentId === Number(transfer.from_department_id))
+    || (transfer.status === 'approved_by_head' && departmentId === Number(transfer.to_department_id));
+});
+
+const handleApproval = async (decision: 'approved' | 'rejected') => {
+  if (!props.transfer) return;
+  try {
+    let reason: string | undefined;
+    if (decision === 'rejected') {
+      const result = await ElMessageBox.prompt(t('transfers.rejectReason'), t('transfers.reject'), {
+        inputValidator: (value: string) => String(value || '').trim() ? true : t('transfers.rejectReasonRequired'),
+      });
+      reason = String(result.value).trim();
+    } else {
+      await ElMessageBox.confirm(t('transfers.approveConfirm'), t('common.confirm'));
+    }
+
+    const updated = await transferStore.processApproval(props.transfer.id, decision, reason);
+    ElMessage.success(decision === 'approved' ? t('transfers.approveSuccess') : t('transfers.rejectSuccess'));
+    emit('approved', updated);
+    emit('update:visible', false);
+  } catch (error: any) {
+    if (error !== 'cancel' && error !== 'close') {
+      ElMessage.error(error?.response?.data?.message || error?.message || t('common.error'));
+    }
+  }
+};
 
 const approvalTimeline = computed(() => {
   const list: { date: string; label: string; type: string; actor?: string; reason?: string }[] = [];
@@ -164,6 +225,8 @@ const getStatusType = (status: string) => {
     approved: 'success',
     rejected: 'danger',
     completed: 'info',
+    approved_by_head: 'primary',
+    rejected_by_head: 'danger',
   };
   return types[status] || '';
 };
@@ -174,6 +237,70 @@ const getStatusText = (status: string) => {
 
 const formatDate = (date: string) => {
   return date ? moment(date).format('DD/MM/YYYY HH:mm') : '-';
+};
+
+const escapeHtml = (value: unknown) => String(value ?? '-')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#039;');
+
+const handlePrint = () => {
+  if (!props.transfer) return;
+
+  const printWindow = window.open('', '_blank', 'width=900,height=700');
+  if (!printWindow) return;
+
+  const transfer = props.transfer;
+  const approvals = approvalTimeline.value.map((item) => `
+    <tr>
+      <td>${escapeHtml(item.date)}</td>
+      <td>${escapeHtml(item.label)}</td>
+      <td>${escapeHtml(item.actor)}</td>
+      <td>${escapeHtml(item.reason || '')}</td>
+    </tr>
+  `).join('');
+
+  printWindow.document.write(`<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>Phiếu điều chuyển ${escapeHtml(transfer.asset?.asset_code)}</title>
+  <style>
+    @page { size: A4; margin: 18mm; }
+    body { font-family: Arial, sans-serif; color: #111; font-size: 13px; line-height: 1.45; }
+    h1 { margin: 18px 0 4px; text-align: center; font-size: 20px; text-transform: uppercase; }
+    .subtitle { text-align: center; margin-bottom: 24px; color: #444; }
+    table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+    th, td { border: 1px solid #444; padding: 8px; vertical-align: top; }
+    th { background: #f2f2f2; text-align: left; width: 22%; }
+    .history th { width: auto; text-align: center; }
+    .signatures { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 34px; text-align: center; }
+    .signature-space { height: 70px; }
+  </style>
+</head>
+<body>
+  <h1>Phiếu điều chuyển tài sản</h1>
+  <div class="subtitle">Mã phiếu: DC-${escapeHtml(transfer.id)} | Ngày lập: ${escapeHtml(formatDate(transfer.created_at))}</div>
+  <table>
+    <tr><th>Mã tài sản</th><td>${escapeHtml(transfer.asset?.asset_code)}</td><th>Tên tài sản</th><td>${escapeHtml(transfer.asset?.name)}</td></tr>
+    <tr><th>Đơn vị giao</th><td>${escapeHtml(transfer.from_department?.name)}</td><th>Đơn vị nhận</th><td>${escapeHtml(transfer.to_department?.name)}</td></tr>
+    <tr><th>Người đề nghị</th><td>${escapeHtml(transfer.requester?.fullname || transfer.requester?.username)}</td><th>Trạng thái</th><td>${escapeHtml(getStatusText(transfer.status))}</td></tr>
+    <tr><th>Lý do</th><td colspan="3">${escapeHtml(transfer.reason)}</td></tr>
+    <tr><th>Ghi chú</th><td colspan="3">${escapeHtml(transfer.notes)}</td></tr>
+  </table>
+  ${approvals ? `<h3>Lịch sử phê duyệt</h3><table class="history"><thead><tr><th>Thời gian</th><th>Thao tác</th><th>Người thực hiện</th><th>Lý do/Ghi chú</th></tr></thead><tbody>${approvals}</tbody></table>` : ''}
+  <div class="signatures">
+    <div><strong>Đơn vị giao</strong><div class="signature-space"></div><div>(Ký, ghi rõ họ tên)</div></div>
+    <div><strong>Đơn vị nhận</strong><div class="signature-space"></div><div>(Ký, ghi rõ họ tên)</div></div>
+    <div><strong>Người phê duyệt</strong><div class="signature-space"></div><div>(Ký, ghi rõ họ tên)</div></div>
+  </div>
+</body>
+</html>`);
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.addEventListener('load', () => printWindow.print(), { once: true });
 };
 </script>
 

@@ -59,36 +59,15 @@ export const canApproveMaintenanceRequest = async (req: RequestWithUser, res: Re
       throw new NotFoundError('Maintenance request not found');
     }
 
-    const status = maintenance.status;
-
-    // Department Head can approve at level 1 (pending/new status)
-    // Only for requests from their department
-    if (user.role === 'department_head') {
-      const isFromMyDepartment = user.department_id === maintenance.department_id;
-      const isMyTurn = status === 'new' || status === 'pending';
-
-      if (isFromMyDepartment && isMyTurn) {
-        return next();
-      }
-    }
-
-    // Admin can approve at level 2 (after head approval) AND level 4 (repair completion)
-    if (user.role === 'admin') {
-      const isMyTurn = status === 'approved_by_head' || status === 'repair_completed';
-
-      if (isMyTurn) {
-        return next();
-      }
-    }
-
-    // Director can approve at level 3 (after admin approval)
-    if (user.role === 'director') {
-      const isMyTurn = status === 'approved_by_admin';
-
-      if (isMyTurn) {
-        return next();
-      }
-    }
+    // Mua sắm/sửa chữa chỉ còn một cấp duyệt bởi admin.
+    // Chấp nhận các trạng thái phân cấp cũ để admin xử lý nốt hồ sơ tồn đọng.
+    if (user.role === 'admin' && [
+      'new',
+      'pending',
+      'approved_by_head',
+      'approved_by_admin',
+      'repair_completed',
+    ].includes(maintenance.status)) return next();
 
     throw new ForbiddenError('Không có quyền duyệt yêu cầu này hoặc chưa đến lượt duyệt');
   } catch (error) {
@@ -160,10 +139,11 @@ export const canApproveTransfer = async (req: RequestWithUser, res: Response, ne
 
     // Department Head can approve transfers from their department
     if (user.role === 'department_head') {
-      const isFromMyDepartment = user.department_id === transfer.from_department_id;
-      const isPending = status === 'pending';
+      const userDepartmentId = Number(user.department_id);
+      const canApproveSource = status === 'pending' && userDepartmentId === Number(transfer.from_department_id);
+      const canApproveDestination = status === 'approved_by_head' && userDepartmentId === Number(transfer.to_department_id);
 
-      if (isFromMyDepartment && isPending) {
+      if (canApproveSource || canApproveDestination) {
         return next();
       }
     }

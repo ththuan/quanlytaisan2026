@@ -2,44 +2,19 @@
   <div class="page">
     <div class="page-header">
       <div>
-        <h2>Tăng / Giảm tài sản</h2>
+        <h2>Tăng tài sản</h2>
         <div class="sub">
-          Theo dõi tăng tài sản (mua sắm/cấp phát) và giảm tài sản (thanh lý)
+          Theo dõi tăng tài sản (mua sắm / cấp phát)
         </div>
       </div>
     </div>
 
-    <el-tabs
-      v-model="activeTab"
-      type="card"
-    >
-      <el-tab-pane
-        label="Tăng tài sản"
-        name="increase"
-      >
-        <KeepAlive>
-          <ProcurementListContent />
-        </KeepAlive>
-      </el-tab-pane>
-      <el-tab-pane
-        label="Giảm tài sản"
-        name="decrease"
-        lazy
-      >
-        <KeepAlive>
-          <AssetDisposalCaseList />
-        </KeepAlive>
-      </el-tab-pane>
-    </el-tabs>
+    <ProcurementListContent />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import AssetDisposalCaseList from '@/views/AssetDisposals/AssetDisposalCaseList.vue';
 import ProcurementListContent from '@/views/Procurements/ProcurementListContent.vue';
-
-const activeTab = ref<'increase' | 'decrease'>('increase');
 </script>
 
 <style scoped>

@@ -46,12 +46,26 @@ class MaintenanceController {
     try {
       const user = req.user!;
       
-      // All authenticated users can create maintenance requests
-      if (!user.department_id) {
+      const requestedDepartmentId = Number(req.body.department_id) || undefined;
+
+      // Admin manages procurement centrally and chooses the receiving unit in
+      // the request form. Other roles must still belong to a department.
+      if (user.role === 'admin') {
+        if (!requestedDepartmentId) {
+          return res.status(400).json({
+            success: false,
+            message: 'Vui lòng chọn đơn vị sử dụng trực tiếp.',
+          });
+        }
+        req.body.department_id = requestedDepartmentId;
+      } else if (!user.department_id) {
         return res.status(400).json({
           success: false,
           message: 'Bạn chưa được phân công vào phòng ban nào.',
         });
+      } else {
+        // Prevent non-admin users from creating requests for another unit.
+        req.body.department_id = user.department_id;
       }
 
       const userId = user.id;
@@ -108,7 +122,7 @@ class MaintenanceController {
       const user = req.user!;
       const id = parseInt(req.params.id);
 
-      if (!user.department_id) {
+      if (user.role !== 'admin' && !user.department_id) {
         return res.status(400).json({
           success: false,
           message: 'Bạn chưa được phân công vào phòng ban nào.',
@@ -369,7 +383,7 @@ class MaintenanceController {
       const user = req.user!;
       const id = parseInt(req.params.id);
 
-      if (!user.department_id) {
+      if (user.role !== 'admin' && !user.department_id) {
         return res.status(400).json({
           success: false,
           message: 'Bạn chưa được phân công vào phòng ban nào.',

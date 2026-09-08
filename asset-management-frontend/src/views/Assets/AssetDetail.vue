@@ -31,14 +31,6 @@
           </el-button>
         </el-tooltip>
         <el-button 
-          v-if="(authStore.isStaff || authStore.isDepartmentHead) && (assetStore.currentAsset?.status === 'active' || assetStore.currentAsset?.status === 'inactive')" 
-          type="danger" 
-          :icon="Warning" 
-          @click="handleReportDamage"
-        >
-          Báo hỏng
-        </el-button>
-        <el-button 
           v-if="authStore.isAdmin" 
           type="primary" 
           :icon="Edit" 
@@ -512,104 +504,6 @@
             </div>
           </el-card>
 
-          <!-- Lịch sử sửa chữa -->
-          <el-card
-            v-if="repairHistory.length > 0"
-            class="info-card repair-history-card"
-            shadow="never"
-          >
-            <template #header>
-              <div class="card-title">
-                <el-icon><SetUp /></el-icon>
-                <span>Lịch sử sửa chữa</span>
-              </div>
-            </template>
-            <div
-              v-loading="loadingRepairHistory"
-              class="repair-history-content"
-            >
-              <div
-                v-for="repair in repairHistory"
-                :key="repair.id"
-                class="repair-item"
-              >
-                <div class="repair-header">
-                  <el-tag
-                    :type="getRepairStatusType(repair.status)"
-                    size="small"
-                  >
-                    {{ getRepairStatusText(repair.status) }}
-                  </el-tag>
-                  <span class="repair-date">{{ formatDate(repair.created_at) }}</span>
-                </div>
-                <div class="repair-details">
-                  <div
-                    v-if="repair.description"
-                    class="repair-description"
-                  >
-                    <span class="detail-label">Mô tả hư hỏng:</span>
-                    <span class="detail-text">{{ repair.description }}</span>
-                  </div>
-                  <div
-                    v-if="repair.estimated_cost"
-                    class="repair-cost"
-                  >
-                    <span class="detail-label">Chi phí dự kiến:</span>
-                    <span class="detail-text cost-value">{{ formatCurrency(Number(repair.estimated_cost)) }}</span>
-                  </div>
-                  <div
-                    v-if="repair.requester"
-                    class="repair-requester"
-                  >
-                    <span class="detail-label">Người đề nghị:</span>
-                    <span class="detail-text">{{ repair.requester?.fullname || repair.requester?.username }}</span>
-                  </div>
-                  <div
-                    v-if="repair.assignee"
-                    class="repair-assignee"
-                  >
-                    <span class="detail-label">Người thực hiện:</span>
-                    <span class="detail-text">{{ repair.assignee?.fullname || repair.assignee?.username }}</span>
-                  </div>
-                  <div
-                    v-if="repair.start_date || repair.completion_date"
-                    class="repair-dates"
-                  >
-                    <span class="detail-label">Thời gian:</span>
-                    <span class="detail-text">
-                      <template v-if="repair.start_date">{{ formatDate(repair.start_date) }}</template>
-                      <template v-if="repair.start_date && repair.completion_date"> → </template>
-                      <template v-if="repair.completion_date">{{ formatDate(repair.completion_date) }}</template>
-                    </span>
-                  </div>
-                  <!-- Tiến trình phê duyệt -->
-                  <div
-                    v-if="repair.approvals && repair.approvals.length > 0"
-                    class="repair-approvals"
-                  >
-                    <span class="detail-label">Phê duyệt:</span>
-                    <div class="approval-steps">
-                      <div
-                        v-for="(approval, idx) in repair.approvals"
-                        :key="idx"
-                        class="approval-step"
-                      >
-                        <el-icon :style="{ color: approval.decision === 'approved' ? '#67c23a' : '#f56c6c' }">
-                          <SuccessFilled v-if="approval.decision === 'approved'" />
-                          <CircleCloseFilled v-else />
-                        </el-icon>
-                        <span class="approval-text">
-                          {{ getApprovalRoleName(approval.approval_level) }} - {{ approval.approver_name }}
-                          <span class="approval-date">({{ formatDate(approval.decided_at) }})</span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </el-card>
-
           <!-- Lịch sử thanh lý -->
           <el-card
             v-if="disposalHistory.length > 0"
@@ -728,12 +622,6 @@
       @saved="handleSaved"
     />
 
-    <!-- Report Damage Dialog -->
-    <ReportDamageDialog
-      v-model:visible="showReportDialog"
-      :asset="assetStore.currentAsset"
-      @submitted="handleReportSubmitted"
-    />
   </div>
 </template>
 
@@ -744,11 +632,9 @@ import { useI18n } from 'vue-i18n';
 import { useAssetStore } from '@/stores/asset.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useTransferStore } from '@/stores/transfer.store';
-import { ArrowLeft, Edit, Delete, Document, Location, Box, TrendCharts, Switch, ArrowRight, Download, Refresh, Warning, Picture, Upload, SetUp, SuccessFilled, CircleCloseFilled } from '@element-plus/icons-vue';
+import { ArrowLeft, Edit, Delete, Document, Location, Box, TrendCharts, Switch, ArrowRight, Download, Refresh, Picture, Upload } from '@element-plus/icons-vue';
 import AssetFormDialog from '@/components/Assets/AssetFormDialog.vue';
-import ReportDamageDialog from '@/components/Assets/ReportDamageDialog.vue';
 import { assetService } from '@/services/asset.service';
-import assetDisposalService from '@/services/assetDisposal.service';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import moment from 'moment';
 import { formatI18nOrRaw } from '@/utils/assetDisplay';
@@ -764,11 +650,8 @@ const authStore = useAuthStore();
 const transferStore = useTransferStore();
 
 const showEditDialog = ref(false);
-const showReportDialog = ref(false);
 const transferHistory = ref<any[]>([]);
 const loadingHistory = ref(false);
-const repairHistory = ref<any[]>([]);
-const loadingRepairHistory = ref(false);
 const disposalHistory = ref<any[]>([]);
 const loadingDisposalHistory = ref(false);
 const qrCodeImage = ref<string | null>(null);
@@ -876,10 +759,10 @@ const calculatedRemainingValue = computed(() => {
 
 onMounted(async () => {
   const id = parseInt(route.params.id as string);
-  await assetStore.fetchAssetById(id);
+  const asset = await assetStore.fetchAssetById(id);
+  if (!asset) return;
   await Promise.all([
     loadTransferHistory(id),
-    loadRepairHistory(id),
     loadDisposalHistory(id),
   ]);
   const categoryGroup = assetStore.currentAsset?.assetCategory?.category_group;
@@ -901,23 +784,11 @@ const loadTransferHistory = async (assetId: number) => {
   }
 };
 
-const loadRepairHistory = async (assetId: number) => {
-  loadingRepairHistory.value = true;
-  try {
-    const response: any = await assetService.getRepairHistory(assetId);
-    repairHistory.value = response.data || [];
-  } catch (error) {
-    console.error('Error loading repair history:', error);
-    repairHistory.value = [];
-  } finally {
-    loadingRepairHistory.value = false;
-  }
-};
-
 const loadDisposalHistory = async (assetId: number) => {
   loadingDisposalHistory.value = true;
   try {
-    disposalHistory.value = await assetDisposalService.listByAsset(assetId);
+    const response: any = await assetService.getDisposalHistory(assetId);
+    disposalHistory.value = response?.data || [];
   } catch {
     disposalHistory.value = [];
   } finally {
@@ -935,72 +806,8 @@ const getDisposalStatusText = (status: string) => {
   return map[status] || status;
 };
 
-const getRepairStatusType = (status: string) => {
-  const map: Record<string, string> = {
-    new: 'info',
-    pending: 'warning',
-    approved_by_head: 'primary',
-    approved_by_admin: 'primary',
-    approved_by_director: 'success',
-    in_progress: 'warning',
-    repair_completed: 'info',
-    repair_approved: 'success',
-    completed: 'success',
-    done: 'success',
-    rejected_by_head: 'danger',
-    rejected_by_admin: 'danger',
-    rejected_by_director: 'danger',
-  };
-  return (map[status] || 'info') as any;
-};
-
-const getRepairStatusText = (status: string) => {
-  const map: Record<string, string> = {
-    draft: 'Nháp',
-    new: 'Chờ phê duyệt',
-    pending: 'Chờ phê duyệt',
-    approved_by_head: 'Trưởng Đơn vị đã duyệt',
-    approved_by_admin: 'Quản trị viên đã duyệt',
-    approved_by_director: 'Giám hiệu đã duyệt',
-    in_progress: 'Đang sửa chữa',
-    repair_completed: 'Đã sửa xong - Chờ xác nhận',
-    repair_approved: 'Xác nhận hoàn thành',
-    completed: 'Hoàn thành',
-    done: 'Hoàn thành',
-    rejected_by_head: 'Trưởng Đơn vị từ chối',
-    rejected_by_admin: 'Quản trị viên từ chối',
-    rejected_by_director: 'Giám hiệu từ chối',
-    rejected_due_to_high_cost: 'Từ chối (chi phí cao)',
-  };
-  return map[status] || status;
-};
-
-const getApprovalRoleName = (level: number) => {
-  const map: Record<number, string> = {
-    1: 'Trưởng Đơn vị',
-    2: 'Quản trị viên',
-    3: 'Giám hiệu',
-    4: 'Bắt đầu sửa chữa',
-    5: 'Báo hoàn thành',
-    6: 'Xác nhận hoàn thành',
-  };
-  return map[level] || `Cấp ${level}`;
-};
-
 const handleEdit = () => {
   showEditDialog.value = true;
-};
-
-const handleReportDamage = () => {
-  showReportDialog.value = true;
-};
-
-const handleReportSubmitted = async () => {
-  // Reload sau khi báo hỏng
-  if (assetStore.currentAsset?.id) {
-    await assetStore.fetchAssetById(assetStore.currentAsset.id);
-  }
-  router.push('/maintenance');
 };
 
 const handleDelete = async () => {
@@ -1226,7 +1033,7 @@ const downloadQRCode = () => {
 }
 
 .content-wrapper {
-  max-width: 1200px;
+  max-width: min(1600px, 100%);
   margin: 0 auto;
 }
 

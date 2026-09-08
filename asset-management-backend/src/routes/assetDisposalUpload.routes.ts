@@ -32,7 +32,7 @@ const upload = multer({
 router.post(
   '/:id/decision-file',
   authenticateToken,
-  requireRoles(['admin', 'director']),
+  requireRoles(['admin']),
   upload.single('file'),
   (req, res) => assetDisposalUploadController.uploadDecisionFile(req as any, res)
 );

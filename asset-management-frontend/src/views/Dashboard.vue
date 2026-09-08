@@ -278,7 +278,7 @@
       </el-tab-pane>
       
       <!-- Tab: Hoạt động gần đây -->
-      <el-tab-pane name="activity" lazy>
+      <el-tab-pane v-if="authStore.isAdmin" name="activity" lazy>
         <template #label>
           <span>Hoạt động</span>
         </template>
@@ -453,15 +453,16 @@ watch(() => authStore.user?.id, () => {
 const loadDashboardData = async () => {
   loading.value = true;
   try {
-    const isAdminOrDir = authStore.isAdmin || authStore.isDirector;
     const [overviewRes, statusRes, deptRes, stockRes, catRes, auditRes, maintRes, inventoryRes, hierarchyRes] = await Promise.all([
       dashboardService.getOverviewStats({}),
       dashboardService.getAssetStatusStats({}),
       dashboardService.getDepartmentStats(),
       dashboardService.getStockStats({}),
       dashboardService.getCategoryBreakdown({ limit: 8 }),
-      dashboardService.getAuditLogs({ limit: 10, page: 1 }),
-      isAdminOrDir ? dashboardService.getMaintenanceStats({}) : Promise.resolve({ data: [] }),
+      authStore.isAdmin
+        ? dashboardService.getAuditLogs({ limit: 10, page: 1 })
+        : Promise.resolve({ data: { data: [], pagination: auditPagination.value } }),
+      authStore.isAdmin ? dashboardService.getMaintenanceStats({}) : Promise.resolve({ data: [] }),
       inventoryService.getPendingReportsCount(),
       dashboardService.getHierarchyStats({}),
     ]);
@@ -1083,6 +1084,33 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
   margin: -20px; /* Tràn viền card để tạo cảm giác không gian vô tận như hình mẫu */
   overflow: hidden;
   border-radius: 0 0 16px 16px;
+}
+
+@media (min-width: 1366px) {
+  .stats-row { margin-bottom: 30px; }
+
+  .stat-card :deep(.el-card__body) { padding: 22px 26px; }
+
+  .stat-icon {
+    width: 50px;
+    height: 50px;
+  }
+
+  .stat-value { font-size: 1.55rem; }
+  .stat-label { font-size: 13px; }
+  .dept-chart { height: min(62vh, 720px); }
+}
+
+@media (min-width: 1920px) {
+  .stat-card :deep(.el-card__body) { padding: 26px 30px; }
+
+  .stat-icon {
+    width: 56px;
+    height: 56px;
+  }
+
+  .stat-value { font-size: 1.75rem; }
+  .dept-chart { height: min(66vh, 900px); }
 }
 
 @media (max-width: 1024px) {

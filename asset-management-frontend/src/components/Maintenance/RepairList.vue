@@ -356,13 +356,6 @@ const router = useRouter();
 const authStore = useAuthStore();
 const notificationStore = useNotificationStore();
 
-const getNextApprovalStatus = (currentStatus: string, role: string): string | null => {
-  if (role === 'department_head' && (currentStatus === 'pending' || currentStatus === 'new')) return 'approved_by_head';
-  if (role === 'admin' && currentStatus === 'approved_by_head') return 'approved_by_admin';
-  if (role === 'admin' && currentStatus === 'repair_completed') return 'completed';
-  if (role === 'director' && currentStatus === 'approved_by_admin') return 'approved_by_director';
-  return null;
-};
 const departmentStore = useDepartmentStore();
 
 const loading = ref(false);
@@ -534,11 +527,7 @@ const canApproveAtCurrentLevel = (row: any) => {
   const status = row.status;
   const userRole = authStore.user.role;
 
-  if (userRole === 'department_head' && (status === 'pending' || status === 'new')) {
-    return authStore.user.department_id === row.department_id;
-  }
-  if (userRole === 'admin' && status === 'approved_by_head') return true;
-  if (userRole === 'director' && status === 'approved_by_admin') return true;
+  if (userRole === 'admin' && ['pending', 'new', 'approved_by_head', 'approved_by_admin'].includes(status)) return true;
   // Admin xác nhận hoàn thành sửa chữa
   if (userRole === 'admin' && status === 'repair_completed') return true;
 
@@ -558,10 +547,8 @@ const getApproveButtonText = (row: any) => {
   const { status } = row;
   const userRole = authStore.user.role;
 
-  if (userRole === 'department_head' && (status === 'pending' || status === 'new')) return 'Phê duyệt (Trưởng Đơn vị)';
-  if (userRole === 'admin' && status === 'approved_by_head') return 'Phê duyệt (Quản trị viên)';
-  if (userRole === 'director' && status === 'approved_by_admin') return 'Phê duyệt (Giám hiệu)';
   if (userRole === 'admin' && status === 'repair_completed') return 'Xác nhận hoàn thành sửa chữa';
+  if (userRole === 'admin') return 'Phê duyệt (Admin)';
 
   return 'Phê duyệt';
 };
@@ -571,7 +558,7 @@ const handleApprove = async (row: any) => {
   const userRole = authStore.user?.role;
 
   // Admin duyệt cấp 2 (approved_by_head): hiển thị dialog với thông tin chi phí
-  if (userRole === 'admin' && row.status === 'approved_by_head') {
+  if (userRole === 'admin' && ['pending', 'new', 'approved_by_head', 'approved_by_admin'].includes(row.status)) {
     adminApprovalRow.value = row;
     adminApprovalNotes.value = '';
     adminEstimatedCost.value = row.estimated_cost ? Number(row.estimated_cost) : null;
@@ -587,12 +574,8 @@ const handleApprove = async (row: any) => {
       { type: 'warning', confirmButtonText: 'Phê duyệt', cancelButtonText: 'Hủy' }
     );
     await api.put(`/maintenance/${id}/approve`);
-    const userRole = authStore.user?.role;
     const aidx = requests.value.findIndex((r: any) => r.id === id);
-    if (aidx !== -1 && userRole) {
-      const next = getNextApprovalStatus(requests.value[aidx].status, userRole);
-      if (next) requests.value[aidx] = { ...requests.value[aidx], status: next };
-    }
+    if (aidx !== -1) requests.value[aidx] = { ...requests.value[aidx], status: 'in_progress' };
     ElMessage.success('Đã phê duyệt thành công.');
     notificationStore.fetchNotifications(true);
     fetchData({}, true);
@@ -611,7 +594,7 @@ const submitAdminApproval = async () => {
       notes: adminApprovalNotes.value || undefined,
       estimated_cost: adminEstimatedCost.value ?? undefined,
     });
-    ElMessage.success('Đã phê duyệt (Quản trị viên). Chuyển lên Giám hiệu.');
+    ElMessage.success('Admin đã phê duyệt thành công.');
     adminApprovalVisible.value = false;
     const aaidx = requests.value.findIndex((r: any) => r.id === adminApprovalRow.value?.id);
     if (aaidx !== -1) requests.value[aaidx] = { ...requests.value[aaidx], status: 'approved_by_admin' };

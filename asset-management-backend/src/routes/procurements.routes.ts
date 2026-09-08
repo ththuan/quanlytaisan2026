@@ -9,11 +9,11 @@ const router = Router();
 
 router.use(authenticateToken);
 
-// Read: admin + director
-router.get('/export/excel', requireRole('admin', 'director'), procurementsController.exportExcel);
-router.get('/summary/yearly', requireRole('admin', 'director'), procurementsController.getYearlySummary);
-router.get('/', requireRole('admin', 'director'), procurementsController.getAll);
-router.get('/:id', requireRole('admin', 'director'), procurementsController.getById);
+// Read: admin only
+router.get('/export/excel', requireRole('admin'), procurementsController.exportExcel);
+router.get('/summary/yearly', requireRole('admin'), procurementsController.getYearlySummary);
+router.get('/', requireRole('admin'), procurementsController.getAll);
+router.get('/:id', requireRole('admin'), procurementsController.getById);
 
 // Write: admin only
 router.post('/', requireRole('admin'), validateRequest(createProcurementSchema), procurementsController.create);

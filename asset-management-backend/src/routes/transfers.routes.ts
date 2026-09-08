@@ -39,13 +39,13 @@ router.post(
 // Legacy approve/reject routes (for backward compatibility)
 router.post(
   '/:id/approve',
-  requireRole('admin', 'department_head'),
+  requireRole('admin'),
   transfersController.approveTransfer
 );
 
 router.post(
   '/:id/reject',
-  requireRole('admin', 'department_head'),
+  requireRole('admin'),
   transfersController.rejectTransfer
 );
 

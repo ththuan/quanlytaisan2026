@@ -132,7 +132,13 @@ const systemAdminService = {
   },
 
   async resetBusinessData(): Promise<{ success: boolean; message: string }> {
-    const response = await api.post('/system-admin/reset-data', { confirm: 'RESET_DATA' });
+    // Reset may wait for active database transactions and can legitimately take
+    // longer than the shared 10-second API timeout.
+    const response = await api.post(
+      '/system-admin/reset-data',
+      { confirm: 'RESET_DATA' },
+      { timeout: 120000 }
+    );
     return unwrap<{ success: boolean; message: string }>(response);
   },
 

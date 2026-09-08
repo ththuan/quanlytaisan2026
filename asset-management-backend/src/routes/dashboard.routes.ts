@@ -15,8 +15,8 @@ router.get('/departments', dashboardController.getDepartmentStats);
 router.get('/procurements', dashboardController.getProcurementStats);
 router.get('/stock', dashboardController.getStockStats);
 router.get('/categories', dashboardController.getCategoryBreakdown);
-router.get('/audit-logs', dashboardController.getAuditLogs);
-router.get('/maintenance', requireRole('admin', 'director'), dashboardController.getMaintenanceStats);
+router.get('/audit-logs', requireRole('admin'), dashboardController.getAuditLogs);
+router.get('/maintenance', requireRole('admin'), dashboardController.getMaintenanceStats);
 router.get('/hierarchy', dashboardController.getHierarchyStats);
 
 export default router;

@@ -121,15 +121,6 @@ export default defineConfig(({ mode }) => {
               },
             },
             // 5. API — network-first (không cache public API)
-            {
-              urlPattern: /\/api\/(?!public\/)/,
-              handler: 'NetworkFirst',
-              options: {
-                cacheName: 'api-calls',
-                networkTimeoutSeconds: 10,
-                expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 },
-              },
-            },
           ],
         },
       }),

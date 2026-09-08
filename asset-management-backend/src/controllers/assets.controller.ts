@@ -5,12 +5,13 @@ import assetService from '../services/asset.service';
 import depreciationCalculatorService from '../services/depreciationCalculator.service';
 import exportService from '../services/export.service';
 import qrcodeService from '../services/qrcode.service';
+import assetDisposalService from '../services/assetDisposal.service';
 import envConfig from '../config/env';
 import { AuthRequest } from '../middleware/auth.middleware';
 
 // Helper: check if a non-admin/director user can access an asset's data
 async function checkAssetDeptAccess(assetId: number, user: { role: string; department_id?: number | null }): Promise<boolean> {
-  if (user.role === 'admin' || user.role === 'director') return true;
+  if (user.role === 'admin') return true;
   if (!user.department_id) return false;
   const asset = await assetService.getAssetById(assetId);
   if (!asset) return false;
@@ -23,7 +24,7 @@ export const getAllAssets = async (req: AuthRequest, res: Response, next: NextFu
     const query = { ...req.query };
 
     // Phân quyền: Cán bộ và Trưởng đơn vị chỉ xem tài sản của phòng ban mình
-    if (user.role !== 'admin' && user.role !== 'director') {
+    if (user.role !== 'admin') {
       if (user.department_id) {
         query.current_department_id = String(user.department_id);
         // Không ẩn tài sản đã thanh lý — viên chức/trưởng đơn vị có quyền xem tài sản đã thanh lý của đơn vị mình
@@ -69,8 +70,8 @@ export const getAssetById = async (req: AuthRequest, res: Response, next: NextFu
     }
 
     // Phân quyền: Cán bộ và Trưởng đơn vị chỉ xem tài sản của phòng ban mình
-    if (user.role !== 'admin' && user.role !== 'director') {
-      if (user.department_id && asset.current_department_id !== user.department_id) {
+    if (user.role !== 'admin') {
+      if (!user.department_id || asset.current_department_id !== user.department_id) {
         res.status(403).json({
           success: false,
           message: 'Bạn không có quyền truy cập tài sản này',
@@ -346,7 +347,7 @@ export const getStatistics = async (req: AuthRequest, res: Response, next: NextF
     const query: any = { ...req.query };
 
     // Phân quyền: Cán bộ và Trưởng đơn vị chỉ xem tài sản của phòng ban mình
-    if (user.role !== 'admin' && user.role !== 'director') {
+    if (user.role !== 'admin') {
       if (user.department_id) {
         query.current_department_id = String(user.department_id);
       }
@@ -488,8 +489,8 @@ export const decodeQRCode = async (req: AuthRequest, res: Response, _next: NextF
 
     // Kiểm tra quyền: Cán bộ chỉ xem tài sản của phòng ban mình
     const user = req.user!;
-    if (user.role !== 'admin' && user.role !== 'director') {
-      if (user.department_id && asset.current_department_id !== user.department_id) {
+    if (user.role !== 'admin') {
+      if (!user.department_id || asset.current_department_id !== user.department_id) {
         res.status(403).json({
           success: false,
           message: 'Bạn không có quyền truy cập tài sản này',
@@ -639,5 +640,21 @@ export const generateAllQRCodes = async (req: AuthRequest, res: Response, _next:
       success: false,
       message: error.message || 'Không thể tạo QR code hàng loạt',
     });
+  }
+};
+
+export const getDisposalHistory = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const assetId = parseInt(req.params.id);
+    const user = req.user!;
+    if (!await checkAssetDeptAccess(assetId, user)) {
+      res.status(403).json({ success: false, message: 'Bạn không có quyền truy cập tài sản này' });
+      return;
+    }
+
+    const result = await assetDisposalService.listCases({ asset_id: assetId, page: 1, limit: 50 });
+    res.status(200).json({ success: true, data: result.data });
+  } catch (error) {
+    next(error);
   }
 };

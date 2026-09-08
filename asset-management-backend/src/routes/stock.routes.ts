@@ -10,9 +10,9 @@ const router = Router();
 
 router.use(authenticateToken);
 
-// Read: admin + director
-router.get('/items', requireRole('admin', 'director'), stockController.listItems);
-router.get('/history', requireRole('admin', 'director'), stockHistoryController.getHistory);
+// Read: admin only
+router.get('/items', requireRole('admin'), stockController.listItems);
+router.get('/history', requireRole('admin'), stockHistoryController.getHistory);
 
 // Write: admin only
 router.post('/items', requireRole('admin'), validateRequest(createStockItemSchema), stockController.createItem);

@@ -353,8 +353,8 @@ class MaintenanceService {
     }
 
     // Only allow after final approval
-    if (maintenance.status !== 'approved_by_director') {
-      throw new ConflictError('Chỉ có thể hoàn tất khi đề nghị đã được Giám hiệu phê duyệt');
+    if (!['approved_by_admin', 'approved_by_director'].includes(maintenance.status)) {
+      throw new ConflictError('Chỉ có thể hoàn tất khi đề nghị đã được Admin phê duyệt');
     }
 
     // Idempotency
@@ -514,8 +514,8 @@ class MaintenanceService {
     if (maintenance.request_type !== 'repair') {
       throw new ConflictError('Thao tác này chỉ áp dụng cho đề nghị sửa chữa');
     }
-    if (maintenance.status !== 'approved_by_director') {
-      throw new ConflictError('Yêu cầu phải ở trạng thái "Giám hiệu đã duyệt" mới có thể bắt đầu sửa chữa');
+    if (!['approved_by_admin', 'approved_by_director'].includes(maintenance.status)) {
+      throw new ConflictError('Yêu cầu phải được Admin phê duyệt mới có thể bắt đầu sửa chữa');
     }
     if (user.role !== 'admin') {
       throw new ForbiddenError('Chỉ Admin mới có thể bắt đầu thực hiện sửa chữa');
@@ -1143,12 +1143,13 @@ class MaintenanceService {
       throw new NotFoundError('Maintenance request not found');
     }
 
-    // Kiểm tra quyền: chỉ staff và department_head mới được sửa, và chỉ khi là người tạo
-    if (user && !['staff', 'department_head'].includes(user.role)) {
-      throw new ForbiddenError('Chỉ cán bộ hoặc trưởng đơn vị mới được sửa yêu cầu');
+    // Admin centrally manages procurement and may edit requests. Department
+    // users may edit only requests they created themselves.
+    if (user && !['admin', 'staff', 'department_head'].includes(user.role)) {
+      throw new ForbiddenError('Bạn không có quyền sửa yêu cầu');
     }
     
-    if (user && maintenance.requested_by !== user.id) {
+    if (user && user.role !== 'admin' && maintenance.requested_by !== user.id) {
       throw new ForbiddenError('Bạn chỉ có thể sửa yêu cầu do chính mình tạo');
     }
 
@@ -1241,13 +1242,13 @@ class MaintenanceService {
       // Copy all fields from data (EXCEPT damage_images - we handle it separately)
       const updateData: any = {};
       Object.keys(data).forEach(key => {
-        // Skip damage_images - we'll save it to maintenance_damage_images table, not to damage_images field
+        // Skip damage_images and custom admin tracking fields
         if (key === 'damage_images') {
           return;
         }
         updateData[key] = data[key as keyof UpdateMaintenanceInput];
       });
-    
+
     // Use transaction to ensure atomicity
     const transaction = await sequelize.transaction();
     
@@ -1425,7 +1426,7 @@ class MaintenanceService {
 
     // Cho phép admin/director submit thay cho user
     const isOwner = requestedById === userId;
-    const isAdminOrDirector = approverInfo && (approverInfo.role === 'admin' || approverInfo.role === 'director');
+    const isAdminOrDirector = approverInfo?.role === 'admin';
 
     console.log('🔍 submitForApproval - Permission check:', {
       isOwner,
@@ -1536,12 +1537,7 @@ class MaintenanceService {
     await maintenance.destroy();
   }
 
-  /**
-   * Multi-level approval for maintenance requests
-   * Level 1: Department Head approves (new/pending -> approved_by_head)
-   * Level 2: Admin approves (approved_by_head -> approved_by_admin)
-   * Level 3: Director approves (approved_by_admin -> approved_by_director/completed)
-   */
+  /** Một cấp phê duyệt cho mua sắm/sửa chữa: chỉ Admin. */
   async processApproval(
     id: number,
     approver: ApproverInfo,
@@ -1561,117 +1557,53 @@ class MaintenanceService {
       throw new ConflictError('Lý do từ chối là bắt buộc');
     }
 
-    // Determine the approval level and new status based on approver role
+    if (approver.role !== 'admin') {
+      throw new ForbiddenError('Chỉ Admin có quyền phê duyệt đề nghị mua sắm/sửa chữa');
+    }
+
+    // Hỗ trợ cả trạng thái mới và trạng thái phân cấp cũ còn tồn đọng.
+    const approvableStatuses = ['new', 'pending', 'approved_by_head', 'approved_by_admin'];
+    if (!approvableStatuses.includes(maintenance.status) && maintenance.status !== 'repair_completed') {
+      throw new ConflictError('Yêu cầu này không ở trạng thái chờ Admin duyệt');
+    }
+
     let newStatus: MaintenanceStatus;
     let approvalLevel: number;
-    let approverRole: 'department_head' | 'admin' | 'director';
+    const approverRole: 'admin' = 'admin';
     const updateData: any = {};
 
-    if (approver.role === 'department_head') {
-      // Level 1: Department Head
-      if (!['new', 'pending'].includes(maintenance.status)) {
-        throw new ConflictError('Yêu cầu này không ở trạng thái chờ duyệt tầng 1');
-      }
-
-      // Check if request is from approver's department
-      if (approver.department_id !== maintenance.department_id) {
-        throw new ForbiddenError('Bạn chỉ có thể duyệt yêu cầu của phòng ban mình');
-      }
-
-      approvalLevel = 1;
-      approverRole = 'department_head';
-
+    if (maintenance.status === 'repair_completed') {
+      approvalLevel = 2;
       if (decision === 'approved') {
-        newStatus = 'approved_by_head';
-        updateData.head_approved_by = approver.id;
-        updateData.head_approved_at = now;
-        updateData.head_notes = notes;
-        updateData.current_approval_level = 2;
+        newStatus = 'repair_approved';
+        updateData.admin_approved_by = approver.id;
+        updateData.admin_approved_at = now;
+        updateData.admin_notes = notes;
+        updateData.completion_date = now;
       } else {
-        newStatus = 'rejected_by_head';
-        updateData.rejection_reason = reason;
-        updateData.rejected_by = approver.id;
-        updateData.rejected_at = now;
-      }
-    } else if (approver.role === 'admin') {
-      // Admin can approve at two levels:
-      // 1. Level 2: approved_by_head -> approved_by_admin
-      // 2. Level 4: repair_completed -> repair_approved (after repair is done)
-      
-      if (maintenance.status === 'approved_by_head') {
-        // Level 2: Admin approves initial request
-        approvalLevel = 2;
-        approverRole = 'admin';
-
-        if (decision === 'approved') {
-          newStatus = 'approved_by_admin';
-          updateData.admin_approved_by = approver.id;
-          updateData.admin_approved_at = now;
-          updateData.admin_notes = notes;
-          updateData.current_approval_level = 3;
-          if (assigned_to) {
-            updateData.assigned_to = assigned_to;
-          }
-          if (estimated_cost !== undefined && estimated_cost !== null) {
-            updateData.estimated_cost = estimated_cost;
-          }
-        } else {
-          newStatus = 'rejected_by_admin';
-          updateData.rejection_reason = reason;
-          updateData.rejected_by = approver.id;
-          updateData.rejected_at = now;
-        }
-      } else if (maintenance.status === 'repair_completed') {
-        // Level 6: Admin approves completed repair
-        approvalLevel = 6;
-        approverRole = 'admin';
-
-        if (decision === 'approved') {
-          newStatus = 'repair_approved';
-          // Store admin approval for repair completion
-          updateData.admin_approved_by = approver.id;
-          updateData.admin_approved_at = now;
-          updateData.admin_notes = notes;
-          updateData.completion_date = now;
-        } else {
-          // If rejected, go back to in_progress
-          newStatus = 'in_progress';
-          updateData.rejection_reason = reason;
-          updateData.rejected_by = approver.id;
-          updateData.rejected_at = now;
-        }
-      } else {
-        throw new ConflictError('Yêu cầu này không ở trạng thái chờ admin duyệt');
-      }
-    } else if (approver.role === 'director') {
-      // Level 3: Director
-      if (maintenance.status !== 'approved_by_admin') {
-        throw new ConflictError('Yêu cầu này chưa được admin duyệt');
-      }
-
-      approvalLevel = 3;
-      approverRole = 'director';
-
-      if (decision === 'approved') {
-        // Repair: tự động chuyển sang in_progress; Procurement: chờ admin thực hiện
-        if (maintenance.request_type === 'repair') {
-          newStatus = 'in_progress';
-          updateData.start_date = now;
-        } else {
-          newStatus = 'approved_by_director';
-        }
-        updateData.director_approved_by = approver.id;
-        updateData.director_approved_at = now;
-        updateData.director_notes = notes;
-        updateData.approved_by = approver.id; // Final approver
-      } else {
-        newStatus = 'rejected_by_director';
+        newStatus = 'in_progress';
         updateData.rejection_reason = reason;
         updateData.rejected_by = approver.id;
         updateData.rejected_at = now;
       }
     } else {
-      throw new ForbiddenError('Bạn không có quyền duyệt yêu cầu này');
+      approvalLevel = 1;
+      if (decision === 'approved') {
+        newStatus = maintenance.request_type === 'repair' ? 'in_progress' : 'approved_by_admin';
+        updateData.admin_approved_by = approver.id;
+        updateData.admin_approved_at = now;
+        updateData.admin_notes = notes;
+        updateData.approved_by = approver.id;
+        updateData.current_approval_level = 1;
+        if (maintenance.request_type === 'repair') updateData.start_date = now;
+        if (assigned_to) updateData.assigned_to = assigned_to;
+        if (estimated_cost !== undefined && estimated_cost !== null) updateData.estimated_cost = estimated_cost;
+      } else {
+        newStatus = 'rejected_by_admin';
+        updateData.rejection_reason = reason;
+        updateData.rejected_by = approver.id;
+        updateData.rejected_at = now;
+      }
     }
 
     // Update status
@@ -1695,22 +1627,6 @@ class MaintenanceService {
     // Update maintenance request
     await maintenance.update(updateData);
 
-    // Auto-create level 4 record when director approves (auto-start repair)
-    if (approver.role === 'director' && decision === 'approved' && maintenance.request_type === 'repair') {
-      await RequestApproval.create({
-        entity_type: 'maintenance_request',
-        entity_id: id,
-        approver_id: approver.id,
-        approver_role: 'director',
-        approver_name: approver.fullname,
-        approver_email: approver.email,
-        decision: 'approved',
-        notes: 'Tự động bắt đầu sửa chữa sau khi được Giám hiệu phê duyệt',
-        approval_level: 4,
-        decided_at: now,
-      });
-    }
-
     // Handle asset status updates for repair requests
     if (maintenance.request_type === 'repair' && maintenance.asset_id) {
       const asset = await Asset.findByPk(maintenance.asset_id);
@@ -1729,8 +1645,7 @@ class MaintenanceService {
             if (!(maintenance as any).linked_disposal_case_id) {
               try {
                 const year = new Date().getFullYear();
-                const roleLabel = approverRole === 'department_head' ? 'Trưởng Đơn vị'
-                  : approverRole === 'admin' ? 'Quản trị viên' : 'Giám hiệu';
+                const roleLabel = 'Quản trị viên';
 
                 const disposalCase = await AssetDisposalCase.create({
                   code: 'TEMP',
@@ -1774,8 +1689,8 @@ class MaintenanceService {
           }
         }
 
-        // Handle department head approval (level 1): mark asset as pending repair
-        if (decision === 'approved' && approver.role === 'department_head' && newStatus === 'approved_by_head') {
+        // Admin duyệt sửa chữa: đánh dấu tài sản đang chờ/đang sửa chữa.
+        if (decision === 'approved' && maintenance.request_type === 'repair' && newStatus === 'in_progress') {
             try {
               await asset.update({ status: 'pending_repair' });
               console.log('✅ Asset status updated to pending_repair after department head approval');
@@ -1819,31 +1734,12 @@ class MaintenanceService {
     const where: any = {};
 
     // Apply role-based filtering
-    if (user.role === 'admin' || user.role === 'director') {
-      // Admin and Director can only see requests that have been submitted for approval
-      // They should NOT see requests with status 'draft' or 'new' (chưa gửi lên duyệt)
-      // Only show requests that have been submitted (status: 'pending' or higher)
-      
-      // Director might only want to see requests at their approval level
-      if (user.role === 'director' && query.pending_only === 'true') {
-        where.status = 'approved_by_admin';
-      } else if (query.status) {
-        // If status filter is provided, only use it if it's not draft or new
-        // Admin/Director should never see draft or new requests
-        if (query.status !== 'draft' && query.status !== 'new') {
-          where.status = query.status;
-        } else {
-          // If they try to filter by draft/new, exclude those (they won't see anything)
-          where.status = {
-            [Op.notIn]: ['draft', 'new']
-          };
-        }
-      } else {
-        // No status filter provided, exclude draft and new by default
-        where.status = {
-          [Op.notIn]: ['draft', 'new']
-        };
-      }
+    if (user.role === 'admin') {
+      // Admin quản lý tập trung và phải thấy cả nháp, mới, chờ duyệt và đã hoàn tất.
+      if (query.status) where.status = query.status;
+    } else if (user.role === 'director') {
+      // Giữ nhánh đọc tương thích cho dữ liệu/tài khoản cũ; route hiện tại đã khóa admin-only.
+      if (query.status) where.status = query.status;
     } else if (user.role === 'department_head') {
       // Department head can see requests from their department
       where.department_id = user.department_id;
@@ -1857,8 +1753,7 @@ class MaintenanceService {
       where.request_type = query.request_type;
     }
 
-    // Status filter is already handled above for admin/director
-    // For other roles, apply status filter if provided
+    // Status filter for legacy non-admin role access.
     if (query.status && user.role !== 'admin' && user.role !== 'director') {
       where.status = query.status;
     }

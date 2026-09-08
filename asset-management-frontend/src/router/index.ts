@@ -61,7 +61,7 @@ const routes: RouteRecordRaw[] = [
         path: '/departments',
         name: 'Departments',
         component: () => import('@/views/Departments/DepartmentList.vue'),
-        meta: { titleKey: 'menu.departments' },
+        meta: { requiresAdmin: true, titleKey: 'menu.departments' },
       },
       {
         path: '/users',
@@ -79,7 +79,7 @@ const routes: RouteRecordRaw[] = [
         path: '/reports',
         name: 'Reports',
         component: () => import('@/views/Reports/ReportList.vue'),
-        meta: { titleKey: 'menu.reports' },
+        meta: { requiresAdmin: true, titleKey: 'menu.reports' },
       },
       {
         path: '/procurements',
@@ -91,13 +91,13 @@ const routes: RouteRecordRaw[] = [
         path: '/purchase-requests',
         name: 'PurchaseRequests',
         component: () => import('@/views/Maintenance/PurchaseRequestView.vue'),
-        meta: { requiresAdminOrDirector: true, titleKey: 'menu.purchaseRequests' },
+        meta: { requiresAdmin: true, titleKey: 'menu.purchaseRequests' },
       },
       {
         path: '/maintenance',
         name: 'Maintenance',
         component: () => import('@/views/Maintenance/RepairRequestView.vue'),
-        meta: { requiresAdminOrDirector: true, titleKey: 'menu.repairTracking' },
+        meta: { requiresAdmin: true, titleKey: 'menu.repairTracking' },
       },
       {
         path: '/stock',
@@ -139,7 +139,7 @@ const routes: RouteRecordRaw[] = [
         path: '/asset-disposals',
         name: 'AssetDisposals',
         component: () => import('@/views/AssetDisposals/AssetDisposalCaseList.vue'),
-        meta: { titleKey: 'menu.assetDisposals' },
+        meta: { requiresAdmin: true, titleKey: 'menu.assetDisposals' },
       },
       {
         path: '/system-admin',
@@ -151,7 +151,7 @@ const routes: RouteRecordRaw[] = [
         path: '/audit-logs',
         name: 'AuditLogs',
         component: () => import('@/views/AuditLogs/AuditLogView.vue'),
-        meta: { requiresAuth: true, titleKey: 'menu.auditLogs' },
+        meta: { requiresAdmin: true, titleKey: 'menu.auditLogs' },
       },
       {
         path: '/notifications',
@@ -213,7 +213,7 @@ router.beforeEach((to, _from, next) => {
   }
 
   // Kiểm tra quyền admin cho các route có meta.requiresAdmin
-  if (to.meta.requiresAdmin && !['admin', 'director'].includes(userRole || '')) {
+  if (to.meta.requiresAdmin && userRole !== 'admin') {
     return next(getLandingPathByRole());
   }
 

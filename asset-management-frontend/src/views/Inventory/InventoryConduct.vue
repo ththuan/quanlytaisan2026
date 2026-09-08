@@ -329,10 +329,6 @@
                 value="missing"
               />
               <el-option
-                label="Cần sửa"
-                value="needs_repair"
-              />
-              <el-option
                 label="Hỏng"
                 value="damaged"
               />
@@ -610,7 +606,7 @@
             >
               <el-option value="good" label="Đang dùng tốt" />
               <el-option value="usable" label="Còn dùng được" />
-              <el-option value="needs_repair" label="Cần sửa" />
+              <el-option value="damaged" label="Hỏng - đề nghị thanh lý" />
             </el-select>
           </template>
         </el-table-column>
@@ -846,19 +842,14 @@
                 label="1 - Sử dụng được: Còn sử dụng được nhưng chưa sử dụng"
               />
               <el-option
-                value="needs_repair"
-                label="2 - Cần sửa chữa: Còn sửa được → Đưa vào quy trình sửa chữa"
-              />
-              <el-option
                 value="damaged"
-                label="3 - Hỏng nặng: Sửa KHÔNG được → Đưa vào thanh lý"
+                label="2 - Hỏng: Đề nghị đưa vào thanh lý"
               />
             </el-select>
             <div style="margin-top: 8px; font-size: 12px; color: #909399; line-height: 1.5;">
               <strong>Lưu ý:</strong> 
               <ul style="margin: 4px 0 0 20px; padding: 0;">
-                <li><strong>Cần sửa chữa</strong>: Tài sản còn giá trị sử dụng nếu sửa → Đưa vào quy trình sửa chữa/bảo dưỡng</li>
-                <li><strong>Hỏng nặng</strong>: Tài sản hỏng không thể sửa hoặc chi phí sửa > giá trị → Đưa thẳng vào thanh lý</li>
+                <li><strong>Hỏng</strong>: Đưa thẳng vào hồ sơ thanh lý khi báo cáo kiểm kê được duyệt.</li>
               </ul>
             </div>
           </el-form-item>
@@ -1148,8 +1139,8 @@ const confirmBatchGroup = async (group: { category_id: number; category_name: st
         check_status: isMatched ? 'matched' : 'missing',
         asset_condition: input.condition,
         notes: (input.notes ? input.notes + ' — ' : '') + 'Kiểm theo nhóm',
-        suggest_repair: input.condition === 'needs_repair',
-        suggest_disposal: false,
+        suggest_repair: false,
+        suggest_disposal: input.condition === 'damaged' || input.condition === 'needs_repair',
       };
       await inventoryService.saveCheck(report.value!.id, asset.id, checkData);
       asset.inventory_detail = { ...checkData };
@@ -1754,22 +1745,17 @@ const saveCheck = async () => {
       data.manual_reason = checkForm.value.manual_reason;
     }
     // NGUYÊN TẮC: Không thể vừa sửa chữa vừa thanh lý
-    // - needs_repair: Tài sản CÒN SỬA ĐƯỢC → suggest_repair = true, suggest_disposal = false
-    // - damaged: Tài sản HỎNG NẶNG, SỬA KHÔNG ĐƯỢC → suggest_disposal = true, suggest_repair = false
+    // Kiểm kê không phát sinh luồng sửa chữa; tài sản hỏng đi thẳng sang thanh lý.
     if (isPendingDisposal) {
       // Tài sản đã được đánh dấu chờ thanh lý từ trước
       data.suggest_disposal = true;
       data.suggest_repair = false;
       data.disposal_reason = data.disposal_reason || 'Chi phí sửa chữa vượt quá giá trị tài sản';
-    } else if (checkForm.value.asset_condition === 'needs_repair') {
-      // Cần sửa chữa: CÒN SỬA ĐƯỢC
-      data.suggest_repair = true;
-      data.suggest_disposal = false;
-    } else if (checkForm.value.asset_condition === 'damaged') {
+    } else if (checkForm.value.asset_condition === 'damaged' || checkForm.value.asset_condition === 'needs_repair') {
       // Hỏng nặng: SỬA KHÔNG ĐƯỢC → thanh lý
       data.suggest_disposal = true;
       data.suggest_repair = false;
-      data.disposal_reason = 'Tài sản hỏng nặng, không thể sửa chữa hoặc chi phí sửa chữa vượt quá giá trị';
+      data.disposal_reason = 'Tài sản hỏng, đề nghị thanh lý qua kiểm kê';
     } else {
       // Tốt hoặc sử dụng được: không cần sửa, không cần thanh lý
       data.suggest_repair = false;

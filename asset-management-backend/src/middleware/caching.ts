@@ -52,8 +52,16 @@ const cache = new SimpleCache();
 
 // Cache middleware
 export const cachingMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  // Only cache GET requests
-  if (req.method !== 'GET') {
+  // Authenticated responses are user/department-specific. The cache key is
+  // URL-only, so caching them can leak one user's response to another device.
+  // Restrict this cache to explicitly public, anonymous GET endpoints.
+  const hasAuthorization = typeof req.headers.authorization === 'string';
+  const isPublicApi = req.originalUrl.startsWith('/api/public/');
+
+  if (req.method !== 'GET' || hasAuthorization || !isPublicApi) {
+    res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Vary', 'Authorization');
     return next();
   }
 
@@ -68,8 +76,10 @@ export const cachingMiddleware = (req: Request, res: Response, next: NextFunctio
   // Override res.json to cache the response
   const originalJson = res.json.bind(res);
   res.json = (data: any) => {
-    // Cache the response
-    cache.set(cacheKey, data, 60000); // 1 minute TTL
+    // Only cache successful public responses.
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      cache.set(cacheKey, data, 60000); // 1 minute TTL
+    }
     res.setHeader('X-Cache', 'MISS');
     return originalJson(data);
   };

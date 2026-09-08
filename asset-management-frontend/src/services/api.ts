@@ -4,6 +4,7 @@ import { ElMessage, ElNotification } from 'element-plus';
 import router from '@/router';
 import { useAuthStore } from '@/stores/auth.store';
 import i18n from '@/i18n';
+import { decodeJwtPayload } from '@/utils/jwt';
 
 function t(key: string): string {
   const v = i18n.global?.t?.(key);
@@ -92,6 +93,18 @@ api.interceptors.response.use(
     const responseData = error.response?.data as any;
     const message = responseData?.message || error.message || 'Đã xảy ra lỗi không xác định';
 
+    // Backward compatibility: older role guards returned 401 even though the
+    // user was authenticated. A permission failure must not expire the session.
+    const isLegacyPermissionDenied =
+      error.response?.status === 401 &&
+      typeof responseData?.message === 'string' &&
+      /access denied|required roles|do not have permission/i.test(responseData.message);
+
+    if (isLegacyPermissionDenied) {
+      ElMessage.error(t('common.apiErrors.forbidden'));
+      return Promise.reject(error);
+    }
+
     // Handle unauthorized
     if (error.response?.status === 401) {
       const isAuthRequest =
@@ -102,7 +115,8 @@ api.interceptors.response.use(
       // Đừng clear auth / redirect khi 401 từ chính request đăng nhập/đăng ký
       if (!isAuthRequest) {
         const storedRefreshToken = localStorage.getItem('refreshToken');
-        if (storedRefreshToken && !isRefreshing) {
+        const hasRetriedAfterRefresh = Boolean((error.config as any)?.__authRefreshRetried);
+        if (storedRefreshToken && !isRefreshing && !hasRetriedAfterRefresh) {
           isRefreshing = true;
           try {
             const authStore = useAuthStore();
@@ -113,7 +127,8 @@ api.interceptors.response.use(
             if (newAccessToken) {
               // Decode JWT to verify this token still belongs to the same user
               try {
-                const payload = JSON.parse(atob(newAccessToken.split('.')[1]));
+                const payload = decodeJwtPayload(newAccessToken);
+                if (!payload) throw new Error('Invalid token payload');
                 if (currentUserId && payload.id && currentUserId !== payload.id) {
                   console.warn('[Auth] Token refresh returned different user — session overwritten by another tab');
                   authStore.clearAuth();
@@ -130,6 +145,7 @@ api.interceptors.response.use(
               isRefreshing = false;
               // Retry the original failed request
               const retryConfig = { ...error.config! };
+              (retryConfig as any).__authRefreshRetried = true;
               retryConfig.headers = retryConfig.headers ?? {};
               retryConfig.headers['Authorization'] = `Bearer ${newAccessToken}`;
               return api(retryConfig);
@@ -145,6 +161,7 @@ api.interceptors.response.use(
           return new Promise((resolve, reject) => {
             addRefreshSubscriber((newToken: string) => {
               const retryConfig = { ...error.config! };
+              (retryConfig as any).__authRefreshRetried = true;
               retryConfig.headers = retryConfig.headers ?? {};
               retryConfig.headers['Authorization'] = `Bearer ${newToken}`;
               resolve(api(retryConfig));

@@ -16,6 +16,7 @@ import InventoryReportDetail from './InventoryReportDetail';
 import AssetCategory from './AssetCategory';
 import AssetDisposalCase from './AssetDisposalCase';
 import AssetDisposalItem from './AssetDisposalItem';
+import AuthSession from './AuthSession';
 
 import StockItem from './StockItem';
 import StockReceipt from './StockReceipt';
@@ -46,6 +47,9 @@ Department.hasMany(User, {
   foreignKey: 'department_id',
   as: 'users',
 });
+
+AuthSession.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+User.hasMany(AuthSession, { foreignKey: 'user_id', as: 'auth_sessions' });
 
 Department.belongsTo(User, {
   foreignKey: 'manager_id',
@@ -501,6 +505,7 @@ export {
   StockReceiptLine,
   StockIssue,
   StockIssueLine,
+  AuthSession,
 };
 
 export default {
@@ -527,4 +532,5 @@ export default {
   StockReceiptLine,
   StockIssue,
   StockIssueLine,
+  AuthSession,
 };

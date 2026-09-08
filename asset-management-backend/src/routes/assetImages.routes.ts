@@ -25,7 +25,7 @@ const upload = multer({
 router.post(
   '/:id/image',
   authenticateToken,
-  requireRoles(['admin', 'director', 'staff']),
+  requireRoles(['admin']),
   upload.single('image'),
   (req, res) => assetImagesController.uploadAssetImage(req as any, res)
 );
@@ -34,7 +34,7 @@ router.post(
 router.delete(
   '/:id/image',
   authenticateToken,
-  requireRoles(['admin', 'director']),
+  requireRoles(['admin']),
   (req, res) => assetImagesController.deleteAssetImage(req as any, res)
 );
 

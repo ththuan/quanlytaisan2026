@@ -12,7 +12,7 @@
 
       <el-aside
         v-show="!isHidden || isOverlay"
-        width="250px"
+        width="230px"
         class="sidebar"
         :class="{ 'sidebar--mobile': isOverlay, 'sidebar--open': isOverlay && !isHidden }"
       >
@@ -41,67 +41,63 @@
             <span>{{ isStaffOrHead ? 'Đề nghị điều chuyển' : $t('menu.transfers') }}</span>
           </el-menu-item>
 
-          <!-- Mua sắm thiết bị: admin + director -->
-          <el-menu-item
-            v-if="isAdminOrDirector"
-            index="/purchase-requests"
-          >
-            <el-icon><ShoppingCart /></el-icon>
-            <span>{{ $t('menu.purchaseRequests') }}</span>
-          </el-menu-item>
-
-          <!-- Bảo trì / Sửa chữa: admin + director -->
-          <el-menu-item
-            v-if="isAdminOrDirector"
-            index="/maintenance"
-          >
-            <el-icon><Tools /></el-icon>
-            <span>{{ $t('menu.repairTracking') }}</span>
-          </el-menu-item>
-
-          <!-- Mua sắm/Cấp phát: admin + director -->
-          <el-menu-item
-            v-if="isAdminOrDirector"
-            index="/procurements"
-          >
-            <el-icon><Document /></el-icon>
-            <span>{{ $t('menu.procurements') }}</span>
-          </el-menu-item>
-
-          <!-- Kho vật tư: admin + director -->
-          <el-menu-item
-            v-if="isAdminOrDirector"
-            index="/stock"
-          >
-            <el-icon><Box /></el-icon>
-            <span>Kho vật tư</span>
-          </el-menu-item>
-
           <el-menu-item index="/inventory">
             <el-icon><Notebook /></el-icon>
             <span>{{ $t('inventory.title') }}</span>
           </el-menu-item>
 
           <!-- Thanh lý / Tiêu hủy -->
-          <el-menu-item index="/asset-disposals">
+          <el-menu-item v-if="authStore.user?.role === 'admin'" index="/asset-disposals">
             <el-icon><DeleteFilled /></el-icon>
             <span>Thanh lý tài sản</span>
           </el-menu-item>
 
           <!-- Báo cáo: admin + director -->
           <el-menu-item
-            v-if="isAdminOrDirector"
+            v-if="authStore.user?.role === 'admin'"
             index="/reports"
           >
             <el-icon><DataAnalysis /></el-icon>
             <span>Báo cáo</span>
           </el-menu-item>
 
-          <el-divider class="sidebar-divider" />
+          <el-divider v-if="authStore.user?.role === 'admin'" class="sidebar-divider" />
 
-          <!-- Admin-only modules moved to bottom for nicer visual order -->
+          <!-- Các module phụ trợ: chỉ admin (ẩn khỏi director, sau này cần bật lại được) -->
           <el-menu-item
-            v-if="isAdminOrDirector"
+            v-if="authStore.user?.role === 'admin'"
+            index="/procurements"
+          >
+            <el-icon><Document /></el-icon>
+            <span>Tăng tài sản</span>
+          </el-menu-item>
+
+          <el-menu-item
+            v-if="authStore.user?.role === 'admin'"
+            index="/purchase-requests"
+          >
+            <el-icon><ShoppingCart /></el-icon>
+            <span>{{ $t('menu.purchaseRequests') }}</span>
+          </el-menu-item>
+
+          <el-menu-item
+            v-if="authStore.user?.role === 'admin'"
+            index="/maintenance"
+          >
+            <el-icon><Tools /></el-icon>
+            <span>{{ $t('menu.repairTracking') }}</span>
+          </el-menu-item>
+
+          <el-menu-item
+            v-if="authStore.user?.role === 'admin'"
+            index="/stock"
+          >
+            <el-icon><Box /></el-icon>
+            <span>Kho vật tư</span>
+          </el-menu-item>
+
+          <el-menu-item
+            v-if="authStore.user?.role === 'admin'"
             index="/departments"
           >
             <el-icon><OfficeBuilding /></el-icon>
@@ -118,18 +114,18 @@
 
           <el-menu-item
             v-if="authStore.user?.role === 'admin'"
-            index="/system-admin"
-          >
-            <el-icon><Setting /></el-icon>
-            <span>Quản trị hệ thống</span>
-          </el-menu-item>
-
-          <el-menu-item
-            v-if="authStore.user?.role === 'admin'"
             index="/asset-categories"
           >
             <el-icon><Grid /></el-icon>
             <span>{{ $t('menu.assetCategories') }}</span>
+          </el-menu-item>
+
+          <el-menu-item
+            v-if="authStore.user?.role === 'admin'"
+            index="/system-admin"
+          >
+            <el-icon><Setting /></el-icon>
+            <span>Quản trị hệ thống</span>
           </el-menu-item>
         </el-menu>
       </el-aside>
@@ -270,11 +266,6 @@ const breadcrumbItems = computed(() => {
   const titleKey = meta?.titleKey;
   items.push({ label: titleKey ? t(titleKey) : (typeof route.name === 'string' ? route.name : '') });
   return items;
-});
-
-const isAdminOrDirector = computed(() => {
-  const role = authStore.user?.role;
-  return role === 'admin' || role === 'director';
 });
 
 const isStaffOrHead = computed(() => {
@@ -427,14 +418,14 @@ const toggleSidebar = () => {
 .el-menu {
   border-right: none !important;
   background-color: transparent !important;
-  padding: 20px 12px 12px;
+  padding: 12px 10px 10px;
 }
 
 :deep(.el-menu-item) {
-  height: 48px !important;
-  line-height: 48px !important;
-  border-radius: 12px;
-  margin-bottom: 4px;
+  height: 44px !important;
+  line-height: 44px !important;
+  border-radius: 10px;
+  margin-bottom: 2px;
   color: #94a3b8 !important;
   font-size: 0.9rem;
   font-weight: 500;
@@ -447,7 +438,7 @@ const toggleSidebar = () => {
 
 /* Menu item đầu tiên có margin-top nhiều hơn */
 :deep(.el-menu-item:first-child) {
-  margin-top: 8px;
+  margin-top: 2px;
 }
 
 :deep(.el-menu-item:active) {
@@ -473,7 +464,7 @@ const toggleSidebar = () => {
 }
 
 .sidebar-divider {
-  margin: 16px 12px;
+  margin: 10px 8px;
   opacity: 0.1;
   background-color: #fff;
 }
@@ -678,6 +669,52 @@ const toggleSidebar = () => {
   /* Desktop Chrome/Edge: prevent flash when switching tabs */
   contain: layout style paint;
   isolation: isolate;
+  min-width: 0;
+  width: 100%;
+}
+
+.el-main > :deep(*) {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 1366px) {
+  .sidebar { width: 230px !important; }
+
+  .el-header {
+    height: 64px !important;
+    padding: 0 28px;
+  }
+
+  :deep(.el-menu-item) {
+    height: 44px !important;
+    line-height: 44px !important;
+    font-size: 14px;
+  }
+
+  :deep(.el-menu-item .el-icon) { font-size: 18px; }
+  .app-title-main { font-size: 17px; }
+  .breadcrumb, .user-info { font-size: 15px; }
+
+  .sidebar-toggle {
+    width: 38px;
+    height: 38px;
+  }
+}
+
+@media (min-width: 1920px) {
+  .sidebar { width: 230px !important; }
+
+  .el-header {
+    height: 70px !important;
+    padding: 0 36px;
+  }
+
+  :deep(.el-menu-item) {
+    height: 44px !important;
+    line-height: 44px !important;
+    font-size: 14px;
+  }
 }
 
 /* Desktop-specific optimizations to prevent tab-switch flash */

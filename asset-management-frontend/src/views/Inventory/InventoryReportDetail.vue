@@ -239,8 +239,8 @@
                   value="missing"
                 />
                 <el-option
-                  label="Cần sửa"
-                  value="needs_repair"
+                  label="Hỏng - đề nghị thanh lý"
+                  value="damaged"
                 />
                 <el-option
                   label="Hỏng"
@@ -519,7 +519,7 @@
             />
           </el-form-item>
           <el-form-item
-            v-if="approveData.approved && repairItems.length > 0 && authStore.user?.role === 'admin'"
+            v-if="false"
             label="Đề nghị sửa chữa"
           >
             <el-alert
@@ -736,7 +736,7 @@ const openApproveDialog = () => {
   approveData.value = {
     approved: true,
     rejection_reason: '',
-    repair_approved_asset_ids: repairItems.value.map((d: any) => d.asset_id),
+    repair_approved_asset_ids: [],
   };
   showApproveDialog.value = true;
 };

@@ -23,6 +23,11 @@ export function initPWA(): PWAUpdateState {
         onRegisteredSW(swUrl, registration) {
           if (registration) {
             console.log('[PWA] Service Worker registered:', swUrl);
+            // Remove API responses cached by older app versions. Authenticated
+            // API data must never survive across accounts/devices.
+            if ('caches' in window) {
+              window.caches.delete('api-calls').catch(() => undefined);
+            }
           }
         },
         onNeedRefresh() {

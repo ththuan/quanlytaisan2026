@@ -604,6 +604,8 @@
           <el-input
             v-model="resetConfirmText"
             placeholder="RESET_DATA"
+            autocomplete="off"
+            autocapitalize="characters"
           />
         </el-form-item>
       </el-form>
@@ -613,7 +615,7 @@
         </el-button>
         <el-button
           type="danger"
-          :disabled="resetConfirmText !== 'RESET_DATA'"
+          :disabled="resetConfirmText.trim().toUpperCase() !== 'RESET_DATA'"
           :loading="actionLoading.reset"
           @click="resetBusinessData"
         >
@@ -937,8 +939,12 @@ const resetBusinessData = async () => {
     } else {
       ElMessage.error(result.message);
     }
-  } catch (error) {
-    ElMessage.error('Không thể reset data');
+  } catch (error: any) {
+    const isTimeout = error?.code === 'ECONNABORTED';
+    const message = isTimeout
+      ? 'Reset mất quá nhiều thời gian. Có thể cơ sở dữ liệu đang có thao tác chưa hoàn tất.'
+      : error?.response?.data?.message || error?.message || 'Không thể reset data';
+    ElMessage.error(message);
   } finally {
     actionLoading.reset = false;
   }

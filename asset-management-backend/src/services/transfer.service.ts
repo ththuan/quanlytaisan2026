@@ -144,7 +144,7 @@ class TransferService {
     const fromDepartmentId = data.from_department_id || asset.current_department_id;
 
     // Only allow creating transfer from requester's own department (except admin/director)
-    if (requester.role !== 'admin' && requester.role !== 'director') {
+    if (requester.role !== 'admin') {
       if (!requester.department_id) {
         throw new ForbiddenError('Bạn chưa được gán phòng ban, không thể tạo điều chuyển');
       }
@@ -156,6 +156,16 @@ class TransferService {
     // Check if asset is already in destination department
     if (fromDepartmentId === data.to_department_id) {
       throw new ConflictError('Asset is already in the destination department');
+    }
+
+    const activeTransfer = await AssetTransfer.findOne({
+      where: {
+        asset_id: data.asset_id,
+        status: { [Op.in]: ['pending', 'approved_by_head'] },
+      },
+    });
+    if (activeTransfer) {
+      throw new ConflictError('Tài sản đang có một đề nghị điều chuyển chờ phê duyệt');
     }
 
     // Create transfer request
@@ -237,7 +247,7 @@ class TransferService {
       throw new NotFoundError('Transfer not found');
     }
 
-    if (transfer.status !== 'pending') {
+    if (!['pending', 'approved_by_head'].includes(transfer.status)) {
       throw new ConflictError('Only pending transfers can be rejected');
     }
 
@@ -304,7 +314,7 @@ class TransferService {
       throw new NotFoundError('Transfer not found');
     }
 
-    if (transfer.status !== 'pending') {
+    if (!['pending', 'approved_by_head'].includes(transfer.status)) {
       throw new ConflictError('Chỉ có thể duyệt yêu cầu đang chờ xử lý');
     }
 
@@ -321,8 +331,13 @@ class TransferService {
         throw new ForbiddenError('Bạn không có quyền duyệt yêu cầu điều chuyển');
       }
 
-      if (approver.department_id !== transfer.from_department_id) {
-        throw new ForbiddenError('Bạn chỉ có thể duyệt yêu cầu điều chuyển từ phòng ban của mình');
+      const expectedDepartmentId = transfer.status === 'pending'
+        ? transfer.from_department_id
+        : transfer.to_department_id;
+      if (Number(approver.department_id) !== Number(expectedDepartmentId)) {
+        throw new ForbiddenError(transfer.status === 'pending'
+          ? 'Chỉ Trưởng đơn vị nơi giao được duyệt bước này'
+          : 'Chỉ Trưởng đơn vị nơi nhận được duyệt bước này');
       }
     }
 
@@ -341,40 +356,41 @@ class TransferService {
         decision: decision,
         reason: reason,
         notes: notes,
-        approval_level: 1,
+        approval_level: transfer.status === 'pending' ? 1 : 2,
         decided_at: now,
       }, { transaction });
 
       if (decision === 'approved') {
-        // Update transfer status
-        await transfer.update(
-          {
+        const isSourceApproval = transfer.status === 'pending';
+
+        if (isSourceApproval && approver.role !== 'admin') {
+          // First approval: the asset remains at the source department.
+          await transfer.update({
             status: 'approved_by_head',
-            approved_by: approver.id,
             head_approved_by: approver.id,
             head_approved_at: now,
             head_notes: notes,
-          },
-          { transaction }
-        );
-
-        // Update asset's department
-        const asset = await Asset.findByPk(transfer.asset_id);
-        if (asset) {
-          const toDepartment = (transfer as any).to_department;
-          const newLocation = toDepartment ? toDepartment.name : null;
-
-          await asset.update(
-            {
+          }, { transaction });
+        } else {
+          // Second approval, or Admin approval: move the asset atomically.
+          const asset = await Asset.findByPk(transfer.asset_id);
+          if (asset) {
+            if (asset.current_department_id !== transfer.from_department_id) {
+              throw new ConflictError('Tài sản không còn thuộc đơn vị giao ban đầu');
+            }
+            const toDepartment = (transfer as any).to_department;
+            await asset.update({
               current_department_id: transfer.to_department_id,
-              location: newLocation,
-            },
-            { transaction }
-          );
-        }
+              location: toDepartment ? toDepartment.name : null,
+            }, { transaction });
+          }
 
-        // Mark as completed
-        await transfer.update({ status: 'completed' }, { transaction });
+          await transfer.update({
+            status: 'completed',
+            approved_by: approver.id,
+            notes: notes || transfer.notes,
+          }, { transaction });
+        }
       } else {
         // Rejected
         await transfer.update(
