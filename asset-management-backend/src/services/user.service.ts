@@ -176,8 +176,17 @@ class UserService {
       throw new NotFoundError('User not found');
     }
 
-    // Hard delete - Admin can delete users directly in the application
-    await user.destroy();
+    try {
+      // Hard delete - Admin can delete users directly in the application
+      await user.destroy();
+    } catch (err: any) {
+      if (err.name === 'SequelizeForeignKeyConstraintError' || err.message?.includes('foreign key')) {
+        throw new ConflictError(
+          'Không thể xóa: người dùng này vẫn được tham chiếu trong lịch sử (nhật ký hoạt động, phiếu điều chuyển, sửa chữa...). Hãy dùng chức năng "Vô hiệu hóa" thay vì xóa.'
+        );
+      }
+      throw err;
+    }
   }
 
   /**

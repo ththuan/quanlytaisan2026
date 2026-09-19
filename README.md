@@ -314,7 +314,38 @@ Chi tiết: [scripts/README.md](./scripts/README.md).
 
 ---
 
-## 🔒 Bảo mật & Triển khai production
+## � Deploy lên Debian home server (production)
+
+Máy Windows chỉ dùng để code/test (`docker compose up -d` với `docker-compose.yml`). Chạy thực tế trên **Debian home server** bằng `docker-compose.prod.yml`.
+
+**Lần đầu trên server Debian:**
+
+```bash
+git clone https://github.com/ththuan/quanlytaisan2026.git /root/quanlytaisan2026
+cd /root/quanlytaisan2026
+cp .env.prod.example .env   # chỉnh JWT_SECRET, DB_PASSWORD, CORS_ORIGIN...
+
+docker volume create quanlytaisan_postgres_data
+docker volume create quanlytaisan_redis_data
+docker volume create quanlytaisan_backend_backups
+
+docker compose -f docker-compose.prod.yml up -d --build
+chmod +x deploy.sh
+```
+
+**Mỗi khi có thay đổi mới trên GitHub**, SSH vào server và chạy:
+
+```bash
+./deploy.sh
+```
+
+[deploy.sh](./deploy.sh) tự `git pull` (nếu có commit mới) rồi rebuild lại 2 container `backend`/`frontend` bằng `docker-compose.prod.yml` — không cần thao tác Docker thủ công. Nếu không có thay đổi, script thoát ngay mà không làm gì.
+
+> `deploy.ps1` / `watchdog.ps1` (PowerShell) chỉ dùng cho máy Windows, không áp dụng cho server Debian.
+
+---
+
+## �🔒 Bảo mật & Triển khai production
 
 **Trước khi triển khai production, cần:**
 

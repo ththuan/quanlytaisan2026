@@ -74,7 +74,7 @@ services:
       - backend_backups:/app/backups
       - ./asset-management-backend/storage:/app/storage
       - ./asset-management-backend/logs:/app/logs
-    command: sh -c "npm run migrate && npm run start"
+    command: sh -c "npm run migrate && (npm run seed:admin || true) && npm run start"
 
   frontend:
     build:

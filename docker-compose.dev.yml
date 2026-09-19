@@ -75,7 +75,7 @@ services:
       - ./asset-management-backend/package.json:/app/package.json
       - ./asset-management-backend/package-lock.json:/app/package-lock.json
     # Không mount /app/node_modules (volume rỗng làm mất dependency → API không lên → unhealthy).
-    command: sh -c "npm install && npm run migrate && exec npm run dev"
+    command: sh -c "npm install && npm run migrate && (npm run seed:admin || true) && exec npm run dev"
     healthcheck:
       # Dùng 127.0.0.1 — localhost có thể resolve ::1, server chỉ lắng nghe IPv4 → healthcheck fail.
       test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:5000/api/health', r => process.exit(r.statusCode===200?0:1)).on('error', () => process.exit(1))\"" ]
