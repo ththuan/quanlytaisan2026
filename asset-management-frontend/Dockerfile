@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile cho Frontend
 # Stage 1: Development
-FROM node:18-alpine AS development
+FROM node:20-alpine AS development
 
 WORKDIR /app
 
@@ -20,7 +20,7 @@ EXPOSE 4000
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 
 # Stage 2: Production Build
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -41,7 +41,7 @@ ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 RUN npm run build
 
 # Stage 3: Production Serve
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 
 # Serve static files with a small Node server
 RUN npm i -g serve@14
