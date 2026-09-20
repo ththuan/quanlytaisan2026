@@ -106,6 +106,22 @@ services:
     networks:
       - asset-management-network
 
+  # Cloudflare Tunnel - public ra internet qua domain (vd: quanlytaisanctec.dpdns.org)
+  # Khong can mo port tren router/firewall. Chi khoi dong khi chay voi --profile cloudflare
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: asset-management-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CF_TUNNEL_TOKEN}
+    environment:
+      CF_TUNNEL_TOKEN: ${CF_TUNNEL_TOKEN:-}
+    depends_on:
+      - nginx
+    networks:
+      - asset-management-network
+    profiles:
+      - cloudflare
+
 volumes:
   postgres_data:
     external: true

@@ -323,13 +323,18 @@ Máy Windows chỉ dùng để code/test (`docker compose up -d` với `docker-c
 ```bash
 git clone https://github.com/ththuan/quanlytaisan2026.git /root/quanlytaisan2026
 cd /root/quanlytaisan2026
-cp .env.prod.example .env   # chỉnh JWT_SECRET, DB_PASSWORD, CORS_ORIGIN...
+cp .env.prod.example .env   # chỉnh JWT_SECRET, DB_PASSWORD, CORS_ORIGIN, CF_TUNNEL_TOKEN...
 
 docker volume create quanlytaisan_postgres_data
 docker volume create quanlytaisan_redis_data
 docker volume create quanlytaisan_backend_backups
 
+# Có Cloudflare Tunnel (public ra internet, xem mục bên dưới):
+docker compose -f docker-compose.prod.yml --profile cloudflare up -d --build
+
+# Không cần public internet (chỉ LAN):
 docker compose -f docker-compose.prod.yml up -d --build
+
 chmod +x deploy.sh
 ```
 
@@ -339,9 +344,26 @@ chmod +x deploy.sh
 ./deploy.sh
 ```
 
-[deploy.sh](./deploy.sh) tự `git pull` (nếu có commit mới) rồi rebuild lại 2 container `backend`/`frontend` bằng `docker-compose.prod.yml` — không cần thao tác Docker thủ công. Nếu không có thay đổi, script thoát ngay mà không làm gì.
+[deploy.sh](./deploy.sh) tự `git pull` (nếu có commit mới) rồi rebuild lại 2 container `backend`/`frontend` bằng `docker-compose.prod.yml` — không cần thao tác Docker thủ công. Nếu không có thay đổi, script thoát ngay mà không làm gì. Container `cloudflared` không bị động tới (không có `--profile cloudflare` trong script) nên tunnel không bị gián đoạn khi deploy.
 
 > `deploy.ps1` / `watchdog.ps1` (PowerShell) chỉ dùng cho máy Windows, không áp dụng cho server Debian.
+
+### Public ra internet với Cloudflare Tunnel (domain: quanlytaisanctec.dpdns.org)
+
+Không cần mở port trên router/firewall. Cloudflare tạo kết nối outbound từ server ra Cloudflare edge.
+
+1. Vào [Cloudflare Zero Trust dashboard](https://one.dash.cloudflare.com/) → **Networks → Tunnels → Create a tunnel** (chọn loại **Cloudflared**).
+2. Đặt tên tunnel (vd: `quanlytaisan-prod`), ở bước cài đặt connector chọn **Docker**, copy giá trị `--token ...` (chỉ phần token).
+3. Dán token vào `.env` trên server: `CF_TUNNEL_TOKEN=<token>`.
+4. Tab **Public Hostname** → Add a public hostname:
+   - Subdomain/Domain: `quanlytaisanctec.dpdns.org`
+   - Service Type: `HTTP`, URL: `nginx:80` (tên service trong Docker network nội bộ, không phải localhost)
+5. Trong `.env`, đặt `CORS_ORIGIN=https://quanlytaisanctec.dpdns.org` và `FRONTEND_URL=https://quanlytaisanctec.dpdns.org`.
+6. Khởi động (hoặc thêm) container `cloudflared`:
+   ```bash
+   docker compose -f docker-compose.prod.yml --profile cloudflare up -d --build cloudflared
+   ```
+7. Kiểm tra: `docker logs asset-management-cloudflared -f` phải thấy `Registered tunnel connection`. Truy cập https://quanlytaisanctec.dpdns.org/login.
 
 ---
 
