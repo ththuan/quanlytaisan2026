@@ -82,11 +82,12 @@ ensure_secrets() {
     [ -z "$JWT_SECRET" ]   && JWT_SECRET="$(openssl rand -hex 32)"
 }
 
-# ---------- 5. Tạo file .env ----------
+# ---------- 5. Tạo / tự sửa file .env ----------
 write_env() {
     local env_file="$APP_DIR/.env"
     if [ -f "$env_file" ]; then
-        warn "$env_file đã tồn tại — giữ nguyên (không ghi đè)."
+        warn "$env_file đã tồn tại — tự động kiểm tra & sửa secret yếu..."
+        ENV_FILE="$env_file" bash "$APP_DIR/scripts/fix-env-secrets.sh"
         return
     fi
     log "Tạo $env_file với secret ngẫu nhiên..."

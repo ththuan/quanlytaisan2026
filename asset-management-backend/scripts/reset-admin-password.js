@@ -17,8 +17,8 @@ const sequelize = new Sequelize(
   }
 );
 
-/** Đồng bộ với src/config/adminCredentials.ts — luôn Admin@123 (không đọc .env). */
-const ADMIN_PASSWORD = 'Admin@123';
+/** Đồng bộ với src/config/adminCredentials.ts — đọc mật khẩu từ env ADMIN_PASSWORD. */
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || process.env.SYSTEM_ADMIN_PASSWORD || 'Admin@123';
 
 async function resetPassword() {
   const hash = await bcrypt.hash(ADMIN_PASSWORD, 10);
