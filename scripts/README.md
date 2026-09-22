@@ -79,7 +79,7 @@ Xóa **toàn bộ dữ liệu nghiệp vụ và phòng ban** bằng `TRUNCATE ..
 
 **Giữ nguyên:** `users`, `asset_categories`.
 
-Sau khi xóa dữ liệu, script cố gắng gọi `npm run reset-admin` trong container **`asset-management-backend`** để đặt lại đăng nhập **`admin` / `Admin@123`** (nếu backend đang chạy). Nếu container không chạy, chạy tay: `docker compose exec backend npm run reset-admin` hoặc trong thư mục backend: `npm run reset-admin`.
+Sau khi xóa dữ liệu, script cố gắng gọi `npm run reset-admin` trong container **`asset-management-backend`** để đặt lại đăng nhập **`admin` / giá trị `ADMIN_PASSWORD` trong `.env`** (nếu backend đang chạy). Nếu container không chạy, chạy tay: `docker compose exec backend npm run reset-admin` hoặc trong thư mục backend: `npm run reset-admin`.
 
 Dùng khi muốn làm sạch dữ liệu để import lại hoặc test từ đầu mà không xóa user và danh mục tài sản.
 
