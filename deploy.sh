@@ -51,6 +51,11 @@ for i in $(seq 1 30); do
     sleep 5
 done
 
+# Quan trọng: backend vừa được tạo lại => IP nội bộ đổi. Restart nginx để nó re-resolve
+# DNS backend, tránh lỗi 502 (nginx giữ IP backend cũ trong bộ nhớ khi dùng upstream keepalive).
+log "Restarting nginx to refresh backend IP..."
+docker compose -f "$COMPOSE_FILE" restart nginx
+
 docker image prune -f
 
 log "Deploy complete!"
