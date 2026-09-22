@@ -48,6 +48,8 @@ COPY --from=builder /app/.sequelizerc ./
 COPY --from=builder /app/sequelize-cli-config.js ./
 COPY --from=builder /app/src/migrations ./src/migrations
 COPY --from=builder /app/seeders ./seeders
+# Cần cho các script tiện ích (vd: npm run reset-admin)
+COPY --from=builder /app/scripts ./scripts
 
 EXPOSE 5000
 
