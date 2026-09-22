@@ -21,11 +21,11 @@ APP_DIR="${APP_DIR:-/root/quanlytaisan2026}"
 DOMAIN="${DOMAIN:-quanlytaisanctec.dpdns.org}"
 COMPOSE_FILE="docker-compose.prod.yml"
 
-# Secrets (để trống sẽ tự sinh ngẫu nhiên)
+# Secrets (để trống sẽ tự sinh ngẫu nhiên — KHÔNG dùng mặc định yếu)
 DB_PASSWORD="${DB_PASSWORD:-}"
 JWT_SECRET="${JWT_SECRET:-}"
-ADMIN_PASSWORD="${ADMIN_PASSWORD:-Admin@123}"
-DEFAULT_PASSWORD="${DEFAULT_PASSWORD:-Ctec@123}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
+DEFAULT_PASSWORD="${DEFAULT_PASSWORD:-}"
 CF_TUNNEL_TOKEN="${CF_TUNNEL_TOKEN:-}"
 
 CYAN='\033[0;36m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
@@ -78,8 +78,10 @@ prepare_repo() {
 
 # ---------- 4. Sinh secret nếu chưa có ----------
 ensure_secrets() {
-    [ -z "$DB_PASSWORD" ] && DB_PASSWORD="$(openssl rand -hex 16)"
-    [ -z "$JWT_SECRET" ]   && JWT_SECRET="$(openssl rand -hex 32)"
+    [ -z "$DB_PASSWORD" ]      && DB_PASSWORD="$(openssl rand -hex 16)"
+    [ -z "$JWT_SECRET" ]        && JWT_SECRET="$(openssl rand -hex 32)"
+    [ -z "$DEFAULT_PASSWORD" ]  && DEFAULT_PASSWORD="$(openssl rand -base64 15 | tr -d '/+=')!Aa1"
+    [ -z "$ADMIN_PASSWORD" ]    && ADMIN_PASSWORD="$(openssl rand -base64 15 | tr -d '/+=')!Aa1"
 }
 
 # ---------- 5. Tạo / tự sửa file .env ----------
@@ -174,12 +176,20 @@ create_volumes
 generate_ssl
 start_services
 
+# Đọc lại giá trị thực từ .env (để in đúng, kể cả khi .env cũ được auto-sửa)
+if [ -f "$APP_DIR/.env" ]; then
+    ADMIN_PASSWORD="$(sed -n 's/^ADMIN_PASSWORD=//p' "$APP_DIR/.env" | tail -n1)"
+    DEFAULT_PASSWORD="$(sed -n 's/^DEFAULT_PASSWORD=//p' "$APP_DIR/.env" | tail -n1)"
+fi
+
 echo ""
 ok "CÀI ĐẶT HOÀN TẤT."
 echo -e "  Truy cập nội bộ:  https://<IP-server>"
 echo -e "  Truy cập public:  https://${DOMAIN}"
 echo -e "  Đăng nhập admin:  admin / ${ADMIN_PASSWORD}"
+echo -e "  Mật khẩu user mới (DEFAULT_PASSWORD): ${DEFAULT_PASSWORD}"
 echo -e "  Xem log:          docker compose -f $APP_DIR/$COMPOSE_FILE logs -f"
+echo -e "  (Mọi secret lưu trong $APP_DIR/.env)"
 echo ""
 
 if [ -n "$CF_TUNNEL_TOKEN" ]; then
