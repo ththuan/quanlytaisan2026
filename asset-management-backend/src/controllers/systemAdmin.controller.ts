@@ -106,6 +106,19 @@ export const listBackups = async (req: AuthRequest, res: Response, next: NextFun
   }
 };
 
+export const downloadBackup = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { filename } = req.params;
+    const filePath = systemAdminService.getBackupPath(filename);
+    if (!filePath) {
+      return res.status(404).json({ success: false, message: 'File backup không tồn tại' });
+    }
+    res.download(filePath, filename);
+  } catch (e) {
+    next(e);
+  }
+};
+
 export const resetBusinessData = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { confirm } = req.body;

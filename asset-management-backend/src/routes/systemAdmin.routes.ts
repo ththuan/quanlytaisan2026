@@ -20,6 +20,7 @@ router.get('/docker/:containerName/logs', systemAdminController.getContainerLogs
 
 router.post('/backup', systemAdminController.createBackup);
 router.get('/backups', systemAdminController.listBackups);
+router.get('/backups/:filename/download', systemAdminController.downloadBackup);
 router.post('/restore', systemAdminController.restoreBackup);
 
 router.post('/reset-data', systemAdminController.resetBusinessData);

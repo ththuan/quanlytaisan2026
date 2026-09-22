@@ -126,6 +126,14 @@ const systemAdminService = {
     return unwrap<BackupInfo[]>(response) ?? [];
   },
 
+  async downloadBackup(filename: string): Promise<Blob> {
+    const response = await api.get(
+      `/system-admin/backups/${encodeURIComponent(filename)}/download`,
+      { responseType: 'blob' }
+    );
+    return response as unknown as Blob;
+  },
+
   async restoreBackup(filename: string): Promise<{ success: boolean; message: string }> {
     const response = await api.post('/system-admin/restore', { filename });
     return unwrap<{ success: boolean; message: string }>(response);

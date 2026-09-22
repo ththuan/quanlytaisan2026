@@ -318,6 +318,14 @@ class SystemAdminService {
     }
   }
 
+  /** Trả về đường dẫn tuyệt đối của file backup nếu tên hợp lệ và file tồn tại, ngược lại null. */
+  getBackupPath(filename: string): string | null {
+    if (!filename || !/^backup_[\w\-]+\.sql$/.test(filename)) return null;
+    const filePath = path.resolve('./backups', filename);
+    if (!fs.existsSync(filePath)) return null;
+    return filePath;
+  }
+
   /** Xóa các file backup cũ hơn `retentionDays` ngày. Trả về số file đã xóa. */
   async deleteOldBackups(retentionDays: number = 7): Promise<number> {
     try {

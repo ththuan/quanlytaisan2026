@@ -520,10 +520,20 @@
         />
         <el-table-column
           label="Thạo tác"
-          width="140"
+          width="220"
           fixed="right"
         >
           <template #default="{ row }">
+            <el-button
+              size="small"
+              type="primary"
+              plain
+              :icon="Download"
+              :loading="downloadingFile === row.name"
+              @click="downloadBackup(row.name)"
+            >
+              Tải về
+            </el-button>
             <el-button
               size="small"
               type="warning"
@@ -659,6 +669,7 @@ import {
   VideoPause,
   RefreshRight,
   RefreshLeft,
+  Download,
 } from '@element-plus/icons-vue';
 import systemAdminService, {
   type SystemInfo,
@@ -697,6 +708,7 @@ const showRestoreDialog = ref(false);
 const restoreFilename = ref('');
 const restoreConfirmText = ref('');
 const restoringFile = ref<string | null>(null);
+const downloadingFile = ref<string | null>(null);
 
 const getMemoryColor = (percentage: number) => {
   if (percentage < 60) return '#67c23a';
@@ -899,6 +911,25 @@ const confirmRestore = (filename: string) => {
   restoreFilename.value = filename;
   restoreConfirmText.value = '';
   showRestoreDialog.value = true;
+};
+
+const downloadBackup = async (filename: string) => {
+  downloadingFile.value = filename;
+  try {
+    const blob = await systemAdminService.downloadBackup(filename);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch {
+    ElMessage.error('Không thể tải file backup');
+  } finally {
+    downloadingFile.value = null;
+  }
 };
 
 const doRestore = async () => {
