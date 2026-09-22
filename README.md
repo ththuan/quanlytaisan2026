@@ -244,12 +244,18 @@ quanlytaisan/
 │   ├── reset-data.ps1
 │   ├── generate-secrets.js
 │   ├── generate-ssl.ps1
+│   ├── setup-github-runner.sh  # Cài self-hosted runner (auto-deploy)
 │   ├── sync-push.ps1 / sync-push.bat
 │   ├── sync-pull.ps1 / sync-pull.bat
 │   └── README.md
+├── .github/workflows/
+│   ├── ci.yml                  # Typecheck trên mỗi push/PR
+│   └── deploy.yml              # Auto-deploy production (self-hosted runner)
 ├── docker-compose.yml
 ├── docker-compose.dev.yml
 ├── docker-compose.prod.yml
+├── setup.sh                    # Cài đặt 1 lần cho server Debian
+├── deploy.sh                   # Pull + rebuild trên server (gọi bởi runner)
 ├── .env.example
 └── README.md
 ```
@@ -301,6 +307,9 @@ Trong thư mục `scripts/`:
 
 | Script | Mô tả |
 |--------|--------|
+| **setup.sh** | Cài đặt 1 lần toàn bộ hệ thống trên server Debian (Docker, repo, `.env`, volume, SSL, khởi động) |
+| **deploy.sh** | Pull code mới + rebuild container trên server (được gọi tự động bởi GitHub Actions runner) |
+| **scripts/setup-github-runner.sh** | Cài GitHub Actions self-hosted runner để push code là tự deploy |
 | **backup-db.ps1** | Tạo backup database |
 | **list-backups.ps1** | Liệt kê file backup + thống kê DB hiện tại |
 | **restore-db.ps1** | Khôi phục từ file backup |
@@ -318,33 +327,45 @@ Chi tiết: [scripts/README.md](./scripts/README.md).
 
 Máy Windows chỉ dùng để code/test (`docker compose up -d` với `docker-compose.yml`). Chạy thực tế trên **Debian home server** bằng `docker-compose.prod.yml`.
 
-**Lần đầu trên server Debian:**
+### Cài đặt 1 lần duy nhất (script tự động)
+
+Không cần làm thủ công từng bước. Trên server Debian mới chỉ cần chạy:
 
 ```bash
-git clone https://github.com/ththuan/quanlytaisan2026.git /root/quanlytaisan2026
-cd /root/quanlytaisan2026
-cp .env.prod.example .env   # chỉnh JWT_SECRET, DB_PASSWORD, CORS_ORIGIN, CF_TUNNEL_TOKEN...
-
-docker volume create quanlytaisan_postgres_data
-docker volume create quanlytaisan_redis_data
-docker volume create quanlytaisan_backend_backups
-
-# Có Cloudflare Tunnel (public ra internet, xem mục bên dưới):
-docker compose -f docker-compose.prod.yml --profile cloudflare up -d --build
-
-# Không cần public internet (chỉ LAN):
-docker compose -f docker-compose.prod.yml up -d --build
-
-chmod +x deploy.sh
+curl -fsSL https://raw.githubusercontent.com/ththuan/quanlytaisan2026/main/setup.sh -o setup.sh
+sudo bash setup.sh
 ```
 
-**Mỗi khi có thay đổi mới trên GitHub**, SSH vào server và chạy:
+[`setup.sh`](./setup.sh) tự động: cài Docker + Compose → clone repo → tạo `.env` với `JWT_SECRET`/`DB_PASSWORD` sinh ngẫu nhiên → tạo volume → sinh SSL cert → khởi động toàn bộ container. Có thể ghi đè cấu hình qua biến môi trường:
+
+```bash
+sudo DOMAIN=quanlytaisanctec.dpdns.org \
+     CF_TUNNEL_TOKEN=<token> \
+     ADMIN_PASSWORD=MatKhauManh@123 \
+     bash setup.sh
+```
+
+> Các file quan trọng (`.env`, `nginx/ssl/`, `storage/`, `backups/`) nằm **ngoài git** nên mọi lần `git pull`/deploy sau này **không bao giờ ghi đè** — bạn không phải cấu hình lại từ đầu.
+
+### Tự động deploy khi push code lên GitHub
+
+**Cách 1 — Tự động hoàn toàn (khuyến nghị):** cài **GitHub Actions self-hosted runner** ngay trên server. Runner tự kết nối *ra ngoài* tới GitHub nên **không cần mở cổng vào** (hoàn toàn hợp với Cloudflare Tunnel). Sau khi cài xong, mỗi lần push lên `main` là server tự pull + rebuild — **không cần SSH thủ công**.
+
+```bash
+# 1) GitHub repo -> Settings -> Actions -> Runners -> New self-hosted runner (Linux x64)
+# 2) Copy TOKEN rồi chạy:
+RUNNER_TOKEN=<TOKEN> bash scripts/setup-github-runner.sh
+```
+
+Workflow tự động nằm tại [`.github/workflows/deploy.yml`](./.github/workflows/deploy.yml) — chỉ chạy khi có thay đổi ở `backend`/`frontend`/`docker-compose.prod.yml`/`nginx`.
+
+**Cách 2 — Thủ công (khi chưa cài runner):** SSH vào server rồi chạy:
 
 ```bash
 ./deploy.sh
 ```
 
-[deploy.sh](./deploy.sh) tự `git pull` (nếu có commit mới) rồi rebuild lại 2 container `backend`/`frontend` bằng `docker-compose.prod.yml` — không cần thao tác Docker thủ công. Nếu không có thay đổi, script thoát ngay mà không làm gì. Container `cloudflared` không bị động tới (không có `--profile cloudflare` trong script) nên tunnel không bị gián đoạn khi deploy.
+[deploy.sh](./deploy.sh) tự `git fetch` + `reset --hard origin/main` (tránh lỗi merge conflict) rồi rebuild 2 container `backend`/`frontend`. Nếu không có thay đổi, script thoát ngay. Container `cloudflared` không bị động tới nên tunnel không gián đoạn khi deploy.
 
 > `deploy.ps1` / `watchdog.ps1` (PowerShell) chỉ dùng cho máy Windows, không áp dụng cho server Debian.
 
@@ -364,6 +385,19 @@ Không cần mở port trên router/firewall. Cloudflare tạo kết nối outbo
    docker compose -f docker-compose.prod.yml --profile cloudflare up -d --build cloudflared
    ```
 7. Kiểm tra: `docker logs asset-management-cloudflared -f` phải thấy `Registered tunnel connection`. Truy cập https://quanlytaisanctec.dpdns.org/login.
+
+> **Mẹo:** nếu đã có `CF_TUNNEL_TOKEN` trước khi chạy `setup.sh`, script sẽ tự bật profile `cloudflare` luôn — không cần làm bước 6.
+
+### Nâng cấp server đang chạy sẵn lên auto-deploy
+
+Nếu server đã chạy ổn (repo ở `/root/quanlytaisan2026`, `.env` đã có), **không cần chạy lại `setup.sh`**. Chỉ cần kéo code mới rồi cài runner:
+
+```bash
+cd /root/quanlytaisan2026 && git pull
+RUNNER_TOKEN=<TOKEN> bash scripts/setup-github-runner.sh
+```
+
+Từ giờ push code lên GitHub là server tự cập nhật, không phải cấu hình lại gì cả.
 
 ---
 

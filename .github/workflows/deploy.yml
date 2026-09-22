@@ -1,0 +1,29 @@
+name: Deploy to Production
+
+# Chạy trên self-hosted runner cài trên server Debian.
+# Khi push code lên main (backend/frontend/compose/nginx), server tự pull + rebuild,
+# KHÔNG cần SSH thủ công và KHÔNG cần mở cổng vào (runner tự kết nối RA ngoài tới GitHub).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'asset-management-backend/**'
+      - 'asset-management-frontend/**'
+      - 'docker-compose.prod.yml'
+      - 'nginx/**'
+      - 'deploy.sh'
+      - 'setup.sh'
+      - 'scripts/**'
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    timeout-minutes: 30
+    steps:
+      - name: Deploy latest code on server
+        run: bash /root/quanlytaisan2026/deploy.sh
