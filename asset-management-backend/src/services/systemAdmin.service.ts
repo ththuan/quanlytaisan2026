@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { sequelize } from '../config/database';
-import { SYSTEM_ADMIN_PASSWORD, SYSTEM_ADMIN_USERNAME } from '../config/adminCredentials';
+import { SYSTEM_ADMIN_USERNAME } from '../config/adminCredentials';
 import logger from '../utils/logger';
 import { ensureDefaultAdminAccount } from '../utils/ensureDefaultAdminAccount';
 
@@ -392,7 +392,7 @@ class SystemAdminService {
 
       return {
         success: true,
-        message: `Dữ liệu nghiệp vụ và phòng ban đã xóa. Đăng nhập: ${SYSTEM_ADMIN_USERNAME} / ${SYSTEM_ADMIN_PASSWORD} (đã đặt lại mật khẩu admin, tắt 2FA). Users khác và asset_categories giữ nguyên.`,
+        message: `Dữ liệu nghiệp vụ và phòng ban đã xóa. Tài khoản ${SYSTEM_ADMIN_USERNAME} đã đặt lại mật khẩu (theo ADMIN_PASSWORD trong .env) và tắt 2FA. Users khác và asset_categories giữ nguyên.`,
       };
     } catch (error) {
       logger.error('Reset business data failed:', error);
@@ -427,7 +427,7 @@ class SystemAdminService {
       await ensureDefaultAdminAccount();
       return {
         success: true,
-        message: `Seed data đã được thêm. Tài khoản ${SYSTEM_ADMIN_USERNAME} đã đặt lại mật khẩu ${SYSTEM_ADMIN_PASSWORD}.`,
+        message: `Seed data đã được thêm. Tài khoản ${SYSTEM_ADMIN_USERNAME} đã đặt lại mật khẩu (theo ADMIN_PASSWORD trong .env).`,
       };
     } catch (error) {
       logger.error('Seeding failed:', error);

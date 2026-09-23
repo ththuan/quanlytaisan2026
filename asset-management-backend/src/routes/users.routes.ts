@@ -3,7 +3,7 @@ import usersController, { uploadUserImport } from '../controllers/users.controll
 import { authenticateToken } from '../middleware/auth.middleware';
 import { requireRole } from '../middleware/authorization.middleware';
 import { validateRequest } from '../middleware/validation';
-import { createUserSchema, updateUserSchema } from '../utils/validators';
+import { createUserSchema, updateUserSchema, updateProfileSchema } from '../utils/validators';
 import { invalidateCache } from '../middleware/caching';
 
 const router = Router();
@@ -14,8 +14,8 @@ router.use(authenticateToken);
 // Get current user profile
 router.get('/profile', usersController.getProfile);
 
-// Update current user profile
-router.put('/profile', validateRequest(updateUserSchema), invalidateCache('users'), usersController.updateProfile);
+// Update current user profile (chỉ trường an toàn, KHÔNG cho sửa role/quyền)
+router.put('/profile', validateRequest(updateProfileSchema), invalidateCache('users'), usersController.updateProfile);
 
 // Admin only routes
 router.get(

@@ -810,6 +810,14 @@ const handleEdit = () => {
   showEditDialog.value = true;
 };
 
+const escapeHtml = (value: unknown): string =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 const handleDelete = async () => {
   if (!assetStore.currentAsset?.id) return;
 
@@ -819,7 +827,7 @@ const handleDelete = async () => {
       `<b>Chỉ xóa khi nhập sai thông tin và chưa qua bất kỳ quy trình nào.</b><br/><br/>` +
       `• Tài sản đã điều chuyển, bảo trì, kiểm kê hoặc thanh lý <b>không thể xóa</b>.<br/>` +
       `• Để loại bỏ tài sản khỏi đơn vị, hãy dùng module <b>Thanh lý / Tiêu hủy</b>.<br/><br/>` +
-      `Bạn chắc chắn muốn xóa <b>${asset.name}</b> (${asset.asset_code})?`,
+      `Bạn chắc chắn muốn xóa <b>${escapeHtml(asset.name)}</b> (${escapeHtml(asset.asset_code)})?`,
       'Xóa tài sản – Đọc kỹ trước khi xác nhận',
       {
         confirmButtonText: 'Xác nhận xóa',

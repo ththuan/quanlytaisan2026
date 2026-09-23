@@ -27,7 +27,7 @@ router.post(
   authenticateToken,
   requireRoles(['admin']),
   upload.single('image'),
-  (req, res) => assetImagesController.uploadAssetImage(req as any, res)
+  (req, res, next) => assetImagesController.uploadAssetImage(req as any, res, next)
 );
 
 // Delete image for an asset
@@ -35,7 +35,7 @@ router.delete(
   '/:id/image',
   authenticateToken,
   requireRoles(['admin']),
-  (req, res) => assetImagesController.deleteAssetImage(req as any, res)
+  (req, res, next) => assetImagesController.deleteAssetImage(req as any, res, next)
 );
 
 export default router;

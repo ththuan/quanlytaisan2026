@@ -1012,24 +1012,33 @@ const handleGenerateAllQR = () => {
   showQRExportDialog.value = true;
 };
 
+const escapeHtml = (value: unknown): string => {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
 const buildPrintHTML = (items: Array<{ asset_code: string; name: string; category_name: string; quantity: number; unit: string; qr_image: string }>, deptName: string): string => {
   const cells = items.map((a, idx) => {
     const row = Math.floor(idx / 4);
     const flip = row % 2 === 1; // hàng chẵn: text trên, QR dưới
     const qrBlock = a.qr_image
-      ? `<img src="${a.qr_image}" alt="QR" />`
+      ? `<img src="${escapeHtml(a.qr_image)}" alt="QR" />`
       : `<div class="qr-placeholder">No QR</div>`;
     const infoBlock = `<div class="qr-info">
-        <div class="qr-code">${a.asset_code}</div>
-        <div class="qr-name">${a.name}</div>
-        ${a.category_name ? `<div class="qr-cat">${a.category_name}</div>` : ''}
-        <div class="qr-qty">SL: ${a.quantity}${a.unit ? ' ' + a.unit : ''}</div>
+        <div class="qr-code">${escapeHtml(a.asset_code)}</div>
+        <div class="qr-name">${escapeHtml(a.name)}</div>
+        ${a.category_name ? `<div class="qr-cat">${escapeHtml(a.category_name)}</div>` : ''}
+        <div class="qr-qty">SL: ${a.quantity}${a.unit ? ' ' + escapeHtml(a.unit) : ''}</div>
       </div>`;
     return `<div class="qr-cell">${flip ? infoBlock + qrBlock : qrBlock + infoBlock}</div>`;
   }).join('');
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
-<title>QR Code – ${deptName}</title>
+<title>QR Code – ${escapeHtml(deptName)}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', sans-serif; background: #fff; }
@@ -1053,11 +1062,11 @@ const buildPrintHTML = (items: Array<{ asset_code: string; name: string; categor
   }
 </style></head><body>
 <div class="no-print" style="text-align:center;padding:10px;background:#f0f0f0">
-  <strong>QR Code – ${deptName}</strong> &nbsp;
+  <strong>QR Code – ${escapeHtml(deptName)}</strong> &nbsp;
   <button onclick="window.print()" style="padding:6px 18px;background:#409eff;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:13px">▶ In / Lưu PDF</button>
   <button onclick="window.close()" style="margin-left:8px;padding:6px 14px;background:#ccc;border:none;border-radius:4px;cursor:pointer">✕ Đóng</button>
 </div>
-<h2>QR Code tài sản – ${deptName}</h2>
+<h2>QR Code tài sản – ${escapeHtml(deptName)}</h2>
 <div class="grid">${cells}</div>
 </body></html>`;
 };

@@ -17,7 +17,7 @@
           <p class="school-name">Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ</p>
         </div>
 
-        <form id="login-form" novalidate @submit.prevent="handleLogin">
+        <form id="login-form" novalidate @submit.prevent="handleSubmit">
           <div class="form-group">
             <label class="form-label" for="f-username"><span class="required">*</span> Tên đăng nhập</label>
             <div class="input-wrap">
@@ -48,13 +48,33 @@
                 id="f-password"
                 placeholder="••••••••"
                 autocomplete="current-password"
-                @keyup.enter="handleLogin"
+                @keyup.enter="handleSubmit"
               >
               <button type="button" class="toggle-pw" @click="showPassword = !showPassword" title="Hiện/ẩn mật khẩu">
                 <span class="material-symbols-rounded">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
               </button>
             </div>
             <p class="field-hint">Vui lòng nhập mật khẩu</p>
+          </div>
+
+          <div v-if="totpRequired" class="form-group">
+            <label class="form-label" for="f-totp"><span class="required">*</span> Mã xác thực 2 lớp</label>
+            <div class="input-wrap">
+              <span class="material-symbols-rounded input-icon">pin</span>
+              <input
+                ref="totpRef"
+                v-model="totpCode"
+                class="input-field"
+                type="text"
+                inputmode="numeric"
+                maxlength="6"
+                id="f-totp"
+                placeholder="Nhập mã 6 chữ số từ ứng dụng xác thực"
+                autocomplete="one-time-code"
+                @keyup.enter="handleSubmit"
+              >
+            </div>
+            <p class="field-hint">Mã gồm 6 chữ số từ Google Authenticator (hoặc ứng dụng TOTP tương tự)</p>
           </div>
 
           <div class="form-row">
@@ -80,7 +100,7 @@
 
           <button type="submit" class="btn-login" :disabled="loading">
             <span v-if="loading" class="spinner" />
-            <span id="btn-login-text">{{ loading ? 'Đang xử lý...' : 'Đăng nhập ngay' }}</span>
+            <span id="btn-login-text">{{ loading ? 'Đang xử lý...' : (totpRequired ? 'Xác nhận mã' : 'Đăng nhập ngay') }}</span>
           </button>
         </form>
 
@@ -106,6 +126,9 @@ const showPassword = ref(false);
 const showForgotPassword = ref(false);
 const loading = ref(false);
 const errorMessage = ref('');
+const totpRequired = ref(false);
+const totpCode = ref('');
+const totpRef = ref<HTMLInputElement | null>(null);
 
 const loginForm = reactive({ username: '', password: '' });
 
@@ -136,7 +159,10 @@ const handleLogin = async () => {
     if (result === true) {
       // _applyAuthResponse handles localStorage clear + full page reload
     } else if (result === '2fa_required') {
-      errorMessage.value = 'Yêu cầu xác thực 2 lớp. Vui lòng liên hệ Admin.';
+      totpRequired.value = true;
+      errorMessage.value = '';
+      totpCode.value = '';
+      setTimeout(() => totpRef.value?.focus(), 0);
     }
   } catch (err: any) {
     loading.value = false;
@@ -144,6 +170,34 @@ const handleLogin = async () => {
     errorMessage.value = msg;
     loginForm.password = '';
     passwordRef.value?.focus();
+  }
+};
+
+const handleVerify2FA = async () => {
+  const code = totpCode.value.trim();
+  if (!/^\d{6}$/.test(code)) {
+    errorMessage.value = 'Vui lòng nhập đúng mã xác thực 6 chữ số';
+    return;
+  }
+  errorMessage.value = '';
+  loading.value = true;
+  try {
+    const ok = await authStore.verify2FA(code);
+    loading.value = false;
+    if (!ok) {
+      errorMessage.value = 'Mã xác thực không đúng hoặc đã hết hạn';
+    }
+  } catch {
+    loading.value = false;
+    errorMessage.value = 'Xác thực thất bại. Vui lòng thử lại.';
+  }
+};
+
+const handleSubmit = () => {
+  if (totpRequired.value) {
+    handleVerify2FA();
+  } else {
+    handleLogin();
   }
 };
 

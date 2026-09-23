@@ -34,7 +34,7 @@ router.post(
   authenticateToken,
   requireRoles(['admin']),
   upload.single('file'),
-  (req, res) => assetDisposalUploadController.uploadDecisionFile(req as any, res)
+  (req, res, next) => assetDisposalUploadController.uploadDecisionFile(req as any, res, next)
 );
 
 export default router;

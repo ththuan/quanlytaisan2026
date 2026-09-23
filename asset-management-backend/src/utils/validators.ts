@@ -282,6 +282,13 @@ export const updateUserSchema = Joi.object({
   is_active: Joi.boolean().optional(),
 }).min(1);
 
+// Profile tự cập nhật — CHỈ cho phép trường an toàn (không role/department_id/is_active)
+// để tránh leo thang đặc quyền.
+export const updateProfileSchema = Joi.object({
+  email: Joi.string().email().optional(),
+  fullname: Joi.string().max(255).optional(),
+}).min(1);
+
 // Procurement/Cấp phát (admin-only) schemas
 export const createProcurementSchema = Joi.object({
   code: Joi.string().max(50).allow('', null).optional(),
