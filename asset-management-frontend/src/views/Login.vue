@@ -89,8 +89,8 @@
           </div>
 
           <div id="admin-help" class="admin-help" :class="{ show: showForgotPassword }" role="status">
-            <strong>Liên hệ Admin để được hỗ trợ:</strong><br>
-            Trần Thuận - <span class="phone">0944 300 848</span>
+            <strong>Quên mật khẩu?</strong><br>
+            Vui lòng liên hệ Quản trị viên hệ thống để được cấp lại mật khẩu.
           </div>
 
           <div v-if="errorMessage" class="login-error" role="alert">

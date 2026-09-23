@@ -51,10 +51,11 @@ class StockService {
     return `XK-${year}-${pad(nextId, 6)}`;
   }
 
-  async createItem(data: CreateStockItemInput): Promise<any> {
-    const transaction = await sequelize.transaction();
+  async createItem(data: CreateStockItemInput, transaction?: Transaction): Promise<any> {
+    const ownsTransaction = !transaction;
+    const tx = transaction || (await sequelize.transaction());
     try {
-      const code = await this.generateItemCode(transaction);
+      const code = await this.generateItemCode(tx);
       const item = await StockItem.create(
         {
           code,
@@ -64,12 +65,12 @@ class StockService {
           min_stock: data.min_stock ?? 0,
           is_active: true,
         } as any,
-        { transaction }
+        { transaction: tx }
       );
-      await transaction.commit();
+      if (ownsTransaction) await tx.commit();
       return item;
     } catch (e) {
-      await transaction.rollback();
+      if (ownsTransaction) await tx.rollback();
       throw e;
     }
   }
@@ -154,6 +155,7 @@ class StockService {
           if (!line.item_name || !String(line.item_name).trim()) throw new ConflictError('Thiếu tên vật tư');
           const item = await this.createItem(
             { name: String(line.item_name).trim(), unit: line.unit || 'Cái', category: line.category, min_stock: line.min_stock },
+            transaction,
           );
           itemId = item.id;
         }
@@ -225,7 +227,7 @@ class StockService {
         if (!itemId) throw new ConflictError('Thiếu vật tư');
         if (!qty || qty <= 0) throw new ConflictError('Số lượng xuất phải > 0');
 
-        const item = await StockItem.findByPk(itemId, { transaction });
+        const item = await StockItem.findByPk(itemId, { transaction, lock: transaction.LOCK.UPDATE });
         if (!item) throw new NotFoundError('Vật tư không tồn tại');
 
         const onHand = await this.getOnHand(itemId, transaction);

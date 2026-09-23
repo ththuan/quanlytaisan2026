@@ -312,7 +312,10 @@ class AuthService {
   async validateTotpLogin(tempToken: string, totpCode: string): Promise<AuthResponse> {
     let decoded: any;
     try {
-      decoded = jwt.verify(tempToken, jwtConfig.secret) as any;
+      decoded = jwt.verify(tempToken, jwtConfig.secret, {
+        issuer: jwtConfig.issuer,
+        algorithms: [jwtConfig.algorithm],
+      }) as any;
     } catch {
       throw new UnauthorizedError('Phiên xác thực đã hết hạn. Vui lòng đăng nhập lại.');
     }

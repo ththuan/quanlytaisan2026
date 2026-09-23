@@ -47,7 +47,7 @@ export const useAssetStore = defineStore('asset', () => {
     try {
       const response = await assetService.createAsset(data);
       if (response.success && response.data) {
-        ElMessage.success('Asset created successfully');
+        ElMessage.success('Đã tạo tài sản thành công');
         return response.data;
       }
       return null;
@@ -64,7 +64,7 @@ export const useAssetStore = defineStore('asset', () => {
     try {
       const response = await assetService.updateAsset(id, data);
       if (response.success && response.data) {
-        ElMessage.success('Asset updated successfully');
+        ElMessage.success('Đã cập nhật tài sản thành công');
         return response.data;
       }
       return null;
@@ -81,7 +81,7 @@ export const useAssetStore = defineStore('asset', () => {
     try {
       const response = await assetService.deleteAsset(id);
       if (response.success) {
-        ElMessage.success('Asset deleted successfully');
+        ElMessage.success('Đã xóa tài sản thành công');
         // Remove from local state
         assets.value = assets.value.filter(a => a.id !== id);
       }

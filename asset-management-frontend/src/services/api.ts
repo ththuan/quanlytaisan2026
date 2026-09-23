@@ -35,7 +35,7 @@ api.interceptors.request.use(
 
 // Biến để theo dõi lỗi liên tiếp
 let consecutiveNetworkErrors = 0;
-let lastNetworkErrorTime = 0;
+let lastNotifiedAt = 0;
 
 // Track whether a token refresh is in progress to avoid parallel refresh requests
 let isRefreshing = false;
@@ -76,16 +76,15 @@ api.interceptors.response.use(
     // Xử lý lỗi mạng
     if (!error.response) {
       consecutiveNetworkErrors++;
-      lastNetworkErrorTime = now;
-      // Chỉ hiện thông báo nếu lỗi liên tiếp hoặc đã lâu không có lỗi
-      if (consecutiveNetworkErrors === 1 || (now - lastNetworkErrorTime > 10000)) {
+      // Chỉ hiện thông báo lần đầu hoặc khi đã quá 10 giây kể từ lần thông báo cuối
+      if (consecutiveNetworkErrors === 1 || now - lastNotifiedAt > 10000) {
         ElNotification.error({
           title: t('common.error'),
           message: t('common.apiErrors.network'),
           duration: 8000,
         });
+        lastNotifiedAt = now;
       }
-      
       return Promise.reject(error);
     }
 

@@ -98,7 +98,7 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
-      ElMessage.success('Logged out successfully');
+      ElMessage.success('Đã đăng xuất');
     }
   }
 
