@@ -19,6 +19,8 @@ export async function ensureDefaultAdminAccount(): Promise<void> {
       department_id: null,
       totp_enabled: false,
       totp_secret: null,
+      failed_login_attempts: 0,
+      locked_until: null,
     });
     return;
   }

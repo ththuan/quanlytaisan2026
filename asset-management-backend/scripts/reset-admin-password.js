@@ -24,7 +24,8 @@ async function resetPassword() {
   const hash = await bcrypt.hash(ADMIN_PASSWORD, 10);
 
   const [rows] = await sequelize.query(
-    `UPDATE users SET password_hash = :hash, totp_enabled = false, totp_secret = NULL, updated_at = NOW()
+    `UPDATE users SET password_hash = :hash, totp_enabled = false, totp_secret = NULL,
+       failed_login_attempts = 0, locked_until = NULL, updated_at = NOW()
      WHERE username = :username RETURNING id`,
     {
       replacements: { hash, username: 'admin' },
