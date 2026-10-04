@@ -50,7 +50,10 @@ COPY --from=builder /app/src/migrations ./src/migrations
 COPY --from=builder /app/seeders ./seeders
 # Cần cho các script tiện ích (vd: npm run reset-admin)
 COPY --from=builder /app/scripts ./scripts
+# Cấu hình PM2 cluster
+COPY --from=builder /app/ecosystem.config.js ./
 
 EXPOSE 5000
 
-CMD ["node", "dist/server.js"]
+# Chạy nhiều worker (cluster) qua PM2 để tận dụng toàn bộ CPU core
+CMD ["node", "./node_modules/pm2/bin/pm2-runtime", "start", "ecosystem.config.js", "--no-daemon"]

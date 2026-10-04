@@ -2,11 +2,26 @@
  * Scheduler đơn giản không cần thư viện ngoài.
  * Chạy backup database lúc 2:00 AM hàng ngày và tự dọn file cũ hơn 7 ngày.
  */
+import cluster from 'node:cluster';
 import logger from './logger';
 import systemAdminService from '../services/systemAdmin.service';
 
 const BACKUP_HOUR = 2;       // 2:00 AM
 const RETENTION_DAYS = 7;    // giữ backup trong 7 ngày
+
+/**
+ * Chỉ một process được chạy job định kỳ (backup DB).
+ * - PM2 cluster: PM2 đặt NODE_APP_INSTANCE = index (0, 1, ...) → chỉ instance 0 chạy.
+ * - Node cluster thuần: primary chạy, worker bỏ qua.
+ * - Chạy đơn process (dev): luôn chạy.
+ */
+function shouldRunScheduler(): boolean {
+  const instance = process.env.NODE_APP_INSTANCE;
+  if (instance !== undefined && instance !== '') {
+    return instance === '0';
+  }
+  return !cluster.isWorker;
+}
 
 /** Tính số ms đến lần chạy tiếp theo (giờ BACKUP_HOUR hôm nay hoặc ngày mai). */
 function msUntilNextRun(): number {
@@ -49,5 +64,9 @@ function schedule() {
 }
 
 export function startScheduler() {
+  if (!shouldRunScheduler()) {
+    logger.info('[Scheduler] Worker/instance phụ — bỏ qua (chỉ process chính chạy backup tự động).');
+    return;
+  }
   schedule();
 }

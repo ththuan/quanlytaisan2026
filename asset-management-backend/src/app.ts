@@ -11,6 +11,7 @@ import scanRoutes from './routes/scan.routes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/logging';
 import { cachingMiddleware } from './middleware/caching';
+import { getRateLimitStore } from './config/rateLimiter';
 
 const app: Application = express();
 
@@ -137,6 +138,7 @@ app.use(requestLogger);
 
 // Rate limiting for auth endpoints (more lenient)
 const authLimiter = rateLimit({
+  store: getRateLimitStore(),
   windowMs: parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
   max: parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS || '10'), // 10 login attempts per 15 minutes (IP-based; per-account lockout is also active)
   message: {
@@ -150,6 +152,7 @@ const authLimiter = rateLimit({
 
 // General rate limiting (exclude auth routes)
 const limiter = rateLimit({
+  store: getRateLimitStore(),
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000'), // 1 minute window
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '500'), // 500 requests per minute
   message: {

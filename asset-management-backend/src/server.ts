@@ -1,7 +1,8 @@
 import { Server } from 'http';
-import app from './app';
 import envConfig from './config/env';
 import { testConnection } from './config/database';
+import { connectRedis } from './config/redis';
+import { initRateLimitStore } from './config/rateLimiter';
 import logger from './utils/logger';
 import { startScheduler } from './utils/scheduler';
 
@@ -34,6 +35,10 @@ const shutdown = (signal: string) => {
 const startServer = async () => {
   try {
     await testConnection();
+    await connectRedis();
+    initRateLimitStore();
+    // Import app sau khi Redis đã sẵn sàng để rate limiter dùng Redis store chia sẻ.
+    const { default: app } = await import('./app');
     server = app.listen(PORT, HOST, () => {
       logger.info(`Server is running on http://${HOST}:${PORT}`);
       logger.info(`Environment: ${envConfig.nodeEnv}`);

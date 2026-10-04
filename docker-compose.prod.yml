@@ -7,6 +7,7 @@ services:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
       POSTGRES_DB: ${DB_NAME:-asset_management}
+    command: postgres -c max_connections=200 -c shared_buffers=256MB -c effective_cache_size=768MB
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -53,11 +54,18 @@ services:
       DEFAULT_PASSWORD: ${DEFAULT_PASSWORD:-Ctec@123}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@123}
       LOG_LEVEL: ${LOG_LEVEL:-info}
-      DB_POOL_MAX: ${DB_POOL_MAX:-10}
+      DB_POOL_MAX: ${DB_POOL_MAX:-8}
       DB_POOL_MIN: ${DB_POOL_MIN:-2}
       DB_POOL_IDLE: ${DB_POOL_IDLE:-30000}
       DB_POOL_ACQUIRE: ${DB_POOL_ACQUIRE:-30000}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      # Số worker cluster (PM2). Trống = toàn bộ CPU core. DB pool tổng = PM2_INSTANCES × DB_POOL_MAX.
+      PM2_INSTANCES: ${PM2_INSTANCES:-}
+      # Rate limiting (nâng tạm khi load-test từ 1 IP, vd =1000000)
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-500}
+      AUTH_RATE_LIMIT_WINDOW_MS: ${AUTH_RATE_LIMIT_WINDOW_MS:-900000}
+      AUTH_RATE_LIMIT_MAX_REQUESTS: ${AUTH_RATE_LIMIT_MAX_REQUESTS:-10}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_ALLOWED_DOMAIN: ${GOOGLE_ALLOWED_DOMAIN:-ctec.edu.vn}
       ADMIN_GOOGLE_EMAIL: ${ADMIN_GOOGLE_EMAIL:-}
