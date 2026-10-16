@@ -2121,6 +2121,17 @@ const isMobileDevice = () => {
   return isIOS() || isAndroid() || window.innerWidth <= 768;
 };
 
+/**
+ * Vùng quét QR linh hoạt theo kích thước khung hình.
+ * Trước đây cố định 250px → khung nhỏ, phải đưa máy sát mới bắt được.
+ * Nay lấy ~70% cạnh ngắn của khung hình → bắt mã tốt hơn ở khoảng cách xa.
+ */
+const computeQrbox = (viewfinderWidth: number, viewfinderHeight: number) => {
+  const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+  const size = Math.max(150, Math.floor(minEdge * 0.7));
+  return { width: size, height: size };
+};
+
 const startCameraWithIndex = async (index: number) => {
   const devices = availableCameras.value;
   if (!devices.length) return;
@@ -2133,7 +2144,10 @@ const startCameraWithIndex = async (index: number) => {
   try {
     await qrCodeInstance.start(
       cameraId || { facingMode: 'environment' },
-      { fps: 10, qrbox: 250 },
+      {
+        fps: 15,
+        qrbox: computeQrbox,
+      },
       (decodedText: string) => {
         console.log('[Camera] QR detected:', decodedText.substring(0, 50));
         onQRCodeScanned(decodedText);
@@ -2191,7 +2205,12 @@ const openCameraScanner = async () => {
     });
     currentCameraIndex.value = backIdx >= 0 ? backIdx : 0;
     
-    html5QrCode.value = new Html5Qrcode('qr-reader');
+    html5QrCode.value = new Html5Qrcode('qr-reader', {
+      verbose: false,
+      // Dùng BarcodeDetector gốc của trình duyệt (Android Chrome) → nhận mã nhanh & xa hơn
+      useBarCodeDetectorIfSupported: true,
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+    });
     await startCameraWithIndex(currentCameraIndex.value);
   } catch (error: any) {
     console.error('Error starting camera:', error);
