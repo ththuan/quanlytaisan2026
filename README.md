@@ -205,7 +205,6 @@ Không cần mở port trên router/firewall — Cloudflare tạo kết nối ou
 | `JWT_SECRET` | Secret ký JWT. **Production bắt buộc ≥32 ký tự** | `your-secret-key-change-in-production` |
 | `DEFAULT_PASSWORD` | Mật khẩu mặc định khi tạo user mới / import user | `Ctec@123` |
 | `ADMIN_PASSWORD` | *(bỏ qua)* — mật khẩu admin luôn cố định `Admin@123` | `Admin@123` |
-| `QR_SIGNING_SECRET` | Secret ký token HMAC trong QR (chống dò mã). Trống → dùng `JWT_SECRET` | *(trống)* |
 | `QR_REQUIRE_SIGNATURE` | Bắt buộc token hợp lệ trên trang tra cứu QR công khai | `true` |
 | `PUBLIC_SCAN_RATE_LIMIT_*` | Giới hạn tần suất tra cứu QR công khai (`/scan`, `/api/public`) | 60/phút |
 | `CORS_ORIGIN` | Origin cho phép. **Production**: domain cụ thể | `*` |
@@ -243,12 +242,13 @@ node scripts/generate-secrets.js
 
 ## 📷 QR code & tra cứu công khai
 
-- Mỗi tài sản có QR chứa URL công khai kèm token: `https://<FRONTEND_URL>/scan/<MÃ>?t=<token>`.
+- Mỗi tài sản có QR chứa URL công khai kèm token ngẫu nhiên: `https://<FRONTEND_URL>/scan/<MÃ>?t=<token>`.
 - Quét bằng camera điện thoại → mở trang HTML tra cứu (không cần đăng nhập): tên, mã, loại, phòng ban, vị trí, trạng thái, ngày kiểm kê gần nhất, thông tin thanh lý (nếu có), nút **Mở trong hệ thống**.
 - Endpoint: `GET /scan/:code` (trang HTML) và `GET /api/public/asset/:code` (JSON). Cả hai đều xác thực token (khi `QR_REQUIRE_SIGNATURE=true`) và bị giới hạn tần suất.
-- **QR là BẤT BIẾN:** sau khi sinh, mã QR **không bao giờ tự thay đổi** (kể cả khi đổi `FRONTEND_URL`, `JWT_SECRET` hay `QR_SIGNING_SECRET`). Token tra cứu được đối chiếu với token **đã lưu trong DB**, không tính lại theo secret.
-  - Chỉ thay đổi khi **xóa tài sản rồi tạo lại** (QR mới), hoặc admin bấm **"Tạo lại QR Code"** ở trang chi tiết (thao tác chủ động).
+- **QR là BẤT BIẾN:** sau khi sinh, mã QR **không bao giờ tự thay đổi** (kể cả khi đổi `FRONTEND_URL`, `JWT_SECRET`). Token tra cứu được đối chiếu với token **đã lưu trong DB**, không tính lại.
+  - Chỉ thay đổi khi **xóa tài sản rồi tạo lại** (QR mới — token ngẫu nhiên nên luôn khác), hoặc admin bấm **"Tạo lại QR Code"** ở trang chi tiết (thao tác chủ động).
   - `POST /api/assets/qrcode/generate-all` chỉ tạo cho tài sản **chưa có** QR, không đụng tới QR đã tồn tại.
+  - **Reset data** (`reset-data.ps1` / `reset:business`) `TRUNCATE assets RESTART IDENTITY` → xóa sạch tài sản + QR; import/tạo lại sẽ sinh QR hoàn toàn mới.
 - **Tem cũ (in trước khi bật token)** vẫn tra cứu được bình thường (hệ thống cho phép QR không token). Muốn bảo vệ tem cũ thì tạo lại QR cho tài sản đó (sẽ đổi nội dung QR → cần in lại tem).
 
 ---

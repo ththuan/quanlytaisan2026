@@ -8,7 +8,7 @@ import QRCode from 'qrcode';
 import { Op } from 'sequelize';
 import { Asset } from '../models';
 import envConfig from '../config/env';
-import { signAssetCode } from '../utils/qrSigning';
+import { generateQrToken } from '../utils/qrSigning';
 
 export interface QRCodeData {
   asset_code: string;
@@ -22,14 +22,14 @@ export interface QRCodeData {
 class QRCodeService {
   /**
    * Generate QR code data string từ thông tin tài sản
-   * Encode URL công khai (kèm token) để camera điện thoại mở trang tra cứu.
+   * Encode URL công khai (kèm token ngẫu nhiên) để camera điện thoại mở trang tra cứu.
    *
-   * Token gắn với cả `asset.id` → xóa tài sản rồi tạo lại sẽ sinh QR MỚI
-   * (tem QR cũ của tài sản đã xóa không còn dùng được).
+   * Token ngẫu nhiên → mỗi QR là duy nhất; reset/tạo lại tài sản luôn sinh QR mới,
+   * tem QR cũ (kể cả trùng mã tài sản) không còn dùng được.
    */
   generateQRCodeData(asset: Asset): string {
     const baseUrl = envConfig.frontendUrl.replace(/\/$/, '');
-    const token = signAssetCode(`${asset.asset_code}:${asset.id}`);
+    const token = generateQrToken();
     return `${baseUrl}/scan/${asset.asset_code}?t=${token}`;
   }
 
