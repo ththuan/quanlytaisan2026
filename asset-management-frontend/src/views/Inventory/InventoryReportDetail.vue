@@ -12,6 +12,14 @@
         <h2>Chi tiết báo cáo kiểm kê</h2>
       </div>
       <div class="header-right">
+        <el-button
+          v-if="report"
+          :loading="printingMinutes"
+          @click="printMinutes"
+        >
+          <el-icon><Document /></el-icon>
+          In biên bản
+        </el-button>
         <!-- Nút chỉnh sửa và gửi lại khi báo cáo bị từ chối -->
         <el-button 
           v-if="canResubmit"
@@ -584,10 +592,12 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { ArrowLeft, Select, Search, Edit } from '@element-plus/icons-vue';
+import { ArrowLeft, Select, Search, Edit, Document } from '@element-plus/icons-vue';
 import { useAuthStore } from '@/stores/auth.store';
 import inventoryService, { type InventoryReport } from '@/services/inventory.service';
 import SignaturePad from '@/components/Common/SignaturePad.vue';
+import api from '@/services/api';
+import { openPrintWindow, escapeHtml, signatureCell } from '@/utils/print';
 
 const route = useRoute();
 const router = useRouter();
@@ -613,6 +623,82 @@ watch(showSignDialog, (open) => {
     signResolve = null;
   }
 });
+
+const printingMinutes = ref(false);
+const CONDITION_TEXT: Record<string, string> = { good: 'Tốt', fair: 'Trung bình', poor: 'Kém' };
+
+const printMinutes = async () => {
+  if (!report.value) return;
+  printingMinutes.value = true;
+  try {
+    let signatures: any[] = [];
+    try {
+      const res: any = await api.get('/signatures', {
+        params: { entity_type: 'inventory_report', entity_id: report.value.id },
+      });
+      signatures = res?.data || [];
+    } catch { signatures = []; }
+
+    const r = report.value as any;
+    const details = r.details || [];
+    const rows = details.map((d: any, idx: number) => {
+      const diff = d.quantity_discrepancy ?? ((d.actual_quantity ?? 0) - (d.assigned_quantity ?? 0));
+      const diffText = diff === 0 ? '0' : (diff > 0 ? `+${diff}` : `${diff}`);
+      return `<tr>
+        <td class="num">${idx + 1}</td>
+        <td>${escapeHtml(d.asset?.asset_code || '')}</td>
+        <td>${escapeHtml(d.asset?.name || '')}</td>
+        <td class="num">${escapeHtml(d.asset?.unit || '')}</td>
+        <td class="num">${escapeHtml(d.assigned_quantity ?? 0)}</td>
+        <td class="num">${escapeHtml(d.actual_quantity ?? 0)}</td>
+        <td class="num">${escapeHtml(diffText)}</td>
+        <td>${escapeHtml(CONDITION_TEXT[d.condition] || d.condition || '')}</td>
+        <td>${escapeHtml(d.notes || '')}</td>
+      </tr>`;
+    }).join('');
+
+    const submitSig = signatures.find((s) => s.action === 'submit');
+    const headSig = signatures.find((s) => s.action === 'approve' && s.signer_role === 'department_head')
+      || signatures.find((s) => s.action === 'reject' && s.signer_role === 'department_head');
+    const adminSig = signatures.find((s) => s.action === 'approve' && s.signer_role === 'admin')
+      || signatures.find((s) => s.action === 'reject' && s.signer_role === 'admin');
+
+    const body = `
+      <div class="doc-header">
+        <div class="org">${escapeHtml(r.department?.name || '')}</div>
+      </div>
+      <div class="doc-title">Biên bản kiểm kê tài sản</div>
+      <div class="doc-sub">${r.inventory_round?.round_name ? `Đợt kiểm kê: ${escapeHtml(r.inventory_round.round_name)}` : ''}</div>
+      <div class="doc-meta">Mã báo cáo: <b>${escapeHtml(r.report_code || '')}</b></div>
+      <table class="data">
+        <thead>
+          <tr>
+            <th>STT</th><th>Mã tài sản</th><th>Tên tài sản</th><th>ĐVT</th>
+            <th>SL sổ sách</th><th>SL thực tế</th><th>Chênh lệch</th><th>Tình trạng</th><th>Ghi chú</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="summary">
+        Tổng số dòng: <b>${details.length}</b> —
+        Khớp: <b>${r.matched_assets || 0}</b> —
+        Thiếu: <b>${r.missing_assets || 0}</b> —
+        Thừa: <b>${r.surplus_assets || 0}</b> —
+        Hỏng: <b>${r.damaged_assets || 0}</b>
+      </div>
+      <div class="signatures">
+        ${signatureCell('Người kiểm kê', submitSig)}
+        ${signatureCell('Trưởng đơn vị', headSig)}
+        ${signatureCell('Quản trị hệ thống', adminSig)}
+      </div>`;
+
+    if (!openPrintWindow('Biên bản kiểm kê', body)) {
+      ElMessage.error('Trình duyệt chặn popup, vui lòng cho phép popup để in biên bản');
+    }
+  } finally {
+    printingMinutes.value = false;
+  }
+};
 
 const loading = ref(false);
 const approving = ref(false);

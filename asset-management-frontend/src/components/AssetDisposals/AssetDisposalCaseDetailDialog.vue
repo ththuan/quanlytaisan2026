@@ -194,6 +194,13 @@
         Đóng
       </el-button>
       <el-button
+        v-if="data"
+        :loading="printingMinutes"
+        @click="printMinutes"
+      >
+        In biên bản
+      </el-button>
+      <el-button
         v-if="data?.status === 'pending' && isAdminOrDirector"
         type="primary"
         :loading="submitting"
@@ -221,6 +228,8 @@ import assetDisposalService from '@/services/assetDisposal.service';
 import { useAuthStore } from '@/stores/auth.store';
 import { useSignature } from '@/composables/useSignature';
 import SignaturePad from '@/components/Common/SignaturePad.vue';
+import api from '@/services/api';
+import { openPrintWindow, escapeHtml, signatureCell } from '@/utils/print';
 
 const props = defineProps<{ modelValue: boolean; caseId: number | null }>();
 const emit = defineEmits<{ (e: 'update:modelValue', v: boolean): void; (e: 'completed'): void }>();
@@ -254,6 +263,58 @@ const form = ref({
 });
 
 const title = computed(() => (data.value ? `Hồ sơ giảm tài sản: ${data.value.code}` : 'Hồ sơ giảm tài sản'));
+
+const printingMinutes = ref(false);
+const printMinutes = async () => {
+  const c = data.value;
+  if (!c) return;
+  printingMinutes.value = true;
+  try {
+    let signatures: any[] = [];
+    try {
+      const res: any = await api.get('/signatures', {
+        params: { entity_type: 'asset_disposal_case', entity_id: props.caseId },
+      });
+      signatures = res?.data || [];
+    } catch { signatures = []; }
+
+    const items = c.items || [];
+    const rows = items.map((it: any, idx: number) => `<tr>
+        <td class="num">${idx + 1}</td>
+        <td>${escapeHtml(it.asset?.asset_code || '')}</td>
+        <td>${escapeHtml(it.asset?.name || '')}</td>
+        <td class="num">${escapeHtml(it.asset?.unit || '')}</td>
+        <td class="num">${escapeHtml(it.asset?.quantity ?? 1)}</td>
+      </tr>`).join('');
+
+    const createSig = signatures.find((s) => s.action === 'create');
+    const completeSig = signatures.find((s) => s.action === 'complete');
+    const typeText = c.disposal_type === 'destruction' ? 'Tiêu hủy' : 'Thanh lý';
+
+    const body = `
+      <div class="doc-header">
+        <div class="org">${escapeHtml(c.origin_department?.name || '')}</div>
+      </div>
+      <div class="doc-title">Biên bản ${escapeHtml(typeText)} tài sản</div>
+      <div class="doc-sub">Mã hồ sơ: ${escapeHtml(c.code || '')}</div>
+      <div class="doc-meta">Số quyết định: <b>${escapeHtml(c.decision_no || '')}</b>${c.decision_date ? ` — Ngày: ${escapeHtml(new Date(c.decision_date).toLocaleDateString('vi-VN'))}` : ''}</div>
+      <table class="data">
+        <thead><tr><th>STT</th><th>Mã tài sản</th><th>Tên tài sản</th><th>ĐVT</th><th>Số lượng</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="summary">Tổng số tài sản: <b>${items.length}</b>${c.notes ? ` — Ghi chú: ${escapeHtml(c.notes)}` : ''}</div>
+      <div class="signatures">
+        ${signatureCell('Người lập hồ sơ', createSig)}
+        ${signatureCell('Người hoàn tất / phê duyệt', completeSig)}
+      </div>`;
+
+    if (!openPrintWindow(`Biên bản ${typeText}`, body)) {
+      ElMessage.error('Trình duyệt chặn popup, vui lòng cho phép popup để in biên bản');
+    }
+  } finally {
+    printingMinutes.value = false;
+  }
+};
 
 const statusLabel = (s: string) => {
   if (s === 'pending') return 'Chờ xử lý';
