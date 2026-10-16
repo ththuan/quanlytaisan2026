@@ -993,8 +993,8 @@ const downloadQRCode = async () => {
     const lines = [
       `Mã TS: ${formData.asset_code || ''}`,
       `Tên: ${formData.name || ''}`,
-      `Loại: ${formData.category_code || formData.category || 'Chưa phân loại'}`,
       `Số lượng: ${formData.quantity || 1}${formData.unit ? ' ' + formData.unit : ''}`,
+      ...(formData.year_in_use ? [`Năm SD: ${formData.year_in_use}`] : []),
     ];
 
     const canvas = document.createElement('canvas');

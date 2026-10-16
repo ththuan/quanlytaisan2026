@@ -1021,18 +1021,18 @@ const escapeHtml = (value: unknown): string => {
     .replace(/'/g, '&#39;');
 };
 
-const buildPrintHTML = (items: Array<{ asset_code: string; name: string; category_name: string; quantity: number; unit: string; qr_image: string }>, deptName: string): string => {
+const buildPrintHTML = (items: Array<{ asset_code: string; name: string; quantity: number; unit: string; year_in_use?: number | null; qr_image: string }>, deptName: string): string => {
   const cells = items.map((a, idx) => {
     const row = Math.floor(idx / 4);
     const flip = row % 2 === 1; // hàng chẵn: text trên, QR dưới
     const qrBlock = a.qr_image
       ? `<img src="${escapeHtml(a.qr_image)}" alt="QR" />`
       : `<div class="qr-placeholder">No QR</div>`;
+    // Chỉ hiển thị thông tin cơ bản gọn nhẹ: tên, số lượng, năm sử dụng (nếu có)
     const infoBlock = `<div class="qr-info">
         <div class="qr-code">${escapeHtml(a.asset_code)}</div>
         <div class="qr-name">${escapeHtml(a.name)}</div>
-        ${a.category_name ? `<div class="qr-cat">${escapeHtml(a.category_name)}</div>` : ''}
-        <div class="qr-qty">SL: ${a.quantity}${a.unit ? ' ' + escapeHtml(a.unit) : ''}</div>
+        <div class="qr-qty">SL: ${escapeHtml(a.quantity)}${a.unit ? ' ' + escapeHtml(a.unit) : ''}${a.year_in_use ? ` • Năm SD: ${escapeHtml(a.year_in_use)}` : ''}</div>
       </div>`;
     return `<div class="qr-cell">${flip ? infoBlock + qrBlock : qrBlock + infoBlock}</div>`;
   }).join('');
@@ -1050,11 +1050,10 @@ const buildPrintHTML = (items: Array<{ asset_code: string; name: string; categor
   }
   .qr-cell img { width: 35mm; height: 35mm; display: block; margin: 0 auto; }
   .qr-placeholder { width: 35mm; height: 35mm; display: flex; align-items: center; justify-content: center; background: #eee; font-size: 9pt; color: #888; margin: 0 auto; }
-  .qr-info { margin: 1.5mm 0; line-height: 1.3; min-height: 12mm; }
+  .qr-info { margin: 1.5mm 0; line-height: 1.3; min-height: 11mm; }
   .qr-code { font-weight: bold; font-size: 8pt; word-break: break-all; }
   .qr-name { font-size: 7.5pt; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-  .qr-cat { font-size: 7pt; color: #555; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-  .qr-qty { font-size: 7pt; }
+  .qr-qty { font-size: 7pt; color: #333; }
   @media print {
     @page { size: A4 portrait; margin: 6mm; }
     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -1073,7 +1072,7 @@ const buildPrintHTML = (items: Array<{ asset_code: string; name: string; categor
 
 const generateQRPDF = async (assets: any[], departmentName: string) => {
   const BATCH = 10;
-  const items: Array<{ asset_code: string; name: string; category_name: string; quantity: number; unit: string; qr_image: string }> = [];
+  const items: Array<{ asset_code: string; name: string; quantity: number; unit: string; year_in_use?: number | null; qr_image: string }> = [];
 
   for (let i = 0; i < assets.length; i += BATCH) {
     const batch = assets.slice(i, i + BATCH);
@@ -1084,18 +1083,18 @@ const generateQRPDF = async (assets: any[], departmentName: string) => {
           return {
             asset_code: asset.asset_code || '',
             name: asset.name || '',
-            category_name: asset.assetCategory?.name || asset.category || '',
             quantity: asset.quantity || 1,
             unit: asset.unit || '',
+            year_in_use: asset.year_in_use || null,
             qr_image: res.data?.qr_code_image || '',
           };
         } catch {
           return {
             asset_code: asset.asset_code || '',
             name: asset.name || '',
-            category_name: asset.assetCategory?.name || asset.category || '',
             quantity: asset.quantity || 1,
             unit: asset.unit || '',
+            year_in_use: asset.year_in_use || null,
             qr_image: '',
           };
         }

@@ -897,8 +897,8 @@ const downloadQRCode = () => {
     const lines = [
       `Mã TS: ${asset?.asset_code || ''}`,
       `Tên: ${asset?.name || ''}`,
-      `Loại: ${asset?.category_code || 'Chưa phân loại'}`,
       `SL: ${asset?.quantity || 1}${asset?.unit ? ' ' + asset.unit : ''}`,
+      ...(asset?.year_in_use ? [`Năm SD: ${asset.year_in_use}`] : []),
     ];
 
     const canvas = document.createElement('canvas');
