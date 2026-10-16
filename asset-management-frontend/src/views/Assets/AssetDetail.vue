@@ -209,9 +209,9 @@
             </div>
           </el-card>
 
-          <!-- QR Code Card - Chỉ hiển thị cho tài sản không phải nhà cửa công trình -->
+          <!-- QR Code Card - CHỈ admin và tài sản không phải nhà cửa công trình -->
           <el-card
-            v-if="!isBuildingAsset"
+            v-if="authStore.isAdmin && !isBuildingAsset"
             class="info-card qrcode-card"
             shadow="never"
           >
@@ -654,9 +654,9 @@ const isBuildingAsset = computed(() => {
   return categoryGroup === 'nha_cua';
 });
 
-// Kiểm tra quyền tạo lại QR code (chỉ admin và director)
+// QR chỉ dành cho admin (xem/tải/tạo lại)
 const canRegenerateQRCode = computed(() => {
-  return authStore.isAdmin || authStore.isDirector;
+  return authStore.isAdmin;
 });
 
 /** Công cụ dụng cụ: hiển thị remainingValue (GTCL), không nhầm với originalValue (nguyên giá). */
@@ -709,7 +709,7 @@ onMounted(async () => {
   if (!asset) return;
   await loadTimeline(id);
   const categoryGroup = assetStore.currentAsset?.assetCategory?.category_group;
-  if (categoryGroup !== 'nha_cua') {
+  if (authStore.isAdmin && categoryGroup !== 'nha_cua') {
     await loadQRCode(id);
   }
 });

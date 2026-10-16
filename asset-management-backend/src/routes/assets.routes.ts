@@ -112,8 +112,8 @@ router.post('/qrcode/decode', assetsController.decodeQRCode);
 // POST /api/assets/qrcode/generate-all - Generate QR code cho tất cả tài sản chưa có
 router.post('/qrcode/generate-all', requireRole('admin'), invalidateCache('assets'), assetsController.generateAllQRCodes);
 
-// GET /api/assets/:id/qrcode - Lấy QR code của tài sản
-router.get('/:id/qrcode', assetsController.getQRCode);
+// GET /api/assets/:id/qrcode - Lấy QR code của tài sản (chỉ admin)
+router.get('/:id/qrcode', requireRole('admin'), assetsController.getQRCode);
 
 // POST /api/assets/:id/qrcode/generate - Generate QR code cho tài sản
 router.post('/:id/qrcode/generate', requireRole('admin'), invalidateCache('assets'), assetsController.generateQRCode);
