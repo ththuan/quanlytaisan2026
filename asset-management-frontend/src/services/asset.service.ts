@@ -80,7 +80,7 @@ export const assetService = {
     return api.post('/assets/qrcode/decode', { qr_data });
   },
 
-  async generateAllQRCodes(): Promise<ApiResponse<{ generated: number; failed: number; total: number; errors: string[] }>> {
-    return api.post('/assets/qrcode/generate-all');
+  async generateAllQRCodes(params?: { force?: boolean; department_id?: number }): Promise<ApiResponse<{ generated: number; failed: number; total: number; errors: string[] }>> {
+    return api.post('/assets/qrcode/generate-all', params || {});
   },
 };

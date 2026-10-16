@@ -604,8 +604,27 @@
             placeholder="Chọn đơn vị cần xuất QR"
           />
         </el-form-item>
+        <el-form-item label="">
+          <el-checkbox v-model="qrRegenerate">
+            Tạo lại QR (thay mẫu mới / QR cũ bị lỗi)
+          </el-checkbox>
+        </el-form-item>
       </el-form>
       <el-alert
+        v-if="qrRegenerate"
+        type="warning"
+        :closable="false"
+        show-icon
+        style="margin-top: 4px"
+      >
+        <template #default>
+          <div style="font-size: 13px; line-height: 1.6">
+            Sẽ <strong>tạo lại toàn bộ QR</strong> của đơn vị theo mẫu mới. Tem QR đã in trước đó sẽ <strong>không còn hiệu lực</strong> — cần in lại.
+          </div>
+        </template>
+      </el-alert>
+      <el-alert
+        v-else
         type="info"
         :closable="false"
         show-icon
@@ -703,6 +722,7 @@ window.addEventListener('resize', onResize);
 const showQRExportDialog = ref(false);
 const qrExportDeptId = ref<number | null>(null);
 const exportingQR = ref(false);
+const qrRegenerate = ref(false);
 
 const currentDepartmentName = computed(() => {
   if (!authStore.userDepartmentId) return '';
@@ -1121,6 +1141,19 @@ const handleExportQRPDF = async () => {
   }
   exportingQR.value = true;
   try {
+    // Tạo lại QR (ghi đè) nếu người dùng chọn — thay mẫu mới/QR cũ bị lỗi
+    if (qrRegenerate.value) {
+      ElMessage.info('Đang tạo lại QR cho đơn vị...');
+      const gen: any = await assetService.generateAllQRCodes({
+        force: true,
+        department_id: qrExportDeptId.value,
+      });
+      const g = gen?.data;
+      if (g) {
+        ElMessage.success(`Đã tạo lại QR cho ${g.generated}/${g.total} tài sản${g.failed ? `, lỗi ${g.failed}` : ''}`);
+      }
+    }
+
     const res: any = await assetService.getAssets({
       current_department_id: qrExportDeptId.value,
       limit: 9999,

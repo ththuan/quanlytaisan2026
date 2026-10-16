@@ -608,28 +608,37 @@ export const getQRCode = async (req: AuthRequest, res: Response, _next: NextFunc
   }
 };
 
-// POST /api/assets/qrcode/generate-all - Generate QR code cho tất cả tài sản chưa có QR
+// POST /api/assets/qrcode/generate-all - Generate QR code hàng loạt
+// Body/query: { force?: boolean, department_id?: number }
+//  - force=false (mặc định): chỉ tạo cho tài sản CHƯA có QR (QR bất biến)
+//  - force=true: TẠO LẠI (ghi đè) cả QR đã có — dùng để thay mẫu/QR lỗi
 export const generateAllQRCodes = async (req: AuthRequest, res: Response, _next: NextFunction): Promise<void> => {
   try {
     const { Asset } = await import('../models');
     const { Op } = await import('sequelize');
 
-    // CHỈ tạo QR cho tài sản CHƯA có QR. Không đụng tới QR đã tồn tại (QR là bất biến).
-    const assetsWithoutQR = await Asset.findAll({
-      where: {
-        [Op.or]: [
-          { qr_code: null },
-          { qr_code: '' },
-        ],
-      },
+    const force = String(req.body?.force ?? req.query.force ?? '') === 'true';
+    const departmentIdRaw = req.body?.department_id ?? req.query.department_id;
+    const departmentId = departmentIdRaw ? Number.parseInt(String(departmentIdRaw), 10) : null;
+
+    const where: any = {};
+    if (departmentId && Number.isFinite(departmentId)) {
+      where.current_department_id = departmentId;
+    }
+    if (!force) {
+      where[Op.or] = [{ qr_code: null }, { qr_code: '' }];
+    }
+
+    const assets = await Asset.findAll({
+      where,
       order: [['id', 'ASC']],
     });
 
-    if (assetsWithoutQR.length === 0) {
+    if (assets.length === 0) {
       res.status(200).json({
         success: true,
-        message: 'Tất cả tài sản đã có QR code',
-        data: { generated: 0, total: 0 },
+        message: force ? 'Không có tài sản nào để tạo lại QR' : 'Tất cả tài sản đã có QR code',
+        data: { generated: 0, failed: 0, total: 0, force },
       });
       return;
     }
@@ -639,9 +648,9 @@ export const generateAllQRCodes = async (req: AuthRequest, res: Response, _next:
     const errors: string[] = [];
 
     // Generate QR cho từng tài sản (tuần tự để tránh quá tải)
-    for (const asset of assetsWithoutQR) {
+    for (const asset of assets) {
       try {
-        await qrcodeService.generateQRCodeForAsset(asset);
+        await qrcodeService.generateQRCodeForAsset(asset, { force });
         generated++;
       } catch (err: any) {
         failed++;
@@ -651,8 +660,8 @@ export const generateAllQRCodes = async (req: AuthRequest, res: Response, _next:
 
     res.status(200).json({
       success: true,
-      message: `Đã tạo QR code cho ${generated}/${assetsWithoutQR.length} tài sản${failed > 0 ? `, lỗi ${failed} tài sản` : ''}`,
-      data: { generated, failed, total: assetsWithoutQR.length, errors: errors.slice(0, 10) },
+      message: `${force ? 'Đã TẠO LẠI' : 'Đã tạo'} QR code cho ${generated}/${assets.length} tài sản${failed > 0 ? `, lỗi ${failed} tài sản` : ''}`,
+      data: { generated, failed, total: assets.length, force, errors: errors.slice(0, 10) },
     });
   } catch (error: any) {
     console.error('Error generating all QR codes:', error);
