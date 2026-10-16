@@ -63,9 +63,10 @@
 
           <el-divider v-if="authStore.user?.role === 'admin'" class="sidebar-divider" />
 
-          <!-- Các module phụ trợ: chỉ admin (ẩn khỏi director, sau này cần bật lại được) -->
+          <!-- Các module phụ trợ (Sửa chữa, Mua sắm, Kho): tạm ẩn theo phạm vi hiện tại.
+               Bật lại bằng FEATURES.auxiliaryModules = true trong src/constants/features.ts -->
           <el-menu-item
-            v-if="authStore.user?.role === 'admin'"
+            v-if="FEATURES.auxiliaryModules && authStore.user?.role === 'admin'"
             index="/procurements"
           >
             <el-icon><Document /></el-icon>
@@ -73,7 +74,7 @@
           </el-menu-item>
 
           <el-menu-item
-            v-if="authStore.user?.role === 'admin'"
+            v-if="FEATURES.auxiliaryModules && authStore.user?.role === 'admin'"
             index="/purchase-requests"
           >
             <el-icon><ShoppingCart /></el-icon>
@@ -81,7 +82,7 @@
           </el-menu-item>
 
           <el-menu-item
-            v-if="authStore.user?.role === 'admin'"
+            v-if="FEATURES.auxiliaryModules && authStore.user?.role === 'admin'"
             index="/maintenance"
           >
             <el-icon><Tools /></el-icon>
@@ -89,7 +90,7 @@
           </el-menu-item>
 
           <el-menu-item
-            v-if="authStore.user?.role === 'admin'"
+            v-if="FEATURES.auxiliaryModules && authStore.user?.role === 'admin'"
             index="/stock"
           >
             <el-icon><Box /></el-icon>
@@ -245,6 +246,7 @@ import { House, HomeFilled, Box, User, ArrowDown, OfficeBuilding, UserFilled, Sw
 import NotificationBell from '@/components/Notifications/NotificationBell.vue';
 import TotpSetupDialog from '@/components/Auth/TotpSetupDialog.vue';
 import ChangePasswordDialog from '@/components/Auth/ChangePasswordDialog.vue';
+import { FEATURES } from '@/constants/features';
 
 
 const router = useRouter();

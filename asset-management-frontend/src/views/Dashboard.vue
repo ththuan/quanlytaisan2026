@@ -58,7 +58,7 @@
 
       <!-- 2. Mua sắm (chỉ admin và director) -->
       <el-col
-        v-if="isAdminOrDirector"
+        v-if="FEATURES.auxiliaryModules && isAdminOrDirector"
         :xs="12"
         :sm="8"
         :md="4"
@@ -93,7 +93,7 @@
 
       <!-- 3. Sửa chữa (chỉ admin và director) -->
       <el-col
-        v-if="isAdminOrDirector"
+        v-if="FEATURES.auxiliaryModules && isAdminOrDirector"
         :xs="12"
         :sm="8"
         :md="4"
@@ -387,6 +387,7 @@ import VChart from 'vue-echarts';
 import * as dashboardService from '@/services/dashboard.service';
 import { inventoryService } from '@/services/inventory.service';
 import { useAuthStore } from '@/stores/auth.store';
+import { FEATURES } from '@/constants/features';
 
 const { t } = useI18n();
 const activeTab = ref('overview');
