@@ -115,3 +115,22 @@ export const clearRead = async (req: AuthenticatedRequest, res: Response, next: 
     next(error);
   }
 };
+
+/**
+ * GET /api/notifications/pending-approvals
+ * Tương thích NGƯỢC cho frontend cũ (đã ngừng dùng): trả về danh sách
+ * thông báo chưa đọc của người dùng dưới dạng mảng (không cần sửa client cũ).
+ */
+export const getPendingApprovalsCompat = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const items = await Notification.findAll({
+      where: { user_id: userId, is_read: false },
+      order: [['created_at', 'DESC']],
+      limit: 50,
+    });
+    res.status(200).json({ success: true, data: items, total: items.length });
+  } catch (error) {
+    next(error);
+  }
+};
