@@ -17,6 +17,7 @@ import AssetCategory from './AssetCategory';
 import AssetDisposalCase from './AssetDisposalCase';
 import AssetDisposalItem from './AssetDisposalItem';
 import AuthSession from './AuthSession';
+import Notification from './Notification';
 
 import StockItem from './StockItem';
 import StockReceipt from './StockReceipt';
@@ -480,6 +481,17 @@ StockItem.hasMany(StockIssueLine, {
   as: 'issue_lines',
 });
 
+// Notification associations
+Notification.belongsTo(User, {
+  foreignKey: 'user_id',
+  as: 'user',
+});
+
+User.hasMany(Notification, {
+  foreignKey: 'user_id',
+  as: 'notifications',
+});
+
 export {
   User,
   Department,
@@ -506,6 +518,7 @@ export {
   StockIssue,
   StockIssueLine,
   AuthSession,
+  Notification,
 };
 
 export default {
@@ -533,4 +546,5 @@ export default {
   StockIssue,
   StockIssueLine,
   AuthSession,
+  Notification,
 };

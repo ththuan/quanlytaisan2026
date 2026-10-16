@@ -13,6 +13,7 @@ import {
 } from '../models';
 import { ConflictError, NotFoundError } from '../utils/errorHandler';
 import { getPaginationParams, buildPaginationResult, getOffset, PaginationResult } from '../utils/pagination';
+import notificationService from './notification.service';
 
 const normalizeCode = (code: string): string => code.trim().replace(/\s+/g, '-');
 
@@ -204,6 +205,24 @@ class AssetDisposalService {
       }
 
       await transaction.commit();
+
+      // Thông báo: hồ sơ đã hoàn tất
+      try {
+        const recipientIds: number[] = [];
+        if ((c as any).created_by) recipientIds.push((c as any).created_by);
+        const headIds = await notificationService.getUserIdsByDepartmentRoles((c as any).origin_department_id, ['department_head']);
+        await notificationService.notify({
+          userIds: [...recipientIds, ...headIds],
+          type: 'disposal',
+          title: 'Hồ sơ thanh lý/tiêu hủy đã hoàn tất',
+          message: `Hồ sơ ${(c as any).code || ''} đã hoàn tất, tài sản đã được cập nhật trạng thái thanh lý.`,
+          link: '/asset-disposals',
+          entityType: 'asset_disposal_case',
+          entityId: id,
+          excludeUserId: userId,
+        });
+      } catch { /* bỏ qua lỗi thông báo */ }
+
       return this.getCaseById(id);
     } catch (e) {
       await transaction.rollback();
@@ -309,6 +328,23 @@ class AssetDisposalService {
       }
 
       await transaction.commit();
+
+      // Thông báo: hồ sơ thanh lý mới cần xử lý (trưởng đơn vị gốc + admin)
+      try {
+        const headIds = await notificationService.getUserIdsByDepartmentRoles(payload.origin_department_id, ['department_head']);
+        const adminIds = await notificationService.getAdminIds();
+        await notificationService.notify({
+          userIds: [...headIds, ...adminIds],
+          type: 'disposal',
+          title: 'Hồ sơ thanh lý/tiêu hủy mới',
+          message: `Hồ sơ ${code} vừa được tạo và đang chờ xử lý.`,
+          link: '/asset-disposals',
+          entityType: 'asset_disposal_case',
+          entityId: created.id,
+          excludeUserId: userId,
+        });
+      } catch { /* bỏ qua lỗi thông báo */ }
+
       return this.getCaseById(created.id);
     } catch (e) {
       await transaction.rollback();

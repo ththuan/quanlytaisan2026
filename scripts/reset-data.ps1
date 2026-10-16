@@ -37,6 +37,7 @@ Write-Host "Dang xoa du lieu..." -ForegroundColor Yellow
 
 $sql1 = @"
 TRUNCATE TABLE
+  notifications,
   asset_disposal_items,
   asset_disposal_cases,
   inventory_report_details,

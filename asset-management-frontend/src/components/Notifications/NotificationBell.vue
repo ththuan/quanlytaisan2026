@@ -223,7 +223,10 @@ const typeRouteMap: Record<string, string> = {
 };
 
 const handleNotificationClick = (notification: Notification) => {
-  const route = typeRouteMap[notification.type];
+  const route = notification.link || typeRouteMap[notification.type];
+  if (!notification.is_read) {
+    notificationStore.markAsRead(notification.id);
+  }
   if (route) {
     router.push(route);
     showDropdown.value = false;

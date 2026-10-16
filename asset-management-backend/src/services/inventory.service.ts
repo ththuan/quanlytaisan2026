@@ -18,6 +18,7 @@ import {
   MaintenanceRequest,
 } from '../models';
 import assetDisposalService from './assetDisposal.service';
+import notificationService from './notification.service';
 import { NotFoundError, ForbiddenError, ValidationError } from '../utils/errorHandler';
 import { getPaginationParams, buildPaginationResult, getOffset } from '../utils/pagination';
 
@@ -76,6 +77,19 @@ class InventoryService {
       total_departments: totalDepartments,
       created_by: createdBy,
       status: 'in_progress',
+    });
+
+    // Thông báo cho trưởng đơn vị + nhân viên biết đợt kiểm kê mới
+    const participantIds = await notificationService.getUserIdsByRoles(['department_head', 'staff']);
+    await notificationService.notify({
+      userIds: participantIds,
+      type: 'inventory',
+      title: 'Đợt kiểm kê mới đã bắt đầu',
+      message: `Đợt kiểm kê "${round.round_name}" đã bắt đầu. Vui lòng thực hiện kiểm kê tài sản của đơn vị trước hạn.`,
+      link: '/inventory',
+      entityType: 'inventory_round',
+      entityId: round.id,
+      excludeUserId: createdBy,
     });
 
     return this.getInventoryRoundById(round.id);
@@ -673,6 +687,19 @@ class InventoryService {
 
     await this.updateRoundStatistics(report.inventory_round_id);
 
+    // Thông báo cho Trưởng đơn vị (cấp 1) duyệt báo cáo
+    const approverIds = await notificationService.getInventoryLevel1ApproverIds(report.department_id);
+    await notificationService.notify({
+      userIds: approverIds,
+      type: 'inventory',
+      title: 'Báo cáo kiểm kê chờ duyệt',
+      message: `Báo cáo ${report.report_code} đã được nộp và đang chờ Trưởng đơn vị phê duyệt.`,
+      link: '/inventory',
+      entityType: 'inventory_report',
+      entityId: reportId,
+      excludeUserId: userId,
+    });
+
     return this.getInventoryReportById(reportId);
   }
 
@@ -773,6 +800,49 @@ class InventoryService {
     }
 
     await this.updateRoundStatistics(report.inventory_round_id);
+
+    // Thông báo theo bước duyệt
+    const deptName = (report as any).department?.name || '';
+    if (approverRole === 'department_head') {
+      if (decision === 'approved') {
+        const adminIds = await notificationService.getAdminIds();
+        await notificationService.notify({
+          userIds: adminIds,
+          type: 'inventory',
+          title: 'Báo cáo kiểm kê chờ admin duyệt',
+          message: `Báo cáo ${report.report_code}${deptName ? ` (${deptName})` : ''} đã được Trưởng đơn vị duyệt, đang chờ admin duyệt.`,
+          link: '/inventory',
+          entityType: 'inventory_report',
+          entityId: reportId,
+          excludeUserId: approverId,
+        });
+      } else {
+        await notificationService.notify({
+          userIds: [report.created_by],
+          type: 'inventory',
+          title: 'Báo cáo kiểm kê bị từ chối',
+          message: `Báo cáo ${report.report_code} bị Trưởng đơn vị từ chối.${reason ? ` Lý do: ${reason}` : ''}`,
+          link: '/inventory',
+          entityType: 'inventory_report',
+          entityId: reportId,
+          excludeUserId: approverId,
+        });
+      }
+    } else if (approverRole === 'admin') {
+      await notificationService.notify({
+        userIds: [report.created_by],
+        type: 'inventory',
+        title: decision === 'approved' ? 'Báo cáo kiểm kê đã được duyệt' : 'Báo cáo kiểm kê bị từ chối',
+        message:
+          decision === 'approved'
+            ? `Báo cáo ${report.report_code} đã được admin duyệt và hoàn tất.`
+            : `Báo cáo ${report.report_code} bị admin từ chối.${reason ? ` Lý do: ${reason}` : ''}`,
+        link: '/inventory',
+        entityType: 'inventory_report',
+        entityId: reportId,
+        excludeUserId: approverId,
+      });
+    }
 
     return this.getInventoryReportById(reportId);
   }

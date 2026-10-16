@@ -4,6 +4,7 @@ import { NotFoundError, ForbiddenError, ConflictError } from '../utils/errorHand
 import { getPaginationParams, buildPaginationResult, getOffset, PaginationResult } from '../utils/pagination';
 import sequelize from '../config/database';
 import { UserRole } from '../models/User';
+import notificationService from './notification.service';
 
 export interface CreateTransferInput {
   asset_id: number;
@@ -178,6 +179,22 @@ class TransferService {
       notes: data.notes,
       status: 'pending',
     });
+
+    // Thông báo cho Trưởng đơn vị nơi giao + admin
+    try {
+      const fromHeadIds = await notificationService.getUserIdsByDepartmentRoles(fromDepartmentId, ['department_head']);
+      const adminIds = await notificationService.getAdminIds();
+      await notificationService.notify({
+        userIds: [...fromHeadIds, ...adminIds],
+        type: 'transfer',
+        title: 'Yêu cầu điều chuyển chờ duyệt',
+        message: `Điều chuyển tài sản ${asset.asset_code} - ${asset.name} đến ${toDepartment.name}, đang chờ Trưởng đơn vị phê duyệt.`,
+        link: '/transfers',
+        entityType: 'asset_transfer',
+        entityId: transfer.id,
+        excludeUserId: requester.id,
+      });
+    } catch { /* bỏ qua lỗi thông báo */ }
 
     return this.getTransferById(transfer.id);
   }
@@ -405,6 +422,48 @@ class TransferService {
       }
 
       await transaction.commit();
+
+      // Thông báo theo bước duyệt (không nằm trong transaction)
+      try {
+        const requesterIds = transfer.requested_by ? [transfer.requested_by] : [];
+        if (decision === 'approved' && transfer.status === 'approved_by_head') {
+          const toHeadIds = await notificationService.getUserIdsByDepartmentRoles(transfer.to_department_id, ['department_head']);
+          const adminIds = await notificationService.getAdminIds();
+          await notificationService.notify({
+            userIds: [...toHeadIds, ...adminIds],
+            type: 'transfer',
+            title: 'Yêu cầu điều chuyển chờ duyệt (đơn vị nhận)',
+            message: `Yêu cầu điều chuyển #${id} đã được Trưởng đơn vị nơi giao duyệt, chờ Trưởng đơn vị nơi nhận duyệt.`,
+            link: '/transfers',
+            entityType: 'asset_transfer',
+            entityId: id,
+            excludeUserId: approver.id,
+          });
+        } else if (decision === 'approved' && transfer.status === 'completed') {
+          await notificationService.notify({
+            userIds: requesterIds,
+            type: 'transfer',
+            title: 'Yêu cầu điều chuyển đã hoàn tất',
+            message: `Yêu cầu điều chuyển #${id} đã hoàn tất.`,
+            link: '/transfers',
+            entityType: 'asset_transfer',
+            entityId: id,
+            excludeUserId: approver.id,
+          });
+        } else if (decision === 'rejected') {
+          await notificationService.notify({
+            userIds: requesterIds,
+            type: 'transfer',
+            title: 'Yêu cầu điều chuyển bị từ chối',
+            message: `Yêu cầu điều chuyển #${id} bị từ chối.${reason ? ` Lý do: ${reason}` : ''}`,
+            link: '/transfers',
+            entityType: 'asset_transfer',
+            entityId: id,
+            excludeUserId: approver.id,
+          });
+        }
+      } catch { /* bỏ qua lỗi thông báo */ }
+
       return this.getTransferById(id);
     } catch (error) {
       await transaction.rollback();

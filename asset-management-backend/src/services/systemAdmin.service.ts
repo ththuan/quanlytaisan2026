@@ -354,6 +354,7 @@ class SystemAdminService {
   async resetBusinessData(): Promise<{ success: boolean; message: string }> {
     try {
       const tables = [
+        'notifications',
         'asset_disposal_items',
         'asset_disposal_cases',
         'inventory_report_details',
