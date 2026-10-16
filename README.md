@@ -243,14 +243,13 @@ node scripts/generate-secrets.js
 
 ## 📷 QR code & tra cứu công khai
 
-- Mỗi tài sản có QR chứa URL công khai kèm token ký HMAC: `https://<FRONTEND_URL>/scan/<MÃ>?t=<token>`.
+- Mỗi tài sản có QR chứa URL công khai kèm token: `https://<FRONTEND_URL>/scan/<MÃ>?t=<token>`.
 - Quét bằng camera điện thoại → mở trang HTML tra cứu (không cần đăng nhập): tên, mã, loại, phòng ban, vị trí, trạng thái, ngày kiểm kê gần nhất, thông tin thanh lý (nếu có), nút **Mở trong hệ thống**.
-- Endpoint: `GET /scan/:code` (trang HTML) và `GET /api/public/asset/:code` (JSON). Cả hai đều xác thực token khi `QR_REQUIRE_SIGNATURE=true` và bị giới hạn tần suất.
-- **Quan trọng:** token ký bằng `QR_SIGNING_SECRET` (hoặc `JWT_SECRET`). QR cũ (không token) sẽ bị từ chối → cần **tạo lại QR**:
-  - Tạo lại cho 1 tài sản: nút "Tạo lại QR Code" ở trang chi tiết tài sản.
-  - Tạo lại hàng loạt: `POST /api/assets/qrcode/generate-all` (admin) — tự tạo lại QR thiếu/sai token.
-  - Sau đó **in lại tem QR** (chức năng in tem theo phòng ban ở danh sách tài sản).
-- Đổi `QR_SIGNING_SECRET` sẽ **vô hiệu hoá toàn bộ QR đã in** — chỉ đổi khi chấp nhận in lại tem.
+- Endpoint: `GET /scan/:code` (trang HTML) và `GET /api/public/asset/:code` (JSON). Cả hai đều xác thực token (khi `QR_REQUIRE_SIGNATURE=true`) và bị giới hạn tần suất.
+- **QR là BẤT BIẾN:** sau khi sinh, mã QR **không bao giờ tự thay đổi** (kể cả khi đổi `FRONTEND_URL`, `JWT_SECRET` hay `QR_SIGNING_SECRET`). Token tra cứu được đối chiếu với token **đã lưu trong DB**, không tính lại theo secret.
+  - Chỉ thay đổi khi **xóa tài sản rồi tạo lại** (QR mới), hoặc admin bấm **"Tạo lại QR Code"** ở trang chi tiết (thao tác chủ động).
+  - `POST /api/assets/qrcode/generate-all` chỉ tạo cho tài sản **chưa có** QR, không đụng tới QR đã tồn tại.
+- **Tem cũ (in trước khi bật token)** vẫn tra cứu được bình thường (hệ thống cho phép QR không token). Muốn bảo vệ tem cũ thì tạo lại QR cho tài sản đó (sẽ đổi nội dung QR → cần in lại tem).
 
 ---
 

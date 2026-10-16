@@ -138,24 +138,19 @@ class QRCodeService {
   }
 
   /**
-   * Generate QR code cho tài sản và lưu vào database
+   * Generate QR code cho tài sản và lưu vào database.
+   *
+   * QR là VĨNH VIỄN: nếu tài sản đã có QR, mặc định trả lại QR cũ (không tạo lại).
+   * Chỉ tạo lại khi `options.force = true` (thao tác chủ động của admin).
    */
-  async generateQRCodeForAsset(asset: Asset | any): Promise<{ qrCode: string; qrCodeImage: string }> {
+  async generateQRCodeForAsset(
+    asset: Asset | any,
+    options?: { force?: boolean }
+  ): Promise<{ qrCode: string; qrCodeImage: string }> {
     try {
       // Validate asset có đủ thông tin
       if (!asset.asset_code || !asset.name) {
         throw new Error('Asset must have asset_code and name to generate QR code');
-      }
-
-      // Generate QR code data
-      const qrData = this.generateQRCodeData(asset);
-      
-      // Generate QR code image (base64)
-      const qrCodeImage = await this.generateQRCodeImage(qrData, { format: 'png', size: 300 });
-
-      // Validate QR code image không quá dài (base64 có thể rất dài)
-      if (qrCodeImage.length > 100000) {
-        console.warn(`QR code image is very long: ${qrCodeImage.length} characters`);
       }
 
       // Đảm bảo asset là Sequelize instance, nếu không thì load lại từ database
@@ -168,6 +163,25 @@ class QRCodeService {
         if (!assetInstance) {
           throw new Error(`Asset with ID ${asset.id} not found`);
         }
+      }
+
+      // QR đã tồn tại → giữ nguyên (bất biến). Chỉ tạo lại khi force.
+      if (!options?.force && assetInstance.qr_code && assetInstance.qr_code_image) {
+        return {
+          qrCode: assetInstance.qr_code,
+          qrCodeImage: assetInstance.qr_code_image,
+        };
+      }
+
+      // Generate QR code data
+      const qrData = this.generateQRCodeData(assetInstance);
+      
+      // Generate QR code image (base64)
+      const qrCodeImage = await this.generateQRCodeImage(qrData, { format: 'png', size: 300 });
+
+      // Validate QR code image không quá dài (base64 có thể rất dài)
+      if (qrCodeImage.length > 100000) {
+        console.warn(`QR code image is very long: ${qrCodeImage.length} characters`);
       }
 
       // Update asset với QR code

@@ -6,9 +6,7 @@ import depreciationCalculatorService from '../services/depreciationCalculator.se
 import exportService from '../services/export.service';
 import qrcodeService from '../services/qrcode.service';
 import assetDisposalService from '../services/assetDisposal.service';
-import envConfig from '../config/env';
 import { AuthRequest } from '../middleware/auth.middleware';
-import { verifyAssetCode } from '../utils/qrSigning';
 
 // Helper: check if a non-admin/director user can access an asset's data
 async function checkAssetDeptAccess(assetId: number, user: { role: string; department_id?: number | null }): Promise<boolean> {
@@ -452,9 +450,9 @@ export const generateQRCode = async (req: AuthRequest, res: Response, _next: Nex
       return;
     }
 
-    // Generate QR code
+    // Generate QR code (force: tạo lại theo yêu cầu chủ động của admin)
     // Note: asset từ getAssetById có thể là plain object, qrcodeService sẽ tự load lại instance
-    const result = await qrcodeService.generateQRCodeForAsset(asset);
+    const result = await qrcodeService.generateQRCodeForAsset(asset, { force: true });
 
     res.status(200).json({
       success: true,
@@ -569,14 +567,9 @@ export const getQRCode = async (req: AuthRequest, res: Response, _next: NextFunc
       return;
     }
 
-    // Nếu chưa có QR code, hoặc QR code chứa URL cũ (không khớp FRONTEND_URL hiện tại)
-    // hoặc thiếu/sai token HMAC → generate lại
-    const expectedBase = envConfig.frontendUrl.replace(/\/$/, '');
-    const qrToken = (asset.qr_code || '').split('?t=')[1];
-    const qrOutdated =
-      !!asset.qr_code &&
-      (!asset.qr_code.startsWith(expectedBase) || !verifyAssetCode(asset.asset_code, qrToken));
-    if (!asset.qr_code || !asset.qr_code_image || qrOutdated) {
+    // QR là bất biến: chỉ tạo khi tài sản CHƯA có QR. Nếu đã có → trả lại nguyên trạng,
+    // không tự tạo lại (giữ tem QR đã in luôn đúng).
+    if (!asset.qr_code || !asset.qr_code_image) {
       try {
         const result = await qrcodeService.generateQRCodeForAsset(asset);
         res.status(200).json({
@@ -621,15 +614,12 @@ export const generateAllQRCodes = async (req: AuthRequest, res: Response, _next:
     const { Asset } = await import('../models');
     const { Op } = await import('sequelize');
 
-    // Lấy tài sản chưa có QR, QR URL cũ, hoặc thiếu token HMAC (?t=)
-    const expectedBase = envConfig.frontendUrl.replace(/\/$/, '');
+    // CHỈ tạo QR cho tài sản CHƯA có QR. Không đụng tới QR đã tồn tại (QR là bất biến).
     const assetsWithoutQR = await Asset.findAll({
       where: {
         [Op.or]: [
           { qr_code: null },
           { qr_code: '' },
-          { qr_code: { [Op.notLike]: `${expectedBase}%` } },
-          { qr_code: { [Op.notLike]: '%?t=%' } },
         ],
       },
       order: [['id', 'ASC']],

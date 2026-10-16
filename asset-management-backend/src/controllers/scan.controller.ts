@@ -5,7 +5,7 @@
 import { Request, Response } from 'express';
 import { Asset, Department, AssetCategory, AssetDisposalItem, AssetDisposalCase } from '../models';
 import { ASSET_STATUS_LABELS, ASSET_STATUS_COLORS, ASSET_CONDITION_LABELS } from '../constants/assetLabels';
-import { QR_REQUIRE_SIGNATURE, verifyAssetCode } from '../utils/qrSigning';
+import { QR_REQUIRE_SIGNATURE, isQrTokenValid } from '../utils/qrSigning';
 import envConfig from '../config/env';
 
 const DISPOSAL_TYPE_LABELS: Record<string, string> = {
@@ -82,7 +82,7 @@ const ASSET_ATTRIBUTES = [
   'id', 'asset_code', 'name', 'description', 'category', 'category_code',
   'status', 'condition', 'location', 'unit', 'quantity', 'year_in_use',
   'serial_number', 'warranty_date', 'current_department_id', 'image_url',
-  'last_inventory_date', 'inventory_status',
+  'last_inventory_date', 'inventory_status', 'qr_code',
 ];
 
 async function findAssetByCode(code: string) {
@@ -122,17 +122,9 @@ export const scanAssetPage = async (req: Request, res: Response): Promise<void> 
     return;
   }
 
-  // Xác thực token HMAC (nếu bật) để chống dò mã tài sản
-  if (QR_REQUIRE_SIGNATURE && !verifyAssetCode(code, req.query.t as string | undefined)) {
-    res.status(403).send(renderPage('Mã QR không hợp lệ', `
-      <div class="card error-card">
-        <div class="error-icon">🔒</div>
-        <div class="error-title">Mã QR không hợp lệ</div>
-        <div class="error-msg">Mã QR này không do hệ thống phát hành hoặc đã cũ. Vui lòng quét tem QR mới trên tài sản.</div>
-      </div>`));
-    return;
-  }
-
+  // Xác thực token HMAC (nếu bật) để chống dò mã tài sản.
+  // Token được đối chiếu với token ĐÃ LƯU trong QR của tài sản → QR vĩnh viễn,
+  // không phụ thuộc secret/domain. Tem cũ (không token) vẫn được chấp nhận.
   try {
     const asset = await findAssetByCode(code);
 
@@ -142,6 +134,16 @@ export const scanAssetPage = async (req: Request, res: Response): Promise<void> 
           <div class="error-icon">🔍</div>
           <div class="error-title">Không tìm thấy tài sản</div>
           <div class="error-msg">Không có tài sản với mã: <strong>${escapeHtml(code)}</strong></div>
+        </div>`));
+      return;
+    }
+
+    if (QR_REQUIRE_SIGNATURE && !isQrTokenValid((asset as any).qr_code, req.query.t as string | undefined)) {
+      res.status(403).send(renderPage('Mã QR không hợp lệ', `
+        <div class="card error-card">
+          <div class="error-icon">🔒</div>
+          <div class="error-title">Mã QR không hợp lệ</div>
+          <div class="error-msg">Mã QR này không hợp lệ với tài sản. Vui lòng quét đúng tem QR của tài sản.</div>
         </div>`));
       return;
     }
