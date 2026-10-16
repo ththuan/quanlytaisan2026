@@ -8,6 +8,7 @@ import QRCode from 'qrcode';
 import { Op } from 'sequelize';
 import { Asset } from '../models';
 import envConfig from '../config/env';
+import { signAssetCode } from '../utils/qrSigning';
 
 export interface QRCodeData {
   asset_code: string;
@@ -21,11 +22,12 @@ export interface QRCodeData {
 class QRCodeService {
   /**
    * Generate QR code data string từ thông tin tài sản
-   * Encode URL công khai để camera điện thoại có thể mở trực tiếp trang tra cứu
+   * Encode URL công khai (kèm token HMAC) để camera điện thoại mở trang tra cứu
    */
   generateQRCodeData(asset: Asset): string {
     const baseUrl = envConfig.frontendUrl.replace(/\/$/, '');
-    return `${baseUrl}/scan/${asset.asset_code}`;
+    const token = signAssetCode(asset.asset_code);
+    return `${baseUrl}/scan/${asset.asset_code}?t=${token}`;
   }
 
   /**
@@ -82,10 +84,12 @@ class QRCodeService {
    */
   decodeQRCodeData(qrDataString: string): QRCodeData {
     const trimmed = qrDataString.trim();
+    // QR mới chứa token: .../scan/TS001?t=<token> → bỏ phần query khi lấy mã
+    const withoutQuery = trimmed.split('?')[0];
     
     // Format URL: https://domain/scan/ASSET_CODE
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-      const urlParts = trimmed.split('/');
+      const urlParts = withoutQuery.split('/');
       const scanIndex = urlParts.indexOf('scan');
       const assetCode = scanIndex !== -1 && urlParts[scanIndex + 1]
         ? urlParts[scanIndex + 1]
@@ -103,7 +107,7 @@ class QRCodeService {
     // Format plain asset_code (không phải JSON, không phải URL)
     if (!trimmed.startsWith('{')) {
       return {
-        asset_code: trimmed,
+        asset_code: withoutQuery,
         name: '',
         category_code: '',
         category_name: '',

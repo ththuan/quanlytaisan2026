@@ -446,114 +446,64 @@
             </div>
           </el-card>
 
-          <!-- Lịch sử điều chuyển -->
+          <!-- Lịch sử tài sản (hợp nhất: nhập → điều chuyển → kiểm kê → thanh lý) -->
           <el-card
-            v-if="transferHistory.length > 0"
-            class="info-card transfer-history-card"
+            v-if="timeline.length > 0"
+            class="info-card timeline-card"
             shadow="never"
           >
             <template #header>
               <div class="card-title">
-                <el-icon><Switch /></el-icon>
-                <span>Lịch sử điều chuyển</span>
+                <el-icon><Clock /></el-icon>
+                <span>Lịch sử tài sản</span>
               </div>
             </template>
             <div
-              v-loading="loadingHistory"
-              class="transfer-history-content"
+              v-loading="loadingTimeline"
+              class="timeline-content"
             >
-              <div 
-                v-for="(transfer, index) in transferHistory" 
-                :key="transfer.id"
-                class="transfer-item"
-                :class="{ 'latest-transfer': index === 0 }"
-              >
-                <div class="transfer-header">
-                  <el-tag
-                    :type="getTransferStatusType(transfer.status)"
-                    size="small"
-                  >
-                    {{ getTransferStatusText(transfer.status) }}
-                  </el-tag>
-                  <span class="transfer-date">{{ formatDate(transfer.transfer_date || transfer.created_at) }}</span>
-                </div>
-                <div class="transfer-details">
-                  <div class="transfer-path">
-                    <span class="transfer-from">{{ transfer.from_department?.name || 'Chưa xác định' }}</span>
-                    <el-icon class="transfer-arrow">
-                      <ArrowRight />
-                    </el-icon>
-                    <span class="transfer-to">{{ transfer.to_department?.name || 'Chưa xác định' }}</span>
+              <el-timeline>
+                <el-timeline-item
+                  v-for="(ev, index) in timeline"
+                  :key="index"
+                  :timestamp="formatDate(ev.date)"
+                  :type="getTimelineType(ev.type)"
+                  placement="top"
+                >
+                  <div class="timeline-event">
+                    <div class="timeline-title">
+                      <el-icon><component :is="getTimelineIcon(ev.type)" /></el-icon>
+                      <span>{{ ev.title }}</span>
+                      <el-tag
+                        v-if="ev.status"
+                        :type="getTimelineStatusType(ev.type, ev.status)"
+                        size="small"
+                        style="margin-left:8px"
+                      >
+                        {{ getTimelineStatusText(ev.type, ev.status) }}
+                      </el-tag>
+                    </div>
+                    <div
+                      v-if="ev.description"
+                      class="timeline-desc"
+                    >
+                      {{ ev.description }}
+                    </div>
+                    <div
+                      v-if="ev.actor"
+                      class="timeline-desc"
+                    >
+                      Người thực hiện: {{ ev.actor }}
+                    </div>
+                    <div
+                      v-if="ev.reason"
+                      class="timeline-desc"
+                    >
+                      Lý do: {{ ev.reason }}
+                    </div>
                   </div>
-                  <div
-                    v-if="transfer.reason"
-                    class="transfer-reason"
-                  >
-                    <span class="reason-label">Lý do:</span>
-                    <span class="reason-text">{{ transfer.reason }}</span>
-                  </div>
-                  <div
-                    v-if="transfer.requester"
-                    class="transfer-requester"
-                  >
-                    <span class="requester-label">Người đề nghị:</span>
-                    <span class="requester-text">{{ transfer.requester?.fullname || transfer.requester?.username }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </el-card>
-
-          <!-- Lịch sử thanh lý -->
-          <el-card
-            v-if="disposalHistory.length > 0"
-            class="info-card disposal-history-card"
-            shadow="never"
-          >
-            <template #header>
-              <div class="card-title">
-                <el-icon><Delete /></el-icon>
-                <span>Lịch sử thanh lý / tiêu hủy</span>
-              </div>
-            </template>
-            <div v-loading="loadingDisposalHistory" class="repair-history-content">
-              <div
-                v-for="dc in disposalHistory"
-                :key="dc.id"
-                class="repair-item"
-              >
-                <div class="repair-header">
-                  <el-tag :type="getDisposalStatusType(dc.status)" size="small">
-                    {{ getDisposalStatusText(dc.status) }}
-                  </el-tag>
-                  <el-tag type="info" size="small" style="margin-left:6px">
-                    {{ dc.disposal_type === 'liquidation' ? 'Thanh lý' : 'Tiêu hủy' }}
-                  </el-tag>
-                  <span class="repair-date">{{ formatDate(dc.created_at) }}</span>
-                </div>
-                <div class="repair-details">
-                  <div v-if="dc.code" class="repair-description">
-                    <span class="detail-label">Mã hồ sơ:</span>
-                    <span class="detail-text">{{ dc.code }}</span>
-                  </div>
-                  <div v-if="dc.decision_no" class="repair-description">
-                    <span class="detail-label">Số quyết định:</span>
-                    <span class="detail-text">{{ dc.decision_no }}</span>
-                  </div>
-                  <div v-if="dc.decision_date" class="repair-description">
-                    <span class="detail-label">Ngày quyết định:</span>
-                    <span class="detail-text">{{ formatDate(dc.decision_date) }}</span>
-                  </div>
-                  <div v-if="dc.creator" class="repair-requester">
-                    <span class="detail-label">Người lập hồ sơ:</span>
-                    <span class="detail-text">{{ dc.creator?.fullname || dc.creator?.username }}</span>
-                  </div>
-                  <div v-if="dc.notes" class="repair-description">
-                    <span class="detail-label">Ghi chú:</span>
-                    <span class="detail-text">{{ dc.notes }}</span>
-                  </div>
-                </div>
-              </div>
+                </el-timeline-item>
+              </el-timeline>
             </div>
           </el-card>
 
@@ -631,8 +581,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAssetStore } from '@/stores/asset.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { useTransferStore } from '@/stores/transfer.store';
-import { ArrowLeft, Edit, Delete, Document, Location, Box, TrendCharts, Switch, ArrowRight, Download, Refresh, Picture, Upload } from '@element-plus/icons-vue';
+import { ArrowLeft, Edit, Delete, Document, Location, Box, TrendCharts, Download, Refresh, Picture, Upload, Clock } from '@element-plus/icons-vue';
 import AssetFormDialog from '@/components/Assets/AssetFormDialog.vue';
 import { assetService } from '@/services/asset.service';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -647,13 +596,10 @@ const assetStatusLabel = (status: string | null | undefined) =>
 const router = useRouter();
 const assetStore = useAssetStore();
 const authStore = useAuthStore();
-const transferStore = useTransferStore();
 
 const showEditDialog = ref(false);
-const transferHistory = ref<any[]>([]);
-const loadingHistory = ref(false);
-const disposalHistory = ref<any[]>([]);
-const loadingDisposalHistory = ref(false);
+const timeline = ref<any[]>([]);
+const loadingTimeline = ref(false);
 const qrCodeImage = ref<string | null>(null);
 const loadingQRCode = ref(false);
 const generatingQR = ref(false);
@@ -761,49 +707,62 @@ onMounted(async () => {
   const id = parseInt(route.params.id as string);
   const asset = await assetStore.fetchAssetById(id);
   if (!asset) return;
-  await Promise.all([
-    loadTransferHistory(id),
-    loadDisposalHistory(id),
-  ]);
+  await loadTimeline(id);
   const categoryGroup = assetStore.currentAsset?.assetCategory?.category_group;
   if (categoryGroup !== 'nha_cua') {
     await loadQRCode(id);
   }
 });
 
-const loadTransferHistory = async (assetId: number) => {
-  loadingHistory.value = true;
+const loadTimeline = async (assetId: number) => {
+  loadingTimeline.value = true;
   try {
-    const history = await transferStore.fetchTransferHistory(assetId);
-    transferHistory.value = history || [];
+    const response: any = await assetService.getTimeline(assetId);
+    timeline.value = response?.data || [];
   } catch (error) {
-    console.error('Error loading transfer history:', error);
-    transferHistory.value = [];
+    console.error('Error loading asset timeline:', error);
+    timeline.value = [];
   } finally {
-    loadingHistory.value = false;
+    loadingTimeline.value = false;
   }
 };
 
-const loadDisposalHistory = async (assetId: number) => {
-  loadingDisposalHistory.value = true;
-  try {
-    const response: any = await assetService.getDisposalHistory(assetId);
-    disposalHistory.value = response?.data || [];
-  } catch {
-    disposalHistory.value = [];
-  } finally {
-    loadingDisposalHistory.value = false;
-  }
+const getTimelineType = (type: string) => {
+  const map: Record<string, string> = {
+    created: 'info',
+    transfer: 'primary',
+    inventory: 'warning',
+    disposal: 'danger',
+  };
+  return (map[type] || 'info') as any;
 };
 
-const getDisposalStatusType = (status: string) => {
-  const map: Record<string, string> = { pending: 'warning', completed: 'success', cancelled: 'info' };
-  return (map[status] || 'info') as any;
+const getTimelineStatusType = (type: string, status: string) => {
+  const map: Record<string, Record<string, string>> = {
+    transfer: { pending: 'warning', approved: 'success', completed: 'success', rejected: 'danger', approved_by_head: 'success', rejected_by_head: 'danger' },
+    inventory: { draft: 'info', pending: 'warning', approved_by_head: 'primary', approved_by_admin: 'success', completed: 'success', rejected_by_head: 'danger', rejected_by_admin: 'danger' },
+    disposal: { pending: 'warning', completed: 'success', cancelled: 'info' },
+  };
+  return (map[type]?.[status] || 'info') as any;
 };
 
-const getDisposalStatusText = (status: string) => {
-  const map: Record<string, string> = { pending: 'Chờ xử lý', completed: 'Hoàn thành', cancelled: 'Đã hủy' };
-  return map[status] || status;
+const getTimelineStatusText = (type: string, status: string) => {
+  const map: Record<string, Record<string, string>> = {
+    transfer: { pending: 'Chờ xử lý', approved: 'Đã duyệt', completed: 'Hoàn thành', rejected: 'Từ chối', approved_by_head: 'Trưởng đơn vị duyệt', rejected_by_head: 'Trưởng đơn vị từ chối' },
+    inventory: { draft: 'Nháp', pending: 'Chờ duyệt', approved_by_head: 'Trưởng đơn vị duyệt', approved_by_admin: 'Admin duyệt', completed: 'Hoàn thành', rejected_by_head: 'Trưởng đơn vị từ chối', rejected_by_admin: 'Admin từ chối' },
+    disposal: { pending: 'Chờ xử lý', completed: 'Hoàn thành', cancelled: 'Đã hủy' },
+  };
+  return map[type]?.[status] || status;
+};
+
+const getTimelineIcon = (type: string) => {
+  const map: Record<string, any> = {
+    created: Upload,
+    transfer: Refresh,
+    inventory: Box,
+    disposal: Delete,
+  };
+  return map[type] || Document;
 };
 
 const handleEdit = () => {
@@ -890,30 +849,6 @@ const formatDate = (date?: string) => {
 const formatNumber = (value?: number | null) => {
   if (value === null || value === undefined || isNaN(value)) return '-';
   return Number(value).toLocaleString('vi-VN');
-};
-
-const getTransferStatusType = (status: string) => {
-  const types: Record<string, string> = {
-    pending: 'warning',
-    approved: 'info',
-    approved_by_head: 'success',
-    rejected: 'danger',
-    rejected_by_head: 'danger',
-    completed: 'success',
-  };
-  return types[status] || 'info';
-};
-
-const getTransferStatusText = (status: string) => {
-  const texts: Record<string, string> = {
-    pending: 'Chờ phê duyệt',
-    approved: 'Đã phê duyệt',
-    approved_by_head: 'Đã phê duyệt',
-    rejected: 'Đã từ chối',
-    rejected_by_head: 'Đã từ chối',
-    completed: 'Hoàn thành',
-  };
-  return texts[status] || status;
 };
 
 // QR Code Functions
@@ -1424,6 +1359,28 @@ const downloadQRCode = () => {
 /* Repair History Card */
 .repair-history-card {
   margin-bottom: 20px;
+}
+
+.timeline-card {
+  margin-bottom: 20px;
+}
+
+.timeline-content {
+  padding: 4px 0;
+}
+
+.timeline-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.timeline-desc {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 4px;
 }
 
 .repair-history-content {

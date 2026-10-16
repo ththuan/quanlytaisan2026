@@ -51,6 +51,10 @@ export const assetService = {
     return api.get(`/assets/${id}/history`);
   },
 
+  async getTimeline(id: number): Promise<ApiResponse<any[]>> {
+    return api.get(`/assets/${id}/timeline`);
+  },
+
   async getRepairHistory(id: number): Promise<ApiResponse<any[]>> {
     return api.get(`/assets/${id}/repair-history`);
   },

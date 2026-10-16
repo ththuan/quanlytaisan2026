@@ -174,6 +174,17 @@ app.use('/api/auth/register', authLimiter);
 // Apply general rate limiter to all other API routes
 app.use('/api', limiter);
 
+// Rate limiting riêng cho tra cứu QR công khai (/scan và /api/public) — chống crawl/dò mã
+const publicScanLimiter = rateLimit({
+  store: getRateLimitStore(),
+  windowMs: parseInt(process.env.PUBLIC_SCAN_RATE_LIMIT_WINDOW_MS || '60000'), // 1 phút
+  max: parseInt(process.env.PUBLIC_SCAN_RATE_LIMIT_MAX_REQUESTS || '60'), // 60 lượt/phút/IP
+  message: 'Quá nhiều lượt tra cứu. Vui lòng thử lại sau ít phút.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(['/scan', '/api/public'], publicScanLimiter);
+
 // API Routes
 app.use('/api', routes);
 

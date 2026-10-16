@@ -5,26 +5,8 @@
  */
 import { Request, Response } from 'express';
 import { Asset, Department, AssetCategory } from '../models';
-
-const STATUS_LABELS: Record<string, string> = {
-  active: 'Đang sử dụng',
-  inactive: 'Ngừng sử dụng',
-  damaged: 'Hỏng',
-  lost: 'Mất',
-  disposed: 'Đã thanh lý',
-  pending_disposal: 'Chờ thanh lý',
-  pending_repair: 'Chờ sửa chữa',
-};
-
-const CONDITION_LABELS: Record<string, string> = {
-  good: 'Tốt',
-  fair: 'Trung bình',
-  poor: 'Kém',
-  usable: 'Còn dùng được',
-  needs_repair: 'Cần sửa chữa',
-  damaged: 'Hỏng',
-  disposed: 'Đã thanh lý',
-};
+import { ASSET_STATUS_LABELS, ASSET_CONDITION_LABELS } from '../constants/assetLabels';
+import { QR_REQUIRE_SIGNATURE, verifyAssetCode } from '../utils/qrSigning';
 
 /**
  * GET /api/public/asset/:code
@@ -36,6 +18,12 @@ export const getPublicAssetByCode = async (req: Request, res: Response): Promise
 
     if (!code || code.trim().length === 0) {
       res.status(400).json({ success: false, message: 'Mã tài sản không hợp lệ' });
+      return;
+    }
+
+    // Bắt buộc token HMAC do hệ thống phát hành (chống dò mã)
+    if (QR_REQUIRE_SIGNATURE && !verifyAssetCode(code, req.query.t as string | undefined)) {
+      res.status(403).json({ success: false, message: 'Mã QR không hợp lệ hoặc đã hết hiệu lực' });
       return;
     }
 
@@ -119,8 +107,8 @@ export const getPublicAssetByCode = async (req: Request, res: Response): Promise
         success: true,
         data: {
           ...data,
-          status_label: STATUS_LABELS[data.status] || data.status,
-          condition_label: CONDITION_LABELS[data.condition] || data.condition,
+          status_label: ASSET_STATUS_LABELS[data.status] || data.status,
+          condition_label: ASSET_CONDITION_LABELS[data.condition] || data.condition,
         },
       });
       return;
@@ -131,8 +119,8 @@ export const getPublicAssetByCode = async (req: Request, res: Response): Promise
       success: true,
       data: {
         ...data,
-        status_label: STATUS_LABELS[data.status] || data.status,
-        condition_label: CONDITION_LABELS[data.condition] || data.condition,
+        status_label: ASSET_STATUS_LABELS[data.status] || data.status,
+        condition_label: ASSET_CONDITION_LABELS[data.condition] || data.condition,
       },
     });
   } catch (error: any) {

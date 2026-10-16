@@ -205,6 +205,9 @@ Không cần mở port trên router/firewall — Cloudflare tạo kết nối ou
 | `JWT_SECRET` | Secret ký JWT. **Production bắt buộc ≥32 ký tự** | `your-secret-key-change-in-production` |
 | `DEFAULT_PASSWORD` | Mật khẩu mặc định khi tạo user mới / import user | `Ctec@123` |
 | `ADMIN_PASSWORD` | *(bỏ qua)* — mật khẩu admin luôn cố định `Admin@123` | `Admin@123` |
+| `QR_SIGNING_SECRET` | Secret ký token HMAC trong QR (chống dò mã). Trống → dùng `JWT_SECRET` | *(trống)* |
+| `QR_REQUIRE_SIGNATURE` | Bắt buộc token hợp lệ trên trang tra cứu QR công khai | `true` |
+| `PUBLIC_SCAN_RATE_LIMIT_*` | Giới hạn tần suất tra cứu QR công khai (`/scan`, `/api/public`) | 60/phút |
 | `CORS_ORIGIN` | Origin cho phép. **Production**: domain cụ thể | `*` |
 | `FRONTEND_URL` | URL frontend (CORS/redirect) | `http://localhost:4000` |
 | `LOG_LEVEL` | Mức log backend | `info` |
@@ -235,6 +238,19 @@ node scripts/generate-secrets.js
   ```
 - **`DEFAULT_PASSWORD`** chỉ dùng cho **tạo user mới / import user**, không áp dụng cho `admin`.
 - **Không đăng nhập được?** Khởi động lại backend hoặc chạy `npm run reset-admin` trong thư mục `asset-management-backend` (hoặc `docker compose exec backend npm run reset-admin`).
+
+---
+
+## 📷 QR code & tra cứu công khai
+
+- Mỗi tài sản có QR chứa URL công khai kèm token ký HMAC: `https://<FRONTEND_URL>/scan/<MÃ>?t=<token>`.
+- Quét bằng camera điện thoại → mở trang HTML tra cứu (không cần đăng nhập): tên, mã, loại, phòng ban, vị trí, trạng thái, ngày kiểm kê gần nhất, thông tin thanh lý (nếu có), nút **Mở trong hệ thống**.
+- Endpoint: `GET /scan/:code` (trang HTML) và `GET /api/public/asset/:code` (JSON). Cả hai đều xác thực token khi `QR_REQUIRE_SIGNATURE=true` và bị giới hạn tần suất.
+- **Quan trọng:** token ký bằng `QR_SIGNING_SECRET` (hoặc `JWT_SECRET`). QR cũ (không token) sẽ bị từ chối → cần **tạo lại QR**:
+  - Tạo lại cho 1 tài sản: nút "Tạo lại QR Code" ở trang chi tiết tài sản.
+  - Tạo lại hàng loạt: `POST /api/assets/qrcode/generate-all` (admin) — tự tạo lại QR thiếu/sai token.
+  - Sau đó **in lại tem QR** (chức năng in tem theo phòng ban ở danh sách tài sản).
+- Đổi `QR_SIGNING_SECRET` sẽ **vô hiệu hoá toàn bộ QR đã in** — chỉ đổi khi chấp nhận in lại tem.
 
 ---
 

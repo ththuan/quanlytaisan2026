@@ -47,7 +47,21 @@
 
       <!-- Main info -->
       <h1 class="asset-name">{{ asset.name }}</h1>
-      <p class="asset-code">{{ asset.asset_code }}</p>
+      <p class="asset-code">
+        {{ asset.asset_code }}
+        <button
+          class="copy-btn"
+          type="button"
+          @click="copyCode"
+        >
+          Sao chép mã
+        </button>
+      </p>
+      <a
+        v-if="asset.id"
+        class="open-app"
+        :href="`/assets/${asset.id}`"
+      >Mở trong hệ thống →</a>
 
       <!-- Details -->
       <div class="info-list">
@@ -145,10 +159,22 @@ function formatDate(d?: string) {
   return new Date(d).toLocaleDateString('vi-VN');
 }
 
+async function copyCode() {
+  if (!code.value) return;
+  try {
+    await navigator.clipboard.writeText(code.value);
+  } catch {
+    // bỏ qua nếu trình duyệt chặn clipboard
+  }
+}
+
 onMounted(async () => {
   try {
     const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
-    const res = await axios.get(`${apiBase}/public/asset/${encodeURIComponent(code.value)}`);
+    const token = route.query.t as string | undefined;
+    const res = await axios.get(`${apiBase}/public/asset/${encodeURIComponent(code.value)}`, {
+      params: token ? { t: token } : {},
+    });
     if (res.data?.success) {
       asset.value = res.data.data;
     } else {
@@ -157,6 +183,8 @@ onMounted(async () => {
   } catch (err: any) {
     if (err.response?.status === 404) {
       error.value = 'Không tìm thấy tài sản với mã QR này';
+    } else if (err.response?.status === 403) {
+      error.value = 'Mã QR không hợp lệ hoặc đã cũ. Vui lòng quét tem QR mới trên tài sản.';
     } else {
       error.value = 'Không thể kết nối máy chủ, vui lòng thử lại';
     }
@@ -301,6 +329,31 @@ onMounted(async () => {
   margin: 0 0 20px;
   font-family: monospace;
   letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.copy-btn {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+  border-radius: 8px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.open-app {
+  display: inline-block;
+  margin: -8px 0 16px;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
 }
 
 /* Info list */

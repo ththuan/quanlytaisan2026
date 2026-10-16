@@ -1,7 +1,10 @@
 import { Asset, Department, AssetTransfer, AssetCondition, AssetCategory, User, RequestApproval } from '../models';
 import MaintenanceRequest from '../models/MaintenanceRequest';
 import AssetDisposalItem from '../models/AssetDisposalItem';
+import AssetDisposalCase from '../models/AssetDisposalCase';
 import InventoryReportDetail from '../models/InventoryReportDetail';
+import InventoryReport from '../models/InventoryReport';
+import InventoryRound from '../models/InventoryRound';
 import { NotFoundError, ConflictError } from '../utils/errorHandler';
 import { Op, QueryTypes } from 'sequelize';
 import sequelize from '../config/database';
@@ -573,6 +576,111 @@ class AssetService {
     });
 
     return transfers;
+  }
+
+  /**
+   * Lịch sử tài sản hợp nhất: nhập tài sản → điều chuyển → kiểm kê → thanh lý.
+   * Trả về danh sách sự kiện đã sắp xếp mới nhất trước.
+   */
+  async getAssetTimeline(assetId: number): Promise<any[]> {
+    const asset = await Asset.findByPk(assetId, {
+      attributes: ['id', 'asset_code', 'name', 'created_at'],
+    });
+    if (!asset) {
+      throw new NotFoundError('Asset not found');
+    }
+
+    const events: any[] = [
+      {
+        type: 'created',
+        date: asset.get('created_at') as Date,
+        title: 'Nhập tài sản vào hệ thống',
+        description: `${asset.get('asset_code')} - ${asset.get('name')}`,
+      },
+    ];
+
+    const [transfers, inventoryDetails, disposalItems] = await Promise.all([
+      AssetTransfer.findAll({
+        where: { asset_id: assetId },
+        include: [
+          { model: Department, as: 'from_department', attributes: ['id', 'name'] },
+          { model: Department, as: 'to_department', attributes: ['id', 'name'] },
+          { model: User, as: 'requester', attributes: ['id', 'fullname', 'username'] },
+        ],
+      }),
+      InventoryReportDetail.findAll({
+        where: { asset_id: assetId },
+        include: [
+          {
+            model: InventoryReport,
+            as: 'inventory_report',
+            include: [
+              { model: InventoryRound, as: 'inventory_round', attributes: ['id', 'round_name', 'round_year'] },
+              { model: Department, as: 'department', attributes: ['id', 'name'] },
+            ],
+          },
+        ],
+      }),
+      AssetDisposalItem.findAll({
+        where: { asset_id: assetId },
+        include: [
+          { model: AssetDisposalCase, as: 'disposal_case' },
+        ],
+      }),
+    ]);
+
+    for (const t of transfers) {
+      const raw = t.toJSON() as any;
+      const fromName = raw.from_department?.name || 'Chưa xác định';
+      const toName = raw.to_department?.name || 'Chưa xác định';
+      events.push({
+        type: 'transfer',
+        date: raw.transfer_date || raw.created_at,
+        title: 'Điều chuyển tài sản',
+        status: raw.status,
+        description: `${fromName} → ${toName}`,
+        actor: raw.requester?.fullname || raw.requester?.username || null,
+        reason: raw.reason || null,
+      });
+    }
+
+    for (const det of inventoryDetails) {
+      const raw = det.toJSON() as any;
+      const report = raw.inventory_report || {};
+      const round = report.inventory_round || {};
+      events.push({
+        type: 'inventory',
+        date: report.completed_at || report.created_at || raw.created_at,
+        title: 'Kiểm kê tài sản',
+        status: report.status,
+        description: [
+          round.round_name || round.round_year ? `Đợt: ${round.round_name || round.round_year}` : null,
+          `SL thực tế: ${raw.actual_quantity}`,
+          report.department?.name ? `Đơn vị: ${report.department.name}` : null,
+        ].filter(Boolean).join(' • '),
+      });
+    }
+
+    for (const it of disposalItems) {
+      const raw = it.toJSON() as any;
+      const dc = raw.disposal_case || {};
+      const isDestroy = dc.disposal_type === 'destruction';
+      events.push({
+        type: 'disposal',
+        date: dc.completed_date || dc.decision_date || raw.created_at,
+        title: isDestroy ? 'Tiêu hủy tài sản' : 'Thanh lý tài sản',
+        status: dc.status,
+        description: [
+          dc.code ? `Hồ sơ: ${dc.code}` : null,
+          dc.decision_no ? `QĐ: ${dc.decision_no}` : null,
+          raw.reason || null,
+        ].filter(Boolean).join(' • '),
+      });
+    }
+
+    return events.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
   }
 
   /**

@@ -8,6 +8,7 @@ import qrcodeService from '../services/qrcode.service';
 import assetDisposalService from '../services/assetDisposal.service';
 import envConfig from '../config/env';
 import { AuthRequest } from '../middleware/auth.middleware';
+import { verifyAssetCode } from '../utils/qrSigning';
 
 // Helper: check if a non-admin/director user can access an asset's data
 async function checkAssetDeptAccess(assetId: number, user: { role: string; department_id?: number | null }): Promise<boolean> {
@@ -202,6 +203,28 @@ export const getAssetHistory = async (req: AuthRequest, res: Response, next: Nex
     res.status(200).json({
       success: true,
       data: history,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Lịch sử tài sản hợp nhất (nhập → điều chuyển → kiểm kê → thanh lý)
+ * GET /api/assets/:id/timeline
+ */
+export const getAssetTimeline = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const user = req.user!;
+    if (!await checkAssetDeptAccess(parseInt(req.params.id), user)) {
+      res.status(403).json({ success: false, message: 'Bạn không có quyền truy cập tài sản này' });
+      return;
+    }
+    const timeline = await assetService.getAssetTimeline(parseInt(req.params.id));
+
+    res.status(200).json({
+      success: true,
+      data: timeline,
     });
   } catch (error) {
     next(error);
@@ -546,9 +569,13 @@ export const getQRCode = async (req: AuthRequest, res: Response, _next: NextFunc
       return;
     }
 
-    // Nếu chưa có QR code, hoặc QR code chứa URL cũ (không khớp FRONTEND_URL hiện tại) → generate lại
+    // Nếu chưa có QR code, hoặc QR code chứa URL cũ (không khớp FRONTEND_URL hiện tại)
+    // hoặc thiếu/sai token HMAC → generate lại
     const expectedBase = envConfig.frontendUrl.replace(/\/$/, '');
-    const qrOutdated = asset.qr_code && !asset.qr_code.startsWith(expectedBase);
+    const qrToken = (asset.qr_code || '').split('?t=')[1];
+    const qrOutdated =
+      !!asset.qr_code &&
+      (!asset.qr_code.startsWith(expectedBase) || !verifyAssetCode(asset.asset_code, qrToken));
     if (!asset.qr_code || !asset.qr_code_image || qrOutdated) {
       try {
         const result = await qrcodeService.generateQRCodeForAsset(asset);
@@ -594,12 +621,15 @@ export const generateAllQRCodes = async (req: AuthRequest, res: Response, _next:
     const { Asset } = await import('../models');
     const { Op } = await import('sequelize');
 
-    // Lấy tất cả tài sản chưa có QR code
+    // Lấy tài sản chưa có QR, QR URL cũ, hoặc thiếu token HMAC (?t=)
+    const expectedBase = envConfig.frontendUrl.replace(/\/$/, '');
     const assetsWithoutQR = await Asset.findAll({
       where: {
         [Op.or]: [
           { qr_code: null },
           { qr_code: '' },
+          { qr_code: { [Op.notLike]: `${expectedBase}%` } },
+          { qr_code: { [Op.notLike]: '%?t=%' } },
         ],
       },
       order: [['id', 'ASC']],

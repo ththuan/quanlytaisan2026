@@ -83,6 +83,9 @@ router.delete('/:id', requireRole('admin'), auditLog('delete'), invalidateCache(
 // GET /api/assets/:id/history - Get asset transfer history
 router.get('/:id/history', assetsController.getAssetHistory);
 
+// GET /api/assets/:id/timeline - Get unified asset history timeline
+router.get('/:id/timeline', assetsController.getAssetTimeline);
+
 // GET /api/assets/:id/repair-history - Get asset repair history
 router.get('/:id/repair-history', assetsController.getRepairHistory);
 
