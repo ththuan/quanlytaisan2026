@@ -21,10 +21,10 @@ APP_DIR="${APP_DIR:-/root/quanlytaisan2026}"
 DOMAIN="${DOMAIN:-quanlytaisanctec.dpdns.org}"
 COMPOSE_FILE="docker-compose.prod.yml"
 
-# Secrets (để trống sẽ tự sinh ngẫu nhiên — KHÔNG dùng mặc định yếu)
+# Secrets (để trống sẽ tự sinh ngẫu nhiên — trừ ADMIN_PASSWORD luôn cố định Admin@123)
 DB_PASSWORD="${DB_PASSWORD:-}"
 JWT_SECRET="${JWT_SECRET:-}"
-ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
+ADMIN_PASSWORD="Admin@123"
 DEFAULT_PASSWORD="${DEFAULT_PASSWORD:-}"
 CF_TUNNEL_TOKEN="${CF_TUNNEL_TOKEN:-}"
 
@@ -81,7 +81,7 @@ ensure_secrets() {
     [ -z "$DB_PASSWORD" ]      && DB_PASSWORD="$(openssl rand -hex 16)"
     [ -z "$JWT_SECRET" ]        && JWT_SECRET="$(openssl rand -hex 32)"
     [ -z "$DEFAULT_PASSWORD" ]  && DEFAULT_PASSWORD="$(openssl rand -base64 15 | tr -d '/+=')!Aa1"
-    [ -z "$ADMIN_PASSWORD" ]    && ADMIN_PASSWORD="$(openssl rand -base64 15 | tr -d '/+=')!Aa1"
+    ADMIN_PASSWORD="Admin@123"
 }
 
 # ---------- 5. Tạo / tự sửa file .env ----------

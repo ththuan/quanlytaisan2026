@@ -5,6 +5,7 @@ import { connectRedis } from './config/redis';
 import { initRateLimitStore } from './config/rateLimiter';
 import logger from './utils/logger';
 import { startScheduler } from './utils/scheduler';
+import { ensureDefaultAdminAccount } from './utils/ensureDefaultAdminAccount';
 
 const PORT = envConfig.port;
 const HOST = envConfig.host;
@@ -37,6 +38,13 @@ const startServer = async () => {
     await testConnection();
     await connectRedis();
     initRateLimitStore();
+    // Luôn khôi phục tài khoản admin mặc định (admin / Admin@123) mỗi lần khởi động.
+    try {
+      await ensureDefaultAdminAccount();
+      logger.info('Default admin account ensured (admin / Admin@123)');
+    } catch (error) {
+      logger.error('Failed to ensure default admin account:', error);
+    }
     // Import app sau khi Redis đã sẵn sàng để rate limiter dùng Redis store chia sẻ.
     const { default: app } = await import('./app');
     server = app.listen(PORT, HOST, () => {

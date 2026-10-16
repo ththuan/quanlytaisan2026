@@ -2,6 +2,7 @@ import { User, Department } from '../models';
 import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errorHandler';
 import { Op } from 'sequelize';
 import { getPaginationParams, buildPaginationResult, getOffset, PaginationResult } from '../utils/pagination';
+import { SYSTEM_ADMIN_USERNAME, SYSTEM_ADMIN_PASSWORD } from '../config/adminCredentials';
 
 export interface CreateUserInput {
   username: string;
@@ -200,8 +201,9 @@ class UserService {
       throw new NotFoundError('User not found');
     }
 
-    // Hash default password
-    const password_hash = await User.hashPassword(DEFAULT_PASSWORD);
+    // Tài khoản admin hệ thống luôn quay về mật khẩu cố định Admin@123.
+    const password = user.username === SYSTEM_ADMIN_USERNAME ? SYSTEM_ADMIN_PASSWORD : DEFAULT_PASSWORD;
+    const password_hash = await User.hashPassword(password);
 
     // Update password
     await user.update({ password_hash });

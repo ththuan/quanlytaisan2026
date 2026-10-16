@@ -41,10 +41,10 @@ if [ -z "$DP" ] || [ "$DP" = "Ctec@123" ]; then
 fi
 
 AP=$(get_key ADMIN_PASSWORD)
-if [ -z "$AP" ] || [ "$AP" = "Admin@123" ]; then
-    AP=$(gen_pw)
+if [ "$AP" != "Admin@123" ]; then
+    AP="Admin@123"
     set_key ADMIN_PASSWORD "$AP"
-    echo "[OK] Đã sinh ADMIN_PASSWORD mới"
+    echo "[OK] Đã đặt ADMIN_PASSWORD cố định = Admin@123"
     changed=1
 fi
 

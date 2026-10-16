@@ -17,14 +17,15 @@ const sequelize = new Sequelize(
   }
 );
 
-/** Đồng bộ với src/config/adminCredentials.ts — đọc mật khẩu từ env ADMIN_PASSWORD. */
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || process.env.SYSTEM_ADMIN_PASSWORD || 'Admin@123';
+/** Mật khẩu admin CỐ ĐỊNH — đồng bộ với src/config/adminCredentials.ts */
+const ADMIN_PASSWORD = 'Admin@123';
 
 async function resetPassword() {
   const hash = await bcrypt.hash(ADMIN_PASSWORD, 10);
 
   const [rows] = await sequelize.query(
-    `UPDATE users SET password_hash = :hash, totp_enabled = false, totp_secret = NULL,
+    `UPDATE users SET password_hash = :hash, role = 'admin', is_active = true,
+       department_id = NULL, totp_enabled = false, totp_secret = NULL,
        failed_login_attempts = 0, locked_until = NULL, updated_at = NOW()
      WHERE username = :username RETURNING id`,
     {
@@ -33,8 +34,12 @@ async function resetPassword() {
   );
 
   if (!rows || rows.length === 0) {
-    console.error('Không tìm thấy user admin. Chạy: npm run seed:admin');
-    process.exit(1);
+    await sequelize.query(
+      `INSERT INTO users (username, email, password_hash, fullname, role, is_active, created_at, updated_at)
+       VALUES (:username, 'admin@example.com', :hash, 'System Admin', 'admin', true, NOW(), NOW())`,
+      { replacements: { hash, username: 'admin' } }
+    );
+    console.log('Chưa có user admin — đã tạo mới.');
   }
 
   console.log('Đã đặt lại mật khẩu admin. Đăng nhập: admin / ' + ADMIN_PASSWORD);

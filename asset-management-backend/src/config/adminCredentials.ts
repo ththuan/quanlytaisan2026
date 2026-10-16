@@ -1,19 +1,7 @@
 /**
  * Tài khoản quản trị hệ thống.
- * Mật khẩu đọc từ env ADMIN_PASSWORD (hoặc SYSTEM_ADMIN_PASSWORD).
- * Production bắt buộc đặt mật khẩu mạnh — không dùng mặc định.
+ * Mật khẩu CỐ ĐỊNH là Admin@123 và luôn được đặt lại mỗi lần khởi động
+ * (xem ensureDefaultAdminAccount). Không phụ thuộc env để tránh mất quyền truy cập.
  */
-const rawPassword =
-  process.env.ADMIN_PASSWORD ||
-  process.env.SYSTEM_ADMIN_PASSWORD ||
-  'Admin@123';
-
-if (process.env.NODE_ENV === 'production' && rawPassword === 'Admin@123') {
-  throw new Error(
-    '⚠️  ADMIN_PASSWORD phải được đặt (mật khẩu mạnh) trong môi trường production. ' +
-    'Không dùng mật khẩu mặc định Admin@123.'
-  );
-}
-
 export const SYSTEM_ADMIN_USERNAME = 'admin' as const;
-export const SYSTEM_ADMIN_PASSWORD = rawPassword as string;
+export const SYSTEM_ADMIN_PASSWORD = 'Admin@123' as const;

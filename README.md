@@ -149,9 +149,10 @@ sudo bash setup.sh
 ```bash
 sudo DOMAIN=quanlytaisanctec.dpdns.org \
      CF_TUNNEL_TOKEN=<token> \
-     ADMIN_PASSWORD=MatKhauManh@123 \
      bash setup.sh
 ```
+
+> Tài khoản admin luôn là `admin / Admin@123` (không nhận `ADMIN_PASSWORD` từ môi trường).
 
 > Các file quan trọng (`.env`, `nginx/ssl/`, `storage/`, `backups/`) nằm **ngoài git** nên mọi lần `git pull`/deploy **không bao giờ ghi đè** — không phải cấu hình lại từ đầu.
 
@@ -203,7 +204,7 @@ Không cần mở port trên router/firewall — Cloudflare tạo kết nối ou
 | `FRONTEND_PORT` | Port frontend expose ra host | `4000` |
 | `JWT_SECRET` | Secret ký JWT. **Production bắt buộc ≥32 ký tự** | `your-secret-key-change-in-production` |
 | `DEFAULT_PASSWORD` | Mật khẩu mặc định khi tạo user mới / import user | `Ctec@123` |
-| `ADMIN_PASSWORD` | Mật khẩu tài khoản `admin` | `Admin@123` |
+| `ADMIN_PASSWORD` | *(bỏ qua)* — mật khẩu admin luôn cố định `Admin@123` | `Admin@123` |
 | `CORS_ORIGIN` | Origin cho phép. **Production**: domain cụ thể | `*` |
 | `FRONTEND_URL` | URL frontend (CORS/redirect) | `http://localhost:4000` |
 | `LOG_LEVEL` | Mức log backend | `info` |
@@ -211,7 +212,7 @@ Không cần mở port trên router/firewall — Cloudflare tạo kết nối ou
 | `VITE_API_BASE_URL` | URL API backend mà frontend gọi | `/api` |
 | `CF_TUNNEL_TOKEN` | Token Cloudflare Tunnel (public ra internet) | *(trống)* |
 
-> ⚠️ **Production bắt buộc:** `JWT_SECRET` ≥32 ký tự, `DEFAULT_PASSWORD` ≠ `Ctec@123`, `ADMIN_PASSWORD` ≠ `Admin@123`. Backend sẽ **từ chối khởi động** nếu dùng giá trị yếu. `setup.sh` và `scripts/fix-env-secrets.sh` tự sinh/xử lý việc này.
+> ⚠️ **Production bắt buộc:** `JWT_SECRET` ≥32 ký tự, `DEFAULT_PASSWORD` ≠ `Ctec@123`. Backend sẽ **từ chối khởi động** nếu dùng giá trị yếu. Riêng tài khoản `admin` **luôn cố định `admin / Admin@123`** (bỏ qua env, tự khôi phục mỗi lần khởi động). `setup.sh` và `scripts/fix-env-secrets.sh` tự sinh/xử lý secret còn lại.
 
 **Tạo secret ngẫu nhiên:**
 ```bash
@@ -225,15 +226,15 @@ node scripts/generate-secrets.js
 | | |
 |---|---|
 | **Username** | `admin` (cố định) |
-| **Password** | giá trị `ADMIN_PASSWORD` trong `.env` (mặc định `Admin@123`) |
+| **Password** | `Admin@123` (cố định, không đổi được) |
 
-- Hệ thống **chỉ tạo admin khi chưa có** (seed `seed:admin` chạy khi khởi động) với mật khẩu = `ADMIN_PASSWORD`.
-- **Đặt lại mật khẩu admin** (về đúng `ADMIN_PASSWORD` trong `.env`, đồng thời mở khoá + tắt 2FA):
+- Tài khoản `admin / Admin@123` là **cố định**: tự tạo nếu chưa có và **tự đặt lại mật khẩu mỗi lần backend khởi động** (mở khoá + tắt 2FA). Reset dữ liệu, xoá DB hay cài mới đều quay về `admin / Admin@123`.
+- **Đặt lại mật khẩu admin** (về `Admin@123`, đồng thời mở khoá + tắt 2FA):
   ```bash
   docker compose exec backend npm run reset-admin
   ```
 - **`DEFAULT_PASSWORD`** chỉ dùng cho **tạo user mới / import user**, không áp dụng cho `admin`.
-- **Không đăng nhập được?** Chạy `npm run reset-admin` trong thư mục `asset-management-backend` (hoặc `docker compose exec backend npm run reset-admin`).
+- **Không đăng nhập được?** Khởi động lại backend hoặc chạy `npm run reset-admin` trong thư mục `asset-management-backend` (hoặc `docker compose exec backend npm run reset-admin`).
 
 ---
 
@@ -291,7 +292,7 @@ quanlytaisan2026/
 **Đã có sẵn:** Helmet, rate limiting, JWT (HS256, access 15 phút + refresh 7 ngày, có issuer/algorithm xác thực), phân quyền theo role, 2FA (TOTP), bcrypt, CORS, SQL parameterized, MIME filter cho file upload, audit log chống giả mạo, session-bound token (lưu theo thiết bị/IP).
 
 **Trước khi triển khai production:**
-1. `JWT_SECRET`, `DEFAULT_PASSWORD`, `ADMIN_PASSWORD` phải là giá trị mạnh (backend tự chặn nếu yếu).
+1. `JWT_SECRET`, `DEFAULT_PASSWORD` phải là giá trị mạnh (backend tự chặn nếu yếu). Tài khoản `admin` **luôn cố định `admin / Admin@123`** để không bao giờ mất quyền truy cập.
 2. Cấu hình `CORS_ORIGIN`/`FRONTEND_URL` đúng domain.
 3. `DB_PASSWORD` mạnh.
 4. Nếu upload ảnh base64 lớn: `BODY_LIMIT=50mb`.

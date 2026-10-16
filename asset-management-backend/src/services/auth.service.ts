@@ -7,6 +7,7 @@ import { UnauthorizedError, ConflictError, NotFoundError, ValidationError } from
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken, JWTPayload } from '../utils/jwt.utils';
 import jwtConfig from '../config/jwt';
 import envConfig from '../config/env';
+import { SYSTEM_ADMIN_USERNAME } from '../config/adminCredentials';
 
 // Short-lived token issued after password verification when 2FA is enabled.
 const TEMP_TOKEN_EXPIRY = '5m';
@@ -196,6 +197,13 @@ class AuthService {
 
     if (!user) {
       throw new NotFoundError('User not found');
+    }
+
+    // Tài khoản admin hệ thống có mật khẩu cố định Admin@123 — không cho đổi qua API.
+    if (user.username === SYSTEM_ADMIN_USERNAME) {
+      throw new ValidationError(
+        'Tài khoản admin hệ thống có mật khẩu cố định Admin@123 và không thể thay đổi.'
+      );
     }
 
     // Verify old password
