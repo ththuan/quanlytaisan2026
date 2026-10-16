@@ -22,11 +22,14 @@ export interface QRCodeData {
 class QRCodeService {
   /**
    * Generate QR code data string từ thông tin tài sản
-   * Encode URL công khai (kèm token HMAC) để camera điện thoại mở trang tra cứu
+   * Encode URL công khai (kèm token) để camera điện thoại mở trang tra cứu.
+   *
+   * Token gắn với cả `asset.id` → xóa tài sản rồi tạo lại sẽ sinh QR MỚI
+   * (tem QR cũ của tài sản đã xóa không còn dùng được).
    */
   generateQRCodeData(asset: Asset): string {
     const baseUrl = envConfig.frontendUrl.replace(/\/$/, '');
-    const token = signAssetCode(asset.asset_code);
+    const token = signAssetCode(`${asset.asset_code}:${asset.id}`);
     return `${baseUrl}/scan/${asset.asset_code}?t=${token}`;
   }
 
