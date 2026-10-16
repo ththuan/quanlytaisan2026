@@ -38,12 +38,12 @@
           <el-button
             v-if="authStore.isAdmin"
             type="info"
-            :icon="Sunny"
+            :icon="Printer"
             size="default"
             :loading="generatingQR"
             @click="handleGenerateAllQR"
           >
-            Tạo QR hàng loạt
+            In QR hàng loạt
           </el-button>
           <el-button
             v-if="authStore.isAdmin"
@@ -587,10 +587,10 @@
       </template>
     </el-dialog>
 
-    <!-- QR Export Dialog -->
+    <!-- QR Print Dialog -->
     <el-dialog
       v-model="showQRExportDialog"
-      title="Xuất QR Code hàng loạt theo đơn vị"
+      title="In QR Code hàng loạt theo đơn vị"
       :width="windowWidth <= 640 ? '95vw' : '460px'"
       :close-on-click-modal="false"
     >
@@ -606,7 +606,7 @@
         </el-form-item>
         <el-form-item label="">
           <el-checkbox v-model="qrRegenerate">
-            Tạo lại QR (thay mẫu mới / QR cũ bị lỗi)
+            Tạo lại QR trước khi in (chỉ khi QR cũ bị lỗi)
           </el-checkbox>
         </el-form-item>
       </el-form>
@@ -662,7 +662,7 @@ import { useI18n } from 'vue-i18n';
 import { useAssetStore } from '@/stores/asset.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useDepartments } from '@/composables/useDepartments';
-import { Plus, Search, Delete, Box, CircleCheck, Refresh, Upload, Download, CircleClose, QuestionFilled, Sunny, DeleteFilled } from '@element-plus/icons-vue';
+import { Plus, Search, Delete, Box, CircleCheck, Refresh, Upload, Download, CircleClose, QuestionFilled, DeleteFilled, Printer } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import AssetFormDialog from '@/components/Assets/AssetFormDialog.vue';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
