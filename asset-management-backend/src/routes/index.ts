@@ -22,6 +22,7 @@ import notificationsRoutes from './notifications.routes';
 import systemAdminRoutes from './systemAdmin.routes';
 import searchRoutes from './search.routes';
 import tt120ExportRoutes from './tt120Export.routes';
+import signaturesRoutes from './signatures.routes';
 
 const router = Router();
 
@@ -49,6 +50,7 @@ router.use('/asset-disposals', assetDisposalRoutes);
 router.use('/asset-disposals', assetDisposalUploadRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/notifications', notificationsRoutes);
+router.use('/signatures', signaturesRoutes);
 router.use('/search', searchRoutes);
 router.use('/system-admin', systemAdminRoutes);
 router.use('/export/tt120', tt120ExportRoutes);

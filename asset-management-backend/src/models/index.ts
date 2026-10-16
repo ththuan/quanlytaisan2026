@@ -18,6 +18,7 @@ import AssetDisposalCase from './AssetDisposalCase';
 import AssetDisposalItem from './AssetDisposalItem';
 import AuthSession from './AuthSession';
 import Notification from './Notification';
+import Signature from './Signature';
 
 import StockItem from './StockItem';
 import StockReceipt from './StockReceipt';
@@ -492,6 +493,12 @@ User.hasMany(Notification, {
   as: 'notifications',
 });
 
+// Signature associations
+Signature.belongsTo(User, {
+  foreignKey: 'signer_id',
+  as: 'signer',
+});
+
 export {
   User,
   Department,
@@ -519,6 +526,7 @@ export {
   StockIssueLine,
   AuthSession,
   Notification,
+  Signature,
 };
 
 export default {

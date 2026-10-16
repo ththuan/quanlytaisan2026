@@ -694,21 +694,50 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <SignaturePad
+      v-model="showSignDialog"
+      :title="signTitle"
+      :signer-name="signerName"
+      @confirm="onSignConfirm"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus, Document, InfoFilled, Check, Calendar, TrendCharts, View, QuestionFilled } from '@element-plus/icons-vue';
 import { useAuthStore } from '@/stores/auth.store';
 import inventoryService, { type InventoryRound, type InventoryReport } from '@/services/inventory.service';
+import SignaturePad from '@/components/Common/SignaturePad.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const { t } = useI18n();
+
+// Chữ ký sống
+const showSignDialog = ref(false);
+const signTitle = ref('Ký xác nhận');
+let signResolve: ((sig: string | null) => void) | null = null;
+const signerName = computed(() => authStore.user?.fullname || authStore.user?.username || '');
+const requestSignature = (title: string): Promise<string | null> => {
+  signTitle.value = title;
+  showSignDialog.value = true;
+  return new Promise((resolve) => { signResolve = resolve; });
+};
+const onSignConfirm = (sig: string) => {
+  signResolve?.(sig);
+  signResolve = null;
+};
+watch(showSignDialog, (open) => {
+  if (!open && signResolve) {
+    signResolve(null);
+    signResolve = null;
+  }
+});
 
 const isAdmin = computed(() => authStore.user?.role === 'admin');
 const isAdminOrDirector = computed(() => {
@@ -1031,10 +1060,19 @@ const approveReport = async () => {
   
   approving.value = true;
   try {
+    const signature = await requestSignature(
+      approveData.value.approved ? 'Ký xác nhận phê duyệt báo cáo' : 'Ký xác nhận từ chối báo cáo'
+    );
+    if (!signature) {
+      approving.value = false;
+      return;
+    }
     await inventoryService.approveReport(
       selectedReport.value.id,
       approveData.value.approved,
-      approveData.value.rejection_reason
+      approveData.value.rejection_reason,
+      undefined,
+      signature
     );
     ElMessage.success(approveData.value.approved ? 'Đã phê duyệt báo cáo' : 'Đã từ chối báo cáo');
     showApproveDialog.value = false;

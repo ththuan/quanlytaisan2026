@@ -355,6 +355,7 @@ class SystemAdminService {
     try {
       const tables = [
         'notifications',
+        'signatures',
         'asset_disposal_items',
         'asset_disposal_cases',
         'inventory_report_details',

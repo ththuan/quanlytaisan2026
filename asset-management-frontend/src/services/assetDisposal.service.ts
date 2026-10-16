@@ -13,6 +13,7 @@ export interface CompleteDisposalCasePayload {
   decision_date?: string | null;
   decision_file_url?: string | null;
   notes?: string | null;
+  signature?: string;
 }
 
 export interface CreateManualCasePayload {
@@ -22,6 +23,7 @@ export interface CreateManualCasePayload {
   disposal_method?: string | null;
   notes?: string | null;
   asset_ids: number[];
+  signature?: string;
 }
 
 class AssetDisposalService {

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import assetDisposalService from '../services/assetDisposal.service';
+import { assertSignature, recordSignature } from '../services/signature.service';
 
 class AssetDisposalController {
   async listCases(req: Request, res: Response) {
@@ -35,8 +36,26 @@ class AssetDisposalController {
   async completeCase(req: Request, res: Response) {
     try {
       const id = parseInt(req.params.id, 10);
-      const userId = (req as any).user?.id;
+      const user = (req as any).user;
+      const userId = user?.id;
+
+      // Bắt buộc chữ ký sống khi chốt (hoàn tất) hồ sơ thanh lý/tiêu hủy
+      const signatureImage = assertSignature(req.body?.signature);
+
       const result = await assetDisposalService.completeCase(id, userId, req.body);
+
+      await recordSignature({
+        entityType: 'asset_disposal_case',
+        entityId: id,
+        action: 'complete',
+        signerId: userId,
+        signerName: user?.fullname || user?.username || `user#${userId}`,
+        signerRole: user?.role,
+        signatureImage,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'] as string | undefined,
+      });
+
       res.json({ success: true, data: result });
     } catch (err: any) {
       res.status(err.statusCode ?? 400).json({ success: false, message: err.message });
@@ -52,12 +71,28 @@ class AssetDisposalController {
       const user = (req as any).user;
       const payload = { ...req.body };
 
+      // Bắt buộc chữ ký sống của người lập hồ sơ
+      const signatureImage = assertSignature(req.body?.signature);
+
       // Staff/Head chỉ được tạo cho phòng mình
       if (['staff', 'department_head'].includes(user?.role)) {
         payload.origin_department_id = user?.department_id;
       }
 
       const result = await assetDisposalService.createManualCase(user.id, payload);
+
+      await recordSignature({
+        entityType: 'asset_disposal_case',
+        entityId: (result as any)?.id,
+        action: 'create',
+        signerId: user.id,
+        signerName: user?.fullname || user?.username || `user#${user.id}`,
+        signerRole: user?.role,
+        signatureImage,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'] as string | undefined,
+      });
+
       res.status(201).json({ success: true, data: result });
     } catch (err: any) {
       res.status(err.statusCode ?? 400).json({ success: false, message: err.message });

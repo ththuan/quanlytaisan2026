@@ -204,6 +204,13 @@
       </el-button>
     </template>
   </el-dialog>
+
+  <SignaturePad
+    v-model="showSignDialog"
+    :title="signTitle"
+    :signer-name="signerName"
+    @confirm="onSignConfirm"
+  />
 </template>
 
 <script setup lang="ts">
@@ -212,6 +219,8 @@ import { ElMessage } from 'element-plus';
 import { Document, Close } from '@element-plus/icons-vue';
 import assetDisposalService from '@/services/assetDisposal.service';
 import { useAuthStore } from '@/stores/auth.store';
+import { useSignature } from '@/composables/useSignature';
+import SignaturePad from '@/components/Common/SignaturePad.vue';
 
 const props = defineProps<{ modelValue: boolean; caseId: number | null }>();
 const emit = defineEmits<{ (e: 'update:modelValue', v: boolean): void; (e: 'completed'): void }>();
@@ -222,6 +231,13 @@ const visible = computed({
 });
 
 const authStore = useAuthStore();
+const {
+  show: showSignDialog,
+  title: signTitle,
+  signerName: signerName,
+  request: requestSignature,
+  onConfirm: onSignConfirm,
+} = useSignature();
 const isAdminOrDirector = computed(() => ['admin', 'director'].includes(authStore.user?.role || ''));
 
 const loading = ref(false);
@@ -362,11 +378,16 @@ const complete = async () => {
 
   submitting.value = true;
   try {
+    const signature = await requestSignature('Ký xác nhận hoàn tất hồ sơ thanh lý/tiêu hủy');    if (!signature) {
+      submitting.value = false;
+      return;
+    }
     await assetDisposalService.completeCase(props.caseId, {
       decision_no: form.value.decision_no,
       decision_date: form.value.decision_date,
       decision_file_url: form.value.decision_file_url,
       notes: form.value.notes,
+      signature,
     });
 
     ElMessage.success('Đã hoàn tất hồ sơ giảm tài sản');

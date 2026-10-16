@@ -925,11 +925,18 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <SignaturePad
+      v-model="showSignDialog"
+      :title="signTitle"
+      :signer-name="signerName"
+      @confirm="onSignConfirm"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { ArrowLeft, DocumentCopy, Select, Search, InfoFilled, Camera, Calendar, Timer, OfficeBuilding, Warning, Box } from '@element-plus/icons-vue';
@@ -938,10 +945,34 @@ import inventoryService, { type InventoryRound, type InventoryReport } from '@/s
 import { assetService } from '@/services/asset.service';
 import { assetCategoryService } from '@/services/assetCategory.service';
 import { Html5Qrcode } from 'html5-qrcode';
+import SignaturePad from '@/components/Common/SignaturePad.vue';
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+
+// Chữ ký sống
+const showSignDialog = ref(false);
+const signTitle = ref('Ký xác nhận');
+let signResolve: ((sig: string | null) => void) | null = null;
+const signerName = computed(() => authStore.user?.fullname || authStore.user?.username || '');
+
+const requestSignature = (title: string): Promise<string | null> => {
+  signTitle.value = title;
+  showSignDialog.value = true;
+  return new Promise((resolve) => { signResolve = resolve; });
+};
+const onSignConfirm = (sig: string) => {
+  signResolve?.(sig);
+  signResolve = null;
+};
+
+watch(showSignDialog, (open) => {
+  if (!open && signResolve) {
+    signResolve(null);
+    signResolve = null;
+  }
+});
 
 // Data
 const loading = ref(false);
@@ -1962,8 +1993,13 @@ const submitReport = async () => {
       }
     }
 
-    // Nộp báo cáo
-    await inventoryService.submitReport(report.value.id);
+    // Nộp báo cáo — bắt buộc ký xác nhận
+    const signature = await requestSignature('Ký xác nhận nộp báo cáo kiểm kê');
+    if (!signature) {
+      ElMessage.info('Đã hủy nộp báo cáo');
+      return;
+    }
+    await inventoryService.submitReport(report.value.id, signature);
     if (report.value.status === 'rejected_by_head' || report.value.status === 'rejected_by_admin') {
       ElMessage.success('Đã gửi lại báo cáo kiểm kê thành công');
     } else {

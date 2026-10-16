@@ -375,6 +375,13 @@
       </el-button>
     </template>
   </el-dialog>
+
+  <SignaturePad
+    v-model="showSignDialog"
+    :title="signTitle"
+    :signer-name="signerName"
+    @confirm="onSignConfirm"
+  />
 </template>
 
 <script setup lang="ts">
@@ -384,8 +391,17 @@ import { Delete, Refresh, Search } from '@element-plus/icons-vue';
 import assetDisposalService from '@/services/assetDisposal.service';
 import api from '@/services/api';
 import { useAuthStore } from '@/stores/auth.store';
+import { useSignature } from '@/composables/useSignature';
+import SignaturePad from '@/components/Common/SignaturePad.vue';
 
 const authStore = useAuthStore();
+const {
+  show: showSignDialog,
+  title: signTitle,
+  signerName: signerName,
+  request: requestSignature,
+  onConfirm: onSignConfirm,
+} = useSignature();
 const isUnitRole = computed(() => authStore.isStaff || authStore.isDepartmentHead);
 
 const dialogTitle = computed(() => {
@@ -578,12 +594,18 @@ const submit = async () => {
   }
   submitting.value = true;
   try {
+    const signature = await requestSignature('Ký xác nhận lập hồ sơ thanh lý/tiêu hủy');
+    if (!signature) {
+      submitting.value = false;
+      return;
+    }
     await assetDisposalService.createManualCase({
       disposal_type: formData.disposal_type,
       destruction_method: formData.disposal_type === 'destruction' ? formData.destruction_method || undefined : undefined,
       disposal_method: formData.disposal_type === 'liquidation' ? formData.disposal_method || undefined : undefined,
       notes: formData.notes || undefined,
       asset_ids: totalIds,
+      signature,
     });
     ElMessage.success('Tạo hồ sơ thành công');
     visible.value = false;

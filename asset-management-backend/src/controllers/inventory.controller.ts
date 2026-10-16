@@ -8,6 +8,7 @@ import InventoryService from '../services/inventory.service';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { ForbiddenError } from '../utils/errorHandler';
 import Department from '../models/Department';
+import { assertSignature, recordSignature } from '../services/signature.service';
 
 // ==================== INVENTORY ROUND (Đợt Kiểm Kê) ====================
 
@@ -261,7 +262,23 @@ export const submitInventoryReport = async (req: AuthRequest, res: Response, nex
       throw new ForbiddenError('Bạn không có quyền nộp báo cáo này');
     }
 
+    // Bắt buộc chữ ký sống của người nộp
+    const signatureImage = assertSignature(req.body?.signature);
+
     const result = await InventoryService.submitInventoryReport(reportId, user.id);
+
+    await recordSignature({
+      entityType: 'inventory_report',
+      entityId: reportId,
+      action: 'submit',
+      signerId: user.id,
+      signerName: user.fullname || user.username || `user#${user.id}`,
+      signerRole: user.role,
+      signatureImage,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'] as string | undefined,
+    });
+
     res.json({
       success: true,
       message: 'Inventory report submitted successfully',
@@ -293,6 +310,9 @@ export const processInventoryApproval = async (req: AuthRequest, res: Response, 
       reason = rejection_reason;
     }
 
+    // Bắt buộc chữ ký sống của người duyệt (cả duyệt và từ chối)
+    const signatureImage = assertSignature(req.body?.signature);
+
     const report = await InventoryService.processInventoryApproval(
       reportId,
       req.user!.id,
@@ -303,6 +323,18 @@ export const processInventoryApproval = async (req: AuthRequest, res: Response, 
       req.user!.department_id ?? undefined,
       Array.isArray(repair_approved_asset_ids) ? repair_approved_asset_ids : undefined
     );
+
+    await recordSignature({
+      entityType: 'inventory_report',
+      entityId: reportId,
+      action: decision === 'approved' ? 'approve' : 'reject',
+      signerId: req.user!.id,
+      signerName: req.user!.fullname || req.user!.username || `user#${req.user!.id}`,
+      signerRole: req.user!.role,
+      signatureImage,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'] as string | undefined,
+    });
 
     const message = decision === 'approved' 
       ? 'Inventory report approved successfully' 

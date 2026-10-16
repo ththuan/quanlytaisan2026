@@ -256,8 +256,8 @@ class InventoryService {
     return unwrapData<InventoryReportDetail>(payload);
   }
 
-  async submitReport(id: number): Promise<InventoryReport> {
-    const payload: any = await api.post(`/inventory/reports/${id}/submit`);
+  async submitReport(id: number, signature: string): Promise<InventoryReport> {
+    const payload: any = await api.post(`/inventory/reports/${id}/submit`, { signature });
     return unwrapData<InventoryReport>(payload);
   }
 
@@ -265,12 +265,14 @@ class InventoryService {
     id: number,
     approved: boolean,
     rejection_reason?: string,
-    repair_approved_asset_ids?: number[]
+    repair_approved_asset_ids?: number[],
+    signature?: string
   ): Promise<InventoryReport> {
     const payload: any = await api.post(`/inventory/reports/${id}/approve`, {
       approved,
       rejection_reason,
       repair_approved_asset_ids,
+      signature,
     });
     return unwrapData<InventoryReport>(payload);
   }
