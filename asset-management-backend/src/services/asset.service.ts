@@ -110,6 +110,8 @@ class AssetService {
       limit,
       offset,
       order: [[sortBy, sortOrder]],
+      // Bỏ cột nặng (ảnh QR base64, mô tả dài) khỏi danh sách để giảm payload/IO
+      attributes: { exclude: ['qr_code', 'qr_code_image'] },
       include: [
         {
           model: AssetCategory,
