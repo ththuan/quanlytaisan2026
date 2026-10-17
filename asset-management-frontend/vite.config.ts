@@ -48,6 +48,9 @@ export default defineConfig(({ mode }) => {
     plugins: [
       vue(),
       VitePWA({
+        // TẮT service worker: trước đây PWA cache app shell khiến deploy xong
+        // trình duyệt vẫn chạy bản cũ. selfDestroying sẽ gỡ SW cũ + xóa cache.
+        selfDestroying: true,
         registerType: 'autoUpdate',
         includeAssets: ['logo-truong.ico', 'logo-truong.jpg'],
         manifest: {

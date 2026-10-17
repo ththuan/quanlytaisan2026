@@ -8,53 +8,40 @@ export interface PWAUpdateState {
 
 let pwaState: PWAUpdateState | null = null;
 
+/**
+ * PWA / Service Worker ĐÃ BỊ TẮT.
+ *
+ * Nguyên nhân: trước đây app dùng service worker (vite-plugin-pwa) để cache
+ * app shell (index.html + JS). Hệ quả là sau khi deploy, trình duyệt vẫn phục
+ * vụ bản cũ từ cache SW — kể cả khi Ctrl+Shift+R. Vì đây là app nội bộ, không
+ * cần offline, nên ta chủ động GỠ service worker và xóa toàn bộ cache để mọi
+ * máy nhanh chóng nhận bản mới.
+ */
 export function initPWA(): PWAUpdateState {
   if (pwaState) return pwaState;
 
-  const needRefresh = ref(false);
-  const offlineReady = ref(false);
-  let swUpdateFn: (() => Promise<void>) | undefined;
-
   try {
-    // Dynamic import for PWA register - only works when vite-plugin-pwa is active
-    import('virtual:pwa-register/vue').then(({ useRegisterSW }) => {
-      const { updateServiceWorker } = useRegisterSW({
-        immediate: true,
-        onRegisteredSW(swUrl, registration) {
-          if (registration) {
-            console.log('[PWA] Service Worker registered:', swUrl);
-            // Remove API responses cached by older app versions. Authenticated
-            // API data must never survive across accounts/devices.
-            if ('caches' in window) {
-              window.caches.delete('api-calls').catch(() => undefined);
-            }
-          }
-        },
-        onNeedRefresh() {
-          needRefresh.value = true;
-          swUpdateFn = updateServiceWorker;
-        },
-        onOfflineReady() {
-          offlineReady.value = true;
-          setTimeout(() => { offlineReady.value = false; }, 5000);
-        },
-        onRegisterError(error) {
-          console.warn('[PWA] Registration error:', error);
-        },
-      });
-    }).catch((e) => {
-      console.warn('[PWA] Not available, skipping:', e.message);
-    });
-  } catch (e: any) {
-    console.warn('[PWA] Init skipped:', e.message);
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((regs) => regs.forEach((r) => r.unregister().catch(() => undefined)))
+        .catch(() => undefined);
+    }
+    if ('caches' in window) {
+      caches
+        .keys()
+        .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+        .catch(() => undefined);
+    }
+  } catch {
+    // ignore
   }
 
   pwaState = {
-    needRefresh,
-    updateServiceWorker: swUpdateFn,
-    offlineReady,
+    needRefresh: ref(false),
+    updateServiceWorker: undefined,
+    offlineReady: ref(false),
   };
-
   return pwaState;
 }
 
