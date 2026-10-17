@@ -12,6 +12,7 @@ import router from './router';
 import i18n from './i18n';
 import { useAuthStore } from '@/stores/auth.store';
 import { initPWA } from '@/pwa';
+import { initUpdateCheck } from '@/update-check';
 
 import { use } from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -60,6 +61,9 @@ app.use(i18n);
 
 // Initialize PWA (service worker registration, update prompts)
 initPWA();
+
+// Tự phát hiện bản build mới (không còn service worker) và nạp lại khi cần
+initUpdateCheck();
 
 // Frontend observability: log lỗi JS để debug (có thể mở rộng gửi lên backend sau)
 app.config.errorHandler = (err: unknown, _instance, info) => {
