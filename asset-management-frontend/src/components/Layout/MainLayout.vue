@@ -228,6 +228,9 @@
           <div class="footer-copyright">
             Copyright &copy; 2026 Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ.
           </div>
+          <div class="footer-build">
+            build {{ buildTime }}
+          </div>
         </footer>
       </el-container>
     </el-container>
@@ -252,6 +255,7 @@ import { FEATURES } from '@/constants/features';
 const router = useRouter();
 const authStore = useAuthStore();
 const { t } = useI18n();
+const buildTime = __BUILD_TIME__;
 const showTotpDialog = ref(false);
 const showChangePasswordDialog = ref(false);
 const breadcrumbItems = computed(() => {
@@ -744,6 +748,13 @@ const toggleSidebar = () => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.footer-build {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-left: 12px;
+  white-space: nowrap;
 }
 
 @media (max-width: 768px) {

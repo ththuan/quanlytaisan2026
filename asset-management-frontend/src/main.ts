@@ -32,6 +32,13 @@ use([
 const app = createApp(App);
 const pinia = createPinia();
 
+// Dấu phiên bản build — mở Console (F12) xem "[app] build ..." để biết đang chạy bản nào
+try {
+  console.log('%c[app] build ' + __BUILD_TIME__, 'color:#409eff;font-weight:bold');
+} catch {
+  // ignore
+}
+
 // Register Element Plus icons
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component);

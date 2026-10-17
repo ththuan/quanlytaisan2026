@@ -40,6 +40,9 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
+    define: {
+      __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),

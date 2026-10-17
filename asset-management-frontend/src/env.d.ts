@@ -2,6 +2,8 @@
 /// <reference types="vite-plugin-pwa/client" />
 /// <reference types="vite-plugin-pwa/vue" />
 
+declare const __BUILD_TIME__: string;
+
 declare module 'element-plus';
 declare module 'virtual:pwa-register/vue' {
   import type { Ref } from 'vue';
