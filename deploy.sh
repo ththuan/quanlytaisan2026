@@ -37,7 +37,9 @@ log "New changes detected (${LOCAL_COMMIT:0:7} -> ${REMOTE_COMMIT:0:7}). Deployi
 git reset --hard origin/main
 
 log "Rebuilding backend + frontend..."
-docker compose -f "$COMPOSE_FILE" up -d --build backend frontend
+# Tạo lại luôn nginx để đồng bộ cấu hình/port theo prod (tránh trường hợp nginx
+# còn là container cũ cấu hình dev → trỏ sai cổng frontend → 502).
+docker compose -f "$COMPOSE_FILE" up -d --build --force-recreate backend frontend nginx
 
 log "Waiting for backend to become healthy..."
 for i in $(seq 1 30); do
@@ -51,9 +53,9 @@ for i in $(seq 1 30); do
     sleep 5
 done
 
-# Quan trọng: backend vừa được tạo lại => IP nội bộ đổi. Restart nginx để nó re-resolve
-# DNS backend, tránh lỗi 502 (nginx giữ IP backend cũ trong bộ nhớ khi dùng upstream keepalive).
-log "Restarting nginx to refresh backend IP..."
+# nginx đã được tạo lại cùng lúc nên IP nội bộ backend/frontend đã được re-resolve.
+# Restart thêm cho chắc (an toàn, không ảnh hưởng).
+log "Restarting nginx to refresh upstream IPs..."
 docker compose -f "$COMPOSE_FILE" restart nginx
 
 docker image prune -f
