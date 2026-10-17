@@ -105,11 +105,6 @@
             min-width="180"
           />
           <el-table-column
-            prop="email"
-            :label="$t('users.email')"
-            min-width="200"
-          />
-          <el-table-column
             prop="role"
             :label="$t('users.role')"
             width="120"
@@ -206,7 +201,7 @@
               class="guide-list"
               style="margin: 0; padding-left: 18px;"
             >
-              <li>Tải file mẫu Excel, điền thông tin (Tên đăng nhập, Mật khẩu, Vai trò bắt buộc; Email không bắt buộc)</li>
+              <li>Tải file mẫu Excel, điền thông tin (Tên đăng nhập, Mật khẩu, Vai trò bắt buộc)</li>
               <li>Upload file → bấm <strong>Kiểm tra lỗi</strong></li>
               <li>Nếu có lỗi: sửa file rồi Kiểm tra lại. Nếu không lỗi: bấm <strong>Xác nhận import</strong></li>
             </ol>
@@ -357,9 +352,6 @@
         <el-descriptions-item :label="$t('users.fullname')">
           {{ currentUser.fullname || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item :label="$t('users.email')">
-          {{ currentUser.email }}
-        </el-descriptions-item>
         <el-descriptions-item :label="$t('users.role')">
           <el-tag :type="getRoleColor(currentUser.role) ?? 'info'">
             {{ getRoleText(currentUser.role) }}
@@ -391,7 +383,6 @@ import UserFormDialog from '@/components/Users/UserFormDialog.vue';
 interface User {
   id: number;
   username: string;
-  email: string;
   fullname?: string;
   role: string;
   is_active: boolean;
@@ -431,8 +422,7 @@ const filteredUsers = computed(() => {
     const query = searchQuery.value.toLowerCase();
     result = result.filter(u => 
       u.username.toLowerCase().includes(query) ||
-      u.fullname?.toLowerCase().includes(query) ||
-      u.email.toLowerCase().includes(query)
+      u.fullname?.toLowerCase().includes(query)
     );
   }
   

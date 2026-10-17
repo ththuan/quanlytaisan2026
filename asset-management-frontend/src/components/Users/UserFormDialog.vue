@@ -28,17 +28,6 @@
             />
           </el-form-item>
         </el-col>
-        <el-col :span="12">
-          <el-form-item
-            :label="$t('users.email')"
-            prop="email"
-          >
-            <el-input
-              v-model="formData.email"
-              :placeholder="$t('users.email')"
-            />
-          </el-form-item>
-        </el-col>
       </el-row>
 
       <el-row :gutter="20">
@@ -165,7 +154,6 @@ import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.
 interface User {
   id: number;
   username: string;
-  email: string;
   fullname?: string;
   role: string;
   department_id?: number;
@@ -196,7 +184,6 @@ const isEdit = computed(() => !!props.user?.id);
 
 const formData = reactive({
   username: '',
-  email: '',
   fullname: '',
   role: 'staff' as string,
   department_id: null as number | null,
@@ -235,9 +222,6 @@ const rules = computed<FormRules>(() => ({
     { required: true, message: t('validation.required'), trigger: 'blur' },
     { min: 3, max: 50, message: t('validation.stringLength', { min: 3, max: 50 }), trigger: 'blur' },
   ],
-  email: [
-    { type: 'email', message: t('validation.invalidEmail'), trigger: 'blur' },
-  ],
   role: [
     { required: true, message: t('validation.required'), trigger: 'change' },
   ],
@@ -251,7 +235,6 @@ const rules = computed<FormRules>(() => ({
 
 const resetForm = () => {
   formData.username = '';
-  formData.email = '';
   formData.fullname = '';
       formData.role = 'staff';
   formData.department_id = null;
@@ -279,7 +262,6 @@ const handleSubmit = async () => {
     try {
       if (isEdit.value && props.user) {
         const updateData: any = {
-          email: formData.email,
           fullname: formData.fullname,
           role: formData.role,
           is_active: formData.is_active,
@@ -292,7 +274,6 @@ const handleSubmit = async () => {
       } else {
         const createData: any = {
           username: formData.username,
-          email: formData.email,
           fullname: formData.fullname,
           role: formData.role,
         };
@@ -324,7 +305,6 @@ watch(() => props.visible, async (newVal) => {
     }
     if (props.user) {
       formData.username = props.user.username;
-      formData.email = props.user.email;
       formData.fullname = props.user.fullname || '';
       formData.role = props.user.role;
       formData.department_id = props.user.department_id || null;

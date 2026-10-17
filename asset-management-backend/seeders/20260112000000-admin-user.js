@@ -41,7 +41,6 @@ module.exports = {
       [
         {
           username: 'admin',
-          email: 'admin@example.com',
           password_hash: passwordHash,
           fullname: 'System Admin',
           role: 'admin',

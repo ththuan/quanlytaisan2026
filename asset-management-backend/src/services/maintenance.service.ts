@@ -83,7 +83,6 @@ export interface ApproverInfo {
   id: number;
   role: UserRole;
   fullname?: string;
-  email?: string;
   department_id?: number;
 }
 
@@ -529,7 +528,6 @@ class MaintenanceService {
       approver_id: user.id,
       approver_role: user.role as any,
       approver_name: user.fullname,
-      approver_email: user.email,
       decision: 'approved',
       notes: 'Bắt đầu thực hiện sửa chữa',
       approval_level: 4,
@@ -568,7 +566,6 @@ class MaintenanceService {
       approver_id: user.id,
       approver_role: user.role as any,
       approver_name: user.fullname,
-      approver_email: user.email,
       decision: 'approved',
       notes: notes || 'Admin xác nhận hoàn thành sửa chữa',
       approval_level: 5,
@@ -615,7 +612,7 @@ class MaintenanceService {
           model: User,
           as: 'requester',
           required: false,
-          attributes: ['id', 'username', 'fullname', 'email'],
+          attributes: ['id', 'username', 'fullname'],
         },
         {
           model: User,
@@ -795,40 +792,40 @@ class MaintenanceService {
         {
           model: User,
           as: 'requester',
-          attributes: ['id', 'username', 'fullname', 'email'],
+          attributes: ['id', 'username', 'fullname'],
         },
         {
           model: User,
           as: 'approver',
-          attributes: ['id', 'username', 'fullname', 'email'],
+          attributes: ['id', 'username', 'fullname'],
         },
         {
           model: User,
           as: 'assignee',
-          attributes: ['id', 'username', 'fullname', 'email'],
+          attributes: ['id', 'username', 'fullname'],
         },
         {
           model: User,
           as: 'headApprover',
-          attributes: ['id', 'username', 'fullname', 'email'],
+          attributes: ['id', 'username', 'fullname'],
           required: false,
         },
         {
           model: User,
           as: 'adminApprover',
-          attributes: ['id', 'username', 'fullname', 'email'],
+          attributes: ['id', 'username', 'fullname'],
           required: false,
         },
         {
           model: User,
           as: 'directorApprover',
-          attributes: ['id', 'username', 'fullname', 'email'],
+          attributes: ['id', 'username', 'fullname'],
           required: false,
         },
         {
           model: User,
           as: 'rejector',
-          attributes: ['id', 'username', 'fullname', 'email'],
+          attributes: ['id', 'username', 'fullname'],
           required: false,
         },
         {
@@ -1616,7 +1613,6 @@ class MaintenanceService {
       approver_id: approver.id,
       approver_role: approverRole,
       approver_name: approver.fullname,
-      approver_email: approver.email,
       decision: decision,
       reason: reason,
       notes: notes,
@@ -1856,7 +1852,7 @@ class MaintenanceService {
         {
           model: User,
           as: 'approver',
-          attributes: ['id', 'username', 'fullname', 'email', 'role'],
+          attributes: ['id', 'username', 'fullname', 'role'],
         },
       ],
       order: [['decided_at', 'ASC']],

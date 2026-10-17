@@ -108,7 +108,7 @@ class InventoryService {
       limit,
       offset,
       order: [[sortBy || 'round_year', sortOrder || 'DESC']],
-      include: [{ model: User, as: 'creator', attributes: ['id', 'fullname', 'email'] }],
+      include: [{ model: User, as: 'creator', attributes: ['id', 'fullname'] }],
     });
 
     return buildPaginationResult(rows, count, page, limit);
@@ -120,7 +120,7 @@ class InventoryService {
 
     const round = await InventoryRound.findByPk(id, {
       include: [
-        { model: User, as: 'creator', attributes: ['id', 'fullname', 'email'] },
+        { model: User, as: 'creator', attributes: ['id', 'fullname'] },
         {
           model: InventoryReport,
           as: 'reports',
@@ -307,9 +307,9 @@ class InventoryService {
       include: [
         { model: InventoryRound, as: 'inventory_round' },
         { model: Department, as: 'department' },
-        { model: User, as: 'creator', attributes: ['id', 'fullname', 'email'] },
-        { model: User, as: 'headApprover', attributes: ['id', 'fullname', 'email'] },
-        { model: User, as: 'adminApprover', attributes: ['id', 'fullname', 'email'] },
+        { model: User, as: 'creator', attributes: ['id', 'fullname'] },
+        { model: User, as: 'headApprover', attributes: ['id', 'fullname'] },
+        { model: User, as: 'adminApprover', attributes: ['id', 'fullname'] },
         {
           model: InventoryReportDetail,
           as: 'details',

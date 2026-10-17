@@ -44,11 +44,10 @@ module.exports = {
 
     if (!existingAdmin) {
       await queryInterface.bulkInsert('users', [{
-        username: 'admin',
-        email: 'admin@college.edu.vn',
-        password_hash: defaultPassword,
-        fullname: 'Nguyễn Văn Admin',
-        role: 'admin',
+          username: 'admin',
+          password_hash: defaultPassword,
+          fullname: 'Quản trị viên',
+          role: 'admin',
         department_id: null,
         is_active: true,
         created_at: now,
@@ -67,7 +66,6 @@ module.exports = {
     if (!existingDirector) {
       await queryInterface.bulkInsert('users', [{
         username: 'director',
-        email: 'director@college.edu.vn',
         password_hash: defaultPassword,
         fullname: 'Trần Thị Giám đốc',
         role: 'director',
@@ -101,13 +99,12 @@ module.exports = {
 
       // 1. Department Head (Trưởng phòng/khoa)
       const deptHeadUsername = `truong_${deptSlug}`;
-      const deptHeadEmail = `truong.${deptSlug}@college.edu.vn`;
-      
+
       // Kiểm tra xem đã có user này chưa
       const [existingDeptHead] = await queryInterface.sequelize.query(
-        `SELECT id FROM users WHERE username = :username OR email = :email LIMIT 1;`,
+        `SELECT id FROM users WHERE username = :username LIMIT 1;`,
         {
-          replacements: { username: deptHeadUsername, email: deptHeadEmail },
+          replacements: { username: deptHeadUsername },
           type: Sequelize.QueryTypes.SELECT
         }
       );
@@ -116,7 +113,6 @@ module.exports = {
         const deptHeadId = usersToInsert.length + 1; // Tạm thời, sẽ được set sau khi insert
         usersToInsert.push({
           username: deptHeadUsername,
-          email: deptHeadEmail,
           password_hash: defaultPassword,
           fullname: `Trưởng ${dept.name}`,
           role: 'department_head',
@@ -133,12 +129,11 @@ module.exports = {
 
       // 2. Manager (Quản lý) - 1 người cho mỗi phòng ban
       const managerUsername = `ql_${deptSlug}`;
-      const managerEmail = `ql.${deptSlug}@college.edu.vn`;
       
       const [existingManager] = await queryInterface.sequelize.query(
-        `SELECT id FROM users WHERE username = :username OR email = :email LIMIT 1;`,
+        `SELECT id FROM users WHERE username = :username LIMIT 1;`,
         {
-          replacements: { username: managerUsername, email: managerEmail },
+          replacements: { username: managerUsername },
           type: Sequelize.QueryTypes.SELECT
         }
       );
@@ -146,7 +141,6 @@ module.exports = {
       if (!existingManager) {
         usersToInsert.push({
           username: managerUsername,
-          email: managerEmail,
           password_hash: defaultPassword,
           fullname: `Quản lý ${dept.name}`,
           role: 'manager',
@@ -161,12 +155,11 @@ module.exports = {
       // 3. Staff (Cán bộ) - 2 người cho mỗi phòng ban
       for (let i = 1; i <= 2; i++) {
         const staffUsername = `nv_${deptSlug}_${i}`;
-        const staffEmail = `nv${i}.${deptSlug}@college.edu.vn`;
         
         const [existingStaff] = await queryInterface.sequelize.query(
-          `SELECT id FROM users WHERE username = :username OR email = :email LIMIT 1;`,
+          `SELECT id FROM users WHERE username = :username LIMIT 1;`,
           {
-            replacements: { username: staffUsername, email: staffEmail },
+            replacements: { username: staffUsername },
             type: Sequelize.QueryTypes.SELECT
           }
         );
@@ -174,7 +167,6 @@ module.exports = {
         if (!existingStaff) {
           usersToInsert.push({
             username: staffUsername,
-            email: staffEmail,
             password_hash: defaultPassword,
             fullname: `Cán bộ ${i} - ${dept.name}`,
             role: 'staff',

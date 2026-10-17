@@ -5,7 +5,6 @@ import Joi from 'joi';
 // (chống leo thang đặc quyền - department_head chỉ được tạo bởi admin)
 export const registerSchema = Joi.object({
   username: Joi.string().alphanum().min(3).max(100).required(),
-  email: Joi.string().email().required(),
   password: Joi.string()
     .min(8)
     .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)'))
@@ -259,7 +258,6 @@ export const updateReportSchema = Joi.object({
 // User CRUD validation schemas
 export const createUserSchema = Joi.object({
   username: Joi.string().alphanum().min(3).max(100).required(),
-  email: Joi.string().email().required(),
   password: Joi.string()
     .min(8)
     .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)'))
@@ -275,7 +273,6 @@ export const createUserSchema = Joi.object({
 });
 
 export const updateUserSchema = Joi.object({
-  email: Joi.string().email().optional(),
   fullname: Joi.string().max(255).optional(),
   role: Joi.string().valid('admin', 'director', 'department_head', 'staff').optional(),
   department_id: Joi.number().integer().positive().optional(),
@@ -285,7 +282,6 @@ export const updateUserSchema = Joi.object({
 // Profile tự cập nhật — CHỈ cho phép trường an toàn (không role/department_id/is_active)
 // để tránh leo thang đặc quyền.
 export const updateProfileSchema = Joi.object({
-  email: Joi.string().email().optional(),
   fullname: Joi.string().max(255).optional(),
 }).min(1);
 

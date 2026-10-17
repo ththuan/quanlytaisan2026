@@ -27,7 +27,6 @@ export async function ensureDefaultAdminAccount(): Promise<void> {
 
   await User.create({
     username: SYSTEM_ADMIN_USERNAME,
-    email: 'admin@example.com',
     password_hash: hash,
     fullname: 'System Admin',
     role: 'admin',

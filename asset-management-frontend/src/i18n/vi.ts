@@ -324,7 +324,6 @@ export default {
     logout: 'Đăng xuất',
     username: 'Tên đăng nhập',
     password: 'Mật khẩu',
-    email: 'Email',
     forgotPassword: 'Quên mật khẩu?',
     rememberMe: 'Ghi nhớ đăng nhập',
     loginSuccess: 'Đăng nhập thành công',
@@ -462,7 +461,6 @@ export default {
     userDetails: 'Chi tiết người dùng',
     fullname: 'Họ và tên',
     username: 'Tên đăng nhập',
-    email: 'Email',
     role: 'Vai trò',
     department: 'Phòng ban',
     isActive: 'Trạng thái hoạt động',
@@ -521,8 +519,6 @@ export default {
   // Validation
   validation: {
     required: 'Trường này là bắt buộc',
-    email: 'Email không hợp lệ',
-    invalidEmail: 'Email không hợp lệ',
     minLength: 'Tối thiểu {min} ký tự',
     maxLength: 'Tối đa {max} ký tự',
     stringLength: 'Độ dài phải từ {min} đến {max} ký tự',

@@ -35,8 +35,8 @@ async function resetPassword() {
 
   if (!rows || rows.length === 0) {
     await sequelize.query(
-      `INSERT INTO users (username, email, password_hash, fullname, role, is_active, created_at, updated_at)
-       VALUES (:username, 'admin@example.com', :hash, 'System Admin', 'admin', true, NOW(), NOW())`,
+      `INSERT INTO users (username, password_hash, fullname, role, is_active, created_at, updated_at)
+       VALUES (:username, :hash, 'System Admin', 'admin', true, NOW(), NOW())`,
       { replacements: { hash, username: 'admin' } }
     );
     console.log('Chưa có user admin — đã tạo mới.');

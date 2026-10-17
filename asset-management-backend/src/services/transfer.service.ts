@@ -29,7 +29,6 @@ export interface ApproverInfo {
   id: number;
   role: UserRole;
   fullname?: string;
-  email?: string;
   department_id?: number;
 }
 
@@ -369,7 +368,6 @@ class TransferService {
         approver_id: approver.id,
         approver_role: approver.role === 'admin' ? 'admin' : 'department_head',
         approver_name: approver.fullname,
-        approver_email: approver.email,
         decision: decision,
         reason: reason,
         notes: notes,
@@ -580,7 +578,7 @@ class TransferService {
         {
           model: User,
           as: 'approver',
-          attributes: ['id', 'username', 'fullname', 'email', 'role'],
+          attributes: ['id', 'username', 'fullname', 'role'],
         },
       ],
       order: [['decided_at', 'ASC']],

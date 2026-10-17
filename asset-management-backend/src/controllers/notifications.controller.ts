@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { Notification } from '../models';
 
 type AuthenticatedRequest = Request & {
-  user?: { id: number; role: string; department_id?: number; fullname?: string; email?: string };
+  user?: { id: number; role: string; department_id?: number; fullname?: string };
 };
 
 const parseLimit = (value: any, defaultValue: number) => {

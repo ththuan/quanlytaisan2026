@@ -69,9 +69,6 @@ services:
       RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-500}
       AUTH_RATE_LIMIT_WINDOW_MS: ${AUTH_RATE_LIMIT_WINDOW_MS:-900000}
       AUTH_RATE_LIMIT_MAX_REQUESTS: ${AUTH_RATE_LIMIT_MAX_REQUESTS:-10}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-      GOOGLE_ALLOWED_DOMAIN: ${GOOGLE_ALLOWED_DOMAIN:-ctec.edu.vn}
-      ADMIN_GOOGLE_EMAIL: ${ADMIN_GOOGLE_EMAIL:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -90,8 +87,6 @@ services:
       context: ./asset-management-frontend
       dockerfile: Dockerfile
       target: production
-      args:
-        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     container_name: asset-management-frontend
     restart: unless-stopped
     depends_on:

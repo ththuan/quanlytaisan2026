@@ -5,7 +5,6 @@ import jwtConfig from '../config/jwt';
 export interface JWTPayload {
   id: number;
   username: string;
-  email: string;
   role: string;
   department_id?: number;
   fullname?: string;

@@ -1,7 +1,6 @@
 export interface User {
   id: number;
   username: string;
-  email: string;
   fullname?: string;
   role: 'admin' | 'director' | 'department_head' | 'manager' | 'staff' | 'user';
   department_id?: number;

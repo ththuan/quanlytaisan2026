@@ -12,7 +12,6 @@ class MaintenanceController {
         role: user.role as any,
         department_id: user.department_id,
         fullname: user.fullname,
-        email: user.email,
       });
 
       return res.json({
@@ -133,7 +132,6 @@ class MaintenanceController {
         id: user.id,
         role: user.role as any,
         fullname: user.fullname,
-        email: user.email,
         department_id: user.department_id,
       });
 
@@ -185,7 +183,6 @@ class MaintenanceController {
           id: user.id,
           role: user.role as any,
           fullname: user.fullname,
-          email: user.email,
           department_id: user.department_id,
         },
         { decision: 'approved', notes, assigned_to, estimated_cost }
@@ -235,7 +232,6 @@ class MaintenanceController {
           id: user.id,
           role: user.role as any,
           fullname: user.fullname,
-          email: user.email,
           department_id: user.department_id,
         },
         { decision, reason, notes, assigned_to }
@@ -315,7 +311,6 @@ class MaintenanceController {
           id: user.id,
           role: user.role as any,
           fullname: user.fullname,
-          email: user.email,
           department_id: user.department_id,
         }
       );
@@ -359,7 +354,6 @@ class MaintenanceController {
           id: user.id,
           role: user.role as any,
           fullname: user.fullname,
-          email: user.email,
           department_id: user.department_id,
         },
         req.body
@@ -394,7 +388,6 @@ class MaintenanceController {
         id: user.id,
         role: user.role as any,
         fullname: user.fullname,
-        email: user.email,
         department_id: user.department_id,
       });
 
@@ -419,7 +412,6 @@ class MaintenanceController {
         id: user.id,
         role: user.role as any,
         fullname: user.fullname,
-        email: user.email,
         department_id: user.department_id,
       });
       return res.json({
@@ -445,7 +437,6 @@ class MaintenanceController {
         id: user.id,
         role: user.role as any,
         fullname: user.fullname,
-        email: user.email,
         department_id: user.department_id,
       }, notes);
       return res.json({

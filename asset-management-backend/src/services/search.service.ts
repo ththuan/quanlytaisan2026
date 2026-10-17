@@ -81,18 +81,17 @@ async function searchUsers(pattern: string, currentUser: SearchUser): Promise<Gl
       [Op.or]: [
         { username: { [Op.iLike]: pattern } },
         { fullname: { [Op.iLike]: pattern } },
-        { email: { [Op.iLike]: pattern } },
       ],
     },
     limit: LIMIT_PER_TYPE,
     order: [['username', 'ASC']],
-    attributes: ['id', 'username', 'fullname', 'email'],
+    attributes: ['id', 'username', 'fullname'],
   });
   return rows.map((u) => ({
     type: 'user' as const,
     id: u.id,
     title: u.username,
-    subtitle: [u.fullname, u.email].filter(Boolean).join(' · ') || '',
+    subtitle: u.fullname || '',
     route: '/users',
   }));
 }

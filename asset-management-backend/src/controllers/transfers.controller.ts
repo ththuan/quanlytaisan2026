@@ -11,7 +11,6 @@ class TransfersController {
         role: user.role as any,
         department_id: user.department_id,
         fullname: user.fullname,
-        email: user.email,
       });
 
       return res.json({
@@ -107,7 +106,6 @@ class TransfersController {
           id: user.id,
           role: user.role as any,
           fullname: user.fullname,
-          email: user.email,
           department_id: user.department_id,
         },
         { decision, reason, notes }

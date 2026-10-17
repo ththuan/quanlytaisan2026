@@ -92,13 +92,11 @@ async function generateUsers(departments) {
     const dept = departments[i % departments.length];
     rows.push({
       username: `${USERNAME_PREFIX}${pad(n, 4)}`,
-      email: `${USERNAME_PREFIX}${pad(n, 4)}@test.local`,
       password_hash: passwordHash,
       fullname: `Người dùng test ${pad(n, 4)}`,
       role,
       department_id: dept ? dept.id : null,
       is_active: true,
-      auth_provider: 'local',
       created_at: now,
       updated_at: now,
     });
@@ -111,8 +109,8 @@ async function generateUsers(departments) {
 
 async function bulkInsertUsers(rows) {
   const cols = [
-    'username', 'email', 'password_hash', 'fullname', 'role',
-    'department_id', 'is_active', 'auth_provider', 'created_at', 'updated_at',
+    'username', 'password_hash', 'fullname', 'role',
+    'department_id', 'is_active', 'created_at', 'updated_at',
   ];
   for (let i = 0; i < rows.length; i += BATCH) {
     const batch = rows.slice(i, i + BATCH);
@@ -122,8 +120,8 @@ async function bulkInsertUsers(rows) {
     for (const r of batch) {
       values.push(`(${cols.map(() => `$${idx++}`).join(', ')})`);
       params.push(
-        r.username, r.email, r.password_hash, r.fullname, r.role,
-        r.department_id, r.is_active, r.auth_provider, r.created_at, r.updated_at,
+        r.username, r.password_hash, r.fullname, r.role,
+        r.department_id, r.is_active, r.created_at, r.updated_at,
       );
     }
     await pool.query(

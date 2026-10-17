@@ -11,7 +11,6 @@ module.exports = {
     await queryInterface.bulkInsert('users', [
       {
         username: 'director',
-        email: 'director@example.com',
         password_hash: defaultPassword,
         fullname: 'Giám Hiệu',
         role: 'director',
@@ -30,7 +29,6 @@ module.exports = {
     // Insert department heads
     const departmentHeads = departments.map((dept, index) => ({
       username: `truongphong${index + 1}`,
-      email: `truongphong${index + 1}@example.com`,
       password_hash: defaultPassword,
       fullname: `Trưởng ${dept.name}`,
       role: 'department_head',
@@ -47,7 +45,6 @@ module.exports = {
     // Insert staff users
     const staffUsers = departments.map((dept, index) => ({
       username: `nhanvien${index + 1}`,
-      email: `nhanvien${index + 1}@example.com`,
       password_hash: defaultPassword,
       fullname: `Cán bộ ${dept.name}`,
       role: 'staff',

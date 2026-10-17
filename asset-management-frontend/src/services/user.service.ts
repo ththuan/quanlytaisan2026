@@ -3,7 +3,6 @@ import api from './api';
 export interface User {
   id: number;
   username: string;
-  email: string;
   fullname?: string;
   role: 'admin' | 'director' | 'department_head' | 'staff';
   department_id?: number;
@@ -14,7 +13,6 @@ export interface User {
 
 export interface CreateUserData {
   username: string;
-  email: string;
   password: string;
   fullname?: string;
   role?: 'admin' | 'manager' | 'staff' | 'user';
@@ -22,7 +20,6 @@ export interface CreateUserData {
 }
 
 export interface UpdateUserData {
-  email?: string;
   fullname?: string;
   role?: 'admin' | 'manager' | 'staff' | 'user';
   department_id?: number;

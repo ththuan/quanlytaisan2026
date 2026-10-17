@@ -12,7 +12,6 @@ export interface RequestApprovalAttributes {
   approver_id: number;
   approver_role: ApproverRole;
   approver_name?: string;
-  approver_email?: string;
   decision: ApprovalDecision;
   reason?: string;
   notes?: string;
@@ -31,7 +30,6 @@ class RequestApproval extends Model<RequestApprovalAttributes, RequestApprovalCr
   public approver_id!: number;
   public approver_role!: ApproverRole;
   public approver_name?: string;
-  public approver_email?: string;
   public decision!: ApprovalDecision;
   public reason?: string;
   public notes?: string;
@@ -70,10 +68,6 @@ RequestApproval.init(
       allowNull: false,
     },
     approver_name: {
-      type: DataTypes.STRING(255),
-      allowNull: true,
-    },
-    approver_email: {
       type: DataTypes.STRING(255),
       allowNull: true,
     },

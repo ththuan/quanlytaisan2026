@@ -19,7 +19,6 @@ const LOCKOUT_DURATION_MINUTES = 15;
 
 export interface RegisterInput {
   username: string;
-  email: string;
   password: string;
   fullname?: string;
 }
@@ -49,12 +48,6 @@ class AuthService {
       throw new ConflictError('Username already exists');
     }
 
-    // Check if email already exists
-    const existingEmail = await User.findOne({ where: { email: data.email } });
-    if (existingEmail) {
-      throw new ConflictError('Email already exists');
-    }
-
     // Hash password
     const password_hash = await User.hashPassword(data.password);
 
@@ -62,7 +55,6 @@ class AuthService {
     // (department_head/director/admin chỉ được tạo bởi quản trị viên qua user management)
     const user = await User.create({
       username: data.username,
-      email: data.email,
       fullname: data.fullname,
       password_hash,
       role: 'staff',
@@ -385,7 +377,6 @@ class AuthService {
     return {
       id: user.id,
       username: user.username,
-      email: user.email || '',
       role: user.role,
       department_id: user.department_id,
       fullname: user.fullname,

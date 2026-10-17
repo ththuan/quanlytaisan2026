@@ -108,17 +108,17 @@ class ReportService {
         {
           model: User,
           as: 'creator',
-          attributes: ['id', 'username', 'fullname', 'email'],
+          attributes: ['id', 'username', 'fullname'],
         },
         {
           model: User,
           as: 'submitter',
-          attributes: ['id', 'username', 'fullname', 'email'],
+          attributes: ['id', 'username', 'fullname'],
         },
         {
           model: User,
           as: 'approver',
-          attributes: ['id', 'username', 'fullname', 'email'],
+          attributes: ['id', 'username', 'fullname'],
         },
       ],
     });

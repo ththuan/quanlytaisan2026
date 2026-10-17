@@ -112,8 +112,8 @@ class ProcurementService {
     const procurement = await Procurement.findByPk(id, {
       include: [
         { model: Department, as: 'receiving_department' },
-        { model: User, as: 'creator', attributes: ['id', 'username', 'fullname', 'email'] },
-        { model: User, as: 'fulfiller', attributes: ['id', 'username', 'fullname', 'email'], required: false },
+        { model: User, as: 'creator', attributes: ['id', 'username', 'fullname'] },
+        { model: User, as: 'fulfiller', attributes: ['id', 'username', 'fullname'], required: false },
         { model: ProcurementItem, as: 'items' },
         {
           model: MaintenanceRequest,

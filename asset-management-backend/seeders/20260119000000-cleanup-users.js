@@ -108,7 +108,7 @@ module.exports = {
 
     // Kiểm tra kết quả
     const remainingUsers = await queryInterface.sequelize.query(
-      `SELECT id, username, email, role FROM users;`,
+      `SELECT id, username, role FROM users;`,
       { type: Sequelize.QueryTypes.SELECT }
     );
 
@@ -117,7 +117,7 @@ module.exports = {
     if (remainingUsers && remainingUsers.length > 0) {
       console.log('\nRemaining users:');
       remainingUsers.forEach(user => {
-        console.log(`   - ${user.username} (${user.email}) - ${user.role}`);
+        console.log(`   - ${user.username} - ${user.role}`);
       });
     }
     console.log('');

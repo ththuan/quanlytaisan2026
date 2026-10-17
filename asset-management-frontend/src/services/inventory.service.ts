@@ -19,7 +19,6 @@ export interface InventoryRound {
   creator?: {
     id: number;
     full_name: string;
-    email: string;
   };
   reports?: InventoryReport[];
   created_at: string;

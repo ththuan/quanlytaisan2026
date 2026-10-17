@@ -45,7 +45,7 @@ class DepartmentService {
         {
           model: User,
           as: 'manager',
-          attributes: ['id', 'username', 'fullname', 'email'],
+          attributes: ['id', 'username', 'fullname'],
         },
         {
           model: Department,
@@ -64,7 +64,7 @@ class DepartmentService {
         {
           model: User,
           as: 'manager',
-          attributes: ['id', 'username', 'fullname', 'email'],
+          attributes: ['id', 'username', 'fullname'],
         },
         {
           model: Department,

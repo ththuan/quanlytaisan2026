@@ -13,7 +13,6 @@ const swaggerOptions = {
       description: 'API Documentation - Phần mềm Quản lý tài sản | Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ',
       contact: {
         name: 'Support',
-        email: 'support@example.com'
       }
     },
     servers: [

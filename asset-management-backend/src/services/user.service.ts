@@ -6,7 +6,6 @@ import { SYSTEM_ADMIN_USERNAME, SYSTEM_ADMIN_PASSWORD } from '../config/adminCre
 
 export interface CreateUserInput {
   username: string;
-  email?: string; // Optional - không bắt buộc vì chưa có chức năng gửi email
   password?: string; // Optional - will use default if not provided
   fullname?: string;
   role?: 'admin' | 'director' | 'department_head' | 'staff';
@@ -15,7 +14,6 @@ export interface CreateUserInput {
 
 export interface UpdateUserInput {
   username?: string;
-  email?: string | null; // null để xóa email
   fullname?: string;
   role?: 'admin' | 'director' | 'department_head' | 'staff';
   department_id?: number;
@@ -44,7 +42,6 @@ class UserService {
     if (query.search) {
       where[Op.or] = [
         { username: { [Op.iLike]: `%${query.search}%` } },
-        { email: { [Op.iLike]: `%${query.search}%` } },
         { fullname: { [Op.iLike]: `%${query.search}%` } },
       ];
     }
@@ -106,14 +103,6 @@ class UserService {
       throw new ConflictError('Username already exists');
     }
 
-    // Check if email already exists (only when email is provided)
-    if (data.email) {
-      const existingEmail = await User.findOne({ where: { email: data.email } });
-      if (existingEmail) {
-        throw new ConflictError('Email already exists');
-      }
-    }
-
     // Use default password if not provided
     const password = data.password || DEFAULT_PASSWORD;
     
@@ -144,19 +133,6 @@ class UserService {
       if (existingUsername) {
         throw new ConflictError('Username already exists');
       }
-    }
-
-    // Check if email is being changed and already exists
-    if (data.email && data.email !== user.email) {
-      const existingEmail = await User.findOne({ where: { email: data.email } });
-      if (existingEmail) {
-        throw new ConflictError('Email already exists');
-      }
-    }
-    // Cho phép xóa email (set null)
-    if (data.email === null) {
-      await user.update({ ...data, email: null });
-      return this.getUserById(id);
     }
 
     // Update user

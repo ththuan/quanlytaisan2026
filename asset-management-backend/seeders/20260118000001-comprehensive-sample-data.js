@@ -58,7 +58,6 @@ module.exports = {
       // Admin
       {
         username: 'admin',
-        email: 'admin@college.edu.vn',
         password_hash: defaultPassword,
         fullname: 'Nguyễn Văn Admin',
         role: 'admin',
@@ -68,7 +67,6 @@ module.exports = {
       // Director
       {
         username: 'director',
-        email: 'director@college.edu.vn',
         password_hash: defaultPassword,
         fullname: 'Trần Thị Giám đốc',
         role: 'director',
@@ -78,7 +76,6 @@ module.exports = {
       // Department Heads (mỗi khoa/phòng 1 trưởng)
       {
         username: 'truongkhoa_ngoaingu',
-        email: 'truongkhoa.ngoaingu@college.edu.vn',
         password_hash: defaultPassword,
         fullname: 'Lê Văn Trưởng Khoa',
         role: 'department_head',
@@ -87,7 +84,6 @@ module.exports = {
       },
       {
         username: 'truongkhoa_kythuat',
-        email: 'truongkhoa.kythuat@college.edu.vn',
         password_hash: defaultPassword,
         fullname: 'Phạm Thị Trưởng Khoa',
         role: 'department_head',
@@ -96,7 +92,6 @@ module.exports = {
       },
       {
         username: 'truongphong_daotao',
-        email: 'truongphong.daotao@college.edu.vn',
         password_hash: defaultPassword,
         fullname: 'Hoàng Văn Trưởng Phòng',
         role: 'department_head',
@@ -105,7 +100,6 @@ module.exports = {
       },
       {
         username: 'truongphong_ketoan',
-        email: 'truongphong.ketoan@college.edu.vn',
         password_hash: defaultPassword,
         fullname: 'Vũ Thị Trưởng Phòng',
         role: 'department_head',
@@ -115,7 +109,6 @@ module.exports = {
       // Managers
       {
         username: 'manager1',
-        email: 'manager1@college.edu.vn',
         password_hash: defaultPassword,
         fullname: 'Đỗ Văn Quản lý',
         role: 'manager',
@@ -124,7 +117,6 @@ module.exports = {
       },
       {
         username: 'manager2',
-        email: 'manager2@college.edu.vn',
         password_hash: defaultPassword,
         fullname: 'Bùi Thị Quản lý',
         role: 'manager',
@@ -134,7 +126,6 @@ module.exports = {
       // Staff (cán bộ các phòng ban)
       {
         username: 'staff1',
-        email: 'staff1@college.edu.vn',
         password_hash: defaultPassword,
         fullname: 'Nguyễn Thị Cán bộ',
         role: 'staff',
@@ -143,7 +134,6 @@ module.exports = {
       },
       {
         username: 'staff2',
-        email: 'staff2@college.edu.vn',
         password_hash: defaultPassword,
         fullname: 'Trần Văn Cán bộ',
         role: 'staff',
@@ -152,7 +142,6 @@ module.exports = {
       },
       {
         username: 'staff3',
-        email: 'staff3@college.edu.vn',
         password_hash: defaultPassword,
         fullname: 'Lê Thị Cán bộ',
         role: 'staff',
@@ -161,7 +150,6 @@ module.exports = {
       },
       {
         username: 'staff4',
-        email: 'staff4@college.edu.vn',
         password_hash: defaultPassword,
         fullname: 'Phạm Văn Cán bộ',
         role: 'staff',
@@ -170,7 +158,6 @@ module.exports = {
       },
       {
         username: 'staff5',
-        email: 'staff5@college.edu.vn',
         password_hash: defaultPassword,
         fullname: 'Hoàng Thị Cán bộ',
         role: 'staff',
@@ -180,7 +167,6 @@ module.exports = {
       // Regular users
       {
         username: 'user1',
-        email: 'user1@college.edu.vn',
         password_hash: defaultPassword,
         fullname: 'Vũ Văn Người dùng',
         role: 'user',
@@ -189,7 +175,6 @@ module.exports = {
       },
       {
         username: 'user2',
-        email: 'user2@college.edu.vn',
         password_hash: defaultPassword,
         fullname: 'Đỗ Thị Người dùng',
         role: 'user',

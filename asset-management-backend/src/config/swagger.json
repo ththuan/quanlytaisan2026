@@ -71,7 +71,6 @@
         "properties": {
           "id": { "type": "integer" },
           "username": { "type": "string" },
-          "email": { "type": "string", "format": "email" },
           "full_name": { "type": "string" },
           "role": { "type": "string", "enum": ["admin", "director", "staff", "department_head"] },
           "department_id": { "type": "integer" }
@@ -168,10 +167,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["username", "email", "password", "full_name"],
+                "required": ["username", "password", "full_name"],
                 "properties": {
                   "username": { "type": "string" },
-                  "email": { "type": "string", "format": "email" },
                   "password": { "type": "string" },
                   "full_name": { "type": "string" },
                   "role": { "type": "string", "enum": ["admin", "director", "staff", "department_head"] },
