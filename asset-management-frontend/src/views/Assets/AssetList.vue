@@ -632,7 +632,7 @@
       >
         <template #default>
           <div style="font-size: 13px; line-height: 1.6">
-            Mỗi QR kích thước <strong>5cm × 5cm</strong>, xếp <strong>4 cột</strong> trên trang A4.<br>
+            Tem QR gọn (~2.4cm), xếp <strong>6 cột</strong> — khoảng <strong>40+ tem/trang A4</strong>.<br>
             Toàn bộ QR của đơn vị sẽ mở trong tab mới. Dùng nút <strong>"In / Lưu PDF"</strong> để xuất ra PDF.
           </div>
         </template>
@@ -1042,50 +1042,67 @@ const escapeHtml = (value: unknown): string => {
 };
 
 const buildPrintHTML = (items: Array<{ asset_code: string; name: string; quantity: number; unit: string; year_in_use?: number | null; qr_image: string }>, deptName: string): string => {
-  const cells = items.map((a, idx) => {
-    const row = Math.floor(idx / 4);
-    const flip = row % 2 === 1; // hàng chẵn: text trên, QR dưới
+  // Bố cục lưới đều, thẳng hàng, tối đa số tem/trang A4 (6 cột, QR 24mm).
+  const cells = items.map((a) => {
     const qrBlock = a.qr_image
       ? `<img src="${escapeHtml(a.qr_image)}" alt="QR" />`
       : `<div class="qr-placeholder">No QR</div>`;
-    // Chỉ hiển thị thông tin cơ bản gọn nhẹ: tên, số lượng, năm sử dụng (nếu có)
-    const infoBlock = `<div class="qr-info">
-        <div class="qr-code">${escapeHtml(a.asset_code)}</div>
-        <div class="qr-name">${escapeHtml(a.name)}</div>
-        <div class="qr-qty">SL: ${escapeHtml(a.quantity)}${a.unit ? ' ' + escapeHtml(a.unit) : ''}${a.year_in_use ? ` • Năm SD: ${escapeHtml(a.year_in_use)}` : ''}</div>
+    const qty = `SL: ${escapeHtml(a.quantity)}${a.unit ? ' ' + escapeHtml(a.unit) : ''}`;
+    const year = a.year_in_use ? ` • ${escapeHtml(a.year_in_use)}` : '';
+    return `<div class="cell">
+        ${qrBlock}
+        <div class="code">${escapeHtml(a.asset_code)}</div>
+        <div class="name">${escapeHtml(a.name)}</div>
+        <div class="qty">${qty}${year}</div>
       </div>`;
-    return `<div class="qr-cell">${flip ? infoBlock + qrBlock : qrBlock + infoBlock}</div>`;
   }).join('');
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
 <title>QR Code – ${escapeHtml(deptName)}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', sans-serif; background: #fff; }
-  h2 { text-align: center; font-size: 14pt; padding: 6mm 0 3mm; }
-  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; padding: 8mm; }
-  .qr-cell {
-    border: 0.5pt dashed #ddd; padding: 1.5mm;
-    page-break-inside: avoid; text-align: center;
+  html, body { background: #fff; }
+  body { font-family: Arial, 'Helvetica Neue', sans-serif; color: #111; }
+  .head { text-align: center; font-size: 11pt; font-weight: 700; margin: 0 0 2mm; }
+  .head .sub { display: block; font-size: 8pt; font-weight: 400; color: #555; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    width: 100%;
   }
-  .qr-cell img { width: 35mm; height: 35mm; display: block; margin: 0 auto; }
-  .qr-placeholder { width: 35mm; height: 35mm; display: flex; align-items: center; justify-content: center; background: #eee; font-size: 9pt; color: #888; margin: 0 auto; }
-  .qr-info { margin: 1.5mm 0; line-height: 1.3; min-height: 11mm; }
-  .qr-code { font-weight: bold; font-size: 8pt; word-break: break-all; }
-  .qr-name { font-size: 7.5pt; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-  .qr-qty { font-size: 7pt; color: #333; }
+  .cell {
+    height: 37mm;
+    padding: 1mm;
+    border: 0.4pt solid #cfcfcf;
+    text-align: center;
+    overflow: hidden;
+    page-break-inside: avoid;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .cell img { width: 24mm; height: 24mm; object-fit: contain; display: block; }
+  .qr-placeholder {
+    width: 24mm; height: 24mm; display: flex; align-items: center; justify-content: center;
+    background: #f2f2f2; font-size: 7pt; color: #999;
+  }
+  .code { font-size: 6.8pt; font-weight: 700; margin-top: 0.6mm; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .name { font-size: 6.4pt; line-height: 1.12; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .qty  { font-size: 6.2pt; color: #333; margin-top: 0.4mm; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .no-print { text-align: center; padding: 10px; background: #f0f0f0; }
+  .no-print button { padding: 6px 18px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
   @media print {
-    @page { size: A4 portrait; margin: 6mm; }
+    @page { size: A4 portrait; margin: 8mm; }
     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .no-print { display: none !important; }
   }
 </style></head><body>
-<div class="no-print" style="text-align:center;padding:10px;background:#f0f0f0">
+<div class="no-print">
   <strong>QR Code – ${escapeHtml(deptName)}</strong> &nbsp;
-  <button onclick="window.print()" style="padding:6px 18px;background:#409eff;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:13px">▶ In / Lưu PDF</button>
-  <button onclick="window.close()" style="margin-left:8px;padding:6px 14px;background:#ccc;border:none;border-radius:4px;cursor:pointer">✕ Đóng</button>
+  <button style="background:#409eff;color:#fff" onclick="window.print()">▶ In / Lưu PDF</button>
+  <button style="background:#ccc;margin-left:8px" onclick="window.close()">✕ Đóng</button>
 </div>
-<h2>QR Code tài sản – ${escapeHtml(deptName)}</h2>
+<div class="head">Mã QR tài sản – ${escapeHtml(deptName)}<span class="sub">${items.length} tem</span></div>
 <div class="grid">${cells}</div>
 </body></html>`;
 };
