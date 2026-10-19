@@ -666,6 +666,52 @@
           </template>
         </el-table-column>
         <el-table-column
+          label="Ảnh nhóm"
+          width="150"
+          align="center"
+        >
+          <template #default="{ row }">
+            <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center;align-items:center;">
+              <div
+                v-for="url in batchInputs[row.category_id].image_urls"
+                :key="url"
+                style="position:relative;"
+              >
+                <el-image
+                  :src="url"
+                  fit="cover"
+                  :preview-src-list="batchInputs[row.category_id].image_urls"
+                  preview-teleported
+                  style="width:34px;height:34px;border-radius:4px;"
+                />
+                <button
+                  v-if="!row.confirmed"
+                  type="button"
+                  class="inv-photo-remove"
+                  style="border:none;cursor:pointer;"
+                  @click="removeBatchImage(row.category_id, url)"
+                >
+                  ✕
+                </button>
+              </div>
+              <label
+                v-if="!row.confirmed"
+                class="inv-photo-add"
+                style="padding:4px 8px;"
+              >
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  multiple
+                  @change="(e) => onBatchImagesSelected(row.category_id, e)"
+                >
+                <span style="font-size:14px;">+</span>
+              </label>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column
           label="Kết quả"
           width="110"
           align="center"
@@ -933,7 +979,7 @@
               placeholder="Ghi chú thêm về tài sản..."
             />
           </el-form-item>
-          <el-form-item label="Ảnh hiện trạng">
+          <el-form-item label="Ảnh hiện trạng (không bắt buộc)">
             <div class="inv-photo-block">
               <div class="inv-photo-list">
                 <div
@@ -1070,7 +1116,7 @@ const filterStatus = ref('');
 
 // ─── Batch tracking ──────────────────────────────────────────────────────────
 const categoriesMap = ref<Map<number, any>>(new Map());
-const batchInputs = ref<Record<number, { actual_quantity: number; condition: string; notes: string }>>({});
+const batchInputs = ref<Record<number, { actual_quantity: number; condition: string; notes: string; image_urls: string[] }>>({});
 const batchSaving = ref<number | null>(null);
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1202,7 +1248,7 @@ const batchGroups = computed(() => {
     const cat = categoriesMap.value.get(catId);
     if (!groups.has(catId)) {
       if (!batchInputs.value[catId]) {
-        batchInputs.value[catId] = { actual_quantity: 0, condition: 'good', notes: '' };
+        batchInputs.value[catId] = { actual_quantity: 0, condition: 'good', notes: '', image_urls: [] };
       }
       groups.set(catId, {
         category_id: catId,
@@ -1240,6 +1286,7 @@ const confirmBatchGroup = async (group: { category_id: number; category_name: st
   batchSaving.value = group.category_id;
   try {
     let remaining = Math.round(input.actual_quantity);
+    let firstAsset = true;
     for (const asset of group.assets) {
       const bookQty = asset.quantity || 1;
       const isMatched = remaining > 0;
@@ -1252,7 +1299,10 @@ const confirmBatchGroup = async (group: { category_id: number; category_name: st
         notes: (input.notes ? input.notes + ' — ' : '') + 'Kiểm theo nhóm',
         suggest_repair: false,
         suggest_disposal: input.condition === 'damaged' || input.condition === 'needs_repair',
+        // Ảnh nhóm chỉ gắn vào dòng đầu tiên để tránh lặp lại trên mọi tài sản
+        image_urls: firstAsset ? (input.image_urls || []) : [],
       };
+      firstAsset = false;
       await inventoryService.saveCheck(report.value!.id, asset.id, checkData);
       asset.inventory_detail = { ...checkData };
     }
@@ -1281,7 +1331,7 @@ const loadCategories = async () => {
     for (const cat of res.data) {
       map.set(cat.id, cat);
       if (cat.tracking_type === 'batch' && !batchInputs.value[cat.id]) {
-        batchInputs.value[cat.id] = { actual_quantity: 0, condition: 'good', notes: '' };
+        batchInputs.value[cat.id] = { actual_quantity: 0, condition: 'good', notes: '', image_urls: [] };
       }
     }
     categoriesMap.value = map;
@@ -1683,6 +1733,29 @@ const removeReportImage = async (url: string) => {
   }
 };
 // ─────────────────────────────────────────────────────────────────────────────
+
+const onBatchImagesSelected = async (categoryId: number, e: Event) => {
+  const input = e.target as HTMLInputElement;
+  const files = Array.from(input.files || []);
+  input.value = '';
+  if (!files.length) return;
+  const target = batchInputs.value[categoryId];
+  if (!target) return;
+  try {
+    for (const f of files) {
+      const url = await inventoryService.uploadImage(f);
+      if (url && !target.image_urls.includes(url)) target.image_urls.push(url);
+    }
+  } catch {
+    ElMessage.error('Không tải được ảnh nhóm');
+  }
+};
+
+const removeBatchImage = (categoryId: number, url: string) => {
+  const target = batchInputs.value[categoryId];
+  if (!target) return;
+  target.image_urls = target.image_urls.filter((u) => u !== url);
+};
 
 const handleScanCode = async () => {
   if (!scannedCode.value.trim()) {
@@ -3400,7 +3473,7 @@ onUnmounted(() => {
 
 @media (max-width: 480px) { .scan-frame { width: 200px; height: 200px; } .scan-corner { width: 24px; height: 24px; } }
 @media (min-width: 768px) { .scan-frame { width: 300px; height: 300px; } }
-/* ?nh hi?n tr?ng ki?m k� */
+/* ?nh hi?n tr?ng ki?m k� */
 .inv-photo-block { width: 100%; }
 .inv-photo-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
 .inv-photo-item { position: relative; width: 84px; height: 84px; border-radius: 8px; overflow: hidden; border: 1px solid #e4e7ed; }
