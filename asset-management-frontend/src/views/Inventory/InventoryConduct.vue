@@ -944,7 +944,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import inventoryService, { type InventoryRound, type InventoryReport } from '@/services/inventory.service';
 import { assetService } from '@/services/asset.service';
 import { assetCategoryService } from '@/services/assetCategory.service';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import SignaturePad from '@/components/Common/SignaturePad.vue';
 
 const route = useRoute();
@@ -2164,17 +2164,6 @@ const isMobileDevice = () => {
   return isIOS() || isAndroid() || window.innerWidth <= 768;
 };
 
-/**
- * Vùng quét QR linh hoạt theo kích thước khung hình.
- * Trước đây cố định 250px → khung nhỏ, phải đưa máy sát mới bắt được.
- * Nay lấy ~70% cạnh ngắn của khung hình → bắt mã tốt hơn ở khoảng cách xa.
- */
-const computeQrbox = (viewfinderWidth: number, viewfinderHeight: number) => {
-  const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-  const size = Math.max(200, Math.floor(minEdge * 0.85));
-  return { width: size, height: size };
-};
-
 const startCameraWithIndex = async (index: number) => {
   const devices = availableCameras.value;
   if (!devices.length) return;
@@ -2188,8 +2177,10 @@ const startCameraWithIndex = async (index: number) => {
     await qrCodeInstance.start(
       cameraId || { facingMode: 'environment' },
       {
-        fps: 20,
-        qrbox: computeQrbox,
+        fps: 15,
+        // Quét TOÀN khung hình (không crop qrbox) → nhạy nhất
+        // Không thử ảnh lật để giảm một nửa công việc giải mã
+        disableFlip: true,
         // Yêu cầu camera độ phân giải cao hơn để giải mã QR nhỏ/dày tốt hơn
         videoConstraints: {
           facingMode: { ideal: 'environment' },
@@ -2273,8 +2264,10 @@ const openCameraScanner = async () => {
     
     html5QrCode.value = new Html5Qrcode('qr-reader', {
       verbose: false,
-      // Dùng BarcodeDetector gốc của trình duyệt nếu có (Android Chrome)
+      // Ưu tiên bộ giải mã gốc của trình duyệt (nhanh như app ngân hàng)
       useBarCodeDetectorIfSupported: true,
+      // CHỈ quét QR → không thử các loại mã khác, nhanh hơn nhiều
+      formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
     });
     await startCameraWithIndex(currentCameraIndex.value);
   } catch (error: any) {
