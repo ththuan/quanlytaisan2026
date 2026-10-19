@@ -1,4 +1,4 @@
-import { User, Department } from '../models';
+import { User, Department, InventoryReport, InventoryRound } from '../models';
 import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errorHandler';
 import { Op } from 'sequelize';
 import { getPaginationParams, buildPaginationResult, getOffset, PaginationResult } from '../utils/pagination';
@@ -126,6 +126,52 @@ class UserService {
     if (!user) {
       throw new NotFoundError('User not found');
     }
+
+    // ─── Chặn đổi phòng ban khi còn báo cáo kiểm kê chưa hoàn tất ─────────────
+    // Tránh tình trạng báo cáo bị "treo" ở đơn vị cũ sau khi chuyển người.
+    if (data.department_id !== undefined && data.department_id !== user.department_id) {
+      const activeRounds = await InventoryRound.findAll({
+        where: { status: { [Op.in]: ['in_progress', 'awaiting_approval'] } },
+        attributes: ['id', 'round_name'],
+      });
+
+      if (activeRounds.length > 0) {
+        const roundIds = activeRounds.map((r) => r.id);
+
+        const ownUnfinished = await InventoryReport.findOne({
+          where: {
+            created_by: id,
+            inventory_round_id: { [Op.in]: roundIds },
+            status: { [Op.ne]: 'completed' },
+          },
+          attributes: ['id', 'report_code'],
+        });
+        if (ownUnfinished) {
+          throw new ConflictError(
+            `Không thể đổi phòng ban: người dùng đang có báo cáo kiểm kê chưa hoàn tất (${ownUnfinished.report_code}) trong đợt đang diễn ra. ` +
+            'Vui lòng hoàn tất hoặc từ chối báo cáo trước khi chuyển đơn vị.'
+          );
+        }
+
+        if (user.role === 'department_head' && user.department_id) {
+          const pendingForHead = await InventoryReport.findOne({
+            where: {
+              department_id: user.department_id,
+              inventory_round_id: { [Op.in]: roundIds },
+              status: 'pending',
+            },
+            attributes: ['id', 'report_code'],
+          });
+          if (pendingForHead) {
+            throw new ConflictError(
+              `Không thể đổi phòng ban: đang có báo cáo kiểm kê chờ Trưởng đơn vị duyệt (${pendingForHead.report_code}) tại đơn vị cũ. ` +
+              'Vui lòng duyệt/từ chối báo cáo trước khi chuyển đơn vị.'
+            );
+          }
+        }
+      }
+    }
+    // ───────────────────────────────────────────────────────────────────────────
 
     // Check if username is being changed and already exists
     if (data.username && data.username !== user.username) {

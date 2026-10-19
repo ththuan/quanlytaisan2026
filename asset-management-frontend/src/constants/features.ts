@@ -9,4 +9,6 @@
 export const FEATURES = {
   /** Bật các module Sửa chữa/Bảo trì, Mua sắm/Tăng tài sản, Kho vật tư */
   auxiliaryModules: false,
+  /** Bật xác thực 2 bước (TOTP). Hiện chưa cần thiết → ẩn khỏi giao diện. */
+  twoFactor: false,
 };

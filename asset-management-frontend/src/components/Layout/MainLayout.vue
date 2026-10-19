@@ -198,7 +198,10 @@
                     <el-dropdown-item @click="showChangePasswordDialog = true">
                       🔑 Đổi mật khẩu
                     </el-dropdown-item>
-                    <el-dropdown-item @click="showTotpDialog = true">
+                    <el-dropdown-item
+                      v-if="FEATURES.twoFactor"
+                      @click="showTotpDialog = true"
+                    >
                       🔐 Xác thực 2 bước
                     </el-dropdown-item>
                     <el-dropdown-item
