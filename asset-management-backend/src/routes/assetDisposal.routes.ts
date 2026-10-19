@@ -7,6 +7,8 @@ const router = Router();
 // Admin/Director handle disposal, Staff can view their department's cases
 router.get('/', authenticateToken, requireRoles(['admin']), (req, res) => assetDisposalController.listCases(req, res));
 router.get('/:id', authenticateToken, requireRoles(['admin']), (req, res) => assetDisposalController.getCaseById(req, res));
+router.put('/:id', authenticateToken, requireRoles(['admin']), (req, res) => assetDisposalController.updateCase(req, res));
+router.delete('/:id', authenticateToken, requireRoles(['admin']), (req, res) => assetDisposalController.deleteCase(req, res));
 router.post('/:id/complete', authenticateToken, requireRoles(['admin']), (req, res) => assetDisposalController.completeCase(req, res));
 
 // POST /manual – Tạo hồ sơ tiêu hủy/thanh lý thủ công (không từ kiểm kê)

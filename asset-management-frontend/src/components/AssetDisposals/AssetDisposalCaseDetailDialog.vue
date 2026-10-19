@@ -202,12 +202,90 @@
       </el-button>
       <el-button
         v-if="data?.status === 'pending' && isAdminOrDirector"
+        @click="openEdit"
+      >
+        Sửa hồ sơ
+      </el-button>
+      <el-button
+        v-if="data?.status === 'pending' && isAdminOrDirector"
+        type="danger"
+        plain
+        :loading="deletingCase"
+        @click="removeCase"
+      >
+        Xóa hồ sơ
+      </el-button>
+      <el-button
+        v-if="data?.status === 'pending' && isAdminOrDirector"
         type="primary"
         :loading="submitting"
         :disabled="!form.decision_no || (!form.decision_file_url && !selectedFile)"
         @click="complete"
       >
         {{ submitting ? 'Đang xử lý...' : 'Hoàn tất thủ tục' }}
+      </el-button>
+    </template>
+  </el-dialog>
+
+  <!-- Dialog sửa hồ sơ (chỉ khi pending) -->
+  <el-dialog
+    v-model="showEditDialog"
+    title="Sửa hồ sơ"
+    width="520px"
+    append-to-body
+  >
+    <el-form label-width="150px">
+      <el-form-item label="Hình thức">
+        <el-select
+          v-model="editForm.disposal_type"
+          style="width: 100%"
+        >
+          <el-option
+            value="liquidation"
+            label="Bán thanh lý"
+          />
+          <el-option
+            value="destruction"
+            label="Tiêu hủy"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item
+        v-if="editForm.disposal_type === 'liquidation'"
+        label="Phương thức thanh lý"
+      >
+        <el-input
+          v-model="editForm.disposal_method"
+          placeholder="VD: bán đấu giá, bán trực tiếp..."
+        />
+      </el-form-item>
+      <el-form-item
+        v-else
+        label="Phương thức tiêu hủy"
+      >
+        <el-input
+          v-model="editForm.destruction_method"
+          placeholder="VD: hóa chất, cơ học..."
+        />
+      </el-form-item>
+      <el-form-item label="Ghi chú">
+        <el-input
+          v-model="editForm.notes"
+          type="textarea"
+          :rows="3"
+        />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="showEditDialog = false">
+        Hủy
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="savingEdit"
+        @click="saveEdit"
+      >
+        Lưu
       </el-button>
     </template>
   </el-dialog>
@@ -222,7 +300,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { Document, Close } from '@element-plus/icons-vue';
 import assetDisposalService from '@/services/assetDisposal.service';
 import { useAuthStore } from '@/stores/auth.store';
@@ -261,6 +339,74 @@ const form = ref({
   decision_file_url: null as string | null,
   notes: null as string | null,
 });
+
+// Sửa / xóa hồ sơ khi chưa hoàn tất
+const showEditDialog = ref(false);
+const savingEdit = ref(false);
+const deletingCase = ref(false);
+const editForm = ref({
+  disposal_type: 'liquidation' as 'liquidation' | 'destruction',
+  destruction_method: '',
+  disposal_method: '',
+  notes: '',
+});
+
+const openEdit = () => {
+  const c = data.value;
+  if (!c) return;
+  editForm.value = {
+    disposal_type: c.disposal_type === 'destruction' ? 'destruction' : 'liquidation',
+    destruction_method: c.destruction_method || '',
+    disposal_method: c.disposal_method || '',
+    notes: c.notes || '',
+  };
+  showEditDialog.value = true;
+};
+
+const saveEdit = async () => {
+  if (!props.caseId) return;
+  savingEdit.value = true;
+  try {
+    await assetDisposalService.updateCase(props.caseId, {
+      disposal_type: editForm.value.disposal_type,
+      destruction_method: editForm.value.disposal_type === 'destruction' ? (editForm.value.destruction_method || null) : null,
+      disposal_method: editForm.value.disposal_type === 'liquidation' ? (editForm.value.disposal_method || null) : null,
+      notes: editForm.value.notes || null,
+    } as any);
+    ElMessage.success('Đã cập nhật hồ sơ');
+    showEditDialog.value = false;
+    await load();
+    emit('completed');
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || 'Không cập nhật được hồ sơ');
+  } finally {
+    savingEdit.value = false;
+  }
+};
+
+const removeCase = async () => {
+  if (!props.caseId) return;
+  try {
+    await ElMessageBox.confirm(
+      'Xóa hồ sơ này? Tài sản sẽ trở về trạng thái chờ xử lý để có thể lập hồ sơ mới.',
+      'Xác nhận xóa hồ sơ',
+      { type: 'warning', confirmButtonText: 'Xóa', cancelButtonText: 'Hủy' }
+    );
+  } catch {
+    return;
+  }
+  deletingCase.value = true;
+  try {
+    await assetDisposalService.deleteCase(props.caseId);
+    ElMessage.success('Đã xóa hồ sơ');
+    visible.value = false;
+    emit('completed');
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || 'Không xóa được hồ sơ');
+  } finally {
+    deletingCase.value = false;
+  }
+};
 
 const title = computed(() => (data.value ? `Hồ sơ giảm tài sản: ${data.value.code}` : 'Hồ sơ giảm tài sản'));
 

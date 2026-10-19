@@ -33,8 +33,31 @@ class AssetDisposalController {
     }
   }
 
-  async completeCase(req: Request, res: Response) {
+  /** PUT /api/asset-disposals/:id — sửa hồ sơ khi chưa hoàn tất */
+  async updateCase(req: Request, res: Response) {
     try {
+      const id = parseInt(req.params.id, 10);
+      const userId = (req as any).user?.id;
+      const result = await assetDisposalService.updatePendingCase(id, userId, req.body || {});
+      res.json({ success: true, data: result });
+    } catch (err: any) {
+      res.status(err.statusCode ?? 400).json({ success: false, message: err.message });
+    }
+  }
+
+  /** DELETE /api/asset-disposals/:id — xóa hồ sơ khi chưa hoàn tất */
+  async deleteCase(req: Request, res: Response) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const userId = (req as any).user?.id;
+      await assetDisposalService.deletePendingCase(id, userId);
+      res.json({ success: true, message: 'Đã xóa hồ sơ' });
+    } catch (err: any) {
+      res.status(err.statusCode ?? 400).json({ success: false, message: err.message });
+    }
+  }
+
+  async completeCase(req: Request, res: Response) {    try {
       const id = parseInt(req.params.id, 10);
       const user = (req as any).user;
       const userId = user?.id;

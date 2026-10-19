@@ -231,6 +231,89 @@ class AssetDisposalService {
   }
 
   /**
+   * Sửa thông tin hồ sơ khi CHƯA hoàn tất (status = pending).
+   */
+  async updatePendingCase(
+    id: number,
+    userId: number,
+    payload: {
+      disposal_type?: 'liquidation' | 'destruction';
+      destruction_method?: string | null;
+      disposal_method?: string | null;
+      notes?: string | null;
+      origin_department_id?: number | null;
+    }
+  ): Promise<any> {
+    const c = await AssetDisposalCase.findByPk(id);
+    if (!c) throw new NotFoundError('Hồ sơ không tồn tại');
+    if ((c as any).status !== 'pending') {
+      throw new ConflictError('Chỉ chỉnh sửa được hồ sơ đang chờ xử lý');
+    }
+
+    const updateData: any = {};
+    const allowed = ['disposal_type', 'destruction_method', 'disposal_method', 'notes', 'origin_department_id'];
+    for (const key of allowed) {
+      if ((payload as any)[key] !== undefined) updateData[key] = (payload as any)[key];
+    }
+    if (Object.keys(updateData).length === 0) {
+      return this.getCaseById(id);
+    }
+
+    await c.update(updateData);
+    await AuditLog.create({
+      user_id: userId,
+      action: 'update',
+      table_name: 'asset_disposal_cases',
+      record_id: id,
+      old_value: null,
+      new_value: updateData,
+    } as any);
+
+    return this.getCaseById(id);
+  }
+
+  /**
+   * Xóa hồ sơ khi CHƯA hoàn tất (status = pending).
+   * Tài sản trong hồ sơ được giữ trạng thái pending_disposal để có thể lập hồ sơ mới.
+   */
+  async deletePendingCase(id: number, userId: number): Promise<void> {
+    const c = await AssetDisposalCase.findByPk(id);
+    if (!c) throw new NotFoundError('Hồ sơ không tồn tại');
+    if ((c as any).status !== 'pending') {
+      throw new ConflictError('Chỉ xóa được hồ sơ đang chờ xử lý');
+    }
+
+    const transaction = await sequelize.transaction();
+    try {
+      // Gỡ liên kết từ đề nghị sửa chữa (nếu có) để tránh trỏ tới hồ sơ đã xóa
+      await MaintenanceRequest.update(
+        { linked_disposal_case_id: null } as any,
+        { where: { linked_disposal_case_id: id } as any, transaction }
+      );
+
+      await AssetDisposalItem.destroy({ where: { disposal_case_id: id }, transaction });
+      await c.destroy({ transaction });
+
+      await AuditLog.create(
+        {
+          user_id: userId,
+          action: 'delete',
+          table_name: 'asset_disposal_cases',
+          record_id: id,
+          old_value: { code: (c as any).code, status: 'pending' },
+          new_value: null,
+        } as any,
+        { transaction }
+      );
+
+      await transaction.commit();
+    } catch (e) {
+      await transaction.rollback();
+      throw e;
+    }
+  }
+
+  /**
    * Tạo hồ sơ xử lý tài sản thủ công (tiêu hủy hoặc thanh lý đơn lẻ).
    * Theo Điều 23 (Thanh lý) và Điều 24 (Tiêu hủy) Quy chế.
    */

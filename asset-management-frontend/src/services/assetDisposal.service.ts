@@ -60,6 +60,18 @@ class AssetDisposalService {
     return response;
   }
 
+  /** Sửa hồ sơ khi chưa hoàn tất (pending) */
+  async updateCase(id: number, payload: Partial<CreateManualCasePayload>) {
+    const response: any = await api.put(`/asset-disposals/${id}`, payload);
+    return response;
+  }
+
+  /** Xóa hồ sơ khi chưa hoàn tất (pending) */
+  async deleteCase(id: number) {
+    const response: any = await api.delete(`/asset-disposals/${id}`);
+    return response;
+  }
+
   async getPendingDisposalGrouped(): Promise<any[]> {
     const response: any = await api.get('/assets/pending-disposal-grouped');
     return response?.data || response || [];
