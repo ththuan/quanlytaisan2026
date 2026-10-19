@@ -6,9 +6,10 @@
 import { Response, NextFunction } from 'express';
 import InventoryService from '../services/inventory.service';
 import { AuthRequest } from '../middleware/auth.middleware';
-import { ForbiddenError } from '../utils/errorHandler';
+import { ForbiddenError, ValidationError } from '../utils/errorHandler';
 import Department from '../models/Department';
 import { assertSignature, recordSignature } from '../services/signature.service';
+import { savePublicFile } from '../utils/fileStorage';
 
 // ==================== INVENTORY ROUND (Đợt Kiểm Kê) ====================
 
@@ -397,6 +398,53 @@ export const findAssetByCode = async (req: AuthRequest, res: Response, next: Nex
       success: true,
       data: asset,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Upload ảnh hiện trạng kiểm kê (tài sản hoặc tổng thể đơn vị)
+ * POST /api/inventory/images  (multipart: image)
+ */
+export const uploadInventoryImage = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const file = (req as any).file as Express.Multer.File | undefined;
+    if (!file) throw new ValidationError('Thiếu file ảnh');
+
+    const mimeToExt: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/gif': 'gif',
+      'image/webp': 'webp',
+    };
+    const ext = mimeToExt[file.mimetype] || 'jpg';
+    const filename = `inv_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const relativePath = savePublicFile(file.buffer, `inventory/${req.user!.id}`, filename);
+
+    res.json({ success: true, image_url: `/storage/${relativePath}`, relative_path: relativePath });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Cập nhật ảnh tổng thể của báo cáo/đơn vị
+ * PATCH /api/inventory/reports/:id/images  { image_urls: string[] }
+ */
+export const updateReportImages = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user!;
+    const reportId = parseInt(req.params.id);
+
+    const report = await InventoryService.getInventoryReportById(reportId);
+    if (!report) throw new ForbiddenError('Báo cáo không tồn tại');
+    if (user.role !== 'admin' && user.role !== 'director' && (report as any).created_by !== user.id) {
+      throw new ForbiddenError('Bạn không có quyền cập nhật ảnh báo cáo này');
+    }
+
+    const result = await InventoryService.updateReportImages(reportId, req.body?.image_urls);
+    res.json({ success: true, data: result });
   } catch (error) {
     next(error);
   }

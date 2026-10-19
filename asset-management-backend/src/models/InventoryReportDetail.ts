@@ -16,7 +16,9 @@ export interface InventoryReportDetailAttributes {
   suggest_repair?: boolean;
   disposal_reason?: string;
   notes?: string;  scan_method?: 'qr_scan' | 'manual_confirm' | 'area_manual' | 'batch';
-  manual_reason?: string;  created_at?: Date;
+  manual_reason?: string;
+  image_urls?: string[];
+  created_at?: Date;
   updated_at?: Date;
 }
 
@@ -39,6 +41,7 @@ class InventoryReportDetail extends Model<InventoryReportDetailAttributes, Inven
   public notes?: string;
   public scan_method?: 'qr_scan' | 'manual_confirm' | 'area_manual' | 'batch';
   public manual_reason?: string;
+  public image_urls?: string[];
   public readonly created_at!: Date;
   public readonly updated_at!: Date;
 }
@@ -127,6 +130,12 @@ InventoryReportDetail.init(
       type: DataTypes.STRING(255),
       allowNull: true,
       comment: 'Lý do không quét được QR — bắt buộc khi scan_method = manual_confirm',
+    },
+    image_urls: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+      defaultValue: [],
+      comment: 'Danh sách URL ảnh hiện trạng của tài sản khi kiểm kê',
     },
   },
   {

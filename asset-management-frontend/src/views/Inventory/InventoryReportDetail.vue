@@ -219,6 +219,30 @@
         </el-alert>
       </div>
 
+      <!-- Ảnh tổng thể đơn vị -->
+      <el-card
+        v-if="report.image_urls && report.image_urls.length"
+        class="details-card"
+        style="margin-bottom: 16px;"
+      >
+        <template #header>
+          <div class="card-title">
+            Ảnh tổng thể đơn vị
+          </div>
+        </template>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <el-image
+            v-for="url in report.image_urls"
+            :key="url"
+            :src="url"
+            :preview-src-list="report.image_urls"
+            preview-teleported
+            fit="cover"
+            style="width:110px;height:110px;border-radius:8px;border:1px solid #e4e7ed;"
+          />
+        </div>
+      </el-card>
+
       <!-- Asset Details Table -->
       <el-card class="details-card">
         <template #header>
@@ -372,6 +396,36 @@
                 >
                   {{ getCheckStatusLabel(row.check_status) }}
                 </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Ảnh"
+              width="120"
+              align="center"
+            >
+              <template #default="{ row }">
+                <div
+                  v-if="row.image_urls && row.image_urls.length"
+                  style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center;"
+                >
+                  <el-image
+                    v-for="url in row.image_urls.slice(0, 3)"
+                    :key="url"
+                    :src="url"
+                    :preview-src-list="row.image_urls"
+                    preview-teleported
+                    fit="cover"
+                    style="width:32px;height:32px;border-radius:4px;"
+                  />
+                  <span
+                    v-if="row.image_urls.length > 3"
+                    style="font-size:11px;color:#909399;"
+                  >+{{ row.image_urls.length - 3 }}</span>
+                </div>
+                <span
+                  v-else
+                  class="text-muted"
+                >-</span>
               </template>
             </el-table-column>
             <el-table-column

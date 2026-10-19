@@ -4,10 +4,21 @@
  */
 
 import { Router } from 'express';
+import multer from 'multer';
 import * as inventoryController from '../controllers/inventory.controller';
 import { authenticate, requireRoles } from '../middleware/auth.middleware';
 
 const router = Router();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Chỉ cho phép ảnh (JPEG, PNG, GIF, WebP)') as any, false);
+  },
+});
 
 // Tất cả routes cần xác thực
 router.use(authenticate);
@@ -43,6 +54,9 @@ router.get('/assets/by-code/:code', inventoryController.findAssetByCode);
 // Lấy số báo cáo đang chờ duyệt
 router.get('/reports/pending', inventoryController.getPendingReportsCount);
 
+// Upload ảnh hiện trạng kiểm kê (tài sản hoặc tổng thể)
+router.post('/images', upload.single('image'), inventoryController.uploadInventoryImage);
+
 // Lấy danh sách báo cáo kiểm kê
 router.get('/reports', inventoryController.getInventoryReports);
 
@@ -60,6 +74,9 @@ router.patch('/reports/:id/details/:detailId', inventoryController.updateInvento
 
 // Nộp báo cáo kiểm kê
 router.post('/reports/:id/submit', inventoryController.submitInventoryReport);
+
+// Cập nhật ảnh tổng thể của báo cáo/đơn vị
+router.patch('/reports/:id/images', inventoryController.updateReportImages);
 
 // Duyệt hoặc từ chối báo cáo kiểm kê (department_head hoặc admin)
 router.post(

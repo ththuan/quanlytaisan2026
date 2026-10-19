@@ -517,6 +517,48 @@
       </div>
     </el-card>
 
+    <!-- Ảnh tổng thể đơn vị (bằng chứng hiện trạng) -->
+    <el-card style="margin-top: 16px;">
+      <template #header>
+        <span style="font-weight: 600;">Ảnh tổng thể đơn vị</span>
+      </template>
+      <div class="inv-photo-block">
+        <div class="inv-photo-list">
+          <div
+            v-for="url in reportImages"
+            :key="url"
+            class="inv-photo-item"
+          >
+            <el-image
+              :src="url"
+              fit="cover"
+              :preview-src-list="reportImages"
+              preview-teleported
+            />
+            <el-button
+              text
+              size="small"
+              class="inv-photo-remove"
+              @click="removeReportImage(url)"
+            >
+              ✕
+            </el-button>
+          </div>
+        </div>
+        <label class="inv-photo-add">
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            multiple
+            :disabled="uploadingReportImage"
+            @change="onReportImagesSelected"
+          >
+          <span>{{ uploadingReportImage ? 'Đang tải...' : '+ Chụp/Thêm ảnh tổng thể' }}</span>
+        </label>
+      </div>
+    </el-card>
+
     <!-- Kiểm kê theo nhóm (bạch items) -->
     <el-card
       v-if="batchGroups.length > 0"
@@ -891,6 +933,43 @@
               placeholder="Ghi chú thêm về tài sản..."
             />
           </el-form-item>
+          <el-form-item label="Ảnh hiện trạng">
+            <div class="inv-photo-block">
+              <div class="inv-photo-list">
+                <div
+                  v-for="url in checkForm.image_urls"
+                  :key="url"
+                  class="inv-photo-item"
+                >
+                  <el-image
+                    :src="url"
+                    fit="cover"
+                    :preview-src-list="checkForm.image_urls"
+                    preview-teleported
+                  />
+                  <el-button
+                    text
+                    size="small"
+                    class="inv-photo-remove"
+                    @click="removeCheckImage(url)"
+                  >
+                    ✕
+                  </el-button>
+                </div>
+              </div>
+              <label class="inv-photo-add">
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  multiple
+                  :disabled="uploadingCheckImage"
+                  @change="onCheckImagesSelected"
+                >
+                <span>{{ uploadingCheckImage ? 'Đang tải...' : '+ Chụp/Thêm ảnh' }}</span>
+              </label>
+            </div>
+          </el-form-item>
           <!-- Lý do không quét được QR: chỉ hiện khi xác nhận thủ công mới -->
           <el-form-item
             v-if="isManualConfirm && !selectedAsset?.inventory_detail"
@@ -1030,6 +1109,7 @@ const checkForm = ref({
   check_status: 'matched',
   notes: '',
   manual_reason: '',
+  image_urls: [] as string[],
 });
 
 // Computed
@@ -1521,6 +1601,7 @@ const openCheckDialog = (row: any, fromScan: boolean = false, manualConfirm: boo
       check_status: row.inventory_detail.check_status,
       notes: row.inventory_detail.notes || '',
       manual_reason: row.inventory_detail.manual_reason || '',
+      image_urls: row.inventory_detail.image_urls || [],
     };
   } else {
     // Chưa có kết quả kiểm kê
@@ -1534,10 +1615,74 @@ const openCheckDialog = (row: any, fromScan: boolean = false, manualConfirm: boo
       check_status: 'matched',
       notes: row.status === 'pending_disposal' ? 'Tài sản chờ thanh lý - đề nghị đưa vào hồ sơ thanh lý trong đợt này' : '',
       manual_reason: '',
+      image_urls: [],
     };
   }
   showCheckDialog.value = true;
 };
+
+// ─── Ảnh hiện trạng kiểm kê ──────────────────────────────────────────────────
+const uploadingCheckImage = ref(false);
+const uploadingReportImage = ref(false);
+
+const onCheckImagesSelected = async (e: Event) => {
+  const input = e.target as HTMLInputElement;
+  const files = Array.from(input.files || []);
+  input.value = '';
+  if (!files.length) return;
+  uploadingCheckImage.value = true;
+  try {
+    for (const f of files) {
+      const url = await inventoryService.uploadImage(f);
+      if (url && !checkForm.value.image_urls.includes(url)) {
+        checkForm.value.image_urls.push(url);
+      }
+    }
+  } catch {
+    ElMessage.error('Không tải được ảnh, vui lòng thử lại');
+  } finally {
+    uploadingCheckImage.value = false;
+  }
+};
+
+const removeCheckImage = (url: string) => {
+  checkForm.value.image_urls = checkForm.value.image_urls.filter((u) => u !== url);
+};
+
+const reportImages = computed<string[]>(() => (report.value as any)?.image_urls || []);
+
+const onReportImagesSelected = async (e: Event) => {
+  const input = e.target as HTMLInputElement;
+  const files = Array.from(input.files || []);
+  input.value = '';
+  if (!files.length || !report.value) return;
+  uploadingReportImage.value = true;
+  try {
+    const urls = [...reportImages.value];
+    for (const f of files) {
+      const url = await inventoryService.uploadImage(f);
+      if (url && !urls.includes(url)) urls.push(url);
+    }
+    const updated = await inventoryService.updateReportImages(report.value.id, urls);
+    report.value = { ...report.value, ...(updated as any) };
+  } catch {
+    ElMessage.error('Không tải được ảnh tổng thể, vui lòng thử lại');
+  } finally {
+    uploadingReportImage.value = false;
+  }
+};
+
+const removeReportImage = async (url: string) => {
+  if (!report.value) return;
+  try {
+    const urls = reportImages.value.filter((u) => u !== url);
+    const updated = await inventoryService.updateReportImages(report.value.id, urls);
+    report.value = { ...report.value, ...(updated as any) };
+  } catch {
+    ElMessage.error('Không xoá được ảnh');
+  }
+};
+// ─────────────────────────────────────────────────────────────────────────────
 
 const handleScanCode = async () => {
   if (!scannedCode.value.trim()) {
@@ -1777,6 +1922,7 @@ const saveCheck = async () => {
       asset_id: selectedAsset.value.id,
       asset_condition: checkForm.value.asset_condition, // Luôn cho phép chỉnh sửa tình trạng
       scan_method: scanMethod,
+      image_urls: checkForm.value.image_urls,
     };
 
     if (isManualConfirm.value && !selectedAsset.value.inventory_detail) {
@@ -3254,5 +3400,12 @@ onUnmounted(() => {
 
 @media (max-width: 480px) { .scan-frame { width: 200px; height: 200px; } .scan-corner { width: 24px; height: 24px; } }
 @media (min-width: 768px) { .scan-frame { width: 300px; height: 300px; } }
-
+/* ?nh hi?n tr?ng ki?m k� */
+.inv-photo-block { width: 100%; }
+.inv-photo-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.inv-photo-item { position: relative; width: 84px; height: 84px; border-radius: 8px; overflow: hidden; border: 1px solid #e4e7ed; }
+.inv-photo-item :deep(.el-image) { width: 100%; height: 100%; display: block; }
+.inv-photo-remove { position: absolute; top: 0; right: 0; min-width: 22px; height: 22px; padding: 0; color: #fff; background: rgba(0,0,0,0.55); border-radius: 0 0 0 8px; }
+.inv-photo-add { display: inline-flex; align-items: center; justify-content: center; padding: 8px 14px; border: 1px dashed #c0c4cc; border-radius: 8px; cursor: pointer; color: #409eff; font-size: 13px; }
+.inv-photo-add input { display: none; }
 </style>

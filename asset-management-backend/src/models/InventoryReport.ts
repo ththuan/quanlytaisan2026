@@ -15,6 +15,7 @@ export interface InventoryReportAttributes {
   total_actual_quantity: number;
   total_discrepancy: number;
   total_disposal_suggestions: number;
+  image_urls?: string[];
   status: InventoryReportStatus;
   head_approved_by?: number;
   head_approved_at?: Date;
@@ -45,6 +46,7 @@ class InventoryReport extends Model<InventoryReportAttributes, InventoryReportCr
   public total_actual_quantity!: number;
   public total_discrepancy!: number;
   public total_disposal_suggestions!: number;
+  public image_urls?: string[];
   public status!: InventoryReportStatus;
   public head_approved_by?: number;
   public head_approved_at?: Date;
@@ -123,6 +125,12 @@ InventoryReport.init(
       allowNull: false,
       defaultValue: 0,
       comment: 'Tổng đề nghị thanh lý',
+    },
+    image_urls: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+      defaultValue: [],
+      comment: 'Danh sách URL ảnh tổng thể đơn vị khi kiểm kê',
     },
     status: {
       type: DataTypes.ENUM(

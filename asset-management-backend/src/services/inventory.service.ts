@@ -490,6 +490,7 @@ class InventoryService {
       notes?: string;
       scan_method?: 'qr_scan' | 'manual_confirm' | 'area_manual' | 'batch';
       manual_reason?: string;
+      image_urls?: string[];
     }
   ): Promise<InventoryReportDetail> {
     const report = await InventoryReport.findByPk(reportId);
@@ -564,6 +565,7 @@ class InventoryService {
       notes: data.notes,
       scan_method: data.scan_method,
       manual_reason: data.manual_reason,
+      image_urls: Array.isArray(data.image_urls) ? data.image_urls : [],
     });
 
     await this.updateReportSummary(reportId);
@@ -590,7 +592,8 @@ class InventoryService {
       disposal_reason: string;
       notes: string;
       scan_method: 'qr_scan' | 'manual_confirm' | 'area_manual' | 'batch';
-      manual_reason: string;
+      manual_reason?: string;
+      image_urls?: string[];
     }>
   ): Promise<InventoryReportDetail> {
     const detail = await InventoryReportDetail.findByPk(detailId, {
@@ -651,6 +654,18 @@ class InventoryService {
       check_status: 'matched',
       actual_value: null,
     } as any;
+  }
+
+  async updateReportImages(reportId: number, imageUrls: string[]): Promise<InventoryReport> {
+    const report = await InventoryReport.findByPk(reportId);
+    if (!report) {
+      throw new NotFoundError('Inventory report not found');
+    }
+    if (report.status !== 'draft' && report.status !== 'rejected_by_head' && report.status !== 'rejected_by_admin') {
+      throw new ValidationError('Chỉ cập nhật ảnh khi báo cáo đang nháp hoặc bị từ chối');
+    }
+    await report.update({ image_urls: Array.isArray(imageUrls) ? imageUrls : [] });
+    return this.getInventoryReportById(reportId);
   }
 
   async updateReportSummary(reportId: number): Promise<void> {

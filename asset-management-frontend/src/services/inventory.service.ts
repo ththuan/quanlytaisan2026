@@ -63,6 +63,7 @@ export interface InventoryReport {
   admin_notes?: string;
   submitted_at?: string;
   details?: InventoryReportDetail[];
+  image_urls?: string[];
   created_at: string;
   updated_at: string;
 }
@@ -94,6 +95,7 @@ export interface InventoryReportDetail {
   notes?: string;
   scan_method?: 'qr_scan' | 'manual_confirm' | 'area_manual' | 'batch';
   manual_reason?: string;
+  image_urls?: string[];
   checked_by?: number;
   checked_at?: string;
 }
@@ -121,6 +123,7 @@ export interface AddInventoryDetailInput {
   notes?: string;
   scan_method?: 'qr_scan' | 'manual_confirm' | 'area_manual' | 'batch';
   manual_reason?: string;
+  image_urls?: string[];
 }
 
 // Axios interceptor in api.ts returns response.data already.
@@ -273,6 +276,22 @@ class InventoryService {
       repair_approved_asset_ids,
       signature,
     });
+    return unwrapData<InventoryReport>(payload);
+  }
+
+  /** Upload ảnh hiện trạng (tài sản hoặc tổng thể) → trả URL /storage/... */
+  async uploadImage(file: File): Promise<string> {
+    const form = new FormData();
+    form.append('image', file);
+    const payload: any = await api.post('/inventory/images', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return payload?.image_url || payload?.data?.image_url || '';
+  }
+
+  /** Cập nhật ảnh tổng thể của báo cáo/đơn vị */
+  async updateReportImages(id: number, image_urls: string[]): Promise<InventoryReport> {
+    const payload: any = await api.patch(`/inventory/reports/${id}/images`, { image_urls });
     return unwrapData<InventoryReport>(payload);
   }
 }
