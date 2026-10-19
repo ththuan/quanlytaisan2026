@@ -17,7 +17,6 @@ import {
   AuditLog,
   MaintenanceRequest,
 } from '../models';
-import assetDisposalService from './assetDisposal.service';
 import notificationService from './notification.service';
 import { NotFoundError, ForbiddenError, ValidationError } from '../utils/errorHandler';
 import { getPaginationParams, buildPaginationResult, getOffset } from '../utils/pagination';
@@ -892,15 +891,9 @@ class InventoryService {
     // undefined = admin did not make an explicit selection → approve all repair suggestions
     const approveAllRepairs = false;
 
-    let disposalCaseId: number | null = null;
-    if (approvedBy) {
-      const hasDisposal = details.some((d: any) => d.suggest_disposal || d.suggest_repair);
-      const hasRepairRejected = false;
-      if (hasDisposal || hasRepairRejected) {
-        const disposalCase = await assetDisposalService.ensureDisposalCaseFromInventoryReport(reportId, approvedBy, transaction);
-        disposalCaseId = (disposalCase as any).id;
-      }
-    }
+    // KHÔNG tự tạo hồ sơ thanh lý khi duyệt kiểm kê.
+    // Tài sản chỉ chuyển sang trạng thái "chờ xử lý" (pending_disposal);
+    // admin sẽ chủ động lập hồ sơ riêng cho "bán thanh lý" hoặc "tiêu hủy".
 
     for (const detail of details) {
       const updateData: any = {
@@ -923,17 +916,8 @@ class InventoryService {
       } else if (detail.suggest_disposal) {
         updateData.status = 'pending_disposal';
         updateData.asset_condition = 'damaged';
-        // Giữ lại current_department_id để đơn vị vẫn thấy tài sản của mình
-
-        if (approvedBy && disposalCaseId) {
-          await assetDisposalService.addItemFromInventoryDetail(
-            disposalCaseId,
-            detail,
-            approvedBy,
-            ((detail as any).inventory_report?.department_id as any) ?? null,
-            transaction
-          );
-        }
+        // Giữ lại current_department_id để đơn vị vẫn thấy tài sản của mình.
+        // Không tự tạo hồ sơ thanh lý — admin sẽ lập hồ sơ riêng (bán thanh lý / tiêu hủy).
       } else if (detail.suggest_repair) {
         const approvedForRepair = false;
         if (approvedForRepair) {
@@ -972,16 +956,8 @@ class InventoryService {
         } else {
           updateData.status = 'pending_disposal';
           updateData.asset_condition = 'damaged';
-          // Giữ lại current_department_id để đơn vị vẫn thấy tài sản của mình
-          if (approvedBy && disposalCaseId) {
-            await assetDisposalService.addItemFromInventoryDetail(
-              disposalCaseId,
-              detail,
-              approvedBy,
-              ((detail as any).inventory_report?.department_id as any) ?? null,
-              transaction
-            );
-          }
+          // Giữ lại current_department_id để đơn vị vẫn thấy tài sản của mình.
+          // Không tự tạo hồ sơ thanh lý — admin sẽ lập hồ sơ riêng (bán thanh lý / tiêu hủy).
         }
       } else if (detail.condition === 'poor' || detail.original_asset_condition === 'damaged') {
         updateData.status = 'damaged';
