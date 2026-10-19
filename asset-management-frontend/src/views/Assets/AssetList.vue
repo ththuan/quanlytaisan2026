@@ -1071,7 +1071,7 @@ const buildPrintHTML = (items: Array<{ asset_code: string; name: string; quantit
     width: 100%;
   }
   .cell {
-    height: 37mm;
+    height: 39mm;
     padding: 1mm;
     border: 0.4pt solid #cfcfcf;
     text-align: center;
@@ -1081,9 +1081,9 @@ const buildPrintHTML = (items: Array<{ asset_code: string; name: string; quantit
     flex-direction: column;
     align-items: center;
   }
-  .cell img { width: 24mm; height: 24mm; object-fit: contain; display: block; }
+  .cell img { width: 26mm; height: 26mm; object-fit: contain; display: block; }
   .qr-placeholder {
-    width: 24mm; height: 24mm; display: flex; align-items: center; justify-content: center;
+    width: 26mm; height: 26mm; display: flex; align-items: center; justify-content: center;
     background: #f2f2f2; font-size: 7pt; color: #999;
   }
   .code { font-size: 6.8pt; font-weight: 700; margin-top: 0.6mm; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

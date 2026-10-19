@@ -2164,7 +2164,7 @@ const isMobileDevice = () => {
  */
 const computeQrbox = (viewfinderWidth: number, viewfinderHeight: number) => {
   const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-  const size = Math.max(150, Math.floor(minEdge * 0.7));
+  const size = Math.max(200, Math.floor(minEdge * 0.85));
   return { width: size, height: size };
 };
 
@@ -2181,8 +2181,14 @@ const startCameraWithIndex = async (index: number) => {
     await qrCodeInstance.start(
       cameraId || { facingMode: 'environment' },
       {
-        fps: 15,
+        fps: 20,
         qrbox: computeQrbox,
+        // Yêu cầu camera độ phân giải cao hơn để giải mã QR nhỏ/dày tốt hơn
+        videoConstraints: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
       },
       (decodedText: string) => {
         console.log('[Camera] QR detected:', decodedText.substring(0, 50));
@@ -2243,9 +2249,8 @@ const openCameraScanner = async () => {
     
     html5QrCode.value = new Html5Qrcode('qr-reader', {
       verbose: false,
-      // Dùng BarcodeDetector gốc của trình duyệt (Android Chrome) → nhận mã nhanh & xa hơn
+      // Dùng BarcodeDetector gốc của trình duyệt nếu có (Android Chrome)
       useBarCodeDetectorIfSupported: true,
-      experimentalFeatures: { useBarCodeDetectorIfSupported: true },
     });
     await startCameraWithIndex(currentCameraIndex.value);
   } catch (error: any) {
@@ -3038,7 +3043,8 @@ onUnmounted(() => {
   height: 100% !important;
   max-width: 100% !important;
   max-height: 100% !important;
-  object-fit: cover;
+  /* contain (không phải cover) để khung hình hiển thị khớp vùng camera quét được */
+  object-fit: contain;
   border-radius: 0;
   display: block;
   /* Cai thien hien thi video tren iOS */
