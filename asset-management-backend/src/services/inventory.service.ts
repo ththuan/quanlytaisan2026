@@ -703,6 +703,12 @@ class InventoryService {
       throw new ValidationError('Can only submit draft reports or resubmit rejected reports');
     }
 
+    // Bắt buộc có ít nhất 1 ảnh tổng thể đơn vị trước khi nộp
+    const reportImages = Array.isArray(report.image_urls) ? report.image_urls : [];
+    if (reportImages.length === 0) {
+      throw new ValidationError('Cần chụp ít nhất 1 ảnh tổng thể đơn vị trước khi nộp báo cáo kiểm kê');
+    }
+
     await report.update({
       status: 'pending',
       submitted_at: new Date(),

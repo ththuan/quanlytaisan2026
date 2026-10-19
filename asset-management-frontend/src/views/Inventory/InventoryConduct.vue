@@ -517,11 +517,30 @@
       </div>
     </el-card>
 
-    <!-- Ảnh tổng thể đơn vị (bằng chứng hiện trạng) -->
+    <!-- Ảnh tổng thể đơn vị (bắt buộc trước khi nộp) -->
     <el-card style="margin-top: 16px;">
       <template #header>
-        <span style="font-weight: 600;">Ảnh tổng thể đơn vị</span>
+        <span style="font-weight: 600;">
+          Ảnh tổng thể đơn vị
+          <el-tag
+            type="danger"
+            size="small"
+            style="margin-left: 8px;"
+          >Bắt buộc</el-tag>
+          <span style="font-weight: 400; color: #909399; font-size: 12px; margin-left: 8px;">
+            (chụp nhiều góc)
+          </span>
+        </span>
       </template>
+      <el-alert
+        v-if="reportImages.length === 0"
+        type="warning"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 10px;"
+      >
+        Cần ít nhất 1 ảnh tổng thể đơn vị để có thể nộp báo cáo kiểm kê.
+      </el-alert>
       <div class="inv-photo-block">
         <div class="inv-photo-list">
           <div
@@ -1190,7 +1209,9 @@ const canSubmit = computed(() => {
   const canSubmitStatus = report.value?.status === 'draft' || 
                           report.value?.status === 'rejected_by_head' || 
                           report.value?.status === 'rejected_by_admin';
-  return checkedCount.value > 0 && canSubmitStatus;
+  // Bắt buộc có ít nhất 1 ảnh tổng thể đơn vị
+  const hasOverallPhotos = ((report.value?.image_urls?.length) || 0) > 0;
+  return checkedCount.value > 0 && canSubmitStatus && hasOverallPhotos;
 });
 
 // Kiểm tra có tài sản chưa quét (có thể quét QR nhưng chưa được quét)
@@ -2146,6 +2167,12 @@ const saveAsDraft = async () => {
 
 const submitReport = async () => {
   if (!report.value) return;
+
+  // Bắt buộc có ít nhất 1 ảnh tổng thể đơn vị
+  if (((report.value?.image_urls?.length) || 0) === 0) {
+    ElMessage.warning('Cần chụp ít nhất 1 ảnh tổng thể đơn vị trước khi nộp báo cáo');
+    return;
+  }
 
   try {
     // Tự động đánh dấu tài sản có QR chưa quét là "Thiếu" trước khi nộp
