@@ -1624,10 +1624,17 @@ const handleScanCode = async () => {
 
     // Check if this asset has already been scanned
     if (foundAsset.inventory_detail) {
-      scanSuccessMessage.value = `⏭ ${foundAsset.name || foundAsset.asset_code} - Đã kiểm kê rồi`;
+      const label = foundAsset.name || foundAsset.asset_code;
+      ElMessage.warning({
+        message: `⏭ Tài sản "${label}" đã được kiểm kê rồi`,
+        duration: 2500,
+        showClose: true,
+        offset: 60,
+      });
+      scanSuccessMessage.value = `⏭ ${label} - Đã kiểm kê rồi`;
       scanning.value = false;
       scannedCode.value = '';
-      setTimeout(() => { scanSuccessMessage.value = ''; }, 1500);
+      setTimeout(() => { scanSuccessMessage.value = ''; }, 1800);
       if (showCameraDialog.value) await restartCamera();
       return;
     }
@@ -2207,6 +2214,23 @@ const startCameraWithIndex = async (index: number) => {
       }
     );
     console.log('[Camera] Started successfully');
+
+    // Tối ưu lấy nét liên tục + zoom nhẹ giúp bắt QR nhỏ/dày tốt hơn
+    try {
+      await qrCodeInstance.applyVideoConstraints({
+        advanced: [{ focusMode: 'continuous' }],
+      } as any);
+    } catch { /* thiết bị không hỗ trợ focusMode */ }
+
+    try {
+      const caps = qrCodeInstance.getRunningTrackCameraCapabilities();
+      const zoom = caps.zoomFeature();
+      if (zoom.isSupported()) {
+        const target = Math.min(zoom.max(), Math.max(1, 1.5));
+        if (target > 1) await zoom.apply(target);
+      }
+    } catch { /* thiết bị không hỗ trợ zoom */ }
+
     cameraScanning.value = true;
   } catch (e: any) {
     console.error('[Camera] Start failed:', e.message || e);

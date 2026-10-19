@@ -505,6 +505,15 @@ class InventoryService {
       throw new NotFoundError('Asset not found');
     }
 
+    // Chặn kiểm kê trùng: mỗi tài sản chỉ có 1 kết quả trong một đợt
+    const existingDetail = await InventoryReportDetail.findOne({
+      where: { inventory_report_id: reportId, asset_id: assetId },
+      attributes: ['id'],
+    });
+    if (existingDetail) {
+      throw new ValidationError('Tài sản này đã được kiểm kê trong đợt này rồi');
+    }
+
     const nonScannableUnits = ['m2', 'm²', 'ha', 'km2', 'km²', 'cm2', 'cm²'];
     const isAreaAsset = asset.unit && nonScannableUnits.includes(asset.unit.toLowerCase().trim());
 
