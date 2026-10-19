@@ -2695,6 +2695,9 @@ const handleOrientationChange = () => {
 };
 
 onMounted(async () => {
+  // Làm mới thông tin người dùng (phòng ban/vai trò có thể vừa được admin thay đổi)
+  try { await authStore.checkAuth(); } catch { /* bỏ qua */ }
+
   // Kiểm tra quyền: Admin không được thực hiện kiểm kê trực tiếp
   const isAdmin = authStore.user?.role === 'admin';
   

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken, JWTPayload } from '../utils/jwt.utils';
 import { ForbiddenError, UnauthorizedError } from '../utils/errorHandler';
-import { AuthSession } from '../models';
+import { AuthSession, User } from '../models';
 
 export interface AuthRequest extends Request {
   user?: JWTPayload;
@@ -38,13 +38,33 @@ export const authMiddleware = async (
 
     const session = await AuthSession.findByPk(decoded.sid, {
       attributes: ['id', 'user_id', 'expires_at', 'revoked_at'],
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'username', 'role', 'department_id', 'fullname', 'is_active'],
+          required: false,
+        },
+      ],
     });
     if (!session || session.user_id !== decoded.id || session.revoked_at || session.expires_at <= new Date()) {
       throw new UnauthorizedError('Session is no longer active');
     }
 
-    // Attach user to request
-    req.user = decoded;
+    // Lấy vai trò/phòng ban HIỆN TẠI từ DB (không dùng giá trị cũ trong JWT).
+    // Nhờ vậy admin đổi phòng/vai trò là có hiệu lực ngay, không cần đăng nhập lại.
+    const dbUser = (session as any).user as User | undefined;
+    if (!dbUser || !dbUser.is_active) {
+      throw new UnauthorizedError('Tài khoản không còn hoạt động');
+    }
+
+    req.user = {
+      ...decoded,
+      username: dbUser.username,
+      role: dbUser.role,
+      department_id: dbUser.department_id,
+      fullname: dbUser.fullname,
+    };
 
     next();
   } catch (error) {

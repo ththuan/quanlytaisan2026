@@ -400,7 +400,12 @@ class InventoryService {
         ? { [Op.in]: [departmentId, ...childIds] }
         : departmentId;
     } else {
+      // Nhân viên: chỉ báo cáo do mình tạo VÀ thuộc đơn vị hiện tại
+      // (tránh thấy lại báo cáo của đơn vị cũ sau khi được chuyển phòng).
       where.created_by = userId;
+      if (departmentId) {
+        where.department_id = departmentId;
+      }
     }
 
     const { count, rows } = await InventoryReport.findAndCountAll({

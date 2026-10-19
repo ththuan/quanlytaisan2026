@@ -1194,7 +1194,9 @@ const getStatusLabel = (status: string) => {
   return v !== key ? v : status;
 };
 
-onMounted(() => {
+onMounted(async () => {
+  // Làm mới phòng ban/vai trò (admin có thể vừa thay đổi)
+  try { await authStore.checkAuth(); } catch { /* bỏ qua */ }
   fetchActiveRound();
   fetchRounds();
   fetchReports();
