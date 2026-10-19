@@ -268,6 +268,25 @@
           placeholder="VD: hóa chất, cơ học..."
         />
       </el-form-item>
+      <el-form-item label="Tài sản trong hồ sơ">
+        <el-select
+          v-model="editAssetIds"
+          multiple
+          filterable
+          collapse-tags
+          collapse-tags-tooltip
+          :loading="loadingEditAssets"
+          placeholder="Chọn tài sản..."
+          style="width: 100%"
+        >
+          <el-option
+            v-for="opt in editAssetOptions"
+            :key="opt.id"
+            :value="opt.id"
+            :label="opt.label"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item label="Ghi chú">
         <el-input
           v-model="editForm.notes"
@@ -350,8 +369,43 @@ const editForm = ref({
   disposal_method: '',
   notes: '',
 });
+const editAssetIds = ref<number[]>([]);
+const editAssetOptions = ref<Array<{ id: number; label: string }>>([]);
+const loadingEditAssets = ref(false);
 
-const openEdit = () => {
+const loadEditAssetOptions = async () => {
+  const map = new Map<number, { id: number; label: string }>();
+  for (const it of (data.value?.items || [])) {
+    const id = it.asset_id ?? it.asset?.id;
+    if (id) {
+      map.set(id, {
+        id,
+        label: `${it.asset?.asset_code || ''} — ${it.asset?.name || ''}`.trim(),
+      });
+    }
+  }
+  try {
+    loadingEditAssets.value = true;
+    const groups: any[] = await assetDisposalService.getPendingDisposalGrouped();
+    for (const g of groups || []) {
+      for (const a of (g.assets || [])) {
+        if (!map.has(a.id)) {
+          map.set(a.id, {
+            id: a.id,
+            label: `${a.asset_code || ''} — ${a.name || ''} (${g.department_name || ''})`.trim(),
+          });
+        }
+      }
+    }
+  } catch {
+    // bỏ qua — vẫn giữ danh sách tài sản hiện tại
+  } finally {
+    loadingEditAssets.value = false;
+  }
+  editAssetOptions.value = [...map.values()];
+};
+
+const openEdit = async () => {
   const c = data.value;
   if (!c) return;
   editForm.value = {
@@ -360,11 +414,18 @@ const openEdit = () => {
     disposal_method: c.disposal_method || '',
     notes: c.notes || '',
   };
+  editAssetIds.value = (c.items || []).map((it: any) => it.asset_id ?? it.asset?.id).filter(Boolean);
+  editAssetOptions.value = [];
   showEditDialog.value = true;
+  await loadEditAssetOptions();
 };
 
 const saveEdit = async () => {
   if (!props.caseId) return;
+  if (editAssetIds.value.length === 0) {
+    ElMessage.warning('Hồ sơ phải có ít nhất 1 tài sản');
+    return;
+  }
   savingEdit.value = true;
   try {
     await assetDisposalService.updateCase(props.caseId, {
@@ -372,6 +433,7 @@ const saveEdit = async () => {
       destruction_method: editForm.value.disposal_type === 'destruction' ? (editForm.value.destruction_method || null) : null,
       disposal_method: editForm.value.disposal_type === 'liquidation' ? (editForm.value.disposal_method || null) : null,
       notes: editForm.value.notes || null,
+      asset_ids: editAssetIds.value,
     } as any);
     ElMessage.success('Đã cập nhật hồ sơ');
     showEditDialog.value = false;

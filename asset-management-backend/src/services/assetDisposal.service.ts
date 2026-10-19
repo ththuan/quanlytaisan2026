@@ -242,6 +242,7 @@ class AssetDisposalService {
       disposal_method?: string | null;
       notes?: string | null;
       origin_department_id?: number | null;
+      asset_ids?: number[];
     }
   ): Promise<any> {
     const c = await AssetDisposalCase.findByPk(id);
@@ -255,18 +256,103 @@ class AssetDisposalService {
     for (const key of allowed) {
       if ((payload as any)[key] !== undefined) updateData[key] = (payload as any)[key];
     }
-    if (Object.keys(updateData).length === 0) {
-      return this.getCaseById(id);
+
+    const replaceAssets = Array.isArray(payload.asset_ids);
+    const newIds = replaceAssets
+      ? [...new Set(payload.asset_ids!.map((n) => Number(n)).filter((n) => Number.isFinite(n) && n > 0))]
+      : [];
+
+    if (replaceAssets && newIds.length === 0) {
+      throw new ConflictError('Hồ sơ phải có ít nhất 1 tài sản');
     }
 
-    await c.update(updateData);
+    const transaction = await sequelize.transaction();
+    try {
+      if (Object.keys(updateData).length > 0) {
+        await c.update(updateData, { transaction });
+      }
+
+      if (replaceAssets) {
+        // Không cho chọn tài sản đang nằm trong hồ sơ chờ xử lý KHÁC
+        const conflicts = await AssetDisposalItem.findAll({
+          where: { asset_id: { [Op.in]: newIds } },
+          include: [
+            {
+              model: AssetDisposalCase,
+              as: 'disposal_case',
+              attributes: [],
+              required: true,
+              where: { status: 'pending', id: { [Op.ne]: id } },
+            },
+          ],
+          attributes: ['asset_id'],
+          transaction,
+        });
+        if (conflicts.length > 0) {
+          const names = await Asset.findAll({
+            where: { id: { [Op.in]: conflicts.map((x: any) => x.asset_id) } },
+            attributes: ['asset_code'],
+            transaction,
+          });
+          throw new ConflictError(
+            `Một số tài sản đã nằm trong hồ sơ chờ xử lý khác: ${names.map((a: any) => a.asset_code).join(', ')}`
+          );
+        }
+
+        const assets = await Asset.findAll({
+          where: { id: { [Op.in]: newIds } },
+          attributes: ['id', 'status', 'current_department_id'],
+          transaction,
+        });
+        if (assets.length !== newIds.length) {
+          throw new NotFoundError('Một số tài sản không tồn tại');
+        }
+
+        // Bỏ các tài sản không còn trong danh sách (giữ trạng thái pending_disposal)
+        await AssetDisposalItem.destroy({
+          where: { disposal_case_id: id, asset_id: { [Op.notIn]: newIds } },
+          transaction,
+        });
+
+        const existingItems = await AssetDisposalItem.findAll({
+          where: { disposal_case_id: id },
+          attributes: ['asset_id'],
+          transaction,
+        });
+        const existingIds = new Set(existingItems.map((i: any) => i.asset_id));
+
+        for (const a of assets as any[]) {
+          if (existingIds.has(a.id)) continue;
+          await AssetDisposalItem.create(
+            {
+              disposal_case_id: id,
+              asset_id: a.id,
+              moved_from_department_id: a.current_department_id ?? null,
+              moved_at: new Date(),
+              moved_by: userId,
+              reason: null,
+            } as any,
+            { transaction }
+          );
+          if (a.status !== 'pending_disposal') {
+            await a.update({ status: 'pending_disposal' }, { transaction });
+          }
+        }
+      }
+
+      await transaction.commit();
+    } catch (e) {
+      await transaction.rollback();
+      throw e;
+    }
+
     await AuditLog.create({
       user_id: userId,
       action: 'update',
       table_name: 'asset_disposal_cases',
       record_id: id,
       old_value: null,
-      new_value: updateData,
+      new_value: { ...updateData, ...(replaceAssets ? { asset_ids: newIds } : {}) },
     } as any);
 
     return this.getCaseById(id);
