@@ -348,6 +348,23 @@
         </div>
       </el-form-item>
 
+      <!-- Số / ngày quyết định (nếu đã có) -->
+      <el-form-item label="Số quyết định">
+        <el-input
+          v-model="formData.decision_no"
+          placeholder="Không bắt buộc — có thể bổ sung sau"
+        />
+      </el-form-item>
+      <el-form-item label="Ngày quyết định">
+        <el-date-picker
+          v-model="formData.decision_date"
+          type="date"
+          value-format="YYYY-MM-DD"
+          placeholder="Không bắt buộc"
+          style="width: 100%"
+        />
+      </el-form-item>
+
       <!-- Ghi chú / lý do -->
       <el-form-item
         label="Lý do / ghi chú"
@@ -429,6 +446,8 @@ const formData = reactive({
   destruction_method: '' as string,
   disposal_method: '' as string,
   notes: '',
+  decision_no: '',
+  decision_date: null as string | null,
 });
 
 const rules = {
@@ -604,6 +623,8 @@ const submit = async () => {
       destruction_method: formData.disposal_type === 'destruction' ? formData.destruction_method || undefined : undefined,
       disposal_method: formData.disposal_type === 'liquidation' ? formData.disposal_method || undefined : undefined,
       notes: formData.notes || undefined,
+      decision_no: formData.decision_no || undefined,
+      decision_date: formData.decision_date || undefined,
       asset_ids: totalIds,
       signature,
     });
@@ -622,6 +643,8 @@ const resetForm = () => {
   formData.destruction_method = '';
   formData.disposal_method = '';
   formData.notes = '';
+  formData.decision_no = '';
+  formData.decision_date = null;
   selectedAssetIds.value = new Set();
   groupedData.value = [];
   manualAssets.value = [];

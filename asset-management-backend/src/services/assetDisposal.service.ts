@@ -242,6 +242,8 @@ class AssetDisposalService {
       disposal_method?: string | null;
       notes?: string | null;
       origin_department_id?: number | null;
+      decision_no?: string | null;
+      decision_date?: string | null;
       asset_ids?: number[];
     }
   ): Promise<any> {
@@ -252,7 +254,7 @@ class AssetDisposalService {
     }
 
     const updateData: any = {};
-    const allowed = ['disposal_type', 'destruction_method', 'disposal_method', 'notes', 'origin_department_id'];
+    const allowed = ['disposal_type', 'destruction_method', 'disposal_method', 'notes', 'origin_department_id', 'decision_no', 'decision_date'];
     for (const key of allowed) {
       if ((payload as any)[key] !== undefined) updateData[key] = (payload as any)[key];
     }
@@ -411,6 +413,8 @@ class AssetDisposalService {
       destruction_method?: string;
       disposal_method?: string;
       notes?: string;
+      decision_no?: string;
+      decision_date?: string;
       asset_ids: number[];
     }
   ): Promise<any> {
@@ -459,6 +463,8 @@ class AssetDisposalService {
           origin_department_id: payload.origin_department_id ?? null,
           status: 'pending',
           notes: payload.notes ?? null,
+          decision_no: payload.decision_no ?? null,
+          decision_date: payload.decision_date ? new Date(payload.decision_date) : null,
           created_by: userId,
         } as any,
         { transaction }

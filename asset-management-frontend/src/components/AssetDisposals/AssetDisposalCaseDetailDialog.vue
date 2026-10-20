@@ -201,6 +201,20 @@
         In biên bản
       </el-button>
       <el-button
+        v-if="data"
+        :loading="printingProposal"
+        @click="printProposal"
+      >
+        In 01/TSC-XLTS
+      </el-button>
+      <el-button
+        v-if="data"
+        :loading="printingHandover"
+        @click="printHandover"
+      >
+        In 02/TSC-BBGN
+      </el-button>
+      <el-button
         v-if="data?.status === 'pending' && isAdminOrDirector"
         @click="openEdit"
       >
@@ -266,6 +280,20 @@
         <el-input
           v-model="editForm.destruction_method"
           placeholder="VD: hóa chất, cơ học..."
+        />
+      </el-form-item>
+      <el-form-item label="Số quyết định">
+        <el-input
+          v-model="editForm.decision_no"
+          placeholder="Số quyết định..."
+        />
+      </el-form-item>
+      <el-form-item label="Ngày quyết định">
+        <el-date-picker
+          v-model="editForm.decision_date"
+          type="date"
+          value-format="YYYY-MM-DD"
+          style="width: 100%"
         />
       </el-form-item>
       <el-form-item label="Tài sản trong hồ sơ">
@@ -368,6 +396,8 @@ const editForm = ref({
   destruction_method: '',
   disposal_method: '',
   notes: '',
+  decision_no: '',
+  decision_date: null as string | null,
 });
 const editAssetIds = ref<number[]>([]);
 const editAssetOptions = ref<Array<{ id: number; label: string }>>([]);
@@ -413,6 +443,8 @@ const openEdit = async () => {
     destruction_method: c.destruction_method || '',
     disposal_method: c.disposal_method || '',
     notes: c.notes || '',
+    decision_no: c.decision_no || '',
+    decision_date: c.decision_date || null,
   };
   editAssetIds.value = (c.items || []).map((it: any) => it.asset_id ?? it.asset?.id).filter(Boolean);
   editAssetOptions.value = [];
@@ -433,6 +465,8 @@ const saveEdit = async () => {
       destruction_method: editForm.value.disposal_type === 'destruction' ? (editForm.value.destruction_method || null) : null,
       disposal_method: editForm.value.disposal_type === 'liquidation' ? (editForm.value.disposal_method || null) : null,
       notes: editForm.value.notes || null,
+      decision_no: editForm.value.decision_no || null,
+      decision_date: editForm.value.decision_date || null,
       asset_ids: editAssetIds.value,
     } as any);
     ElMessage.success('Đã cập nhật hồ sơ');
@@ -523,6 +557,112 @@ const printMinutes = async () => {
     printingMinutes.value = false;
   }
 };
+
+const printingProposal = ref(false);
+const printingHandover = ref(false);
+
+const fetchCaseSignatures = async () => {
+  try {
+    const res: any = await api.get('/signatures', {
+      params: { entity_type: 'asset_disposal_case', entity_id: props.caseId },
+    });
+    return res?.data || [];
+  } catch {
+    return [];
+  }
+};
+
+/** In Văn bản đề nghị xử lý tài sản công (Mẫu số 01/TSC-XLTS) */
+const printProposal = async () => {
+  const c = data.value;
+  if (!c) return;
+  printingProposal.value = true;
+  try {
+    const signatures = await fetchCaseSignatures();
+    const createSig = signatures.find((s: any) => s.action === 'create');
+    const items = c.items || [];
+    const rows = items.map((it: any, idx: number) => `<tr>
+        <td class="num">${idx + 1}</td>
+        <td>${escapeHtml(it.asset?.asset_code || '')}</td>
+        <td>${escapeHtml(it.asset?.name || '')}</td>
+        <td class="num">${escapeHtml(it.asset?.unit || '')}</td>
+        <td class="num">${escapeHtml(it.asset?.quantity ?? 1)}</td>
+        <td>${escapeHtml(it.reason || '')}</td>
+      </tr>`).join('');
+    const typeText = c.disposal_type === 'destruction' ? 'tiêu hủy' : 'bán thanh lý';
+
+    const body = `
+      <div class="doc-header"><div class="org">${escapeHtml(c.origin_department?.name || '')}</div></div>
+      <div class="doc-sub" style="text-align:right; font-size:12px;">Mẫu số 01/TSC-XLTS</div>
+      <div class="doc-title">Văn bản đề nghị xử lý tài sản công</div>
+      <div class="doc-meta">Kính gửi: Cơ quan quản lý cấp trên / Người có thẩm quyền</div>
+      <div class="doc-meta">Mã hồ sơ: <b>${escapeHtml(c.code || '')}</b></div>
+      <div class="doc-meta">Số quyết định: <b>${escapeHtml(c.decision_no || '')}</b>${c.decision_date ? ` — Ngày: ${escapeHtml(new Date(c.decision_date).toLocaleDateString('vi-VN'))}` : ''}</div>
+      <div class="doc-meta">Hình thức đề nghị xử lý: <b>${escapeHtml(typeText)}</b></div>
+      <table class="data">
+        <thead><tr><th>STT</th><th>Mã tài sản</th><th>Tên tài sản</th><th>ĐVT</th><th>Số lượng</th><th>Lý do</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="summary">Tổng số tài sản đề nghị xử lý: <b>${items.length}</b>${c.notes ? ` — Ghi chú: ${escapeHtml(c.notes)}` : ''}</div>
+      <div class="signatures">
+        ${signatureCell('Người lập', createSig)}
+        ${signatureCell('Thủ trưởng đơn vị', createSig)}
+      </div>`;
+
+    if (!openPrintWindow('Văn bản đề nghị xử lý tài sản công', body)) {
+      ElMessage.error('Trình duyệt chặn popup, vui lòng cho phép popup để in');
+    }
+  } finally {
+    printingProposal.value = false;
+  }
+};
+
+/** In Biên bản bàn giao tài sản (Mẫu số 02/TSC-BBGN) */
+const printHandover = async () => {
+  const c = data.value;
+  if (!c) return;
+  printingHandover.value = true;
+  try {
+    const signatures = await fetchCaseSignatures();
+    const createSig = signatures.find((s: any) => s.action === 'create');
+    const completeSig = signatures.find((s: any) => s.action === 'complete');
+    const items = c.items || [];
+    const rows = items.map((it: any, idx: number) => `<tr>
+        <td class="num">${idx + 1}</td>
+        <td>${escapeHtml(it.asset?.asset_code || '')}</td>
+        <td>${escapeHtml(it.asset?.name || '')}</td>
+        <td class="num">${escapeHtml(it.asset?.unit || '')}</td>
+        <td class="num">${escapeHtml(it.asset?.quantity ?? 1)}</td>
+        <td>${escapeHtml(it.reason || '')}</td>
+      </tr>`).join('');
+
+    const body = `
+      <div class="doc-header"><div class="org">${escapeHtml(c.origin_department?.name || '')}</div></div>
+      <div class="doc-sub" style="text-align:right; font-size:12px;">Mẫu số 02/TSC-BBGN</div>
+      <div class="doc-title">Biên bản bàn giao tài sản</div>
+      <div class="doc-meta">Mã hồ sơ: <b>${escapeHtml(c.code || '')}</b></div>
+      <div class="doc-meta">Số quyết định: <b>${escapeHtml(c.decision_no || '')}</b>${c.decision_date ? ` — Ngày: ${escapeHtml(new Date(c.decision_date).toLocaleDateString('vi-VN'))}` : ''}</div>
+      <div class="doc-meta">Bên giao: <b>${escapeHtml(c.origin_department?.name || '')}</b></div>
+      <div class="doc-meta">Bên nhận: ............................................................</div>
+      <table class="data">
+        <thead><tr><th>STT</th><th>Mã tài sản</th><th>Tên tài sản</th><th>ĐVT</th><th>Số lượng</th><th>Ghi chú</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="summary">Tổng số tài sản bàn giao: <b>${items.length}</b></div>
+      <div class="signatures">
+        ${signatureCell('Bên giao', createSig)}
+        ${signatureCell('Bên nhận', completeSig)}
+        ${signatureCell('Người lập biên bản', createSig)}
+      </div>`;
+
+    if (!openPrintWindow('Biên bản bàn giao tài sản', body)) {
+      ElMessage.error('Trình duyệt chặn popup, vui lòng cho phép popup để in');
+    }
+  } finally {
+    printingHandover.value = false;
+  }
+};
+
 
 const statusLabel = (s: string) => {
   if (s === 'pending') return 'Chờ xử lý';

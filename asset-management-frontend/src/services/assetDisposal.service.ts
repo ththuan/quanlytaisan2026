@@ -22,6 +22,8 @@ export interface CreateManualCasePayload {
   destruction_method?: string | null;
   disposal_method?: string | null;
   notes?: string | null;
+  decision_no?: string | null;
+  decision_date?: string | null;
   asset_ids: number[];
   signature?: string;
 }
