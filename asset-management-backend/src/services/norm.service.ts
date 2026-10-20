@@ -13,7 +13,51 @@ interface AssetLike {
 }
 
 class NormService {
+  private defaultsChecked = false;
+
+  /**
+   * Seed sẵn một số định mức phổ biến theo QĐ 10/2026/QĐ-TTg (mức giá tối đa)
+   * khi danh mục còn trống. Admin có thể sửa/xóa tùy nhu cầu.
+   */
+  private async seedDefaultsIfEmpty(): Promise<void> {
+    if (this.defaultsChecked) return;
+    try {
+      const count = await EquipmentNorm.count();
+      if (count === 0) {
+        const doc = '10/2026/QĐ-TTg';
+        const eff = '2026-03-09';
+        const defaults = [
+          { equipment_name: 'Bộ bàn ghế họp, tiếp khách', scope: 'room', unit: 'bộ', max_price: 13 },
+          { equipment_name: 'Máy in', scope: 'room', unit: 'chiếc', max_price: 13 },
+          { equipment_name: 'Máy scan tài liệu', scope: 'room', unit: 'chiếc', max_price: 22 },
+          { equipment_name: 'Máy hủy tài liệu', scope: 'room', unit: 'chiếc', max_price: 10 },
+          { equipment_name: 'Máy photocopy', scope: 'room', unit: 'chiếc', max_price: 110 },
+          { equipment_name: 'Giá đựng tài liệu', scope: 'room', unit: 'chiếc', max_price: 1.5 },
+          { equipment_name: 'Máy vi tính để bàn', scope: 'digital', unit: 'bộ', max_price: 20 },
+          { equipment_name: 'Máy vi tính xách tay', scope: 'digital', unit: 'chiếc', max_price: 25 },
+          { equipment_name: 'Máy tính bảng', scope: 'digital', unit: 'chiếc', max_price: 25 },
+          { equipment_name: 'Điện thoại cố định', scope: 'title', unit: 'chiếc', max_price: 2.5 },
+          { equipment_name: 'Tủ đựng tài liệu', scope: 'title', unit: 'chiếc', max_price: 10 },
+          { equipment_name: 'Bộ bàn ghế ngồi làm việc', scope: 'title', unit: 'bộ', max_price: 30 },
+        ].map((n) => ({
+          ...n,
+          document_no: doc,
+          effective_date: eff,
+          max_quantity: null,
+          note: 'Mức giá tối đa tham khảo theo QĐ 10/2026/QĐ-TTg; điều chỉnh theo nhóm chức danh thực tế.',
+          is_active: true,
+        }));
+        await EquipmentNorm.bulkCreate(defaults as any);
+      }
+    } catch {
+      // bỏ qua nếu có lỗi (không chặn chức năng)
+    } finally {
+      this.defaultsChecked = true;
+    }
+  }
+
   async listNorms(query: any = {}): Promise<EquipmentNorm[]> {
+    await this.seedDefaultsIfEmpty();
     const where: any = {};
     if (query.scope) where.scope = query.scope;
     if (query.is_active !== undefined) where.is_active = String(query.is_active) === 'true';
@@ -70,6 +114,7 @@ class NormService {
    * Trả về danh sách cảnh báo vừa tạo.
    */
   async evaluateAsset(asset: AssetLike, userId?: number): Promise<NormWarning[]> {
+    await this.seedDefaultsIfEmpty();
     const a: any = (asset as any).toJSON ? (asset as any).toJSON() : asset;
     if (!a?.id) return [];
 

@@ -18,6 +18,9 @@ export interface InventoryReportDetailAttributes {
   notes?: string;  scan_method?: 'qr_scan' | 'manual_confirm' | 'area_manual' | 'batch';
   manual_reason?: string;
   image_urls?: string[];
+  discrepancy_reason?: string | null;
+  responsibility?: string | null;
+  compensation_amount?: number | null;
   created_at?: Date;
   updated_at?: Date;
 }
@@ -42,6 +45,9 @@ class InventoryReportDetail extends Model<InventoryReportDetailAttributes, Inven
   public scan_method?: 'qr_scan' | 'manual_confirm' | 'area_manual' | 'batch';
   public manual_reason?: string;
   public image_urls?: string[];
+  public discrepancy_reason?: string | null;
+  public responsibility?: string | null;
+  public compensation_amount?: number | null;
   public readonly created_at!: Date;
   public readonly updated_at!: Date;
 }
@@ -136,6 +142,21 @@ InventoryReportDetail.init(
       allowNull: false,
       defaultValue: [],
       comment: 'Danh sách URL ảnh hiện trạng của tài sản khi kiểm kê',
+    },
+    discrepancy_reason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'Nguyên nhân thừa/thiếu',
+    },
+    responsibility: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: 'Trách nhiệm (tập thể/cá nhân)',
+    },
+    compensation_amount: {
+      type: DataTypes.DECIMAL(18, 2),
+      allowNull: true,
+      comment: 'Số tiền bồi thường (đối với thiếu)',
     },
   },
   {

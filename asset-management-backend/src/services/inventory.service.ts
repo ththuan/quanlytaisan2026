@@ -495,6 +495,9 @@ class InventoryService {
       scan_method?: 'qr_scan' | 'manual_confirm' | 'area_manual' | 'batch';
       manual_reason?: string;
       image_urls?: string[];
+      discrepancy_reason?: string;
+      responsibility?: string;
+      compensation_amount?: number;
     }
   ): Promise<InventoryReportDetail> {
     const report = await InventoryReport.findByPk(reportId);
@@ -570,6 +573,9 @@ class InventoryService {
       scan_method: data.scan_method,
       manual_reason: data.manual_reason,
       image_urls: Array.isArray(data.image_urls) ? data.image_urls : [],
+      discrepancy_reason: data.discrepancy_reason ?? null,
+      responsibility: data.responsibility ?? null,
+      compensation_amount: data.compensation_amount ?? null,
     });
 
     await this.updateReportSummary(reportId);
@@ -598,6 +604,9 @@ class InventoryService {
       scan_method: 'qr_scan' | 'manual_confirm' | 'area_manual' | 'batch';
       manual_reason?: string;
       image_urls?: string[];
+      discrepancy_reason?: string;
+      responsibility?: string;
+      compensation_amount?: number;
     }>
   ): Promise<InventoryReportDetail> {
     const detail = await InventoryReportDetail.findByPk(detailId, {
@@ -711,6 +720,28 @@ class InventoryService {
     const reportImages = Array.isArray(report.image_urls) ? report.image_urls : [];
     if (reportImages.length === 0) {
       throw new ValidationError('Cần chụp ít nhất 1 ảnh tổng thể đơn vị trước khi nộp báo cáo kiểm kê');
+    }
+
+    // Bắt buộc nhập nguyên nhân + trách nhiệm cho các tài sản thừa/thiếu
+    const discrepancyDetails = await InventoryReportDetail.findAll({
+      where: { inventory_report_id: reportId },
+      attributes: ['id', 'asset_id', 'quantity_discrepancy', 'discrepancy_reason', 'responsibility'],
+      include: [{ model: Asset, as: 'asset', attributes: ['asset_code', 'name'], required: false }],
+    });
+    const missingInfo = discrepancyDetails.filter(
+      (d: any) =>
+        Number(d.quantity_discrepancy) !== 0 &&
+        (!d.discrepancy_reason || !String(d.discrepancy_reason).trim() ||
+          !d.responsibility || !String(d.responsibility).trim())
+    );
+    if (missingInfo.length > 0) {
+      const codes = missingInfo
+        .slice(0, 5)
+        .map((d: any) => d.asset?.asset_code || `#${d.asset_id}`)
+        .join(', ');
+      throw new ValidationError(
+        `Cần nhập nguyên nhân và trách nhiệm cho ${missingInfo.length} tài sản thừa/thiếu trước khi nộp (${codes}${missingInfo.length > 5 ? '...' : ''}).`
+      );
     }
 
     await report.update({

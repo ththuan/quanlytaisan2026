@@ -20,6 +20,14 @@
           <el-icon><Document /></el-icon>
           In biên bản
         </el-button>
+        <el-button
+          v-if="report"
+          :loading="printingDiscrepancy"
+          @click="printDiscrepancyMinutes"
+        >
+          <el-icon><Warning /></el-icon>
+          In biên bản thừa/thiếu
+        </el-button>
         <!-- Nút chỉnh sửa và gửi lại khi báo cáo bị từ chối -->
         <el-button 
           v-if="canResubmit"
@@ -646,7 +654,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { ArrowLeft, Select, Search, Edit, Document } from '@element-plus/icons-vue';
+import { ArrowLeft, Select, Search, Edit, Document, Warning } from '@element-plus/icons-vue';
 import { useAuthStore } from '@/stores/auth.store';
 import inventoryService, { type InventoryReport } from '@/services/inventory.service';
 import SignaturePad from '@/components/Common/SignaturePad.vue';
@@ -751,6 +759,83 @@ const printMinutes = async () => {
     }
   } finally {
     printingMinutes.value = false;
+  }
+};
+
+const printingDiscrepancy = ref(false);
+const printDiscrepancyMinutes = async () => {
+  if (!report.value) return;
+  printingDiscrepancy.value = true;
+  try {
+    let signatures: any[] = [];
+    try {
+      const res: any = await api.get('/signatures', {
+        params: { entity_type: 'inventory_report', entity_id: report.value.id },
+      });
+      signatures = res?.data || [];
+    } catch { signatures = []; }
+
+    const r = report.value as any;
+    const details = (r.details || []).filter(
+      (d: any) => Number(d.quantity_difference ?? d.quantity_discrepancy ?? 0) !== 0
+    );
+    if (!details.length) {
+      ElMessage.info('Báo cáo không có tài sản thừa/thiếu');
+      return;
+    }
+
+    const rows = details.map((d: any, idx: number) => {
+      const book = d.book_quantity ?? d.assigned_quantity ?? d.asset?.quantity ?? 0;
+      const actual = d.actual_quantity ?? 0;
+      const diff = d.quantity_difference ?? d.quantity_discrepancy ?? (actual - book);
+      const diffText = diff === 0 ? '0' : (diff > 0 ? `+${diff}` : `${diff}`);
+      const comp = Number(d.compensation_amount || 0);
+      return `<tr>
+        <td class="num">${idx + 1}</td>
+        <td>${escapeHtml(d.asset?.asset_code || '')}</td>
+        <td>${escapeHtml(d.asset?.name || '')}</td>
+        <td class="num">${escapeHtml(book)}</td>
+        <td class="num">${escapeHtml(actual)}</td>
+        <td class="num">${escapeHtml(diffText)}</td>
+        <td>${escapeHtml(d.discrepancy_reason || '')}</td>
+        <td>${escapeHtml(d.responsibility || '')}</td>
+        <td class="num">${comp ? comp.toLocaleString('vi-VN') : '-'}</td>
+      </tr>`;
+    }).join('');
+
+    const totalComp = details.reduce((s: number, d: any) => s + Number(d.compensation_amount || 0), 0);
+    const submitSig = signatures.find((s) => s.action === 'submit');
+    const headSig = signatures.find((s) => s.action === 'approve' && s.signer_role === 'department_head');
+    const adminSig = signatures.find((s) => s.action === 'approve' && s.signer_role === 'admin');
+
+    const body = `
+      <div class="doc-header"><div class="org">${escapeHtml(r.department?.name || '')}</div></div>
+      <div class="doc-title">Biên bản kiểm kê thừa/thiếu tài sản</div>
+      <div class="doc-sub">Mã báo cáo: ${escapeHtml(r.report_code || '')}</div>
+      <table class="data">
+        <thead>
+          <tr>
+            <th>STT</th><th>Mã TS</th><th>Tên tài sản</th><th>SL sổ sách</th><th>SL thực tế</th>
+            <th>Chênh lệch</th><th>Nguyên nhân</th><th>Trách nhiệm</th><th>Bồi thường (đồng)</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="summary">
+        Tổng số tài sản thừa/thiếu: <b>${details.length}</b> —
+        Tổng bồi thường: <b>${totalComp.toLocaleString('vi-VN')} đồng</b>
+      </div>
+      <div class="signatures">
+        ${signatureCell('Người kiểm kê', submitSig)}
+        ${signatureCell('Trưởng đơn vị', headSig)}
+        ${signatureCell('Quản trị hệ thống', adminSig)}
+      </div>`;
+
+    if (!openPrintWindow('Biên bản thừa/thiếu', body)) {
+      ElMessage.error('Trình duyệt chặn popup, vui lòng cho phép popup để in biên bản');
+    }
+  } finally {
+    printingDiscrepancy.value = false;
   }
 };
 

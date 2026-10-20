@@ -685,6 +685,32 @@
           </template>
         </el-table-column>
         <el-table-column
+          label="Xử lý thừa/thiếu"
+          width="230"
+        >
+          <template #default="{ row }">
+            <template v-if="batchInputs[row.category_id].actual_quantity !== row.book_quantity">
+              <el-input
+                v-model="batchInputs[row.category_id].discrepancy_reason"
+                size="small"
+                placeholder="Nguyên nhân *"
+                :disabled="row.confirmed"
+              />
+              <el-input
+                v-model="batchInputs[row.category_id].responsibility"
+                size="small"
+                placeholder="Trách nhiệm *"
+                style="margin-top: 4px"
+                :disabled="row.confirmed"
+              />
+            </template>
+            <span
+              v-else
+              style="color: #909399; font-size: 12px;"
+            >Không chênh lệch</span>
+          </template>
+        </el-table-column>
+        <el-table-column
           label="Ảnh nhóm"
           width="150"
           align="center"
@@ -998,6 +1024,46 @@
               placeholder="Ghi chú thêm về tài sản..."
             />
           </el-form-item>
+          <template v-if="isDiscrepancy">
+            <el-alert
+              type="warning"
+              :closable="false"
+              show-icon
+              style="margin-bottom: 12px;"
+              title="Có chênh lệch thừa/thiếu so với sổ sách — bắt buộc ghi rõ nguyên nhân và trách nhiệm."
+            />
+            <el-form-item
+              label="Nguyên nhân thừa/thiếu"
+              required
+            >
+              <el-input
+                v-model="checkForm.discrepancy_reason"
+                type="textarea"
+                :rows="2"
+                placeholder="Nêu rõ nguyên nhân thừa/thiếu..."
+              />
+            </el-form-item>
+            <el-form-item
+              label="Trách nhiệm"
+              required
+            >
+              <el-input
+                v-model="checkForm.responsibility"
+                placeholder="Tập thể/cá nhân chịu trách nhiệm"
+              />
+            </el-form-item>
+            <el-form-item
+              v-if="isShortage"
+              label="Số tiền bồi thường (đồng)"
+            >
+              <el-input-number
+                v-model="checkForm.compensation_amount"
+                :min="0"
+                :step="100000"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </template>
           <el-form-item label="Ảnh hiện trạng (không bắt buộc)">
             <div class="inv-photo-block">
               <div class="inv-photo-list">
@@ -1135,7 +1201,7 @@ const filterStatus = ref('');
 
 // ─── Batch tracking ──────────────────────────────────────────────────────────
 const categoriesMap = ref<Map<number, any>>(new Map());
-const batchInputs = ref<Record<number, { actual_quantity: number; condition: string; notes: string; image_urls: string[] }>>({});
+const batchInputs = ref<Record<number, { actual_quantity: number; condition: string; notes: string; image_urls: string[]; discrepancy_reason: string; responsibility: string; compensation_amount: number }>>({});
 const batchSaving = ref<number | null>(null);
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1175,6 +1241,25 @@ const checkForm = ref({
   notes: '',
   manual_reason: '',
   image_urls: [] as string[],
+  discrepancy_reason: '',
+  responsibility: '',
+  compensation_amount: 0,
+});
+
+// Có chênh lệch thừa/thiếu so với sổ sách?
+const isDiscrepancy = computed(() => {
+  const row = selectedAsset.value;
+  if (!row) return false;
+  if (checkForm.value.check_status === 'missing') return true;
+  return Number(checkForm.value.actual_quantity) !== Number(row.quantity || 1);
+});
+
+// Thiếu (số thực tế < sổ sách hoặc đánh dấu mất)
+const isShortage = computed(() => {
+  const row = selectedAsset.value;
+  if (!row) return false;
+  if (checkForm.value.check_status === 'missing') return true;
+  return Number(checkForm.value.actual_quantity) < Number(row.quantity || 1);
 });
 
 // Computed
@@ -1269,7 +1354,7 @@ const batchGroups = computed(() => {
     const cat = categoriesMap.value.get(catId);
     if (!groups.has(catId)) {
       if (!batchInputs.value[catId]) {
-        batchInputs.value[catId] = { actual_quantity: 0, condition: 'good', notes: '', image_urls: [] };
+        batchInputs.value[catId] = { actual_quantity: 0, condition: 'good', notes: '', image_urls: [], discrepancy_reason: '', responsibility: '', compensation_amount: 0 };
       }
       groups.set(catId, {
         category_id: catId,
@@ -1304,6 +1389,13 @@ const confirmBatchGroup = async (group: { category_id: number; category_name: st
     ElMessage.warning('Vui lòng nhập số lượng thực tế (được phép là 0)');
     return;
   }
+  // Bắt buộc nguyên nhân + trách nhiệm khi số lượng thực tế khác sổ sách
+  if (Number(input.actual_quantity) !== Number(group.book_quantity)) {
+    if (!input.discrepancy_reason?.trim() || !input.responsibility?.trim()) {
+      ElMessage.error(`Nhóm "${group.category_name}" có chênh lệch: vui lòng nhập nguyên nhân và trách nhiệm`);
+      return;
+    }
+  }
   batchSaving.value = group.category_id;
   try {
     let remaining = Math.round(input.actual_quantity);
@@ -1322,6 +1414,9 @@ const confirmBatchGroup = async (group: { category_id: number; category_name: st
         suggest_disposal: input.condition === 'damaged' || input.condition === 'needs_repair',
         // Ảnh nhóm chỉ gắn vào dòng đầu tiên để tránh lặp lại trên mọi tài sản
         image_urls: firstAsset ? (input.image_urls || []) : [],
+        discrepancy_reason: input.discrepancy_reason || null,
+        responsibility: input.responsibility || null,
+        compensation_amount: input.compensation_amount || 0,
       };
       firstAsset = false;
       await inventoryService.saveCheck(report.value!.id, asset.id, checkData);
@@ -1352,7 +1447,7 @@ const loadCategories = async () => {
     for (const cat of res.data) {
       map.set(cat.id, cat);
       if (cat.tracking_type === 'batch' && !batchInputs.value[cat.id]) {
-        batchInputs.value[cat.id] = { actual_quantity: 0, condition: 'good', notes: '', image_urls: [] };
+        batchInputs.value[cat.id] = { actual_quantity: 0, condition: 'good', notes: '', image_urls: [], discrepancy_reason: '', responsibility: '', compensation_amount: 0 };
       }
     }
     categoriesMap.value = map;
@@ -1673,6 +1768,9 @@ const openCheckDialog = (row: any, fromScan: boolean = false, manualConfirm: boo
       notes: row.inventory_detail.notes || '',
       manual_reason: row.inventory_detail.manual_reason || '',
       image_urls: row.inventory_detail.image_urls || [],
+      discrepancy_reason: row.inventory_detail.discrepancy_reason || '',
+      responsibility: row.inventory_detail.responsibility || '',
+      compensation_amount: Number(row.inventory_detail.compensation_amount) || 0,
     };
   } else {
     // Chưa có kết quả kiểm kê
@@ -1687,6 +1785,9 @@ const openCheckDialog = (row: any, fromScan: boolean = false, manualConfirm: boo
       notes: row.status === 'pending_disposal' ? 'Tài sản chờ thanh lý - đề nghị đưa vào hồ sơ thanh lý trong đợt này' : '',
       manual_reason: '',
       image_urls: [],
+      discrepancy_reason: '',
+      responsibility: '',
+      compensation_amount: 0,
     };
   }
   showCheckDialog.value = true;
@@ -1995,6 +2096,12 @@ const saveCheck = async () => {
     return;
   }
 
+  // Bắt buộc nguyên nhân + trách nhiệm khi có thừa/thiếu
+  if (isDiscrepancy.value && (!checkForm.value.discrepancy_reason.trim() || !checkForm.value.responsibility.trim())) {
+    ElMessage.error('Vui lòng nhập nguyên nhân và trách nhiệm cho tài sản thừa/thiếu');
+    return;
+  }
+
   savingCheck.value = true;
   try {
     // Với tài sản đã quét QR: chỉ cho phép cập nhật tình trạng, giữ nguyên số lượng và kết quả
@@ -2017,6 +2124,9 @@ const saveCheck = async () => {
       asset_condition: checkForm.value.asset_condition, // Luôn cho phép chỉnh sửa tình trạng
       scan_method: scanMethod,
       image_urls: checkForm.value.image_urls,
+      discrepancy_reason: checkForm.value.discrepancy_reason || null,
+      responsibility: checkForm.value.responsibility || null,
+      compensation_amount: isShortage.value ? (Number(checkForm.value.compensation_amount) || 0) : 0,
     };
 
     if (isManualConfirm.value && !selectedAsset.value.inventory_detail) {

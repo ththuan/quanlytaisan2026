@@ -96,6 +96,9 @@ export interface InventoryReportDetail {
   scan_method?: 'qr_scan' | 'manual_confirm' | 'area_manual' | 'batch';
   manual_reason?: string;
   image_urls?: string[];
+  discrepancy_reason?: string | null;
+  responsibility?: string | null;
+  compensation_amount?: number | null;
   checked_by?: number;
   checked_at?: string;
 }
