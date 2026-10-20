@@ -19,6 +19,8 @@ import AssetDisposalItem from './AssetDisposalItem';
 import AuthSession from './AuthSession';
 import Notification from './Notification';
 import Signature from './Signature';
+import EquipmentNorm from './EquipmentNorm';
+import NormWarning from './NormWarning';
 
 import StockItem from './StockItem';
 import StockReceipt from './StockReceipt';
@@ -499,6 +501,32 @@ Signature.belongsTo(User, {
   as: 'signer',
 });
 
+// Equipment norm associations
+EquipmentNorm.hasMany(NormWarning, {
+  foreignKey: 'norm_id',
+  as: 'warnings',
+});
+
+NormWarning.belongsTo(EquipmentNorm, {
+  foreignKey: 'norm_id',
+  as: 'norm',
+});
+
+NormWarning.belongsTo(Asset, {
+  foreignKey: 'asset_id',
+  as: 'asset',
+});
+
+NormWarning.belongsTo(Department, {
+  foreignKey: 'department_id',
+  as: 'department',
+});
+
+NormWarning.belongsTo(User, {
+  foreignKey: 'created_by',
+  as: 'creator',
+});
+
 export {
   User,
   Department,
@@ -527,6 +555,8 @@ export {
   AuthSession,
   Notification,
   Signature,
+  EquipmentNorm,
+  NormWarning,
 };
 
 export default {
@@ -555,4 +585,7 @@ export default {
   StockIssueLine,
   AuthSession,
   Notification,
+  Signature,
+  EquipmentNorm,
+  NormWarning,
 };

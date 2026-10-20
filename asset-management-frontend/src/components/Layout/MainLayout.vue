@@ -115,6 +115,14 @@
 
           <el-menu-item
             v-if="authStore.user?.role === 'admin'"
+            index="/norms"
+          >
+            <el-icon><DataAnalysis /></el-icon>
+            <span>Định mức tài sản</span>
+          </el-menu-item>
+
+          <el-menu-item
+            v-if="authStore.user?.role === 'admin'"
             index="/asset-categories"
           >
             <el-icon><Grid /></el-icon>

@@ -165,6 +165,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/AssetCategories/AssetCategoryView.vue'),
         meta: { requiresAdmin: true, titleKey: 'menu.assetCategories' },
       },
+      {
+        path: '/norms',
+        name: 'Norms',
+        component: () => import('@/views/Norms/NormView.vue'),
+        meta: { requiresAdmin: true },
+      },
     ],
   },
   {

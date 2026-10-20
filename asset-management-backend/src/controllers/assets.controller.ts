@@ -7,6 +7,7 @@ import exportService from '../services/export.service';
 import qrcodeService from '../services/qrcode.service';
 import assetDisposalService from '../services/assetDisposal.service';
 import { AuthRequest } from '../middleware/auth.middleware';
+import normService from '../services/norm.service';
 
 // Helper: check if a non-admin/director user can access an asset's data
 async function checkAssetDeptAccess(assetId: number, user: { role: string; department_id?: number | null }): Promise<boolean> {
@@ -94,10 +95,19 @@ export const createAsset = async (req: Request, res: Response, next: NextFunctio
 
     const asset = await assetService.createAsset(req.body);
 
+    // Cảnh báo vượt định mức (chỉ cảnh báo, không chặn)
+    let normWarnings: any[] = [];
+    try {
+      normWarnings = await normService.evaluateAsset(asset as any, (req as any).user?.id);
+    } catch (e) {
+      console.warn('Norm evaluation failed:', e);
+    }
+
     res.status(201).json({
       success: true,
       message: 'Tài sản đã được tạo thành công',
       data: asset,
+      norm_warnings: normWarnings,
     });
   } catch (error) {
     console.error('❌ Error creating asset:', error);
@@ -109,10 +119,18 @@ export const updateAsset = async (req: Request, res: Response, next: NextFunctio
   try {
     const asset = await assetService.updateAsset(parseInt(req.params.id), req.body);
 
+    let normWarnings: any[] = [];
+    try {
+      normWarnings = await normService.evaluateAsset(asset as any, (req as any).user?.id);
+    } catch (e) {
+      console.warn('Norm evaluation failed:', e);
+    }
+
     res.status(200).json({
       success: true,
       message: 'Tài sản đã được cập nhật thành công',
       data: asset,
+      norm_warnings: normWarnings,
     });
   } catch (error) {
     next(error);

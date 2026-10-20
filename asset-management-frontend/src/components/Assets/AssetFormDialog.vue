@@ -922,12 +922,27 @@ const handleSubmit = async () => {
         return;
       }
 
+      let res: any;
       if (isEdit.value) {
-        await api.put(`/assets/${props.asset.id}`, submitData);
+        res = await api.put(`/assets/${props.asset.id}`, submitData);
         ElMessage.success(t('assets.updateSuccess'));
       } else {
-        await api.post('/assets', submitData);
+        res = await api.post('/assets', submitData);
         ElMessage.success(t('assets.createSuccess'));
+      }
+
+      // Cảnh báo vượt định mức (chỉ cảnh báo, không chặn)
+      const warnings = res?.norm_warnings || [];
+      if (Array.isArray(warnings) && warnings.length > 0) {
+        ElMessage.warning({
+          message:
+            `Cảnh báo định mức: ${warnings[0].message}` +
+            (warnings.length > 1
+              ? ` (+${warnings.length - 1} cảnh báo khác — xem mục "Định mức tài sản")`
+              : ''),
+          duration: 7000,
+          showClose: true,
+        });
       }
 
       emit('success');
