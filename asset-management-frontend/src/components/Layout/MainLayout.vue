@@ -61,6 +61,14 @@
             <span>Báo cáo</span>
           </el-menu-item>
 
+          <el-menu-item
+            v-if="authStore.user?.role === 'admin'"
+            index="/loss-damage"
+          >
+            <el-icon><Warning /></el-icon>
+            <span>Tài sản mất / hư hỏng</span>
+          </el-menu-item>
+
           <el-divider v-if="authStore.user?.role === 'admin'" class="sidebar-divider" />
 
           <!-- Các module phụ trợ (Sửa chữa, Mua sắm, Kho): tạm ẩn theo phạm vi hiện tại.
@@ -253,7 +261,7 @@ import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
-import { House, HomeFilled, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid } from '@element-plus/icons-vue';
+import { House, HomeFilled, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, Warning } from '@element-plus/icons-vue';
 import NotificationBell from '@/components/Notifications/NotificationBell.vue';
 import TotpSetupDialog from '@/components/Auth/TotpSetupDialog.vue';
 import ChangePasswordDialog from '@/components/Auth/ChangePasswordDialog.vue';

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import fs from 'fs/promises';
 import path from 'path';
+import ExcelJS from 'exceljs';
 import assetService from '../services/asset.service';
 import depreciationCalculatorService from '../services/depreciationCalculator.service';
 import exportService from '../services/export.service';
@@ -701,6 +702,72 @@ export const getDisposalHistory = async (req: AuthRequest, res: Response, next: 
 
     const result = await assetDisposalService.listCases({ asset_id: assetId, page: 1, limit: 50 });
     res.status(200).json({ success: true, data: result.data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/assets/loss-damage
+ * Danh sách tài s?n m?t/hu h?ng + b?i thu?ng (t? ki?m kê g?n nh?t).
+ */
+export const getLossDamageAssets = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const data = await assetService.getLossDamageAssets(req.query);
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/assets/loss-damage/export
+ * Xu?t Excel báo cáo tài s?n m?t/hu h?ng + b?i thu?ng.
+ */
+export const exportLossDamage = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const rows = await assetService.getLossDamageAssets(req.query);
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Tai san mat hu hong');
+
+    sheet.columns = [
+      { header: 'STT', key: 'stt', width: 6 },
+      { header: 'Mã tài s?n', key: 'asset_code', width: 18 },
+      { header: 'Tên tài s?n', key: 'name', width: 32 },
+      { header: 'Ðon v?', key: 'department', width: 26 },
+      { header: 'Tr?ng thái', key: 'status', width: 14 },
+      { header: 'Nguyên giá', key: 'purchase_price', width: 18 },
+      { header: 'Giá tr? còn l?i', key: 'current_value', width: 18 },
+      { header: 'Nguyên nhân', key: 'discrepancy_reason', width: 36 },
+      { header: 'Trách nhi?m', key: 'responsibility', width: 28 },
+      { header: 'B?i thu?ng (d?ng)', key: 'compensation_amount', width: 20 },
+    ];
+    sheet.getRow(1).font = { bold: true };
+
+    rows.forEach((r: any, idx: number) => {
+      sheet.addRow({
+        stt: idx + 1,
+        asset_code: r.asset_code || '',
+        name: r.name || '',
+        department: r.department?.name || '',
+        status: r.status === 'lost' ? 'M?t' : 'Hu h?ng',
+        purchase_price: Number(r.purchase_price || 0),
+        current_value: Number(r.current_value || 0),
+        discrepancy_reason: r.discrepancy_reason || '',
+        responsibility: r.responsibility || '',
+        compensation_amount: Number(r.compensation_amount || 0),
+      });
+    });
+
+    const totalComp = rows.reduce((s: number, r: any) => s + Number(r.compensation_amount || 0), 0);
+    const totalRow = sheet.addRow({ name: 'T?NG C?NG', compensation_amount: totalComp });
+    totalRow.font = { bold: true };
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="bao-cao-mat-hu-hong-${Date.now()}.xlsx"`);
+    const buffer = await workbook.xlsx.writeBuffer();
+    res.send(Buffer.from(buffer as ArrayBuffer));
   } catch (error) {
     next(error);
   }

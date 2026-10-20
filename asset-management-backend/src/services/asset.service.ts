@@ -830,8 +830,60 @@ class AssetService {
     return Object.values(grouped);
   }
 
-  async getRepairHistory(assetId: number): Promise<any[]> {
-    const asset = await Asset.findByPk(assetId);
+  /**
+   * Danh sách tài sản mất / hư hỏng kèm thông tin xử lý thừa/thiếu (bồi thường)
+   * từ kết quả kiểm kê gần nhất. Tách khỏi hồ sơ thanh lý.
+   */
+  async getLossDamageAssets(query: any): Promise<any[]> {
+    const where: any = { status: { [Op.in]: ['lost', 'damaged'] } };
+    if (query.department_id) where.current_department_id = Number(query.department_id);
+    if (query.status && ['lost', 'damaged'].includes(String(query.status))) {
+      where.status = query.status;
+    }
+
+    const rows = await Asset.findAll({
+      where,
+      attributes: { exclude: ['qr_code', 'qr_code_image'] },
+      include: [
+        { model: Department, as: 'current_department', attributes: ['id', 'name'], required: false },
+        {
+          model: InventoryReportDetail,
+          as: 'inventory_details',
+          attributes: [
+            'id', 'actual_quantity', 'quantity_discrepancy',
+            'discrepancy_reason', 'responsibility', 'compensation_amount', 'created_at',
+          ],
+          required: false,
+          separate: true,
+          limit: 1,
+          order: [['created_at', 'DESC']],
+        },
+      ],
+      order: [['updated_at', 'DESC']],
+    });
+
+    return rows.map((row: any) => {
+      const d = row.toJSON();
+      const latest = (d.inventory_details && d.inventory_details[0]) || null;
+      return {
+        id: d.id,
+        asset_code: d.asset_code,
+        name: d.name,
+        status: d.status,
+        condition: d.condition,
+        purchase_price: d.purchase_price,
+        current_value: d.current_value,
+        department: d.current_department,
+        current_department_id: d.current_department_id,
+        last_inventory_date: d.last_inventory_date,
+        discrepancy_reason: latest?.discrepancy_reason || null,
+        responsibility: latest?.responsibility || null,
+        compensation_amount: latest?.compensation_amount != null ? Number(latest.compensation_amount) : 0,
+      };
+    });
+  }
+
+  async getRepairHistory(assetId: number): Promise<any[]> {    const asset = await Asset.findByPk(assetId);
     if (!asset) {
       throw new NotFoundError('Asset not found');
     }

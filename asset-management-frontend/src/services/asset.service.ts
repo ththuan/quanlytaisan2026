@@ -83,4 +83,12 @@ export const assetService = {
   async generateAllQRCodes(params?: { force?: boolean; department_id?: number }): Promise<ApiResponse<{ generated: number; failed: number; total: number; errors: string[] }>> {
     return api.post('/assets/qrcode/generate-all', params || {});
   },
+
+  async getLossDamage(params?: { department_id?: number; status?: string }): Promise<ApiResponse<any[]>> {
+    return api.get('/assets/loss-damage', { params });
+  },
+
+  async exportLossDamage(params?: { department_id?: number; status?: string }): Promise<Blob> {
+    return api.get('/assets/loss-damage/export', { params, responseType: 'blob' });
+  },
 };

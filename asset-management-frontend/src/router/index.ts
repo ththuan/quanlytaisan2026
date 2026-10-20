@@ -82,6 +82,12 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAdmin: true, titleKey: 'menu.reports' },
       },
       {
+        path: '/loss-damage',
+        name: 'LossDamageReport',
+        component: () => import('@/views/Reports/LossDamageReport.vue'),
+        meta: { requiresAdmin: true },
+      },
+      {
         path: '/procurements',
         name: 'Procurements',
         component: () => import('@/views/Procurements/ProcurementList.vue'),

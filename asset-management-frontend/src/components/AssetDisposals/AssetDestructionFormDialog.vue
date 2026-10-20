@@ -109,15 +109,15 @@
           style="width:100%"
         >
           <el-option
-            label="Bán đấu giá (≥50 triệu/TS)"
+            label="Bán đấu giá"
             value="sell_auction"
           />
           <el-option
-            label="Bán niêm yết (10–50 triệu/TS)"
+            label="Bán niêm yết giá"
             value="sell_listed"
           />
           <el-option
-            label="Bán chỉ định (&lt;10 triệu/TS)"
+            label="Bán chỉ định (nguyên giá < 250 triệu & giá đánh giá lại < 10 triệu; không áp dụng ô tô)"
             value="sell_direct"
           />
           <el-option
@@ -125,6 +125,22 @@
             value="demolish"
           />
         </el-select>
+        <div
+          v-if="formData.disposal_type === 'liquidation'"
+          style="margin-top: 6px; font-size: 12px;"
+        >
+          <span style="color: #409eff;">
+            Gợi ý: {{ suggestedMethod === 'sell_direct' ? 'Bán chỉ định' : 'Bán đấu giá' }}
+          </span>
+          <el-alert
+            v-if="directInvalid"
+            type="warning"
+            :closable="false"
+            show-icon
+            style="margin-top: 6px;"
+            title="Chỉ định chỉ áp dụng khi nguyên giá < 250 triệu và giá đánh giá lại < 10 triệu, không áp dụng cho ô tô. Lựa chọn hiện tại có thể không phù hợp."
+          />
+        </div>
       </el-form-item>
 
       <!-- Danh sách tài sản chờ thanh lý nhóm theo đơn vị -->
@@ -444,7 +460,7 @@ const submitting = ref(false);
 const formData = reactive({
   disposal_type: 'liquidation' as 'liquidation' | 'destruction',
   destruction_method: '' as string,
-  disposal_method: '' as string,
+  disposal_method: 'sell_auction' as string,
   notes: '',
   decision_no: '',
   decision_date: null as string | null,
@@ -460,6 +476,45 @@ const groupedData = ref<any[]>([]);
 const groupedLoading = ref(false);
 const expandedDepts = ref<string[]>([]);
 const selectedAssetIds = ref<Set<number>>(new Set());
+
+// --- Gợi ý phương thức bán theo QĐ 186/2025 (Điều 27) ---
+const isCarAsset = (a: any) =>
+  /ô tô|ôto|oto|xe hơi|xe ô tô|xe khách/i.test(`${a?.name || ''} ${a?.category || ''}`);
+
+const selectedAssetDetails = computed(() => {
+  const map = new Map<number, any>();
+  for (const g of groupedData.value) {
+    for (const a of (g.assets || [])) {
+      if (selectedAssetIds.value.has(a.id)) map.set(a.id, a);
+    }
+  }
+  for (const a of manualAssets.value) {
+    if (selectedAssetIds.value.has(a.id) && !map.has(a.id)) map.set(a.id, a);
+  }
+  return [...map.values()];
+});
+
+// Chỉ định: nguyên giá < 250 triệu VÀ giá đánh giá lại < 10 triệu, không áp dụng ô tô
+const allQualifyDirect = computed(() => {
+  const list = selectedAssetDetails.value;
+  return (
+    list.length > 0 &&
+    list.every(
+      (a) =>
+        !isCarAsset(a) &&
+        Number(a.purchase_price || 0) < 250_000_000 &&
+        Number(a.current_value || 0) < 10_000_000
+    )
+  );
+});
+
+const suggestedMethod = computed(() => (allQualifyDirect.value ? 'sell_direct' : 'sell_auction'));
+const directInvalid = computed(
+  () =>
+    formData.disposal_type === 'liquidation' &&
+    formData.disposal_method === 'sell_direct' &&
+    !allQualifyDirect.value
+);
 
 const loadGroupedAssets = async () => {
   groupedLoading.value = true;
@@ -611,6 +666,9 @@ const submit = async () => {
     ElMessage.warning('Vui lòng chọn ít nhất một tài sản');
     return;
   }
+  if (directInvalid.value) {
+    ElMessage.warning('Phương thức bán chỉ định có thể không phù hợp với tài sản đã chọn (QĐ 186/2025).');
+  }
   submitting.value = true;
   try {
     const signature = await requestSignature('Ký xác nhận lập hồ sơ thanh lý/tiêu hủy');
@@ -641,7 +699,7 @@ const submit = async () => {
 const resetForm = () => {
   formData.disposal_type = 'liquidation';
   formData.destruction_method = '';
-  formData.disposal_method = '';
+  formData.disposal_method = 'sell_auction';
   formData.notes = '';
   formData.decision_no = '';
   formData.decision_date = null;

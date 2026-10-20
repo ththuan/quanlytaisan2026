@@ -268,9 +268,30 @@
         v-if="editForm.disposal_type === 'liquidation'"
         label="Phương thức thanh lý"
       >
-        <el-input
+        <el-select
           v-model="editForm.disposal_method"
-          placeholder="VD: bán đấu giá, bán trực tiếp..."
+          style="width: 100%"
+        >
+          <el-option
+            label="Bán đấu giá"
+            value="sell_auction"
+          />
+          <el-option
+            label="Bán niêm yết giá"
+            value="sell_listed"
+          />
+          <el-option
+            label="Bán chỉ định"
+            value="sell_direct"
+          />
+        </el-select>
+        <el-alert
+          v-if="editDirectInvalid"
+          type="warning"
+          :closable="false"
+          show-icon
+          style="margin-top: 6px;"
+          title="Chỉ định không áp dụng cho ô tô. Lựa chọn hiện tại có thể không phù hợp (QĐ 186/2025)."
         />
       </el-form-item>
       <el-form-item
@@ -402,6 +423,18 @@ const editForm = ref({
 const editAssetIds = ref<number[]>([]);
 const editAssetOptions = ref<Array<{ id: number; label: string }>>([]);
 const loadingEditAssets = ref(false);
+
+const editHasCar = computed(() =>
+  (data.value?.items || []).some((it: any) =>
+    /ô tô|ôto|oto|xe ô tô|xe hơi/i.test(`${it.asset?.name || ''}`)
+  )
+);
+const editDirectInvalid = computed(
+  () =>
+    editForm.value.disposal_type === 'liquidation' &&
+    editForm.value.disposal_method === 'sell_direct' &&
+    editHasCar.value
+);
 
 const loadEditAssetOptions = async () => {
   const map = new Map<number, { id: number; label: string }>();
