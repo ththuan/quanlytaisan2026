@@ -2592,7 +2592,7 @@ const startCameraWithIndex = async (index: number) => {
     await qrCodeInstance.start(
       cameraId || { facingMode: 'environment' },
       {
-        fps: 15,
+        fps: 20,
         // Quét TOÀN khung hình (không crop qrbox) → nhạy nhất
         // Không thử ảnh lật để giảm một nửa công việc giải mã
         disableFlip: true,

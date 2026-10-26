@@ -15,9 +15,9 @@ import crypto from 'crypto';
 /** Bắt buộc token hợp lệ trên trang tra cứu công khai? (mặc định: có) */
 export const QR_REQUIRE_SIGNATURE = (process.env.QR_REQUIRE_SIGNATURE ?? 'true') !== 'false';
 
-/** Sinh token ngẫu nhiên, duy nhất cho một QR (16 ký tự base64url — ngắn để QR dễ quét). */
+/** Sinh token ngẫu nhiên, duy nhất cho một QR (8 ký tự base64url — ngắn để QR bớt dày, dễ quét). */
 export function generateQrToken(): string {
-  return crypto.randomBytes(12).toString('base64url');
+  return crypto.randomBytes(6).toString('base64url');
 }
 
 /**

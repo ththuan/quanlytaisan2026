@@ -47,8 +47,10 @@ class QRCodeService {
         // Return base64 data URL
         return await QRCode.toDataURL(data, {
           width: size,
-          margin: 6,           // Tăng khoảng trắng để giúp scanner nhận ra viền QR
-          errorCorrectionLevel: 'M', // Muc M (~15%) - it module hon, de quet hon khi in nho
+          // 4 module là mức tối thiểu chuẩn của QR; giữ viền gọn để module lớn hơn.
+          margin: 4,
+          // Mức L (~7%) cho ít module nhất → QR thưa hơn, dễ quét hơn khi in nhỏ.
+          errorCorrectionLevel: 'L',
           color: {
             dark: '#000000',
             light: '#FFFFFF',
@@ -69,8 +71,8 @@ class QRCodeService {
     try {
       return await QRCode.toBuffer(data, {
         width: size,
-        margin: 6,
-        errorCorrectionLevel: 'M',
+        margin: 4,
+        errorCorrectionLevel: 'L',
         color: {
           dark: '#000000',
           light: '#FFFFFF',
