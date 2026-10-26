@@ -127,7 +127,7 @@ const formatSignDate = () => {
 
 /**
  * Vẽ khối chữ ký số theo chuẩn hiển thị của Adobe Acrobat:
- * chữ ký tay màu hồng + "Digitally signed by ..." + "Date: ...".
+ * dấu check xác thực + "Digitally signed by ..." + "Date: ...".
  */
 const drawDigitalSignature = () => {
   const canvas = digitalCanvasRef.value;
@@ -144,37 +144,31 @@ const drawDigitalSignature = () => {
   const name = signerName.value.trim();
   if (!name) return;
 
-  // Chữ ký tay (màu hồng nhạt) phía sau, xoay nhẹ như bản ký số chuẩn
-  const pink = 'rgba(236, 72, 153, 0.38)';
-  c.save();
-  c.translate(W * 0.3, H * 0.55);
-  c.rotate(-0.2);
-  c.textAlign = 'center';
-  c.textBaseline = 'middle';
+  // Dấu check xanh xác thực chữ ký
+  const badgeX = 200;
+  const badgeY = 150;
+  const badgeR = 76;
 
-  let sigSize = 104;
-  const sigMax = 430;
-  const setScript = (s: number) => {
-    c.font = `italic 700 ${s}px "Segoe Script", "Brush Script MT", "Times New Roman", serif`;
-  };
-  setScript(sigSize);
-  while (c.measureText(name).width > sigMax && sigSize > 40) {
-    sigSize -= 2;
-    setScript(sigSize);
-  }
-  c.fillStyle = pink;
-  c.fillText(name, 0, 0);
-
-  const sigWidth = Math.min(c.measureText(name).width, sigMax);
-  const flourishY = sigSize * 0.72;
-  c.strokeStyle = pink;
-  c.lineWidth = 5;
-  c.lineCap = 'round';
+  c.fillStyle = '#f0fdf4';
   c.beginPath();
-  c.moveTo(-sigWidth / 2 - 22, flourishY);
-  c.bezierCurveTo(-sigWidth / 4, flourishY + 24, sigWidth / 4, flourishY - 18, sigWidth / 2 + 22, flourishY + 4);
+  c.arc(badgeX, badgeY, badgeR, 0, Math.PI * 2);
+  c.fill();
+
+  c.strokeStyle = '#16a34a';
+  c.lineWidth = 6;
+  c.beginPath();
+  c.arc(badgeX, badgeY, badgeR, 0, Math.PI * 2);
   c.stroke();
-  c.restore();
+
+  c.strokeStyle = '#16a34a';
+  c.lineWidth = 10;
+  c.lineCap = 'round';
+  c.lineJoin = 'round';
+  c.beginPath();
+  c.moveTo(badgeX - 34, badgeY + 2);
+  c.lineTo(badgeX - 9, badgeY + 27);
+  c.lineTo(badgeX + 39, badgeY - 27);
+  c.stroke();
 
   // Khối nội dung chuẩn "Digitally signed by / Date"
   const rx = 400;
