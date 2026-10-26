@@ -50,6 +50,27 @@
         </el-descriptions-item>
       </el-descriptions>
 
+      <!-- Chữ ký số của người tạo đề nghị -->
+      <div
+        v-if="creatorSignature"
+        class="transfer-signature-section"
+      >
+        <div class="timeline-title">
+          Chữ ký số người tạo đề nghị
+        </div>
+        <div class="transfer-signature-box">
+          <img
+            :src="creatorSignature.signature_image"
+            alt="Chữ ký số"
+            class="transfer-signature-img"
+          >
+          <div class="transfer-signature-meta">
+            <strong>{{ creatorSignature.signer_name }}</strong>
+            <span>{{ formatDate(creatorSignature.signed_at) }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Timeline phê duyệt -->
       <div
         v-if="approvalTimeline.length > 0"
@@ -121,7 +142,7 @@ import { Printer } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useAuthStore } from '@/stores/auth.store';
 import { useTransferStore } from '@/stores/transfer.store';
-import { openPrintWindow } from '@/utils/print';
+import { openPrintWindow, signatureCell } from '@/utils/print';
 
 const props = defineProps<{
   visible: boolean;
@@ -137,6 +158,8 @@ const { t } = useI18n();
 const authStore = useAuthStore();
 const transferStore = useTransferStore();
 const approvalHistory = ref<any[]>([]);
+const signatures = ref<any[]>([]);
+const creatorSignature = computed(() => signatures.value.find((s) => s.action === 'create'));
 
 const canApprove = computed(() => {
   const transfer = props.transfer;
@@ -213,8 +236,17 @@ watch(
       } catch {
         approvalHistory.value = [];
       }
+      try {
+        const sigRes: any = await api.get('/signatures', {
+          params: { entity_type: 'asset_transfer', entity_id: id },
+        });
+        signatures.value = sigRes?.data ?? [];
+      } catch {
+        signatures.value = [];
+      }
     } else {
       approvalHistory.value = [];
+      signatures.value = [];
     }
   },
   { immediate: true }
@@ -272,7 +304,7 @@ const handlePrint = () => {
     </table>
     ${approvals ? `<h3>Lịch sử phê duyệt</h3><table class="history"><thead><tr><th>Thời gian</th><th>Thao tác</th><th>Người thực hiện</th><th>Lý do/Ghi chú</th></tr></thead><tbody>${approvals}</tbody></table>` : ''}
     <div class="signatures">
-      <div><strong>Đơn vị giao</strong><div class="signature-space"></div><div>(Ký, ghi rõ họ tên)</div></div>
+      ${signatureCell('Người tạo đề nghị', creatorSignature.value)}
       <div><strong>Đơn vị nhận</strong><div class="signature-space"></div><div>(Ký, ghi rõ họ tên)</div></div>
       <div><strong>Người phê duyệt</strong><div class="signature-space"></div><div>(Ký, ghi rõ họ tên)</div></div>
     </div>`;
@@ -321,5 +353,35 @@ const handlePrint = () => {
   margin: 6px 0 0 0;
   color: #909399;
   font-size: 12px;
+}
+.transfer-signature-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #ebeef5;
+}
+.transfer-signature-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+.transfer-signature-img {
+  max-width: 300px;
+  max-height: 110px;
+  object-fit: contain;
+}
+.transfer-signature-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+  color: #64748b;
+}
+.transfer-signature-meta strong {
+  color: #0f172a;
+  font-size: 14px;
 }
 </style>

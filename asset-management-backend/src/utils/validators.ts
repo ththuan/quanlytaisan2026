@@ -119,6 +119,7 @@ export const createTransferSchema = Joi.object({
   to_department_id: Joi.number().integer().positive().required(),
   reason: Joi.string().allow('', null).optional(),
   notes: Joi.string().allow('', null).optional(),
+  signature: Joi.string().max(2_000_000).required(),
 });
 
 // Maintenance validation schemas

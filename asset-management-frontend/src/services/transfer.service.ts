@@ -21,6 +21,7 @@ export interface CreateTransferData {
   to_department_id: number;
   reason?: string;
   notes?: string;
+  signature: string;
 }
 
 class TransferService {

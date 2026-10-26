@@ -46,13 +46,26 @@
         <el-button @click="load">
           Lọc
         </el-button>
+        <el-button
+          type="warning"
+          :icon="EditPen"
+          :disabled="selectedRows.length === 0"
+          @click="openBulkEdit"
+        >
+          Cập nhật {{ selectedRows.length || '' }} tài sản
+        </el-button>
       </div>
 
       <el-table
         v-loading="loading"
         :data="rows"
         stripe
+        @selection-change="handleSelectionChange"
       >
+        <el-table-column
+          type="selection"
+          width="46"
+        />
         <el-table-column
           type="index"
           label="STT"
@@ -202,13 +215,62 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <el-dialog
+      v-model="bulkVisible"
+      title="Cập nhật hàng loạt"
+      width="520px"
+      :close-on-click-modal="false"
+    >
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 14px"
+        :title="`Áp dụng nguyên nhân và trách nhiệm cho ${selectedRows.length} tài sản đã chọn.`"
+      />
+      <el-form label-position="top">
+        <el-form-item
+          label="Nguyên nhân mất / hư hỏng"
+          required
+        >
+          <el-input
+            v-model="bulkForm.discrepancy_reason"
+            type="textarea"
+            :rows="3"
+            placeholder="Nêu rõ nguyên nhân..."
+          />
+        </el-form-item>
+        <el-form-item
+          label="Trách nhiệm"
+          required
+        >
+          <el-input
+            v-model="bulkForm.responsibility"
+            placeholder="Tập thể/cá nhân chịu trách nhiệm"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="bulkVisible = false">
+          Hủy
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="bulkSaving"
+          @click="saveBulkEdit"
+        >
+          Áp dụng
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Download, Edit, Printer } from '@element-plus/icons-vue';
+import { Download, Edit, EditPen, Printer } from '@element-plus/icons-vue';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 import { assetService } from '@/services/asset.service';
 import { openPrintWindow, escapeHtml } from '@/utils/print';
@@ -222,6 +284,54 @@ const status = ref<string>('');
 const totalCompensation = computed(() =>
   rows.value.reduce((s, r) => s + Number(r.compensation_amount || 0), 0)
 );
+
+const selectedRows = ref<any[]>([]);
+const bulkVisible = ref(false);
+const bulkSaving = ref(false);
+const bulkForm = reactive({
+  discrepancy_reason: '',
+  responsibility: '',
+});
+
+const handleSelectionChange = (rows: any[]) => {
+  selectedRows.value = rows;
+};
+
+const openBulkEdit = () => {
+  bulkForm.discrepancy_reason = '';
+  bulkForm.responsibility = '';
+  bulkVisible.value = true;
+};
+
+const saveBulkEdit = async () => {
+  const reason = bulkForm.discrepancy_reason.trim();
+  const responsibility = bulkForm.responsibility.trim();
+  if (!reason || !responsibility) {
+    ElMessage.warning('Vui lòng nhập nguyên nhân và trách nhiệm');
+    return;
+  }
+  bulkSaving.value = true;
+  try {
+    await Promise.all(
+      selectedRows.value.map((row) =>
+        assetService.updateAsset(row.id, {
+          discrepancy_reason: reason,
+          responsibility,
+        }),
+      ),
+    );
+    selectedRows.value.forEach((row) => {
+      row.discrepancy_reason = reason;
+      row.responsibility = responsibility;
+    });
+    bulkVisible.value = false;
+    ElMessage.success(`Đã cập nhật ${selectedRows.value.length} tài sản`);
+  } catch {
+    ElMessage.error('Không lưu được thông tin xử lý');
+  } finally {
+    bulkSaving.value = false;
+  }
+};
 
 const editVisible = ref(false);
 const savingEdit = ref(false);

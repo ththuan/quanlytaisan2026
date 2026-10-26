@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import transferService from '../services/transfer.service';
 import { AuthRequest } from '../middleware/auth.middleware';
+import { assertSignature, recordSignature } from '../services/signature.service';
 
 class TransfersController {
   async getAllTransfers(req: AuthRequest, res: Response, next: NextFunction) {
@@ -40,10 +41,26 @@ class TransfersController {
   async createTransfer(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const user = req.user!;
+
+      // Bắt buộc chữ ký số của người tạo đề nghị điều chuyển
+      const signatureImage = assertSignature(req.body?.signature);
+
       const transfer = await transferService.createTransfer(req.body, {
         id: user.id,
         role: user.role as any,
         department_id: user.department_id,
+      });
+
+      await recordSignature({
+        entityType: 'asset_transfer',
+        entityId: transfer.id,
+        action: 'create',
+        signerId: user.id,
+        signerName: user.fullname || user.username || `user#${user.id}`,
+        signerRole: user.role,
+        signatureImage,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'] as string | undefined,
       });
 
       return res.status(201).json({

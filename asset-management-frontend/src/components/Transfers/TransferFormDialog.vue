@@ -165,6 +165,13 @@
       </el-button>
     </template>
   </el-dialog>
+
+  <SignaturePad
+    v-model="showSignDialog"
+    :title="signTitle"
+    :signer-name="signerName"
+    @confirm="onSignConfirm"
+  />
 </template>
 
 <script setup lang="ts">
@@ -177,6 +184,8 @@ import { ElMessage } from 'element-plus';
 import type { FormInstance, FormRules } from '@/types/element-plus';
 import api from '@/services/api';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
+import SignaturePad from '@/components/Common/SignaturePad.vue';
+import { useSignature } from '@/composables/useSignature';
 import { formatAssetCategoryLabel, formatI18nOrRaw } from '@/utils/assetDisplay';
 
 const props = defineProps<{
@@ -330,11 +339,22 @@ const formatCurrency = (value: number) => {
   }).format(value || 0);
 };
 
+const {
+  show: showSignDialog,
+  title: signTitle,
+  signerName,
+  request: requestSignature,
+  onConfirm: onSignConfirm,
+} = useSignature();
+
 const handleSubmit = async () => {
   if (!formRef.value) return;
   
   const valid = await formRef.value.validate().catch(() => false);
   if (!valid) return;
+
+  const signature = await requestSignature('Ký xác nhận tạo đề nghị điều chuyển tài sản');
+  if (!signature) return;
 
   loading.value = true;
   try {
@@ -344,6 +364,7 @@ const handleSubmit = async () => {
       to_department_id: formData.to_department_id!,
       reason: formData.reason,
       notes: formData.notes,
+      signature,
     });
     ElMessage.success(t('transfers.createSuccess'));
     emit('success');
