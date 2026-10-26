@@ -22,7 +22,7 @@
           Xuất báo cáo tổng hợp
         </el-button>
         <el-button
-          v-if="isAdmin"
+          v-if="isAdmin && round?.status !== 'completed'"
           type="warning"
           style="margin-right: 12px"
           @click="openExtendDialog"

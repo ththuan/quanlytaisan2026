@@ -941,6 +941,20 @@ const createRound = async () => {
 
 const completeRound = async (round: InventoryRound) => {
   try {
+    // Kiểm tra tất cả đơn vị đã ký nộp báo cáo chưa (kể cả báo cáo nháp cũng chặn)
+    const detail: any = await inventoryService.getRoundById(round.id);
+    const notSubmitted: any[] = detail?.not_submitted_departments || [];
+    if (notSubmitted.length > 0) {
+      const names = notSubmitted.slice(0, 5).map((d: any) => d.name).join(', ');
+      await ElMessageBox.alert(
+        `Còn ${notSubmitted.length} đơn vị chưa ký nộp báo cáo (${names}${notSubmitted.length > 5 ? '...' : ''}). `
+        + 'Vào chi tiết đợt kiểm kê để gia hạn thời gian cho các đơn vị hoàn tất.',
+        'Chưa thể hoàn tất',
+        { type: 'warning', confirmButtonText: 'Đã hiểu' },
+      );
+      return;
+    }
+
     await ElMessageBox.confirm(
       `Bạn có chắc chắn muốn hoàn tất đợt kiểm kê "${round.round_name}"? Sau khi hoàn tất sẽ không thể chỉnh sửa.`,
       'Xác nhận hoàn tất',

@@ -246,21 +246,47 @@
       <div class="camera-scanner-container">
         <!-- Header bar -->
         <div class="camera-top-bar">
-          <button class="camera-close-btn" @click="stopCameraScanner">
+          <button
+            class="camera-close-btn"
+            @click="stopCameraScanner"
+          >
             <span class="close-icon">&times;</span>
           </button>
           <span class="camera-title">Quét mã QR</span>
-          <button v-if="hasMultipleCameras" class="camera-switch-btn" @click="switchCamera" title="Đổi camera">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20 7h-6m0 0l-3-3m3 3l-3 3M4 17h6m0 0l3 3m-3-3l3-3"/><circle cx="12" cy="12" r="3"/></svg>
+          <button
+            v-if="hasMultipleCameras"
+            class="camera-switch-btn"
+            title="Đổi camera"
+            @click="switchCamera"
+          >
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="white"
+              stroke-width="2"
+            ><path d="M20 7h-6m0 0l-3-3m3 3l-3 3M4 17h6m0 0l3 3m-3-3l3-3" /><circle
+              cx="12"
+              cy="12"
+              r="3"
+            /></svg>
           </button>
         </div>
 
         <!-- Camera view -->
         <div class="camera-view">
-          <div :id="'qr-reader'" :key="cameraKey" class="qr-reader" />
+          <div
+            :id="'qr-reader'"
+            :key="cameraKey"
+            class="qr-reader"
+          />
 
           <!-- Scan frame overlay -->
-          <div v-if="cameraScanning" class="scan-frame-overlay">
+          <div
+            v-if="cameraScanning"
+            class="scan-frame-overlay"
+          >
             <div class="scan-frame">
               <div class="scan-corner tl" />
               <div class="scan-corner tr" />
@@ -268,26 +294,52 @@
               <div class="scan-corner br" />
               <div class="scan-line" />
             </div>
-            <p class="scan-hint">Đưa mã QR vào khung hình</p>
+            <p class="scan-hint">
+              Đưa mã QR vào khung hình
+            </p>
           </div>
 
           <!-- Processing overlay -->
-          <div v-if="scanning" class="scan-processing-overlay">
+          <div
+            v-if="scanning"
+            class="scan-processing-overlay"
+          >
             <div class="processing-ring" />
             <p>Đang xử lý...</p>
           </div>
 
           <!-- Success flash -->
           <transition name="scan-flash">
-            <div v-if="scanSuccessMessage" class="scan-success-flash">
-              <svg class="success-check" viewBox="0 0 52 52"><circle cx="26" cy="26" r="25" fill="none" stroke="#4caf50" stroke-width="2"/><path fill="none" stroke="#4caf50" stroke-width="3" d="M14 27l7 7 16-16"/></svg>
+            <div
+              v-if="scanSuccessMessage"
+              class="scan-success-flash"
+            >
+              <svg
+                class="success-check"
+                viewBox="0 0 52 52"
+              ><circle
+                cx="26"
+                cy="26"
+                r="25"
+                fill="none"
+                stroke="#4caf50"
+                stroke-width="2"
+              /><path
+                fill="none"
+                stroke="#4caf50"
+                stroke-width="3"
+                d="M14 27l7 7 16-16"
+              /></svg>
               <span>{{ scanSuccessMessage }}</span>
             </div>
           </transition>
         </div>
 
         <!-- Error banner -->
-        <div v-if="cameraError" class="camera-error-banner">
+        <div
+          v-if="cameraError"
+          class="camera-error-banner"
+        >
           <span>{{ cameraError }}</span>
         </div>
       </div>
@@ -665,9 +717,18 @@
               size="small"
               :disabled="row.confirmed"
             >
-              <el-option value="good" label="Đang dùng tốt" />
-              <el-option value="usable" label="Còn dùng được" />
-              <el-option value="damaged" label="Hỏng - đề nghị thanh lý" />
+              <el-option
+                value="good"
+                label="Đang dùng tốt"
+              />
+              <el-option
+                value="usable"
+                label="Còn dùng được"
+              />
+              <el-option
+                value="damaged"
+                label="Hỏng - đề nghị thanh lý"
+              />
             </el-select>
           </template>
         </el-table-column>
@@ -693,13 +754,13 @@
               <el-input
                 v-model="batchInputs[row.category_id].discrepancy_reason"
                 size="small"
-                placeholder="Nguyên nhân *"
+                placeholder="Nguyên nhân (không bắt buộc)"
                 :disabled="row.confirmed"
               />
               <el-input
                 v-model="batchInputs[row.category_id].responsibility"
                 size="small"
-                placeholder="Trách nhiệm *"
+                placeholder="Trách nhiệm (không bắt buộc)"
                 style="margin-top: 4px"
                 :disabled="row.confirmed"
               />
@@ -1030,12 +1091,9 @@
               :closable="false"
               show-icon
               style="margin-bottom: 12px;"
-              title="Có chênh lệch thừa/thiếu so với sổ sách — bắt buộc ghi rõ nguyên nhân và trách nhiệm."
+              title="Có chênh lệch thừa/thiếu so với sổ sách. Có thể bổ sung nguyên nhân/trách nhiệm; nếu chưa nhập, hệ thống sẽ cảnh báo giải trình khi nộp báo cáo."
             />
-            <el-form-item
-              label="Nguyên nhân thừa/thiếu"
-              required
-            >
+            <el-form-item label="Nguyên nhân thừa/thiếu (không bắt buộc)">
               <el-input
                 v-model="checkForm.discrepancy_reason"
                 type="textarea"
@@ -1043,10 +1101,7 @@
                 placeholder="Nêu rõ nguyên nhân thừa/thiếu..."
               />
             </el-form-item>
-            <el-form-item
-              label="Trách nhiệm"
-              required
-            >
+            <el-form-item label="Trách nhiệm (không bắt buộc)">
               <el-input
                 v-model="checkForm.responsibility"
                 placeholder="Tập thể/cá nhân chịu trách nhiệm"
@@ -1147,13 +1202,10 @@
         :closable="false"
         show-icon
         style="margin-bottom: 14px;"
-        :title="`${bulkMissingAssets.length} tài sản chưa quét sẽ được đánh dấu là Thiếu. Vui lòng ghi rõ nguyên nhân và trách nhiệm.`"
+        :title="`${bulkMissingAssets.length} tài sản chưa quét sẽ được đánh dấu là Thiếu. Có thể bổ sung nguyên nhân/trách nhiệm (không bắt buộc).`"
       />
       <el-form label-position="top">
-        <el-form-item
-          label="Nguyên nhân thiếu"
-          required
-        >
+        <el-form-item label="Nguyên nhân thiếu (không bắt buộc)">
           <el-input
             v-model="bulkMissingForm.discrepancy_reason"
             type="textarea"
@@ -1161,10 +1213,7 @@
             placeholder="Nêu rõ nguyên nhân thiếu..."
           />
         </el-form-item>
-        <el-form-item
-          label="Trách nhiệm"
-          required
-        >
+        <el-form-item label="Trách nhiệm (không bắt buộc)">
           <el-input
             v-model="bulkMissingForm.responsibility"
             placeholder="Tập thể/cá nhân chịu trách nhiệm"
@@ -1172,7 +1221,9 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="bulkMissingVisible = false">Hủy</el-button>
+        <el-button @click="bulkMissingVisible = false">
+          Hủy
+        </el-button>
         <el-button
           type="primary"
           :loading="markingMissing"
@@ -1441,13 +1492,6 @@ const confirmBatchGroup = async (group: { category_id: number; category_name: st
   if (!input || input.actual_quantity === undefined || input.actual_quantity < 0) {
     ElMessage.warning('Vui lòng nhập số lượng thực tế (được phép là 0)');
     return;
-  }
-  // Bắt buộc nguyên nhân + trách nhiệm khi số lượng thực tế khác sổ sách
-  if (Number(input.actual_quantity) !== Number(group.book_quantity)) {
-    if (!input.discrepancy_reason?.trim() || !input.responsibility?.trim()) {
-      ElMessage.error(`Nhóm "${group.category_name}" có chênh lệch: vui lòng nhập nguyên nhân và trách nhiệm`);
-      return;
-    }
   }
   batchSaving.value = group.category_id;
   try {
@@ -2149,12 +2193,6 @@ const saveCheck = async () => {
     return;
   }
 
-  // Bắt buộc nguyên nhân + trách nhiệm khi có thừa/thiếu
-  if (isDiscrepancy.value && (!checkForm.value.discrepancy_reason.trim() || !checkForm.value.responsibility.trim())) {
-    ElMessage.error('Vui lòng nhập nguyên nhân và trách nhiệm cho tài sản thừa/thiếu');
-    return;
-  }
-
   savingCheck.value = true;
   try {
     // Với tài sản đã quét QR: chỉ cho phép cập nhật tình trạng, giữ nguyên số lượng và kết quả
@@ -2278,10 +2316,6 @@ const confirmMarkMissing = async () => {
   if (!report.value) return;
   const reason = bulkMissingForm.value.discrepancy_reason.trim();
   const responsibility = bulkMissingForm.value.responsibility.trim();
-  if (!reason || !responsibility) {
-    ElMessage.warning('Vui lòng nhập nguyên nhân và trách nhiệm cho tài sản thiếu');
-    return;
-  }
 
   markingMissing.value = true;
   let successCount = 0;
@@ -2413,6 +2447,27 @@ const submitReport = async () => {
         submitting.value = false;
         return;
       }
+    }
+
+    // Cảnh báo (không chặn) nếu còn tài sản thừa/thiếu chưa giải trình nguyên nhân/trách nhiệm
+    const unexplained = assets.value.filter((asset) => {
+      const detail = asset.inventory_detail;
+      if (!detail) return false;
+      return Number(detail.quantity_discrepancy) !== 0
+        && (!String(detail.discrepancy_reason || '').trim()
+          || !String(detail.responsibility || '').trim());
+    });
+    if (unexplained.length > 0) {
+      await ElMessageBox.confirm(
+        `Có ${unexplained.length} tài sản thừa/thiếu chưa nhập đầy đủ nguyên nhân/trách nhiệm. `
+        + 'Bạn vẫn có thể nộp báo cáo, nhưng đơn vị cần giải trình khi được yêu cầu. Tiếp tục nộp?',
+        'Cảnh báo giải trình',
+        {
+          confirmButtonText: 'Vẫn nộp',
+          cancelButtonText: 'Hủy',
+          type: 'warning',
+        },
+      );
     }
 
     // Nộp báo cáo — bắt buộc ký xác nhận

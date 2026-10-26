@@ -175,10 +175,29 @@ class InventoryService {
       (dept: any) => inProgressDepts.includes(dept.id)
     );
 
+    // Đơn vị chưa nộp (chưa có báo cáo hoặc báo cáo còn nháp/bị từ chối).
+    const submittedStatuses = ['pending', 'approved_by_head', 'approved_by_admin', 'completed'];
+    const not_submitted_departments: any[] = [];
+    for (const parent of parentDepts) {
+      const parentId = (parent as any).id;
+      const children = await Department.findAll({
+        where: { parent_department_id: parentId },
+        attributes: ['id'],
+      });
+      const allDeptIds = [parentId, ...children.map((c: any) => c.id)];
+      const unitReports = reports.filter((r: any) => allDeptIds.includes(r.department_id));
+      const allSubmitted = unitReports.length > 0
+        && unitReports.every((r: any) => submittedStatuses.includes(r.status));
+      if (!allSubmitted) {
+        not_submitted_departments.push(parent);
+      }
+    }
+
     return {
       ...round.toJSON(),
       unsubmitted_departments,
-      incomplete_departments
+      incomplete_departments,
+      not_submitted_departments,
     };
   }
 
@@ -241,11 +260,42 @@ class InventoryService {
       throw new NotFoundError('Inventory round not found');
     }
 
-    await InventoryRound.update(
-      { status: 'completed' },
-      { where: { id: roundId } }
-    );
+    // Chỉ hoàn tất khi TẤT CẢ đơn vị đã ký nộp báo cáo (kể cả báo cáo nháp/bị từ chối đều chặn).
+    const reports = await InventoryReport.findAll({
+      where: { inventory_round_id: roundId },
+      attributes: ['department_id', 'status'],
+    });
+    const parentDepts = await Department.findAll({
+      where: { parent_department_id: null },
+      attributes: ['id', 'name'],
+    });
+    const submittedStatuses = ['pending', 'approved_by_head', 'approved_by_admin', 'completed'];
 
+    const notSubmitted: any[] = [];
+    for (const parent of parentDepts) {
+      const parentId = (parent as any).id;
+      const children = await Department.findAll({
+        where: { parent_department_id: parentId },
+        attributes: ['id'],
+      });
+      const allDeptIds = [parentId, ...children.map((c: any) => c.id)];
+      const unitReports = reports.filter((r: any) => allDeptIds.includes(r.department_id));
+      const allSubmitted = unitReports.length > 0
+        && unitReports.every((r: any) => submittedStatuses.includes(r.status));
+      if (!allSubmitted) {
+        notSubmitted.push(parent);
+      }
+    }
+
+    if (notSubmitted.length > 0) {
+      const names = notSubmitted.slice(0, 5).map((d: any) => d.name).join(', ');
+      throw new ValidationError(
+        `Không thể hoàn tất: còn ${notSubmitted.length} đơn vị chưa nộp báo cáo (${names}${notSubmitted.length > 5 ? '...' : ''}). `
+        + 'Hãy gia hạn thời gian để các đơn vị hoàn tất nộp báo cáo.',
+      );
+    }
+
+    await round.update({ status: 'completed' });
     return round.reload();
   }
 
@@ -253,6 +303,12 @@ class InventoryService {
     const round = await InventoryRound.findByPk(roundId);
     if (!round) {
       throw new NotFoundError('Inventory round not found');
+    }
+    if (round.status === 'completed') {
+      throw new ValidationError('Đợt kiểm kê đã hoàn tất, không thể gia hạn');
+    }
+    if (new Date(endDate) <= new Date(round.end_date)) {
+      throw new ValidationError('Hạn mới phải sau hạn hiện tại của đợt kiểm kê');
     }
 
     const oldEndDate = round.end_date;
@@ -722,27 +778,8 @@ class InventoryService {
       throw new ValidationError('Cần chụp ít nhất 1 ảnh tổng thể đơn vị trước khi nộp báo cáo kiểm kê');
     }
 
-    // Bắt buộc nhập nguyên nhân + trách nhiệm cho các tài sản thừa/thiếu
-    const discrepancyDetails = await InventoryReportDetail.findAll({
-      where: { inventory_report_id: reportId },
-      attributes: ['id', 'asset_id', 'quantity_discrepancy', 'discrepancy_reason', 'responsibility'],
-      include: [{ model: Asset, as: 'asset', attributes: ['asset_code', 'name'], required: false }],
-    });
-    const missingInfo = discrepancyDetails.filter(
-      (d: any) =>
-        Number(d.quantity_discrepancy) !== 0 &&
-        (!d.discrepancy_reason || !String(d.discrepancy_reason).trim() ||
-          !d.responsibility || !String(d.responsibility).trim())
-    );
-    if (missingInfo.length > 0) {
-      const codes = missingInfo
-        .slice(0, 5)
-        .map((d: any) => d.asset?.asset_code || `#${d.asset_id}`)
-        .join(', ');
-      throw new ValidationError(
-        `Cần nhập nguyên nhân và trách nhiệm cho ${missingInfo.length} tài sản thừa/thiếu trước khi nộp (${codes}${missingInfo.length > 5 ? '...' : ''}).`
-      );
-    }
+    // Không chặn nộp vì thiếu giải trình từng tài sản: khi nộp, giao diện sẽ cảnh báo
+    // và đơn vị có trách nhiệm giải trình sau (tránh phải nhập thủ công từng món).
 
     await report.update({
       status: 'pending',
