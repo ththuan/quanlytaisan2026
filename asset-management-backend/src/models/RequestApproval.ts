@@ -3,7 +3,7 @@ import sequelize from '../config/database';
 
 export type ApprovalEntityType = 'maintenance_request' | 'asset_transfer';
 export type ApprovalDecision = 'approved' | 'rejected';
-export type ApproverRole = 'department_head' | 'admin' | 'director';
+export type ApproverRole = 'department_head' | 'admin' | 'director' | 'staff';
 
 export interface RequestApprovalAttributes {
   id: number;
@@ -64,7 +64,7 @@ RequestApproval.init(
       },
     },
     approver_role: {
-      type: DataTypes.ENUM('department_head', 'admin', 'director'),
+      type: DataTypes.ENUM('department_head', 'admin', 'director', 'staff'),
       allowNull: false,
     },
     approver_name: {

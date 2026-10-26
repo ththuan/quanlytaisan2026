@@ -50,23 +50,28 @@
         </el-descriptions-item>
       </el-descriptions>
 
-      <!-- Chữ ký số của người tạo đề nghị -->
+      <!-- Chữ ký số các bên -->
       <div
-        v-if="creatorSignature"
+        v-if="signatureBlocks.length > 0"
         class="transfer-signature-section"
       >
         <div class="timeline-title">
-          Chữ ký số người tạo đề nghị
+          Chữ ký số
         </div>
-        <div class="transfer-signature-box">
+        <div
+          v-for="block in signatureBlocks"
+          :key="block.label"
+          class="transfer-signature-box"
+        >
           <img
-            :src="creatorSignature.signature_image"
+            :src="block.sig.signature_image"
             alt="Chữ ký số"
             class="transfer-signature-img"
           >
           <div class="transfer-signature-meta">
-            <strong>{{ creatorSignature.signer_name }}</strong>
-            <span>{{ formatDate(creatorSignature.signed_at) }}</span>
+            <strong>{{ block.label }}</strong>
+            <span>{{ block.sig.signer_name }}</span>
+            <span>{{ formatDate(block.sig.signed_at) }}</span>
           </div>
         </div>
       </div>
@@ -131,6 +136,13 @@
       </el-button>
     </template>
   </el-dialog>
+
+  <SignaturePad
+    v-model="showSignDialog"
+    :title="signTitle"
+    :signer-name="signerName"
+    @confirm="onSignConfirm"
+  />
 </template>
 
 <script setup lang="ts">
@@ -142,6 +154,8 @@ import { Printer } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useAuthStore } from '@/stores/auth.store';
 import { useTransferStore } from '@/stores/transfer.store';
+import { useSignature } from '@/composables/useSignature';
+import SignaturePad from '@/components/Common/SignaturePad.vue';
 import { openPrintWindow, signatureCell } from '@/utils/print';
 
 const props = defineProps<{
@@ -160,15 +174,36 @@ const transferStore = useTransferStore();
 const approvalHistory = ref<any[]>([]);
 const signatures = ref<any[]>([]);
 const creatorSignature = computed(() => signatures.value.find((s) => s.action === 'create'));
+const receiverSignature = computed(() => signatures.value.find((s) => s.action === 'receive'));
+const adminSignature = computed(() => signatures.value.find((s) => s.action === 'approve'));
+const signatureBlocks = computed(() => [
+  { label: 'Người tạo đề nghị', sig: creatorSignature.value },
+  { label: 'Đơn vị nhận ký', sig: receiverSignature.value },
+  { label: 'Quản trị viên ký duyệt', sig: adminSignature.value },
+].filter((b) => !!b.sig) as { label: string; sig: any }[]);
+
+const {
+  show: showSignDialog,
+  title: signTitle,
+  signerName,
+  request: requestSignature,
+  onConfirm: onSignConfirm,
+} = useSignature();
 
 const canApprove = computed(() => {
   const transfer = props.transfer;
   if (!transfer) return false;
-  if (authStore.isAdmin) return ['pending', 'approved_by_head'].includes(transfer.status);
-  if (authStore.user?.role !== 'department_head') return false;
   const departmentId = Number(authStore.user?.department_id);
-  return (transfer.status === 'pending' && departmentId === Number(transfer.from_department_id))
-    || (transfer.status === 'approved_by_head' && departmentId === Number(transfer.to_department_id));
+  if (authStore.isAdmin) return transfer.status === 'approved_by_destination';
+  if (transfer.status === 'pending') {
+    return authStore.user?.role === 'department_head'
+      && departmentId === Number(transfer.from_department_id);
+  }
+  if (transfer.status === 'approved_by_head') {
+    return ['department_head', 'staff'].includes(authStore.user?.role || '')
+      && departmentId === Number(transfer.to_department_id);
+  }
+  return false;
 });
 
 const handleApproval = async (decision: 'approved' | 'rejected') => {
@@ -184,7 +219,14 @@ const handleApproval = async (decision: 'approved' | 'rejected') => {
       await ElMessageBox.confirm(t('transfers.approveConfirm'), t('common.confirm'));
     }
 
-    const updated = await transferStore.processApproval(props.transfer.id, decision, reason);
+    const signature = await requestSignature(
+      decision === 'approved'
+        ? 'Ký xác nhận duyệt điều chuyển tài sản'
+        : 'Ký xác nhận từ chối điều chuyển tài sản',
+    );
+    if (!signature) return;
+
+    const updated = await transferStore.processApproval(props.transfer.id, decision, reason, undefined, signature);
     ElMessage.success(decision === 'approved' ? t('transfers.approveSuccess') : t('transfers.rejectSuccess'));
     emit('approved', updated);
     emit('update:visible', false);
@@ -214,7 +256,9 @@ const approvalTimeline = computed(() => {
           ? 'Quản trị viên'
           : item.approver_role === 'director'
             ? 'Giám hiệu'
-            : '';
+            : item.approver_role === 'staff'
+              ? 'Viên chức đơn vị nhận'
+              : '';
     list.push({
       date: formatDate(item.decided_at),
       label: isApproved ? `Đã duyệt (${roleLabel})` : `Từ chối (${roleLabel})`,
@@ -305,8 +349,8 @@ const handlePrint = () => {
     ${approvals ? `<h3>Lịch sử phê duyệt</h3><table class="history"><thead><tr><th>Thời gian</th><th>Thao tác</th><th>Người thực hiện</th><th>Lý do/Ghi chú</th></tr></thead><tbody>${approvals}</tbody></table>` : ''}
     <div class="signatures">
       ${signatureCell('Người tạo đề nghị', creatorSignature.value)}
-      <div><strong>Đơn vị nhận</strong><div class="signature-space"></div><div>(Ký, ghi rõ họ tên)</div></div>
-      <div><strong>Người phê duyệt</strong><div class="signature-space"></div><div>(Ký, ghi rõ họ tên)</div></div>
+      ${signatureCell('Đơn vị nhận', receiverSignature.value)}
+      ${signatureCell('Quản trị viên duyệt', adminSignature.value)}
     </div>`;
 
   const extraStyles = `
@@ -358,6 +402,9 @@ const handlePrint = () => {
   margin-top: 20px;
   padding-top: 16px;
   border-top: 1px solid #ebeef5;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 .transfer-signature-box {
   display: flex;

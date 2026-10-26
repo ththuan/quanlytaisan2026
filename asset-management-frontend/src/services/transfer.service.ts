@@ -56,11 +56,18 @@ class TransferService {
     return response;
   }
 
-  async processApproval(id: number, decision: 'approved' | 'rejected', reason?: string, notes?: string) {
+  async processApproval(
+    id: number,
+    decision: 'approved' | 'rejected',
+    reason?: string,
+    notes?: string,
+    signature?: string,
+  ) {
     const response: any = await api.post(`/transfers/${id}/process-approval`, {
       decision,
       reason,
       notes,
+      signature,
     });
     return response;
   }

@@ -113,10 +113,16 @@ export const useTransferStore = defineStore('transfer', {
       }
     },
 
-    async processApproval(id: number, decision: 'approved' | 'rejected', reason?: string, notes?: string) {
+    async processApproval(
+      id: number,
+      decision: 'approved' | 'rejected',
+      reason?: string,
+      notes?: string,
+      signature?: string,
+    ) {
       this.error = null;
       try {
-        const response = await transferService.processApproval(id, decision, reason, notes);
+        const response = await transferService.processApproval(id, decision, reason, notes, signature);
         return response.data;
       } catch (error: any) {
         this.error = error.response?.data?.message || 'Failed to process transfer approval';

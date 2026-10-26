@@ -204,6 +204,13 @@
       :transfer="currentTransfer"
       @approved="handleDetailApproval"
     />
+
+    <SignaturePad
+      v-model="showSignDialog"
+      :title="signTitle"
+      :signer-name="signerName"
+      @confirm="onSignConfirm"
+    />
   </div>
 </template>
 
@@ -219,12 +226,22 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import TransferFormDialog from '@/components/Transfers/TransferFormDialog.vue';
 import TransferDetailDialog from '@/components/Transfers/TransferDetailDialog.vue';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
+import SignaturePad from '@/components/Common/SignaturePad.vue';
+import { useSignature } from '@/composables/useSignature';
 import moment from 'moment';
 
 const { t } = useI18n();
 const transferStore = useTransferStore();
 const authStore = useAuthStore();
 const notificationStore = useNotificationStore();
+
+const {
+  show: showSignDialog,
+  title: signTitle,
+  signerName,
+  request: requestSignature,
+  onConfirm: onSignConfirm,
+} = useSignature();
 
 // Sử dụng composable mới với caching tự động
 useDepartments();
@@ -242,6 +259,7 @@ const statuses = computed(() => [
   { value: 'rejected', label: t('transfers.status.rejected') },
   { value: 'completed', label: t('transfers.status.completed') },
   { value: 'approved_by_head', label: t('transfers.status.approved_by_head') },
+  { value: 'approved_by_destination', label: t('transfers.status.approved_by_destination') },
   { value: 'rejected_by_head', label: t('transfers.status.rejected_by_head') },
 ]);
 
@@ -287,13 +305,15 @@ const handleView = (transfer: any) => {
 };
 
 const canApprove = (transfer: any) => {
-  if (authStore.isAdmin) return ['pending', 'approved_by_head'].includes(transfer.status);
-  if (!authStore.isDepartmentHead) return false;
+  const departmentId = Number(authStore.userDepartmentId);
+  if (authStore.isAdmin) return transfer.status === 'approved_by_destination';
   if (transfer.status === 'pending') {
-    return Number(transfer.from_department_id) === Number(authStore.userDepartmentId);
+    return authStore.user?.role === 'department_head'
+      && Number(transfer.from_department_id) === departmentId;
   }
   if (transfer.status === 'approved_by_head') {
-    return Number(transfer.to_department_id) === Number(authStore.userDepartmentId);
+    return ['department_head', 'staff'].includes(authStore.user?.role || '')
+      && Number(transfer.to_department_id) === departmentId;
   }
   return false;
 };
@@ -303,7 +323,9 @@ const handleApprove = async (id: number) => {
     await ElMessageBox.confirm(t('transfers.approveConfirm'), t('common.confirm'), {
       type: 'warning',
     });
-    const updatedTransfer = await transferStore.processApproval(id, 'approved');
+    const signature = await requestSignature('Ký xác nhận duyệt điều chuyển tài sản');
+    if (!signature) return;
+    const updatedTransfer = await transferStore.processApproval(id, 'approved', undefined, undefined, signature);
     const aidx = transferStore.transfers.findIndex((t: any) => t.id === id);
     if (aidx !== -1) transferStore.transfers[aidx] = updatedTransfer;
     ElMessage.success(t('transfers.approveSuccess'));
@@ -328,7 +350,9 @@ const handleReject = async (id: number) => {
       inputPlaceholder: t('transfers.enterReason'),
       inputValidator: (value: string) => String(value || '').trim() ? true : t('transfers.rejectReasonRequired'),
     });
-    const updatedTransfer = await transferStore.processApproval(id, 'rejected', String(value).trim());
+    const signature = await requestSignature('Ký xác nhận từ chối điều chuyển tài sản');
+    if (!signature) return;
+    const updatedTransfer = await transferStore.processApproval(id, 'rejected', String(value).trim(), undefined, signature);
     const ridx = transferStore.transfers.findIndex((t: any) => t.id === id);
     if (ridx !== -1) transferStore.transfers[ridx] = updatedTransfer;
     ElMessage.success(t('transfers.rejectSuccess'));

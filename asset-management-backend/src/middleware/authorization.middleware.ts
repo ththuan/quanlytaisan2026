@@ -131,21 +131,31 @@ export const canApproveTransfer = async (req: RequestWithUser, res: Response, ne
     }
 
     const status = transfer.status;
+    const userDepartmentId = Number(user.department_id);
 
-    // Admin can approve all transfers
+    // Quản trị viên chỉ ký duyệt cuối, sau khi đơn vị nhận đã ký.
     if (user.role === 'admin') {
-      return next();
-    }
-
-    // Department Head can approve transfers from their department
-    if (user.role === 'department_head') {
-      const userDepartmentId = Number(user.department_id);
-      const canApproveSource = status === 'pending' && userDepartmentId === Number(transfer.from_department_id);
-      const canApproveDestination = status === 'approved_by_head' && userDepartmentId === Number(transfer.to_department_id);
-
-      if (canApproveSource || canApproveDestination) {
+      if (status === 'approved_by_destination') {
         return next();
       }
+      throw new ForbiddenError('Quản trị viên chỉ ký duyệt sau khi đơn vị nhận đã ký');
+    }
+
+    // Trưởng đơn vị nơi giao duyệt bước 1.
+    if (status === 'pending') {
+      if (user.role === 'department_head' && userDepartmentId === Number(transfer.from_department_id)) {
+        return next();
+      }
+      throw new ForbiddenError('Chỉ Trưởng đơn vị nơi giao được duyệt bước này');
+    }
+
+    // Đơn vị nhận ký bước 2: viên chức hoặc trưởng đơn vị đều được.
+    if (status === 'approved_by_head') {
+      const receiverRoles = ['staff', 'department_head'];
+      if (receiverRoles.includes(user.role) && userDepartmentId === Number(transfer.to_department_id)) {
+        return next();
+      }
+      throw new ForbiddenError('Chỉ viên chức hoặc Trưởng đơn vị nơi nhận được ký bước này');
     }
 
     throw new ForbiddenError('Không có quyền duyệt yêu cầu điều chuyển này');
@@ -183,9 +193,10 @@ export const canViewTransfer = async (req: RequestWithUser, res: Response, next:
       }
     }
 
-    // Staff can only view their own requests
+    // Viên chức xem đề nghị của mình hoặc đề nghị gửi đến đơn vị mình (để ký bước đơn vị nhận)
     if (user.role === 'staff') {
-      if (user.id === transfer.requested_by) {
+      if (user.id === transfer.requested_by
+        || Number(user.department_id) === Number(transfer.to_department_id)) {
         return next();
       }
     }

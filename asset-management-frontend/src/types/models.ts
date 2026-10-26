@@ -110,7 +110,7 @@ export interface AssetTransfer {
   approved_by?: number;
   transfer_date?: string;
   reason?: string;
-  status: 'pending' | 'approved_by_head' | 'rejected_by_head' | 'approved' | 'rejected' | 'completed';
+  status: 'pending' | 'approved_by_head' | 'approved_by_destination' | 'rejected_by_head' | 'approved' | 'rejected' | 'completed';
   notes?: string;
   created_at?: string;
   updated_at?: string;

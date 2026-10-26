@@ -76,8 +76,36 @@ class TransfersController {
   async approveTransfer(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const id = parseInt(req.params.id);
-      const userId = req.user!.id;
-      const transfer = await transferService.approveTransfer(id, userId);
+      const user = req.user!;
+
+      // Bắt buộc chữ ký số; dùng chung luồng duyệt nhiều bước để không bỏ qua đơn vị nhận.
+      const signatureImage = assertSignature(req.body?.signature);
+      const before = await transferService.getTransferById(id);
+      const statusBefore = (before as any)?.status as string | undefined;
+
+      const transfer = await transferService.processTransferApproval(
+        id,
+        {
+          id: user.id,
+          role: user.role as any,
+          fullname: user.fullname,
+          department_id: user.department_id,
+        },
+        { decision: 'approved' },
+      );
+
+      await recordSignature({
+        entityType: 'asset_transfer',
+        entityId: id,
+        action: statusBefore === 'approved_by_head' ? 'receive'
+          : statusBefore === 'approved_by_destination' ? 'approve' : 'approve_source',
+        signerId: user.id,
+        signerName: user.fullname || user.username || `user#${user.id}`,
+        signerRole: user.role,
+        signatureImage,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'] as string | undefined,
+      });
 
       return res.json({
         success: true,
@@ -92,9 +120,33 @@ class TransfersController {
   async rejectTransfer(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const id = parseInt(req.params.id);
-      const userId = req.user!.id;
-      const { notes } = req.body;
-      const transfer = await transferService.rejectTransfer(id, userId, notes);
+      const user = req.user!;
+      const { notes, reason } = req.body;
+
+      const signatureImage = assertSignature(req.body?.signature);
+
+      const transfer = await transferService.processTransferApproval(
+        id,
+        {
+          id: user.id,
+          role: user.role as any,
+          fullname: user.fullname,
+          department_id: user.department_id,
+        },
+        { decision: 'rejected', reason: notes || reason },
+      );
+
+      await recordSignature({
+        entityType: 'asset_transfer',
+        entityId: id,
+        action: 'reject',
+        signerId: user.id,
+        signerName: user.fullname || user.username || `user#${user.id}`,
+        signerRole: user.role,
+        signatureImage,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'] as string | undefined,
+      });
 
       return res.json({
         success: true,
@@ -117,6 +169,11 @@ class TransfersController {
       const user = req.user!;
       const { decision, reason, notes } = req.body;
 
+      // Bắt buộc chữ ký số ở mọi bước duyệt/từ chối điều chuyển.
+      const signatureImage = assertSignature(req.body?.signature);
+      const before = await transferService.getTransferById(id);
+      const statusBefore = (before as any)?.status as string | undefined;
+
       const transfer = await transferService.processTransferApproval(
         id,
         {
@@ -127,6 +184,26 @@ class TransfersController {
         },
         { decision, reason, notes }
       );
+
+      const signatureAction = decision === 'rejected'
+        ? 'reject'
+        : statusBefore === 'approved_by_head'
+          ? 'receive'
+          : statusBefore === 'approved_by_destination'
+            ? 'approve'
+            : 'approve_source';
+
+      await recordSignature({
+        entityType: 'asset_transfer',
+        entityId: id,
+        action: signatureAction,
+        signerId: user.id,
+        signerName: user.fullname || user.username || `user#${user.id}`,
+        signerRole: user.role,
+        signatureImage,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'] as string | undefined,
+      });
 
       const message = decision === 'approved'
         ? 'Yêu cầu điều chuyển đã được phê duyệt thành công'

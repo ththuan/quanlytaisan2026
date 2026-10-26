@@ -28,8 +28,11 @@ const STATUS_TYPE_MAP: Record<StatusNamespace, Record<string, StatusTagType>> = 
   },
   transfer: {
     pending: 'warning',
+    approved_by_head: 'primary',
+    approved_by_destination: 'primary',
     approved: 'success',
     rejected: 'danger',
+    rejected_by_head: 'danger',
     completed: 'success',
     cancelled: 'info',
   },

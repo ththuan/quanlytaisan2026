@@ -1,7 +1,7 @@
 import { Model, DataTypes, Optional } from 'sequelize';
 import sequelize from '../config/database';
 
-export type TransferStatus = 'pending' | 'approved' | 'rejected' | 'completed' | 'approved_by_head' | 'rejected_by_head';
+export type TransferStatus = 'pending' | 'approved' | 'rejected' | 'completed' | 'approved_by_head' | 'approved_by_destination' | 'rejected_by_head';
 
 export interface AssetTransferAttributes {
   id: number;
@@ -121,7 +121,7 @@ AssetTransfer.init(
       allowNull: true,
     },
     status: {
-      type: DataTypes.ENUM('pending', 'approved', 'rejected', 'completed', 'approved_by_head', 'rejected_by_head'),
+      type: DataTypes.ENUM('pending', 'approved', 'rejected', 'completed', 'approved_by_head', 'approved_by_destination', 'rejected_by_head'),
       allowNull: false,
       defaultValue: 'pending',
     },

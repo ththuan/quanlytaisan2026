@@ -15,7 +15,7 @@ export interface CreateTransferInput {
 }
 
 export interface UpdateTransferInput {
-  status?: 'pending' | 'approved' | 'rejected' | 'completed' | 'approved_by_head' | 'rejected_by_head';
+  status?: 'pending' | 'approved' | 'rejected' | 'completed' | 'approved_by_head' | 'approved_by_destination' | 'rejected_by_head';
   notes?: string;
 }
 
@@ -330,7 +330,7 @@ class TransferService {
       throw new NotFoundError('Transfer not found');
     }
 
-    if (!['pending', 'approved_by_head'].includes(transfer.status)) {
+    if (!['pending', 'approved_by_head', 'approved_by_destination'].includes(transfer.status)) {
       throw new ConflictError('Chỉ có thể duyệt yêu cầu đang chờ xử lý');
     }
 
@@ -341,21 +341,29 @@ class TransferService {
       throw new ConflictError('Lý do từ chối là bắt buộc');
     }
 
-    // Check if approver is department head of source department (or admin)
-    if (approver.role !== 'admin') {
-      if (approver.role !== 'department_head') {
-        throw new ForbiddenError('Bạn không có quyền duyệt yêu cầu điều chuyển');
-      }
+    const approverDept = Number(approver.department_id);
+    const isAdmin = approver.role === 'admin';
+    const receiverRoles = ['staff', 'department_head'];
 
-      const expectedDepartmentId = transfer.status === 'pending'
-        ? transfer.from_department_id
-        : transfer.to_department_id;
-      if (Number(approver.department_id) !== Number(expectedDepartmentId)) {
-        throw new ForbiddenError(transfer.status === 'pending'
-          ? 'Chỉ Trưởng đơn vị nơi giao được duyệt bước này'
-          : 'Chỉ Trưởng đơn vị nơi nhận được duyệt bước này');
+    // Luồng ký: đơn vị giao → đơn vị nhận (viên chức hoặc trưởng đơn vị) → quản trị viên.
+    if (isAdmin) {
+      if (transfer.status !== 'approved_by_destination') {
+        throw new ForbiddenError('Quản trị viên chỉ ký duyệt sau khi đơn vị nhận đã ký');
       }
+    } else if (transfer.status === 'pending') {
+      if (approver.role !== 'department_head' || approverDept !== Number(transfer.from_department_id)) {
+        throw new ForbiddenError('Chỉ Trưởng đơn vị nơi giao được duyệt bước này');
+      }
+    } else if (transfer.status === 'approved_by_head') {
+      if (!receiverRoles.includes(approver.role) || approverDept !== Number(transfer.to_department_id)) {
+        throw new ForbiddenError('Chỉ viên chức hoặc Trưởng đơn vị nơi nhận được ký bước này');
+      }
+    } else {
+      throw new ForbiddenError('Bạn không có quyền duyệt yêu cầu điều chuyển');
     }
+
+    const previousStatus = transfer.status;
+    const approvalLevel = previousStatus === 'pending' ? 1 : previousStatus === 'approved_by_head' ? 2 : 3;
 
     const transaction = await sequelize.transaction();
     const now = new Date();
@@ -366,28 +374,32 @@ class TransferService {
         entity_type: 'asset_transfer',
         entity_id: id,
         approver_id: approver.id,
-        approver_role: approver.role === 'admin' ? 'admin' : 'department_head',
+        approver_role: approver.role,
         approver_name: approver.fullname,
         decision: decision,
         reason: reason,
         notes: notes,
-        approval_level: transfer.status === 'pending' ? 1 : 2,
+        approval_level: approvalLevel,
         decided_at: now,
       }, { transaction });
 
       if (decision === 'approved') {
-        const isSourceApproval = transfer.status === 'pending';
-
-        if (isSourceApproval && approver.role !== 'admin') {
-          // First approval: the asset remains at the source department.
+        if (previousStatus === 'pending') {
+          // Bước 1: Trưởng đơn vị nơi giao duyệt, tài sản vẫn ở đơn vị giao.
           await transfer.update({
             status: 'approved_by_head',
             head_approved_by: approver.id,
             head_approved_at: now,
             head_notes: notes,
           }, { transaction });
+        } else if (previousStatus === 'approved_by_head') {
+          // Bước 2: Viên chức/Trưởng đơn vị nơi nhận ký, chờ quản trị viên ký.
+          await transfer.update({
+            status: 'approved_by_destination',
+            notes: notes || transfer.notes,
+          }, { transaction });
         } else {
-          // Second approval, or Admin approval: move the asset atomically.
+          // Bước 3: Quản trị viên ký duyệt cuối và chuyển tài sản.
           const asset = await Asset.findByPk(transfer.asset_id);
           if (asset) {
             if (asset.current_department_id !== transfer.from_department_id) {
@@ -425,19 +437,33 @@ class TransferService {
       try {
         const requesterIds = transfer.requested_by ? [transfer.requested_by] : [];
         if (decision === 'approved' && transfer.status === 'approved_by_head') {
-          const toHeadIds = await notificationService.getUserIdsByDepartmentRoles(transfer.to_department_id, ['department_head']);
-          const adminIds = await notificationService.getAdminIds();
+          const receiverIds = await notificationService.getUserIdsByDepartmentRoles(
+            transfer.to_department_id,
+            ['department_head', 'staff'],
+          );
           await notificationService.notify({
-            userIds: [...toHeadIds, ...adminIds],
+            userIds: receiverIds,
             type: 'transfer',
-            title: 'Yêu cầu điều chuyển chờ duyệt (đơn vị nhận)',
-            message: `Yêu cầu điều chuyển #${id} đã được Trưởng đơn vị nơi giao duyệt, chờ Trưởng đơn vị nơi nhận duyệt.`,
+            title: 'Yêu cầu điều chuyển chờ đơn vị nhận ký',
+            message: `Yêu cầu điều chuyển #${id} đã được đơn vị giao duyệt, chờ viên chức/Trưởng đơn vị nơi nhận ký số.`,
             link: '/transfers',
             entityType: 'asset_transfer',
             entityId: id,
             excludeUserId: approver.id,
           });
-        } else if (decision === 'approved' && transfer.status === 'completed') {
+        } else if (decision === 'approved' && transfer.status === 'approved_by_destination') {
+          const adminIds = await notificationService.getAdminIds();
+          await notificationService.notify({
+            userIds: adminIds,
+            type: 'transfer',
+            title: 'Yêu cầu điều chuyển chờ quản trị viên ký',
+            message: `Yêu cầu điều chuyển #${id} đã được đơn vị nhận ký, chờ quản trị viên ký duyệt cuối.`,
+            link: '/transfers',
+            entityType: 'asset_transfer',
+            entityId: id,
+            excludeUserId: approver.id,
+          });
+        } else if (decision === 'approved' && String(transfer.status) === 'completed') {
           await notificationService.notify({
             userIds: requesterIds,
             type: 'transfer',
@@ -491,8 +517,11 @@ class TransferService {
         { to_department_id: user.department_id },
       ];
     } else if (user.role === 'staff') {
-      // Staff can only see their own requests
-      where.requested_by = user.id;
+      // Viên chức thấy đề nghị của mình và đề nghị gửi đến đơn vị mình (để ký bước đơn vị nhận).
+      where[Op.or] = [
+        { requested_by: user.id },
+        { to_department_id: user.department_id },
+      ];
     }
 
     // Apply additional filters
