@@ -144,34 +144,27 @@ const drawDigitalSignature = () => {
   const name = signerName.value.trim();
   if (!name) return;
 
-  // Dấu check xanh xác thực chữ ký
-  const badgeX = 200;
-  const badgeY = 150;
-  const badgeR = 76;
-
-  c.fillStyle = '#f0fdf4';
+  // Dấu check xanh mờ làm nền phía sau chữ (watermark xác thực)
+  c.save();
+  c.strokeStyle = 'rgba(22, 163, 74, 0.10)';
+  c.lineWidth = 10;
   c.beginPath();
-  c.arc(badgeX, badgeY, badgeR, 0, Math.PI * 2);
-  c.fill();
-
-  c.strokeStyle = '#16a34a';
-  c.lineWidth = 6;
-  c.beginPath();
-  c.arc(badgeX, badgeY, badgeR, 0, Math.PI * 2);
+  c.arc(410, 150, 128, 0, Math.PI * 2);
   c.stroke();
 
-  c.strokeStyle = '#16a34a';
-  c.lineWidth = 10;
+  c.strokeStyle = 'rgba(22, 163, 74, 0.14)';
+  c.lineWidth = 28;
   c.lineCap = 'round';
   c.lineJoin = 'round';
   c.beginPath();
-  c.moveTo(badgeX - 34, badgeY + 2);
-  c.lineTo(badgeX - 9, badgeY + 27);
-  c.lineTo(badgeX + 39, badgeY - 27);
+  c.moveTo(320, 148);
+  c.lineTo(375, 208);
+  c.lineTo(505, 68);
   c.stroke();
+  c.restore();
 
   // Khối nội dung chuẩn "Digitally signed by / Date"
-  const rx = 400;
+  const rx = 40;
   const maxTextWidth = W - rx - 24;
 
   c.textAlign = 'left';
