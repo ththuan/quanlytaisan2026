@@ -10,370 +10,467 @@
     </div>
 
     <!-- Tabs wrapper -->
-    <el-tabs v-model="activeTab" type="border-card" class="dashboard-tabs">
-      
+    <el-tabs
+      v-model="activeTab"
+      type="border-card"
+      class="dashboard-tabs"
+    >
       <!-- Tab: Tổng quan -->
       <el-tab-pane name="overview">
         <template #label>
           <span>Tổng quan</span>
         </template>
 
-    <el-row
-      :gutter="16"
-      class="stats-row"
-    >
-      <!-- 1. Tổng tài sản -->
-      <el-col
-        :xs="12"
-        :sm="8"
-        :md="4"
-      >
-        <el-card
-          class="stat-card stat-clickable"
-          shadow="hover"
-          @click="$router.push('/assets')"
+        <el-row
+          :gutter="16"
+          class="stats-row"
         >
-          <div class="stat-icon assets-icon">
-            <el-icon size="24">
-              <Box />
-            </el-icon>
-          </div>
-          <div class="stat-content">
-            <el-skeleton
-              v-if="loading"
-              :rows="1"
-              animated
-            />
-            <template v-else>
-              <div class="stat-value text-truncate">
-                {{ formatNumber(stats.assetsTotal) }}
-              </div>
-              <div class="stat-label">
-                Tổng tài sản
-              </div>
-            </template>
-          </div>
-        </el-card>
-      </el-col>
-
-      <!-- 2. Mua sắm (chỉ admin và director) -->
-      <el-col
-        v-if="FEATURES.auxiliaryModules && isAdminOrDirector"
-        :xs="12"
-        :sm="8"
-        :md="4"
-      >
-        <el-card
-          class="stat-card stat-clickable"
-          shadow="hover"
-          @click="$router.push('/purchase-requests')"
-        >
-          <div class="stat-icon procurements-icon">
-            <el-icon size="24">
-              <ShoppingCart />
-            </el-icon>
-          </div>
-          <div class="stat-content">
-            <el-skeleton
-              v-if="loading"
-              :rows="1"
-              animated
-            />
-            <template v-else>
-              <div class="stat-value text-truncate">
-                {{ formatNumber(stats.purchaseRequestsTotal) }}
-              </div>
-              <div class="stat-label">
-                Mua sắm
-              </div>
-            </template>
-          </div>
-        </el-card>
-      </el-col>
-
-      <!-- 3. Sửa chữa (chỉ admin và director) -->
-      <el-col
-        v-if="FEATURES.auxiliaryModules && isAdminOrDirector"
-        :xs="12"
-        :sm="8"
-        :md="4"
-      >
-        <el-card
-          class="stat-card stat-clickable"
-          shadow="hover"
-          @click="$router.push('/maintenance')"
-        >
-          <div class="stat-icon maintenance-icon">
-            <el-icon size="24">
-              <Setting />
-            </el-icon>
-          </div>
-          <div class="stat-content">
-            <el-skeleton
-              v-if="loading"
-              :rows="1"
-              animated
-            />
-            <template v-else>
-              <div class="stat-value text-truncate">
-                {{ formatNumber(stats.repairTotal) }}
-              </div>
-              <div class="stat-label">
-                Sửa chữa
-              </div>
-            </template>
-          </div>
-        </el-card>
-      </el-col>
-
-      <!-- 4. Điều chuyển -->
-      <el-col
-        :xs="12"
-        :sm="8"
-        :md="4"
-      >
-        <el-card
-          class="stat-card stat-clickable"
-          shadow="hover"
-          @click="$router.push('/transfers')"
-        >
-          <div class="stat-icon transfers-icon">
-            <el-icon size="24">
-              <Sort />
-            </el-icon>
-          </div>
-          <div class="stat-content">
-            <el-skeleton
-              v-if="loading"
-              :rows="1"
-              animated
-            />
-            <template v-else>
-              <div class="stat-value text-truncate">
-                {{ formatNumber(stats.transfersTotal) }}
-              </div>
-              <div class="stat-label">
-                Điều chuyển
-              </div>
-            </template>
-          </div>
-        </el-card>
-      </el-col>
-
-      <!-- 5. Kiểm kê -->
-      <el-col
-        :xs="12"
-        :sm="8"
-        :md="4"
-      >
-        <el-card
-          class="stat-card stat-clickable"
-          shadow="hover"
-          @click="$router.push('/inventory')"
-        >
-          <div class="stat-icon inventory-icon">
-            <el-icon size="24">
-              <List />
-            </el-icon>
-          </div>
-          <div class="stat-content">
-            <el-skeleton
-              v-if="loading"
-              :rows="1"
-              animated
-            />
-            <template v-else>
-              <div class="stat-value text-truncate">
-                {{ formatNumber(inventoryPending) }}
-              </div>
-              <div class="stat-label">
-                Kiểm kê
-              </div>
-            </template>
-          </div>
-        </el-card>
-      </el-col>
-
-      <!-- 6. Đề nghị thanh lý -->
-      <el-col
-        :xs="12"
-        :sm="8"
-        :md="4"
-      >
-        <el-card
-          class="stat-card stat-clickable"
-          shadow="hover"
-          @click="$router.push('/asset-disposals')"
-        >
-          <div class="stat-icon issues-icon">
-            <el-icon size="24">
-              <Delete />
-            </el-icon>
-          </div>
-          <div class="stat-content">
-            <el-skeleton
-              v-if="loading"
-              :rows="1"
-              animated
-            />
-            <template v-else>
-              <div class="stat-value text-truncate">
-                {{ formatNumber(disposalPending) }}
-              </div>
-              <div class="stat-label">
-                Đề nghị thanh lý
-              </div>
-            </template>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <el-row
-      :gutter="16"
-      class="charts-row"
-    >
-      <el-col :span="24">
-        <el-card
-          class="chart-card"
-          shadow="hover"
-        >
-          <template #header>
-            <div
-              class="card-header chart-card-header"
+          <!-- 1. Tổng tài sản -->
+          <el-col
+            :xs="12"
+            :sm="8"
+            :md="4"
+          >
+            <el-card
+              class="stat-card stat-clickable"
+              shadow="hover"
+              @click="$router.push('/assets')"
             >
-              <div class="header-left">
-                <span class="card-title">Mạng lưới tài sản thông minh</span>
+              <div class="stat-icon assets-icon">
+                <el-icon size="24">
+                  <Box />
+                </el-icon>
               </div>
-              <div class="header-right">
-                <div class="status-capsules">
-                  <div 
-                    v-for="s in assetsByStatus" 
-                    :key="s.status" 
-                    class="status-capsule"
-                    :style="{ '--status-color': getStatusColor(s.status) }"
-                    @click="goToAssets({ status: s.status })"
-                  >
-                    <span class="capsule-label">{{ getStatusText(s.status) }}</span>
-                    <span class="capsule-value">{{ s.count }}</span>
+              <div class="stat-content">
+                <el-skeleton
+                  v-if="loading"
+                  :rows="1"
+                  animated
+                />
+                <template v-else>
+                  <div class="stat-value text-truncate">
+                    {{ formatNumber(stats.assetsTotal) }}
+                  </div>
+                  <div class="stat-label">
+                    Tổng tài sản
+                  </div>
+                </template>
+              </div>
+            </el-card>
+          </el-col>
+
+          <!-- 2. Mua sắm (chỉ admin và director) -->
+          <el-col
+            v-if="FEATURES.auxiliaryModules && isAdminOrDirector"
+            :xs="12"
+            :sm="8"
+            :md="4"
+          >
+            <el-card
+              class="stat-card stat-clickable"
+              shadow="hover"
+              @click="$router.push('/purchase-requests')"
+            >
+              <div class="stat-icon procurements-icon">
+                <el-icon size="24">
+                  <ShoppingCart />
+                </el-icon>
+              </div>
+              <div class="stat-content">
+                <el-skeleton
+                  v-if="loading"
+                  :rows="1"
+                  animated
+                />
+                <template v-else>
+                  <div class="stat-value text-truncate">
+                    {{ formatNumber(stats.purchaseRequestsTotal) }}
+                  </div>
+                  <div class="stat-label">
+                    Mua sắm
+                  </div>
+                </template>
+              </div>
+            </el-card>
+          </el-col>
+
+          <!-- 3. Sửa chữa (chỉ admin và director) -->
+          <el-col
+            v-if="FEATURES.auxiliaryModules && isAdminOrDirector"
+            :xs="12"
+            :sm="8"
+            :md="4"
+          >
+            <el-card
+              class="stat-card stat-clickable"
+              shadow="hover"
+              @click="$router.push('/maintenance')"
+            >
+              <div class="stat-icon maintenance-icon">
+                <el-icon size="24">
+                  <Setting />
+                </el-icon>
+              </div>
+              <div class="stat-content">
+                <el-skeleton
+                  v-if="loading"
+                  :rows="1"
+                  animated
+                />
+                <template v-else>
+                  <div class="stat-value text-truncate">
+                    {{ formatNumber(stats.repairTotal) }}
+                  </div>
+                  <div class="stat-label">
+                    Sửa chữa
+                  </div>
+                </template>
+              </div>
+            </el-card>
+          </el-col>
+
+          <!-- 4. Điều chuyển -->
+          <el-col
+            :xs="12"
+            :sm="8"
+            :md="4"
+          >
+            <el-card
+              class="stat-card stat-clickable"
+              shadow="hover"
+              @click="$router.push('/transfers')"
+            >
+              <div class="stat-icon transfers-icon">
+                <el-icon size="24">
+                  <Sort />
+                </el-icon>
+              </div>
+              <div class="stat-content">
+                <el-skeleton
+                  v-if="loading"
+                  :rows="1"
+                  animated
+                />
+                <template v-else>
+                  <div class="stat-value text-truncate">
+                    {{ formatNumber(stats.transfersTotal) }}
+                  </div>
+                  <div class="stat-label">
+                    Điều chuyển
+                  </div>
+                </template>
+              </div>
+            </el-card>
+          </el-col>
+
+          <!-- 5. Kiểm kê -->
+          <el-col
+            :xs="12"
+            :sm="8"
+            :md="4"
+          >
+            <el-card
+              class="stat-card stat-clickable"
+              shadow="hover"
+              @click="$router.push('/inventory')"
+            >
+              <div class="stat-icon inventory-icon">
+                <el-icon size="24">
+                  <List />
+                </el-icon>
+              </div>
+              <div class="stat-content">
+                <el-skeleton
+                  v-if="loading"
+                  :rows="1"
+                  animated
+                />
+                <template v-else>
+                  <div class="stat-value text-truncate">
+                    {{ formatNumber(inventoryPending) }}
+                  </div>
+                  <div class="stat-label">
+                    Kiểm kê
+                  </div>
+                </template>
+              </div>
+            </el-card>
+          </el-col>
+
+          <!-- 6. Đề nghị thanh lý -->
+          <el-col
+            :xs="12"
+            :sm="8"
+            :md="4"
+          >
+            <el-card
+              class="stat-card stat-clickable"
+              shadow="hover"
+              @click="$router.push('/asset-disposals')"
+            >
+              <div class="stat-icon issues-icon">
+                <el-icon size="24">
+                  <Delete />
+                </el-icon>
+              </div>
+              <div class="stat-content">
+                <el-skeleton
+                  v-if="loading"
+                  :rows="1"
+                  animated
+                />
+                <template v-else>
+                  <div class="stat-value text-truncate">
+                    {{ formatNumber(disposalPending) }}
+                  </div>
+                  <div class="stat-label">
+                    Đề nghị thanh lý
+                  </div>
+                </template>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+
+        <el-row
+          :gutter="16"
+          class="charts-row"
+        >
+          <el-col :span="24">
+            <el-card
+              class="chart-card"
+              shadow="hover"
+            >
+              <template #header>
+                <div
+                  class="card-header chart-card-header"
+                >
+                  <div class="header-left">
+                    <span class="card-title">Mạng lưới tài sản thông minh</span>
+                  </div>
+                  <div class="header-right">
+                    <div class="status-capsules">
+                      <div 
+                        v-for="s in assetsByStatus" 
+                        :key="s.status" 
+                        class="status-capsule"
+                        :style="{ '--status-color': getStatusColor(s.status) }"
+                        @click="goToAssets({ status: s.status })"
+                      >
+                        <span class="capsule-label">{{ getStatusText(s.status) }}</span>
+                        <span class="capsule-value">{{ s.count }}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </template>
+              </template>
 
-          <div
-            class="dept-chart force-full-width"
-          >
-            <VChart
-              class="dept-echart"
-              :option="graphOption"
-              autoresize
-              @click="onGraphClick"
-            />
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+              <div
+                class="dept-chart force-full-width"
+              >
+                <VChart
+                  class="dept-echart"
+                  :option="graphOption"
+                  autoresize
+                  @click="onGraphClick"
+                />
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+
+        <!-- Tài sản mất / hư hỏng (mọi người dùng; tự lọc theo đơn vị nếu không phải admin) -->
+        <el-row
+          :gutter="16"
+          class="loss-damage-row"
+        >
+          <el-col :span="24">
+            <el-card
+              class="chart-card loss-damage-card"
+              shadow="hover"
+            >
+              <template #header>
+                <div class="card-header chart-card-header">
+                  <div class="header-left">
+                    <span class="card-title">Tài sản mất / hư hỏng</span>
+                    <span class="loss-summary">
+                      {{ lostDamageTotals.lost }} mất • {{ lostDamageTotals.damaged }} hư hỏng
+                    </span>
+                  </div>
+                  <div
+                    v-if="authStore.isAdmin"
+                    class="header-right"
+                  >
+                    <el-button
+                      link
+                      type="primary"
+                      @click="$router.push('/loss-damage')"
+                    >
+                      Xem chi tiết
+                    </el-button>
+                  </div>
+                </div>
+              </template>
+
+              <el-table
+                v-loading="loading"
+                :data="lossDamageAssets"
+                stripe
+                size="small"
+                max-height="320"
+                empty-text="Không có tài sản mất/hư hỏng"
+              >
+                <el-table-column
+                  prop="asset_code"
+                  label="Mã tài sản"
+                  width="140"
+                />
+                <el-table-column
+                  prop="name"
+                  label="Tên tài sản"
+                  min-width="200"
+                />
+                <el-table-column
+                  v-if="authStore.isAdmin"
+                  label="Đơn vị"
+                  min-width="170"
+                >
+                  <template #default="{ row }">
+                    {{ row.department?.name || '-' }}
+                  </template>
+                </el-table-column>
+                <el-table-column
+                  label="Trạng thái"
+                  width="110"
+                  align="center"
+                >
+                  <template #default="{ row }">
+                    <el-tag
+                      :type="row.status === 'lost' ? 'danger' : 'warning'"
+                      size="small"
+                    >
+                      {{ row.status === 'lost' ? 'Mất' : 'Hư hỏng' }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column
+                  prop="discrepancy_reason"
+                  label="Nguyên nhân"
+                  min-width="200"
+                  show-overflow-tooltip
+                />
+                <el-table-column
+                  prop="responsibility"
+                  label="Trách nhiệm"
+                  min-width="160"
+                  show-overflow-tooltip
+                />
+              </el-table>
+            </el-card>
+          </el-col>
+        </el-row>
       </el-tab-pane>
       
       <!-- Tab: Hoạt động gần đây -->
-      <el-tab-pane v-if="authStore.isAdmin" name="activity" lazy>
+      <el-tab-pane
+        v-if="authStore.isAdmin"
+        name="activity"
+        lazy
+      >
         <template #label>
           <span>Hoạt động</span>
         </template>
         
-    <el-row
-      :gutter="16"
-      class="charts-row"
-    >
-      <el-col
-        :xs="24"
-        :md="24"
-      >
-        <el-card
-          class="chart-card"
-          shadow="hover"
+        <el-row
+          :gutter="16"
+          class="charts-row"
         >
-          <template #header>
-            <div class="card-header">
-              <span class="card-title">Lịch sử thao tác gần đây</span>
-            </div>
-          </template>
-
-          <div class="responsive-table">
-            <el-table
-              v-loading="loading"
-              :data="auditLogs"
-              size="small"
-              style="min-width: 600px"
+          <el-col
+            :xs="24"
+            :md="24"
+          >
+            <el-card
+              class="chart-card"
+              shadow="hover"
             >
-              <el-table-column
-                label="Thời gian"
-                width="150"
-              >
-                <template #default="{ row }">
-                  {{ formatDateTime(row.created_at) }}
-                </template>
-              </el-table-column>
-              <el-table-column
-                label="Người dùng"
-                min-width="120"
-              >
-                <template #default="{ row }">
-                  {{ getUserDisplayName(row) }}
-                </template>
-              </el-table-column>
-              <el-table-column
-                label="Vai trò"
-                width="120"
-              >
-                <template #default="{ row }">
-                  <el-tag
-                    :type="getRoleTagType(row.user?.role)"
-                    size="small"
+              <template #header>
+                <div class="card-header">
+                  <span class="card-title">Lịch sử thao tác gần đây</span>
+                </div>
+              </template>
+
+              <div class="responsive-table">
+                <el-table
+                  v-loading="loading"
+                  :data="auditLogs"
+                  size="small"
+                  style="min-width: 600px"
+                >
+                  <el-table-column
+                    label="Thời gian"
+                    width="150"
                   >
-                    {{ getRoleText(row.user?.role) }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column
-                label="Hành động"
-                width="110"
-              >
-                <template #default="{ row }">
-                  <el-tag
-                    :type="getActionTagType(row.action)"
-                    size="small"
-                    effect="plain"
+                    <template #default="{ row }">
+                      {{ formatDateTime(row.created_at) }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column
+                    label="Người dùng"
+                    min-width="120"
                   >
-                    {{ getActionText(row.action) }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column
-                label="Đối tượng"
-                min-width="160"
-              >
-                <template #default="{ row }">
-                  {{ getTargetText(row) }}
-                </template>
-              </el-table-column>
-              <el-table-column
-                label="Địa chỉ IP"
-                width="120"
-              >
-                <template #default="{ row }">
-                  <span class="ip-text">{{ row.ip_address ? row.ip_address.replace(/^::ffff:/, '') : '-' }}</span>
-                </template>
-              </el-table-column>
-            </el-table>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+                    <template #default="{ row }">
+                      {{ getUserDisplayName(row) }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column
+                    label="Vai trò"
+                    width="120"
+                  >
+                    <template #default="{ row }">
+                      <el-tag
+                        :type="getRoleTagType(row.user?.role)"
+                        size="small"
+                      >
+                        {{ getRoleText(row.user?.role) }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column
+                    label="Hành động"
+                    width="110"
+                  >
+                    <template #default="{ row }">
+                      <el-tag
+                        :type="getActionTagType(row.action)"
+                        size="small"
+                        effect="plain"
+                      >
+                        {{ getActionText(row.action) }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column
+                    label="Đối tượng"
+                    min-width="160"
+                  >
+                    <template #default="{ row }">
+                      {{ getTargetText(row) }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column
+                    label="Địa chỉ IP"
+                    width="120"
+                  >
+                    <template #default="{ row }">
+                      <span class="ip-text">{{ row.ip_address ? row.ip_address.replace(/^::ffff:/, '') : '-' }}</span>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
       </el-tab-pane>
-      
     </el-tabs>
   </div>
 </template>
@@ -386,6 +483,7 @@ import { Box, ShoppingCart, Setting, Sort, List, Delete } from '@element-plus/ic
 import VChart from 'vue-echarts';
 import * as dashboardService from '@/services/dashboard.service';
 import { inventoryService } from '@/services/inventory.service';
+import { assetService } from '@/services/asset.service';
 import { useAuthStore } from '@/stores/auth.store';
 import { FEATURES } from '@/constants/features';
 
@@ -426,6 +524,17 @@ const assetsByCategory = ref<{ category: string; code: string; count: number; fi
 const assetsByDepartment = ref<{ department_name: string; asset_count: number; department_id: number }[]>([]);
 const assetsHierarchy = ref<any[]>([]);
 const maintenanceByStatus = ref<{ status: string; request_type: string; count: number; label: string }[]>([]);
+const lossDamageAssets = ref<any[]>([]);
+
+const lostDamageTotals = computed(() => {
+  let lost = 0;
+  let damaged = 0;
+  for (const asset of lossDamageAssets.value) {
+    if (asset.status === 'lost') lost += 1;
+    else if (asset.status === 'damaged') damaged += 1;
+  }
+  return { lost, damaged };
+});
 
 const auditLogs = ref<any[]>([]);
 const auditPagination = ref({
@@ -454,7 +563,7 @@ watch(() => authStore.user?.id, () => {
 const loadDashboardData = async () => {
   loading.value = true;
   try {
-    const [overviewRes, statusRes, deptRes, stockRes, catRes, auditRes, maintRes, inventoryRes, hierarchyRes] = await Promise.all([
+    const [overviewRes, statusRes, deptRes, stockRes, catRes, auditRes, maintRes, inventoryRes, hierarchyRes, lossDamageRes] = await Promise.all([
       dashboardService.getOverviewStats({}),
       dashboardService.getAssetStatusStats({}),
       dashboardService.getDepartmentStats(),
@@ -466,6 +575,7 @@ const loadDashboardData = async () => {
       authStore.isAdmin ? dashboardService.getMaintenanceStats({}) : Promise.resolve({ data: [] }),
       inventoryService.getPendingReportsCount(),
       dashboardService.getHierarchyStats({}),
+      assetService.getLossDamage({}).catch(() => ({ data: [] } as any)),
     ]);
 
     // axios interceptor in `src/services/api.ts` trả về `response.data`
@@ -479,6 +589,7 @@ const loadDashboardData = async () => {
 
     const maintenance = (maintRes as any)?.data || [];
     const pendingInv = (inventoryRes as any) || 0;
+    lossDamageAssets.value = (lossDamageRes as any)?.data || [];
 
     inventoryPending.value = pendingInv;
     assetsHierarchy.value = hierarchy;
@@ -1009,6 +1120,17 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
   font-size: 1.05rem;
   font-weight: 800;
   color: #0f172a;
+}
+
+.loss-damage-row {
+  margin-top: 16px;
+}
+
+.loss-summary {
+  margin-left: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #b45309;
 }
 
 .status-list, .category-list, .dept-list {

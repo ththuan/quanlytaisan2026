@@ -709,11 +709,23 @@ export const getDisposalHistory = async (req: AuthRequest, res: Response, next: 
 
 /**
  * GET /api/assets/loss-damage
- * Danh sách tài s?n m?t/hu h?ng + b?i thu?ng (t? ki?m kê g?n nh?t).
+ * Danh sï¿½ch tï¿½i s?n m?t/hu h?ng + b?i thu?ng (t? ki?m kï¿½ g?n nh?t).
  */
 export const getLossDamageAssets = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const data = await assetService.getLossDamageAssets(req.query);
+    const query: any = { ...req.query };
+    const user = req.user;
+
+    // NgÆ°á»i dÃ¹ng thÆ°á»ng chá»‰ xem tÃ i sáº£n máº¥t/hÆ° há»ng cá»§a Ä‘Æ¡n vá»‹ mÃ¬nh.
+    if (!['admin', 'director'].includes(user?.role || '')) {
+      if (!user?.department_id) {
+        res.status(200).json({ success: true, data: [] });
+        return;
+      }
+      query.department_id = String(user.department_id);
+    }
+
+    const data = await assetService.getLossDamageAssets(query);
     res.status(200).json({ success: true, data });
   } catch (error) {
     next(error);
@@ -722,7 +734,7 @@ export const getLossDamageAssets = async (req: AuthRequest, res: Response, next:
 
 /**
  * GET /api/assets/loss-damage/export
- * Xu?t Excel báo cáo tài s?n m?t/hu h?ng + b?i thu?ng.
+ * Xu?t Excel bï¿½o cï¿½o tï¿½i s?n m?t/hu h?ng + b?i thu?ng.
  */
 export const exportLossDamage = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -733,14 +745,14 @@ export const exportLossDamage = async (req: AuthRequest, res: Response, next: Ne
 
     sheet.columns = [
       { header: 'STT', key: 'stt', width: 6 },
-      { header: 'Mã tài s?n', key: 'asset_code', width: 18 },
-      { header: 'Tên tài s?n', key: 'name', width: 32 },
-      { header: 'Ğon v?', key: 'department', width: 26 },
-      { header: 'Tr?ng thái', key: 'status', width: 14 },
-      { header: 'Nguyên giá', key: 'purchase_price', width: 18 },
-      { header: 'Giá tr? còn l?i', key: 'current_value', width: 18 },
-      { header: 'Nguyên nhân', key: 'discrepancy_reason', width: 36 },
-      { header: 'Trách nhi?m', key: 'responsibility', width: 28 },
+      { header: 'Mï¿½ tï¿½i s?n', key: 'asset_code', width: 18 },
+      { header: 'Tï¿½n tï¿½i s?n', key: 'name', width: 32 },
+      { header: 'ï¿½on v?', key: 'department', width: 26 },
+      { header: 'Tr?ng thï¿½i', key: 'status', width: 14 },
+      { header: 'Nguyï¿½n giï¿½', key: 'purchase_price', width: 18 },
+      { header: 'Giï¿½ tr? cï¿½n l?i', key: 'current_value', width: 18 },
+      { header: 'Nguyï¿½n nhï¿½n', key: 'discrepancy_reason', width: 36 },
+      { header: 'Trï¿½ch nhi?m', key: 'responsibility', width: 28 },
       { header: 'B?i thu?ng (d?ng)', key: 'compensation_amount', width: 20 },
     ];
     sheet.getRow(1).font = { bold: true };

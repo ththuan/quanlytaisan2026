@@ -39,8 +39,8 @@ router.get('/export', assetsController.exportAssets);
 // GET /api/assets/pending-disposal-grouped - Get pending disposal assets grouped by department
 router.get('/pending-disposal-grouped', assetsController.getPendingDisposalGrouped);
 
-// GET /api/assets/loss-damage - Tài sản mất/hư hỏng + bồi thường
-router.get('/loss-damage', requireRole('admin', 'director'), assetsController.getLossDamageAssets);
+// GET /api/assets/loss-damage - Tài sản mất/hư hỏng (người dùng thường chỉ thấy đơn vị mình)
+router.get('/loss-damage', assetsController.getLossDamageAssets);
 router.get('/loss-damage/export', requireRole('admin', 'director'), assetsController.exportLossDamage);
 
 // GET /api/assets - List all assets
