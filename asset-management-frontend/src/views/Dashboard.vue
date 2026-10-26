@@ -29,7 +29,7 @@
           <el-col
             :xs="12"
             :sm="8"
-            :md="4"
+            :md="3"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -64,7 +64,7 @@
             v-if="FEATURES.auxiliaryModules && isAdminOrDirector"
             :xs="12"
             :sm="8"
-            :md="4"
+            :md="3"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -99,7 +99,7 @@
             v-if="FEATURES.auxiliaryModules && isAdminOrDirector"
             :xs="12"
             :sm="8"
-            :md="4"
+            :md="3"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -133,7 +133,7 @@
           <el-col
             :xs="12"
             :sm="8"
-            :md="4"
+            :md="3"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -167,7 +167,7 @@
           <el-col
             :xs="12"
             :sm="8"
-            :md="4"
+            :md="3"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -201,7 +201,7 @@
           <el-col
             :xs="12"
             :sm="8"
-            :md="4"
+            :md="3"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -230,10 +230,48 @@
               </div>
             </el-card>
           </el-col>
+
+          <!-- 7. Tài sản mất / hư hỏng -->
+          <el-col
+            :xs="12"
+            :sm="8"
+            :md="3"
+          >
+            <el-card
+              class="stat-card stat-clickable"
+              shadow="hover"
+              @click="handleLossDamageClick"
+            >
+              <div class="stat-icon lost-damage-icon">
+                <el-icon size="24">
+                  <Warning />
+                </el-icon>
+              </div>
+              <div class="stat-content">
+                <el-skeleton
+                  v-if="loading"
+                  :rows="1"
+                  animated
+                />
+                <template v-else>
+                  <div class="stat-value text-truncate">
+                    {{ formatNumber(lostDamageTotals.total) }}
+                  </div>
+                  <div class="stat-label">
+                    Mất / hư hỏng
+                  </div>
+                  <div class="stat-sub">
+                    {{ lostDamageTotals.lost }} mất • {{ lostDamageTotals.damaged }} hỏng
+                  </div>
+                </template>
+              </div>
+            </el-card>
+          </el-col>
         </el-row>
 
         <!-- Tài sản mất / hư hỏng (mọi người dùng; tự lọc theo đơn vị nếu không phải admin) -->
         <el-row
+          id="loss-damage-section"
           :gutter="16"
           class="loss-damage-row"
         >
@@ -479,7 +517,7 @@
 import { ref, reactive, onMounted, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { Box, ShoppingCart, Setting, Sort, List, Delete } from '@element-plus/icons-vue';
+import { Box, ShoppingCart, Setting, Sort, List, Delete, Warning } from '@element-plus/icons-vue';
 import VChart from 'vue-echarts';
 import * as dashboardService from '@/services/dashboard.service';
 import { inventoryService } from '@/services/inventory.service';
@@ -533,8 +571,16 @@ const lostDamageTotals = computed(() => {
     if (asset.status === 'lost') lost += 1;
     else if (asset.status === 'damaged') damaged += 1;
   }
-  return { lost, damaged };
+  return { lost, damaged, total: lost + damaged };
 });
+
+const handleLossDamageClick = () => {
+  if (authStore.isAdmin) {
+    router.push('/loss-damage');
+    return;
+  }
+  document.getElementById('loss-damage-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
 
 const auditLogs = ref<any[]>([]);
 const auditPagination = ref({
@@ -1021,6 +1067,7 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
 .maintenance-icon  { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
 .receipts-icon     { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); }
 .issues-icon       { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
+.lost-damage-icon  { background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%); }
 .transfers-icon    { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
 .inventory-icon    { background: linear-gradient(135deg, #64748b 0%, #475569 100%); }
 
@@ -1042,6 +1089,16 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
   color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.stat-sub {
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   line-height: 1.2;
 }
 
