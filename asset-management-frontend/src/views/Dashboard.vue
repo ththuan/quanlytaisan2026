@@ -232,53 +232,6 @@
           </el-col>
         </el-row>
 
-        <el-row
-          :gutter="16"
-          class="charts-row"
-        >
-          <el-col :span="24">
-            <el-card
-              class="chart-card"
-              shadow="hover"
-            >
-              <template #header>
-                <div
-                  class="card-header chart-card-header"
-                >
-                  <div class="header-left">
-                    <span class="card-title">Mạng lưới tài sản thông minh</span>
-                  </div>
-                  <div class="header-right">
-                    <div class="status-capsules">
-                      <div 
-                        v-for="s in assetsByStatus" 
-                        :key="s.status" 
-                        class="status-capsule"
-                        :style="{ '--status-color': getStatusColor(s.status) }"
-                        @click="goToAssets({ status: s.status })"
-                      >
-                        <span class="capsule-label">{{ getStatusText(s.status) }}</span>
-                        <span class="capsule-value">{{ s.count }}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </template>
-
-              <div
-                class="dept-chart force-full-width"
-              >
-                <VChart
-                  class="dept-echart"
-                  :option="graphOption"
-                  autoresize
-                  @click="onGraphClick"
-                />
-              </div>
-            </el-card>
-          </el-col>
-        </el-row>
-
         <!-- Tài sản mất / hư hỏng (mọi người dùng; tự lọc theo đơn vị nếu không phải admin) -->
         <el-row
           :gutter="16"
@@ -366,6 +319,53 @@
                   show-overflow-tooltip
                 />
               </el-table>
+            </el-card>
+          </el-col>
+        </el-row>
+
+        <el-row
+          :gutter="16"
+          class="charts-row"
+        >
+          <el-col :span="24">
+            <el-card
+              class="chart-card"
+              shadow="hover"
+            >
+              <template #header>
+                <div
+                  class="card-header chart-card-header"
+                >
+                  <div class="header-left">
+                    <span class="card-title">Mạng lưới tài sản thông minh</span>
+                  </div>
+                  <div class="header-right">
+                    <div class="status-capsules">
+                      <div 
+                        v-for="s in assetsByStatus" 
+                        :key="s.status" 
+                        class="status-capsule"
+                        :style="{ '--status-color': getStatusColor(s.status) }"
+                        @click="goToAssets({ status: s.status })"
+                      >
+                        <span class="capsule-label">{{ getStatusText(s.status) }}</span>
+                        <span class="capsule-value">{{ s.count }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <div
+                class="dept-chart force-full-width"
+              >
+                <VChart
+                  class="dept-echart"
+                  :option="graphOption"
+                  autoresize
+                  @click="onGraphClick"
+                />
+              </div>
             </el-card>
           </el-col>
         </el-row>
