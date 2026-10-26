@@ -121,6 +121,7 @@ import { Printer } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useAuthStore } from '@/stores/auth.store';
 import { useTransferStore } from '@/stores/transfer.store';
+import { openPrintWindow } from '@/utils/print';
 
 const props = defineProps<{
   visible: boolean;
@@ -249,9 +250,6 @@ const escapeHtml = (value: unknown) => String(value ?? '-')
 const handlePrint = () => {
   if (!props.transfer) return;
 
-  const printWindow = window.open('', '_blank', 'width=900,height=700');
-  if (!printWindow) return;
-
   const transfer = props.transfer;
   const approvals = approvalTimeline.value.map((item) => `
     <tr>
@@ -262,12 +260,24 @@ const handlePrint = () => {
     </tr>
   `).join('');
 
-  printWindow.document.write(`<!doctype html>
-<html lang="vi">
-<head>
-  <meta charset="utf-8">
-  <title>Phiếu điều chuyển ${escapeHtml(transfer.asset?.asset_code)}</title>
-  <style>
+  const body = `
+    <h1>Phiếu điều chuyển tài sản</h1>
+    <div class="subtitle">Mã phiếu: DC-${escapeHtml(transfer.id)} | Ngày lập: ${escapeHtml(formatDate(transfer.created_at))}</div>
+    <table>
+      <tr><th>Mã tài sản</th><td>${escapeHtml(transfer.asset?.asset_code)}</td><th>Tên tài sản</th><td>${escapeHtml(transfer.asset?.name)}</td></tr>
+      <tr><th>Đơn vị giao</th><td>${escapeHtml(transfer.from_department?.name)}</td><th>Đơn vị nhận</th><td>${escapeHtml(transfer.to_department?.name)}</td></tr>
+      <tr><th>Người đề nghị</th><td>${escapeHtml(transfer.requester?.fullname || transfer.requester?.username)}</td><th>Trạng thái</th><td>${escapeHtml(getStatusText(transfer.status))}</td></tr>
+      <tr><th>Lý do</th><td colspan="3">${escapeHtml(transfer.reason)}</td></tr>
+      <tr><th>Ghi chú</th><td colspan="3">${escapeHtml(transfer.notes)}</td></tr>
+    </table>
+    ${approvals ? `<h3>Lịch sử phê duyệt</h3><table class="history"><thead><tr><th>Thời gian</th><th>Thao tác</th><th>Người thực hiện</th><th>Lý do/Ghi chú</th></tr></thead><tbody>${approvals}</tbody></table>` : ''}
+    <div class="signatures">
+      <div><strong>Đơn vị giao</strong><div class="signature-space"></div><div>(Ký, ghi rõ họ tên)</div></div>
+      <div><strong>Đơn vị nhận</strong><div class="signature-space"></div><div>(Ký, ghi rõ họ tên)</div></div>
+      <div><strong>Người phê duyệt</strong><div class="signature-space"></div><div>(Ký, ghi rõ họ tên)</div></div>
+    </div>`;
+
+  const extraStyles = `
     @page { size: A4; margin: 18mm; }
     body { font-family: Arial, sans-serif; color: #111; font-size: 13px; line-height: 1.45; }
     h1 { margin: 18px 0 4px; text-align: center; font-size: 20px; text-transform: uppercase; }
@@ -278,29 +288,9 @@ const handlePrint = () => {
     .history th { width: auto; text-align: center; }
     .signatures { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 34px; text-align: center; }
     .signature-space { height: 70px; }
-  </style>
-</head>
-<body>
-  <h1>Phiếu điều chuyển tài sản</h1>
-  <div class="subtitle">Mã phiếu: DC-${escapeHtml(transfer.id)} | Ngày lập: ${escapeHtml(formatDate(transfer.created_at))}</div>
-  <table>
-    <tr><th>Mã tài sản</th><td>${escapeHtml(transfer.asset?.asset_code)}</td><th>Tên tài sản</th><td>${escapeHtml(transfer.asset?.name)}</td></tr>
-    <tr><th>Đơn vị giao</th><td>${escapeHtml(transfer.from_department?.name)}</td><th>Đơn vị nhận</th><td>${escapeHtml(transfer.to_department?.name)}</td></tr>
-    <tr><th>Người đề nghị</th><td>${escapeHtml(transfer.requester?.fullname || transfer.requester?.username)}</td><th>Trạng thái</th><td>${escapeHtml(getStatusText(transfer.status))}</td></tr>
-    <tr><th>Lý do</th><td colspan="3">${escapeHtml(transfer.reason)}</td></tr>
-    <tr><th>Ghi chú</th><td colspan="3">${escapeHtml(transfer.notes)}</td></tr>
-  </table>
-  ${approvals ? `<h3>Lịch sử phê duyệt</h3><table class="history"><thead><tr><th>Thời gian</th><th>Thao tác</th><th>Người thực hiện</th><th>Lý do/Ghi chú</th></tr></thead><tbody>${approvals}</tbody></table>` : ''}
-  <div class="signatures">
-    <div><strong>Đơn vị giao</strong><div class="signature-space"></div><div>(Ký, ghi rõ họ tên)</div></div>
-    <div><strong>Đơn vị nhận</strong><div class="signature-space"></div><div>(Ký, ghi rõ họ tên)</div></div>
-    <div><strong>Người phê duyệt</strong><div class="signature-space"></div><div>(Ký, ghi rõ họ tên)</div></div>
-  </div>
-</body>
-</html>`);
-  printWindow.document.close();
-  printWindow.focus();
-  printWindow.addEventListener('load', () => printWindow.print(), { once: true });
+  `;
+
+  openPrintWindow(`Phiếu điều chuyển ${transfer.asset?.asset_code || ''}`, body, extraStyles);
 };
 </script>
 

@@ -67,6 +67,9 @@ export const createAssetSchema = Joi.object({
   useful_life: Joi.number().integer().min(1).max(100).allow(null).optional(),
   asset_condition: Joi.string().valid('good', 'usable', 'needs_repair', 'damaged', 'disposed').optional(),
   land_parcel_id: Joi.number().integer().min(0).allow(null).optional(),
+  discrepancy_reason: Joi.string().allow('', null).optional(),
+  responsibility: Joi.string().max(255).allow('', null).optional(),
+  compensation_amount: Joi.number().min(0).precision(2).allow(null).optional(),
 });
 
 export const updateAssetSchema = Joi.object({
@@ -104,6 +107,9 @@ export const updateAssetSchema = Joi.object({
   useful_life: Joi.number().integer().min(1).max(100).allow(null).optional(),
   asset_condition: Joi.string().valid('good', 'usable', 'needs_repair', 'damaged', 'disposed').optional(),
   land_parcel_id: Joi.number().integer().min(0).allow(null).optional(),
+  discrepancy_reason: Joi.string().allow('', null).optional(),
+  responsibility: Joi.string().max(255).allow('', null).optional(),
+  compensation_amount: Joi.number().min(0).precision(2).allow(null).optional(),
 }).min(1);
 
 // Transfer validation schemas

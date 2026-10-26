@@ -34,10 +34,18 @@
           clearable
           style="width: 160px"
         >
-          <el-option label="Mất" value="lost" />
-          <el-option label="Hư hỏng" value="damaged" />
+          <el-option
+            label="Mất"
+            value="lost"
+          />
+          <el-option
+            label="Hư hỏng"
+            value="damaged"
+          />
         </el-select>
-        <el-button @click="load">Lọc</el-button>
+        <el-button @click="load">
+          Lọc
+        </el-button>
       </div>
 
       <el-table
@@ -45,32 +53,98 @@
         :data="rows"
         stripe
       >
-        <el-table-column type="index" label="STT" width="60" align="center" />
-        <el-table-column prop="asset_code" label="Mã tài sản" width="140" />
-        <el-table-column prop="name" label="Tên tài sản" min-width="220" />
-        <el-table-column label="Đơn vị" min-width="180">
-          <template #default="{ row }">{{ row.department?.name || '-' }}</template>
-        </el-table-column>
-        <el-table-column label="Trạng thái" width="110" align="center">
+        <el-table-column
+          type="index"
+          label="STT"
+          width="60"
+          align="center"
+        />
+        <el-table-column
+          prop="asset_code"
+          label="Mã tài sản"
+          width="140"
+        />
+        <el-table-column
+          prop="name"
+          label="Tên tài sản"
+          min-width="220"
+        />
+        <el-table-column
+          label="Đơn vị"
+          min-width="180"
+        >
           <template #default="{ row }">
-            <el-tag :type="row.status === 'lost' ? 'danger' : 'warning'" size="small">
+            {{ row.department?.name || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="Trạng thái"
+          width="110"
+          align="center"
+        >
+          <template #default="{ row }">
+            <el-tag
+              :type="row.status === 'lost' ? 'danger' : 'warning'"
+              size="small"
+            >
               {{ row.status === 'lost' ? 'Mất' : 'Hư hỏng' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="Nguyên giá" width="140" align="right">
-          <template #default="{ row }">{{ formatMoney(row.purchase_price) }}</template>
+        <el-table-column
+          label="Nguyên giá"
+          width="140"
+          align="right"
+        >
+          <template #default="{ row }">
+            {{ formatMoney(row.purchase_price) }}
+          </template>
         </el-table-column>
-        <el-table-column label="Giá trị còn lại" width="140" align="right">
-          <template #default="{ row }">{{ formatMoney(row.current_value) }}</template>
+        <el-table-column
+          label="Giá trị còn lại"
+          width="140"
+          align="right"
+        >
+          <template #default="{ row }">
+            {{ formatMoney(row.current_value) }}
+          </template>
         </el-table-column>
-        <el-table-column prop="discrepancy_reason" label="Nguyên nhân" min-width="200" />
-        <el-table-column prop="responsibility" label="Trách nhiệm" min-width="160" />
-        <el-table-column label="Bồi thường" width="140" align="right">
+        <el-table-column
+          prop="discrepancy_reason"
+          label="Nguyên nhân"
+          min-width="200"
+        />
+        <el-table-column
+          prop="responsibility"
+          label="Trách nhiệm"
+          min-width="160"
+        />
+        <el-table-column
+          label="Bồi thường"
+          width="140"
+          align="right"
+        >
           <template #default="{ row }">
             <span :class="{ 'text-danger': Number(row.compensation_amount) > 0 }">
               {{ formatMoney(row.compensation_amount) }}
             </span>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="Thao tác"
+          width="90"
+          align="center"
+          fixed="right"
+        >
+          <template #default="{ row }">
+            <el-button
+              link
+              type="primary"
+              :icon="Edit"
+              @click.stop="openEdit(row)"
+            >
+              Sửa
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -80,13 +154,73 @@
         <span>Tổng bồi thường: <b>{{ formatMoney(totalCompensation) }}</b></span>
       </div>
     </el-card>
+
+    <el-dialog
+      v-model="editVisible"
+      title="Cập nhật nguyên nhân & trách nhiệm"
+      width="520px"
+      :close-on-click-modal="false"
+    >
+      <el-form label-position="top">
+        <el-form-item label="Tài sản">
+          <el-input
+            :model-value="editRow ? `${editRow.asset_code} - ${editRow.name}` : ''"
+            disabled
+          />
+        </el-form-item>
+        <el-form-item
+          label="Nguyên nhân mất / hư hỏng"
+          required
+        >
+          <el-input
+            v-model="editForm.discrepancy_reason"
+            type="textarea"
+            :rows="3"
+            placeholder="Nêu rõ nguyên nhân..."
+          />
+        </el-form-item>
+        <el-form-item
+          label="Trách nhiệm"
+          required
+        >
+          <el-input
+            v-model="editForm.responsibility"
+            placeholder="Tập thể/cá nhân chịu trách nhiệm"
+          />
+        </el-form-item>
+        <el-form-item label="Bồi thường (đồng)">
+          <el-input-number
+            v-model="editForm.compensation_amount"
+            :min="0"
+            :precision="0"
+            :formatter="(value: any) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
+            :parser="(value: any) => value.replace(/\$\s?|(,*)/g, '')"
+            placeholder="0"
+            style="width: 100%"
+            :controls="false"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editVisible = false">
+          Hủy
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="savingEdit"
+          @click="saveEdit"
+        >
+          Lưu
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Download, Printer } from '@element-plus/icons-vue';
+import { Download, Edit, Printer } from '@element-plus/icons-vue';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 import { assetService } from '@/services/asset.service';
 import { openPrintWindow, escapeHtml } from '@/utils/print';
@@ -100,6 +234,51 @@ const status = ref<string>('');
 const totalCompensation = computed(() =>
   rows.value.reduce((s, r) => s + Number(r.compensation_amount || 0), 0)
 );
+
+const editVisible = ref(false);
+const savingEdit = ref(false);
+const editRow = ref<any>(null);
+const editForm = reactive({
+  discrepancy_reason: '',
+  responsibility: '',
+  compensation_amount: null as number | null,
+});
+
+const openEdit = (row: any) => {
+  editRow.value = row;
+  editForm.discrepancy_reason = row.discrepancy_reason || '';
+  editForm.responsibility = row.responsibility || '';
+  editForm.compensation_amount =
+    row.compensation_amount !== undefined && row.compensation_amount !== null
+      ? Number(row.compensation_amount)
+      : null;
+  editVisible.value = true;
+};
+
+const saveEdit = async () => {
+  if (!editRow.value) return;
+  if (!editForm.discrepancy_reason.trim() || !editForm.responsibility.trim()) {
+    ElMessage.warning('Vui lòng nhập nguyên nhân và trách nhiệm');
+    return;
+  }
+  savingEdit.value = true;
+  try {
+    await assetService.updateAsset(editRow.value.id, {
+      discrepancy_reason: editForm.discrepancy_reason.trim(),
+      responsibility: editForm.responsibility.trim(),
+      compensation_amount: editForm.compensation_amount ?? 0,
+    });
+    editRow.value.discrepancy_reason = editForm.discrepancy_reason.trim();
+    editRow.value.responsibility = editForm.responsibility.trim();
+    editRow.value.compensation_amount = editForm.compensation_amount ?? 0;
+    editVisible.value = false;
+    ElMessage.success('Đã lưu nguyên nhân và trách nhiệm');
+  } catch {
+    ElMessage.error('Không lưu được thông tin xử lý');
+  } finally {
+    savingEdit.value = false;
+  }
+};
 
 const formatMoney = (v: any) =>
   v != null ? Number(v).toLocaleString('vi-VN') + ' đ' : '-';

@@ -53,6 +53,9 @@ export interface AssetAttributes {
   current_department_id?: number;
   status: AssetStatus;
   location?: string;
+  discrepancy_reason?: string;
+  responsibility?: string;
+  compensation_amount?: number;
   image_url?: string;
   qr_code?: string; // Mã QR code của tài sản (chứa thông tin: mã, tên, loại, số lượng)
   qr_code_image?: string; // URL hình ảnh QR code đã generate
@@ -109,6 +112,9 @@ class Asset extends Model<AssetAttributes, AssetCreationAttributes> implements A
   public current_department_id?: number;
   public status!: AssetStatus;
   public location?: string;
+  public discrepancy_reason?: string;
+  public responsibility?: string;
+  public compensation_amount?: number;
   public image_url?: string;
   public qr_code?: string;
   public qr_code_image?: string;
@@ -300,6 +306,21 @@ Asset.init(
     location: {
       type: DataTypes.STRING(255),
       allowNull: true,
+    },
+    discrepancy_reason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'Nguyên nhân mất/hư hỏng',
+    },
+    responsibility: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: 'Trách nhiệm (tập thể/cá nhân)',
+    },
+    compensation_amount: {
+      type: DataTypes.DECIMAL(18, 2),
+      allowNull: true,
+      comment: 'Số tiền bồi thường',
     },
     image_url: {
       type: DataTypes.STRING(500),

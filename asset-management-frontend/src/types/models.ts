@@ -60,6 +60,9 @@ export interface Asset {
   current_department_id?: number;
   status: 'active' | 'inactive' | 'damaged' | 'lost' | 'disposed';
   location?: string;
+  discrepancy_reason?: string;
+  responsibility?: string;
+  compensation_amount?: number;
   image_url?: string;
   assetCategory?: AssetCategoryInfo;
   created_at?: string;

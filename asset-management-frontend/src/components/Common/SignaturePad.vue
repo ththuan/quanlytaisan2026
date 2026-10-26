@@ -122,11 +122,39 @@ const updateSignedAt = () => {
   signedAtText.value = new Date().toLocaleString('vi-VN', { hour12: false });
 };
 
+const drawArcText = (
+  c: CanvasRenderingContext2D,
+  text: string,
+  cx: number,
+  cy: number,
+  radius: number,
+  start: number,
+  end: number,
+  font: string,
+  color: string,
+) => {
+  c.save();
+  c.fillStyle = color;
+  c.font = font;
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  const step = (end - start) / text.length;
+  for (let i = 0; i < text.length; i += 1) {
+    const angle = start + step * (i + 0.5);
+    c.save();
+    c.translate(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius);
+    c.rotate(angle + Math.PI / 2);
+    c.fillText(text[i], 0, 0);
+    c.restore();
+  }
+  c.restore();
+};
+
 const drawDigitalSignature = () => {
   const canvas = digitalCanvasRef.value;
   if (!canvas) return;
-  const W = 720;
-  const H = 190;
+  const W = 820;
+  const H = 240;
   canvas.width = W;
   canvas.height = H;
   const c = canvas.getContext('2d');
@@ -137,23 +165,24 @@ const drawDigitalSignature = () => {
   const name = signerName.value.trim();
   if (!name) return;
 
-  const ink = c.createLinearGradient(80, 50, W - 80, 150);
+  const blue = '#1d4ed8';
+  const ink = c.createLinearGradient(80, 50, 520, 170);
   ink.addColorStop(0, '#1d4ed8');
   ink.addColorStop(1, '#0f766e');
 
-  let size = 62;
-  const maxWidth = W - 120;
+  let size = 56;
+  const maxWidth = 440;
   const setFont = (s: number) => {
     c.font = `italic 700 ${s}px "Segoe Script", "Brush Script MT", "Times New Roman", serif`;
   };
   setFont(size);
-  while (c.measureText(name).width > maxWidth && size > 26) {
+  while (c.measureText(name).width > maxWidth && size > 24) {
     size -= 2;
     setFont(size);
   }
 
-  const cx = W / 2;
-  const cy = H / 2 - 8;
+  const cx = 270;
+  const cy = 108;
 
   c.textAlign = 'center';
   c.textBaseline = 'middle';
@@ -176,6 +205,55 @@ const drawDigitalSignature = () => {
     flourishY + 2,
   );
   c.stroke();
+
+  // Con dấu "ĐÃ KÝ SỐ" kiểu hóa đơn điện tử
+  const sx = 650;
+  const sy = 112;
+  const r = 84;
+
+  c.strokeStyle = blue;
+  c.lineWidth = 5;
+  c.beginPath();
+  c.arc(sx, sy, r, 0, Math.PI * 2);
+  c.stroke();
+
+  c.lineWidth = 1.5;
+  c.beginPath();
+  c.arc(sx, sy, r - 8, 0, Math.PI * 2);
+  c.stroke();
+
+  drawArcText(
+    c,
+    'CHỮ KÝ ĐIỆN TỬ',
+    sx,
+    sy,
+    r - 20,
+    Math.PI * 1.08,
+    Math.PI * 1.92,
+    '600 11px Inter, Arial, sans-serif',
+    blue,
+  );
+
+  // Dấu check
+  c.strokeStyle = '#15803d';
+  c.lineWidth = 5;
+  c.lineCap = 'round';
+  c.lineJoin = 'round';
+  c.beginPath();
+  c.moveTo(sx - 16, sy - 8);
+  c.lineTo(sx - 3, sy + 6);
+  c.lineTo(sx + 20, sy - 20);
+  c.stroke();
+
+  c.fillStyle = blue;
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  c.font = '700 16px Inter, Arial, sans-serif';
+  c.fillText('ĐÃ KÝ SỐ', sx, sy + 28);
+
+  c.font = '500 12px Inter, Arial, sans-serif';
+  c.fillStyle = '#475569';
+  c.fillText(new Date().toLocaleDateString('vi-VN'), sx, sy + 50);
 };
 
 const onOpen = () => {

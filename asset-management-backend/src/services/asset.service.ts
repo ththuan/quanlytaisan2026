@@ -40,6 +40,9 @@ export interface CreateAssetInput {
   image_url?: string;
   asset_condition?: AssetCondition;
   land_parcel_id?: number;
+  discrepancy_reason?: string;
+  responsibility?: string;
+  compensation_amount?: number;
 }
 
 export interface AssetWithDepreciation extends Asset {
@@ -876,9 +879,11 @@ class AssetService {
         department: d.current_department,
         current_department_id: d.current_department_id,
         last_inventory_date: d.last_inventory_date,
-        discrepancy_reason: latest?.discrepancy_reason || null,
-        responsibility: latest?.responsibility || null,
-        compensation_amount: latest?.compensation_amount != null ? Number(latest.compensation_amount) : 0,
+        discrepancy_reason: d.discrepancy_reason || latest?.discrepancy_reason || null,
+        responsibility: d.responsibility || latest?.responsibility || null,
+        compensation_amount: d.compensation_amount != null
+          ? Number(d.compensation_amount)
+          : (latest?.compensation_amount != null ? Number(latest.compensation_amount) : 0),
       };
     });
   }

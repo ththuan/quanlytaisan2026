@@ -1136,6 +1136,61 @@
       </template>
     </el-dialog>
 
+    <el-dialog
+      v-model="bulkMissingVisible"
+      title="Đánh dấu tài sản thiếu"
+      width="520px"
+      :close-on-click-modal="false"
+    >
+      <el-alert
+        type="warning"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 14px;"
+        :title="`${bulkMissingAssets.length} tài sản chưa quét sẽ được đánh dấu là Thiếu. Vui lòng ghi rõ nguyên nhân và trách nhiệm.`"
+      />
+      <el-form label-position="top">
+        <el-form-item
+          label="Nguyên nhân thiếu"
+          required
+        >
+          <el-input
+            v-model="bulkMissingForm.discrepancy_reason"
+            type="textarea"
+            :rows="2"
+            placeholder="Nêu rõ nguyên nhân thiếu..."
+          />
+        </el-form-item>
+        <el-form-item
+          label="Trách nhiệm"
+          required
+        >
+          <el-input
+            v-model="bulkMissingForm.responsibility"
+            placeholder="Tập thể/cá nhân chịu trách nhiệm"
+          />
+        </el-form-item>
+        <el-form-item label="Số tiền bồi thường (đồng)">
+          <el-input-number
+            v-model="bulkMissingForm.compensation_amount"
+            :min="0"
+            :step="100000"
+            style="width: 100%"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="bulkMissingVisible = false">Hủy</el-button>
+        <el-button
+          type="primary"
+          :loading="markingMissing"
+          @click="confirmMarkMissing"
+        >
+          Đánh dấu thiếu
+        </el-button>
+      </template>
+    </el-dialog>
+
     <SignaturePad
       v-model="showSignDialog"
       :title="signTitle"
@@ -1190,6 +1245,13 @@ const saving = ref(false);
 const submitting = ref(false);
 const savingCheck = ref(false);
 const markingMissing = ref(false);
+const bulkMissingVisible = ref(false);
+const bulkMissingAssets = ref<any[]>([]);
+const bulkMissingForm = ref({
+  discrepancy_reason: '',
+  responsibility: '',
+  compensation_amount: 0,
+});
 
 const round = ref<InventoryRound | null>(null);
 const report = ref<InventoryReport | null>(null);
@@ -2196,39 +2258,47 @@ const saveCheck = async () => {
   }
 };
 
-const markUnscannedAsMissing = async () => {
+const markUnscannedAsMissing = () => {
   if (!report.value) {
     ElMessage.error('Không tìm thấy báo cáo kiểm kê');
     return;
   }
-  
+
   // Tìm các tài sản chưa quét (có thể quét QR nhưng chưa có inventory_detail)
   const unscannedAssets = assets.value.filter(asset => {
     if (!canScanAsset(asset)) return false; // Bỏ qua tài sản không cần quét QR
     return !asset.inventory_detail; // Chưa có kết quả kiểm kê
   });
-  
+
   if (unscannedAssets.length === 0) {
     ElMessage.info('Không có tài sản nào chưa quét');
     return;
   }
-  
+
+  bulkMissingAssets.value = unscannedAssets;
+  bulkMissingForm.value = {
+    discrepancy_reason: '',
+    responsibility: '',
+    compensation_amount: 0,
+  };
+  bulkMissingVisible.value = true;
+};
+
+const confirmMarkMissing = async () => {
+  if (!report.value) return;
+  const reason = bulkMissingForm.value.discrepancy_reason.trim();
+  const responsibility = bulkMissingForm.value.responsibility.trim();
+  if (!reason || !responsibility) {
+    ElMessage.warning('Vui lòng nhập nguyên nhân và trách nhiệm cho tài sản thiếu');
+    return;
+  }
+
+  markingMissing.value = true;
+  let successCount = 0;
+  let errorCount = 0;
+
   try {
-    await ElMessageBox.confirm(
-      `Bạn có chắc chắn muốn đánh dấu ${unscannedAssets.length} tài sản chưa quét là "Thiếu"?\n\nLưu ý: Chỉ đánh dấu các tài sản có thể quét QR nhưng chưa được quét.`,
-      'Xác nhận đánh dấu tài sản thiếu',
-      { 
-        confirmButtonText: 'Đánh dấu', 
-        cancelButtonText: 'Hủy', 
-        type: 'warning' 
-      }
-    );
-    
-    markingMissing.value = true;
-    let successCount = 0;
-    let errorCount = 0;
-    
-    for (const asset of unscannedAssets) {
+    for (const asset of bulkMissingAssets.value) {
       try {
         const data = {
           asset_id: asset.id,
@@ -2236,33 +2306,33 @@ const markUnscannedAsMissing = async () => {
           asset_condition: 'damaged', // Hư hỏng nặng (tài sản mất)
           check_status: 'missing',
           notes: 'Tài sản chưa được quét QR - đánh dấu là thiếu',
+          discrepancy_reason: reason,
+          responsibility,
+          compensation_amount: Number(bulkMissingForm.value.compensation_amount) || 0,
         };
-        
+
         const detail = await inventoryService.addDetail(report.value.id, data);
-        
+
         // Update local state
         const index = assets.value.findIndex(a => a.id === asset.id);
         if (index !== -1) {
           assets.value[index].inventory_detail = detail;
         }
-        
+
         successCount++;
       } catch (error: any) {
         console.error(`Error marking asset ${asset.id} as missing:`, error);
         errorCount++;
       }
     }
-    
+
     hasChanges.value = true;
-    
+    bulkMissingVisible.value = false;
+
     if (errorCount === 0) {
       ElMessage.success(`Đã đánh dấu ${successCount} tài sản là "Thiếu"`);
     } else {
       ElMessage.warning(`Đã đánh dấu ${successCount} tài sản, ${errorCount} tài sản gặp lỗi`);
-    }
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error('Có lỗi xảy ra khi đánh dấu tài sản');
     }
   } finally {
     markingMissing.value = false;

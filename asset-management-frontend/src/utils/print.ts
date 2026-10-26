@@ -69,8 +69,8 @@ const BASE_STYLES = `
   .signatures { display: flex; justify-content: space-between; gap: 16px; margin-top: 36px; text-align: center; }
   .sig-cell { flex: 1; }
   .sig-label { font-weight: bold; font-size: 13px; margin-bottom: 4px; }
-  .sig-img { height: 60px; object-fit: contain; }
-  .sig-space { height: 60px; }
+  .sig-img { height: auto; max-height: 92px; max-width: 100%; object-fit: contain; }
+  .sig-space { height: 70px; }
   .sig-name { font-weight: bold; font-size: 13px; }
   .sig-role { font-size: 12px; color: #333; }
   .sig-meta { font-size: 11px; color: #555; }
@@ -81,24 +81,73 @@ const BASE_STYLES = `
   @media print { .toolbar { display: none !important; } @page { size: A4 portrait; margin: 12mm; } }
 `;
 
+const isIOSDevice = () =>
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
 /**
- * Mở cửa sổ in với tiêu đề + nội dung HTML. Trả về false nếu bị chặn popup.
+ * In biên bản ngay trong trang hiện tại (không mở tab mới) để tránh bị trình
+ * duyệt — đặc biệt là Safari trên iPad — chặn popup. Toàn bộ nội dung in được
+ * đặt trong một lớp phủ riêng và chỉ lớp này hiển thị khi in.
  */
 export function openPrintWindow(title: string, bodyHtml: string, extraStyles = ''): boolean {
-  const html = `<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8">
-<title>${escapeHtml(title)}</title>
-<style>${BASE_STYLES}${extraStyles}</style></head><body>
-<div class="toolbar">
-  <button class="btn-print" onclick="window.print()">In / Lưu PDF</button>
-  <button class="btn-close" onclick="window.close()">Đóng</button>
-</div>
-<div class="doc">${bodyHtml}</div>
-</body></html>`;
+  document.getElementById('app-print-root')?.remove();
 
-  const win = window.open('', '_blank');
-  if (!win) return false;
-  win.document.open();
-  win.document.write(html);
-  win.document.close();
+  const root = document.createElement('div');
+  root.id = 'app-print-root';
+  root.setAttribute('data-print-title', title);
+  root.innerHTML = `
+    <style>
+      ${BASE_STYLES}
+      ${extraStyles}
+      #app-print-root {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483000;
+        overflow: auto;
+        background: #fff;
+      }
+      #app-print-root .toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: #fff;
+        padding: 10px;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      @media print {
+        body > *:not(#app-print-root) { display: none !important; }
+        #app-print-root { position: static !important; overflow: visible !important; }
+        #app-print-root .toolbar { display: none !important; }
+        @page { size: A4 portrait; margin: 12mm; }
+      }
+    </style>
+    <div class="toolbar">
+      <button class="btn-print" type="button">In / Lưu PDF</button>
+      <button class="btn-close" type="button">Đóng</button>
+    </div>
+    <div class="doc">${bodyHtml}</div>`;
+
+  document.body.appendChild(root);
+
+  const close = () => {
+    window.removeEventListener('afterprint', close);
+    root.remove();
+  };
+  const doPrint = () => {
+    try { window.print(); } catch { /* ignore */ }
+  };
+
+  root.querySelector('.btn-print')?.addEventListener('click', doPrint);
+  root.querySelector('.btn-close')?.addEventListener('click', close);
+  window.addEventListener('afterprint', close);
+
+  // iOS yêu cầu window.print() phải nằm trong thao tác chạm của người dùng,
+  // nên chỉ tự động in trên các trình duyệt khác; trên iPad người dùng bấm
+  // nút "In / Lưu PDF" trong lớp phủ.
+  if (!isIOSDevice()) {
+    setTimeout(doPrint, 150);
+  }
+
   return true;
 }
