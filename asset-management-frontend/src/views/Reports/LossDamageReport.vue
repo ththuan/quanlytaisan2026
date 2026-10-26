@@ -1,7 +1,7 @@
 <template>
   <div class="loss-page">
     <div class="page-head">
-      <h2>Tài sản mất / hư hỏng &amp; bồi thường</h2>
+      <h2>Tài sản mất / hư hỏng</h2>
       <div>
         <el-button
           :icon="Printer"
@@ -133,17 +133,6 @@
           min-width="160"
         />
         <el-table-column
-          label="Bồi thường"
-          width="140"
-          align="right"
-        >
-          <template #default="{ row }">
-            <span :class="{ 'text-danger': Number(row.compensation_amount) > 0 }">
-              {{ formatMoney(row.compensation_amount) }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column
           label="Thao tác"
           width="90"
           align="center"
@@ -164,7 +153,6 @@
 
       <div class="totals">
         <span>Tổng số: <b>{{ rows.length }}</b> tài sản</span>
-        <span>Tổng bồi thường: <b>{{ formatMoney(totalCompensation) }}</b></span>
       </div>
     </el-card>
 
@@ -268,7 +256,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Download, Edit, EditPen, Printer } from '@element-plus/icons-vue';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
@@ -280,10 +268,6 @@ const loading = ref(false);
 const exporting = ref(false);
 const departmentId = ref<number | null>(null);
 const status = ref<string>('');
-
-const totalCompensation = computed(() =>
-  rows.value.reduce((s, r) => s + Number(r.compensation_amount || 0), 0)
-);
 
 const selectedRows = ref<any[]>([]);
 const bulkVisible = ref(false);
@@ -414,9 +398,9 @@ const exportExcel = async () => {
 const printReport = () => {
   const body = `
     <div class="doc-header"><div class="org">Báo cáo tài sản mất / hư hỏng</div></div>
-    <div class="doc-title">Biên bản tài sản mất / hư hỏng &amp; bồi thường</div>
+    <div class="doc-title">Biên bản tài sản mất / hư hỏng</div>
     <table class="data">
-      <thead><tr><th>STT</th><th>Mã TS</th><th>Tên tài sản</th><th>Đơn vị</th><th>Trạng thái</th><th>Nguyên nhân</th><th>Trách nhiệm</th><th>Bồi thường</th></tr></thead>
+      <thead><tr><th>STT</th><th>Mã TS</th><th>Tên tài sản</th><th>Đơn vị</th><th>Trạng thái</th><th>Nguyên nhân</th><th>Trách nhiệm</th></tr></thead>
       <tbody>
         ${rows.value.map((r, i) => `<tr>
           <td class="num">${i + 1}</td>
@@ -426,11 +410,10 @@ const printReport = () => {
           <td>${r.status === 'lost' ? 'Mất' : 'Hư hỏng'}</td>
           <td>${escapeHtml(r.discrepancy_reason || '')}</td>
           <td>${escapeHtml(r.responsibility || '')}</td>
-          <td class="num">${Number(r.compensation_amount || 0).toLocaleString('vi-VN')}</td>
         </tr>`).join('')}
       </tbody>
     </table>
-    <div class="summary">Tổng số: <b>${rows.value.length}</b> — Tổng bồi thường: <b>${totalCompensation.value.toLocaleString('vi-VN')} đồng</b></div>
+    <div class="summary">Tổng số: <b>${rows.value.length}</b> tài sản</div>
     <div class="signatures">
       <div class="sig-cell"><div class="sig-label">Người lập</div><div class="sig-space"></div><div class="sig-name">..............</div></div>
       <div class="sig-cell"><div class="sig-label">Thủ trưởng đơn vị</div><div class="sig-space"></div><div class="sig-name">..............</div></div>
@@ -449,5 +432,4 @@ onMounted(load);
 .page-head h2 { margin: 0; font-size: 18px; }
 .toolbar { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
 .totals { display: flex; justify-content: flex-end; gap: 24px; margin-top: 12px; font-size: 14px; }
-.text-danger { color: #f56c6c; font-weight: 600; }
 </style>

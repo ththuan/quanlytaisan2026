@@ -753,7 +753,6 @@ export const exportLossDamage = async (req: AuthRequest, res: Response, next: Ne
       { header: 'Gi� tr? c�n l?i', key: 'current_value', width: 18 },
       { header: 'Nguy�n nh�n', key: 'discrepancy_reason', width: 36 },
       { header: 'Tr�ch nhi?m', key: 'responsibility', width: 28 },
-      { header: 'B?i thu?ng (d?ng)', key: 'compensation_amount', width: 20 },
     ];
     sheet.getRow(1).font = { bold: true };
 
@@ -768,12 +767,10 @@ export const exportLossDamage = async (req: AuthRequest, res: Response, next: Ne
         current_value: Number(r.current_value || 0),
         discrepancy_reason: r.discrepancy_reason || '',
         responsibility: r.responsibility || '',
-        compensation_amount: Number(r.compensation_amount || 0),
       });
     });
 
-    const totalComp = rows.reduce((s: number, r: any) => s + Number(r.compensation_amount || 0), 0);
-    const totalRow = sheet.addRow({ name: 'T?NG C?NG', compensation_amount: totalComp });
+    const totalRow = sheet.addRow({ name: 'TỔNG CỘNG' });
     totalRow.font = { bold: true };
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
