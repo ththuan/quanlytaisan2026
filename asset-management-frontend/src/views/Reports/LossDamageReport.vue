@@ -188,18 +188,6 @@
             placeholder="Tập thể/cá nhân chịu trách nhiệm"
           />
         </el-form-item>
-        <el-form-item label="Bồi thường (đồng)">
-          <el-input-number
-            v-model="editForm.compensation_amount"
-            :min="0"
-            :precision="0"
-            :formatter="(value: any) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
-            :parser="(value: any) => value.replace(/\$\s?|(,*)/g, '')"
-            placeholder="0"
-            style="width: 100%"
-            :controls="false"
-          />
-        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="editVisible = false">
@@ -241,17 +229,12 @@ const editRow = ref<any>(null);
 const editForm = reactive({
   discrepancy_reason: '',
   responsibility: '',
-  compensation_amount: null as number | null,
 });
 
 const openEdit = (row: any) => {
   editRow.value = row;
   editForm.discrepancy_reason = row.discrepancy_reason || '';
   editForm.responsibility = row.responsibility || '';
-  editForm.compensation_amount =
-    row.compensation_amount !== undefined && row.compensation_amount !== null
-      ? Number(row.compensation_amount)
-      : null;
   editVisible.value = true;
 };
 
@@ -266,11 +249,9 @@ const saveEdit = async () => {
     await assetService.updateAsset(editRow.value.id, {
       discrepancy_reason: editForm.discrepancy_reason.trim(),
       responsibility: editForm.responsibility.trim(),
-      compensation_amount: editForm.compensation_amount ?? 0,
     });
     editRow.value.discrepancy_reason = editForm.discrepancy_reason.trim();
     editRow.value.responsibility = editForm.responsibility.trim();
-    editRow.value.compensation_amount = editForm.compensation_amount ?? 0;
     editVisible.value = false;
     ElMessage.success('Đã lưu nguyên nhân và trách nhiệm');
   } catch {

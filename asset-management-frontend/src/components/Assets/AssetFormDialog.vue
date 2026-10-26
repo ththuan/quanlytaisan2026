@@ -235,7 +235,7 @@
             type="warning"
             :closable="false"
             show-icon
-            title="Tài sản mất / hư hỏng cần ghi rõ nguyên nhân và trách nhiệm để phục vụ biên bản, bồi thường."
+            title="Tài sản mất / hư hỏng cần ghi rõ nguyên nhân và trách nhiệm để phục vụ biên bản."
             style="margin-bottom: 12px"
           />
         </el-col>
@@ -252,7 +252,7 @@
             />
           </el-form-item>
         </el-col>
-        <el-col :span="16">
+        <el-col :span="24">
           <el-form-item
             label="Trách nhiệm"
             prop="responsibility"
@@ -260,23 +260,6 @@
             <el-input
               v-model="formData.responsibility"
               placeholder="Tập thể/cá nhân chịu trách nhiệm"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item
-            label="Bồi thường (đồng)"
-            prop="compensation_amount"
-          >
-            <el-input-number
-              v-model="formData.compensation_amount"
-              :min="0"
-              :precision="0"
-              :formatter="(value: any) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
-              :parser="(value: any) => value.replace(/\$\s?|(,*)/g, '')"
-              placeholder="0"
-              style="width: 100%"
-              :controls="false"
             />
           </el-form-item>
         </el-col>
@@ -576,7 +559,6 @@ const formData = reactive({
   current_department_id: null as number | null,
   discrepancy_reason: '',
   responsibility: '',
-  compensation_amount: null as number | null,
   location: '',
   purchase_date: '',
   purchase_price: null as number | null,
@@ -952,7 +934,6 @@ const resetForm = () => {
   formData.current_department_id = null;
   formData.discrepancy_reason = '';
   formData.responsibility = '';
-  formData.compensation_amount = null;
   formData.location = '';
   formData.purchase_date = '';
   formData.purchase_price = null;
@@ -1151,10 +1132,6 @@ watch(() => props.visible, async (val) => {
         current_department_id: props.asset.current_department_id ?? null,
         discrepancy_reason: props.asset.discrepancy_reason || '',
         responsibility: props.asset.responsibility || '',
-        compensation_amount:
-          props.asset.compensation_amount !== undefined && props.asset.compensation_amount !== null
-            ? Number(props.asset.compensation_amount)
-            : null,
         location: props.asset.location || '',
         purchase_date: props.asset.purchase_date || '',
         purchase_price: props.asset.purchase_price !== undefined && props.asset.purchase_price !== null ? Number(props.asset.purchase_price) : null,

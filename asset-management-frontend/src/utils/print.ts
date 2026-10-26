@@ -42,13 +42,16 @@ export function signatureCell(label: string, sign: SignatureLike | undefined): s
   const meta = sign
     ? `<div class="sig-meta">Ký số: ${escapeHtml(time)}</div>`
     : '';
+  // Chữ ký số đã chứa sẵn họ tên/vai trò/thời gian theo chuẩn (Digitally signed by...),
+  // nên chỉ hiển thị ảnh để tránh lặp thông tin trên bản in.
+  const hasImage = !!sign?.signature_image;
   return `
     <div class="sig-cell">
       <div class="sig-label">${escapeHtml(label)}</div>
       ${img}
-      <div class="sig-name">${name}</div>
-      ${roleLine}
-      ${meta}
+      ${hasImage ? '' : `<div class="sig-name">${name}</div>`}
+      ${hasImage ? '' : roleLine}
+      ${hasImage ? '' : meta}
     </div>`;
 }
 
@@ -69,7 +72,7 @@ const BASE_STYLES = `
   .signatures { display: flex; justify-content: space-between; gap: 16px; margin-top: 36px; text-align: center; }
   .sig-cell { flex: 1; }
   .sig-label { font-weight: bold; font-size: 13px; margin-bottom: 4px; }
-  .sig-img { height: auto; max-height: 92px; max-width: 100%; object-fit: contain; }
+  .sig-img { height: auto; max-height: 110px; max-width: 100%; object-fit: contain; }
   .sig-space { height: 70px; }
   .sig-name { font-weight: bold; font-size: 13px; }
   .sig-role { font-size: 12px; color: #333; }

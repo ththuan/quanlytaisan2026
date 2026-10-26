@@ -1170,14 +1170,6 @@
             placeholder="Tập thể/cá nhân chịu trách nhiệm"
           />
         </el-form-item>
-        <el-form-item label="Số tiền bồi thường (đồng)">
-          <el-input-number
-            v-model="bulkMissingForm.compensation_amount"
-            :min="0"
-            :step="100000"
-            style="width: 100%"
-          />
-        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="bulkMissingVisible = false">Hủy</el-button>
@@ -1250,7 +1242,6 @@ const bulkMissingAssets = ref<any[]>([]);
 const bulkMissingForm = ref({
   discrepancy_reason: '',
   responsibility: '',
-  compensation_amount: 0,
 });
 
 const round = ref<InventoryRound | null>(null);
@@ -2279,7 +2270,6 @@ const markUnscannedAsMissing = () => {
   bulkMissingForm.value = {
     discrepancy_reason: '',
     responsibility: '',
-    compensation_amount: 0,
   };
   bulkMissingVisible.value = true;
 };
@@ -2308,7 +2298,6 @@ const confirmMarkMissing = async () => {
           notes: 'Tài sản chưa được quét QR - đánh dấu là thiếu',
           discrepancy_reason: reason,
           responsibility,
-          compensation_amount: Number(bulkMissingForm.value.compensation_amount) || 0,
         };
 
         const detail = await inventoryService.addDetail(report.value.id, data);

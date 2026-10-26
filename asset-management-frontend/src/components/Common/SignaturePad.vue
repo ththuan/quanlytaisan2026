@@ -51,10 +51,6 @@
           ref="digitalCanvasRef"
           class="digital-signature-canvas"
         />
-        <span class="preview-badge">
-          <el-icon><Lock /></el-icon>
-          Chữ ký số
-        </span>
       </div>
 
       <div class="digital-note">
@@ -122,39 +118,22 @@ const updateSignedAt = () => {
   signedAtText.value = new Date().toLocaleString('vi-VN', { hour12: false });
 };
 
-const drawArcText = (
-  c: CanvasRenderingContext2D,
-  text: string,
-  cx: number,
-  cy: number,
-  radius: number,
-  start: number,
-  end: number,
-  font: string,
-  color: string,
-) => {
-  c.save();
-  c.fillStyle = color;
-  c.font = font;
-  c.textAlign = 'center';
-  c.textBaseline = 'middle';
-  const step = (end - start) / text.length;
-  for (let i = 0; i < text.length; i += 1) {
-    const angle = start + step * (i + 0.5);
-    c.save();
-    c.translate(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius);
-    c.rotate(angle + Math.PI / 2);
-    c.fillText(text[i], 0, 0);
-    c.restore();
-  }
-  c.restore();
+const formatSignDate = () => {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} `
+    + `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())} +07'00'`;
 };
 
+/**
+ * Vẽ khối chữ ký số theo chuẩn hiển thị của Adobe Acrobat:
+ * chữ ký tay màu hồng + "Digitally signed by ..." + "Date: ...".
+ */
 const drawDigitalSignature = () => {
   const canvas = digitalCanvasRef.value;
   if (!canvas) return;
   const W = 820;
-  const H = 240;
+  const H = 300;
   canvas.width = W;
   canvas.height = H;
   const c = canvas.getContext('2d');
@@ -165,95 +144,81 @@ const drawDigitalSignature = () => {
   const name = signerName.value.trim();
   if (!name) return;
 
-  const blue = '#1d4ed8';
-  const ink = c.createLinearGradient(80, 50, 520, 170);
-  ink.addColorStop(0, '#1d4ed8');
-  ink.addColorStop(1, '#0f766e');
+  // Chữ ký tay (màu hồng nhạt) phía sau, xoay nhẹ như bản ký số chuẩn
+  const pink = 'rgba(236, 72, 153, 0.38)';
+  c.save();
+  c.translate(W * 0.3, H * 0.55);
+  c.rotate(-0.2);
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
 
-  let size = 56;
-  const maxWidth = 440;
-  const setFont = (s: number) => {
+  let sigSize = 104;
+  const sigMax = 430;
+  const setScript = (s: number) => {
     c.font = `italic 700 ${s}px "Segoe Script", "Brush Script MT", "Times New Roman", serif`;
   };
-  setFont(size);
-  while (c.measureText(name).width > maxWidth && size > 24) {
-    size -= 2;
-    setFont(size);
+  setScript(sigSize);
+  while (c.measureText(name).width > sigMax && sigSize > 40) {
+    sigSize -= 2;
+    setScript(sigSize);
+  }
+  c.fillStyle = pink;
+  c.fillText(name, 0, 0);
+
+  const sigWidth = Math.min(c.measureText(name).width, sigMax);
+  const flourishY = sigSize * 0.72;
+  c.strokeStyle = pink;
+  c.lineWidth = 5;
+  c.lineCap = 'round';
+  c.beginPath();
+  c.moveTo(-sigWidth / 2 - 22, flourishY);
+  c.bezierCurveTo(-sigWidth / 4, flourishY + 24, sigWidth / 4, flourishY - 18, sigWidth / 2 + 22, flourishY + 4);
+  c.stroke();
+  c.restore();
+
+  // Khối nội dung chuẩn "Digitally signed by / Date"
+  const rx = 400;
+  const maxTextWidth = W - rx - 24;
+
+  c.textAlign = 'left';
+  c.textBaseline = 'alphabetic';
+  c.fillStyle = '#111827';
+  c.font = '600 31px Inter, Arial, sans-serif';
+  c.fillText('Digitally signed', rx, 78);
+
+  let nameSize = 31;
+  const setNameFont = (s: number) => {
+    c.font = `400 ${s}px Inter, Arial, sans-serif`;
+  };
+  setNameFont(nameSize);
+  while (c.measureText(`by ${name}`).width > maxTextWidth && nameSize > 16) {
+    nameSize -= 1;
+    setNameFont(nameSize);
+  }
+  c.fillText(`by ${name}`, rx, 118);
+
+  const subline = [signerRoleLabel.value, departmentName.value].filter(Boolean).join(' • ');
+  if (subline) {
+    c.font = '400 15px Inter, Arial, sans-serif';
+    c.fillStyle = '#4b5563';
+    c.fillText(subline, rx, 146);
   }
 
-  const cx = 270;
-  const cy = 108;
+  c.fillStyle = '#111827';
+  c.font = '400 26px Inter, Arial, sans-serif';
+  c.fillText('Date:', rx, 188);
 
-  c.textAlign = 'center';
-  c.textBaseline = 'middle';
-  c.fillStyle = ink;
-  c.fillText(name, cx, cy);
-
-  const textWidth = Math.min(c.measureText(name).width, maxWidth);
-  const flourishY = cy + size * 0.72;
-  c.strokeStyle = ink;
-  c.lineWidth = 3;
-  c.lineCap = 'round';
-  c.beginPath();
-  c.moveTo(cx - textWidth / 2 - 14, flourishY);
-  c.bezierCurveTo(
-    cx - textWidth / 4,
-    flourishY + 14,
-    cx + textWidth / 4,
-    flourishY - 10,
-    cx + textWidth / 2 + 14,
-    flourishY + 2,
-  );
-  c.stroke();
-
-  // Con dấu "ĐÃ KÝ SỐ" kiểu hóa đơn điện tử
-  const sx = 650;
-  const sy = 112;
-  const r = 84;
-
-  c.strokeStyle = blue;
-  c.lineWidth = 5;
-  c.beginPath();
-  c.arc(sx, sy, r, 0, Math.PI * 2);
-  c.stroke();
-
-  c.lineWidth = 1.5;
-  c.beginPath();
-  c.arc(sx, sy, r - 8, 0, Math.PI * 2);
-  c.stroke();
-
-  drawArcText(
-    c,
-    'CHỮ KÝ ĐIỆN TỬ',
-    sx,
-    sy,
-    r - 20,
-    Math.PI * 1.08,
-    Math.PI * 1.92,
-    '600 11px Inter, Arial, sans-serif',
-    blue,
-  );
-
-  // Dấu check
-  c.strokeStyle = '#15803d';
-  c.lineWidth = 5;
-  c.lineCap = 'round';
-  c.lineJoin = 'round';
-  c.beginPath();
-  c.moveTo(sx - 16, sy - 8);
-  c.lineTo(sx - 3, sy + 6);
-  c.lineTo(sx + 20, sy - 20);
-  c.stroke();
-
-  c.fillStyle = blue;
-  c.textAlign = 'center';
-  c.textBaseline = 'middle';
-  c.font = '700 16px Inter, Arial, sans-serif';
-  c.fillText('ĐÃ KÝ SỐ', sx, sy + 28);
-
-  c.font = '500 12px Inter, Arial, sans-serif';
-  c.fillStyle = '#475569';
-  c.fillText(new Date().toLocaleDateString('vi-VN'), sx, sy + 50);
+  let dateSize = 26;
+  const setDateFont = (s: number) => {
+    c.font = `400 ${s}px Inter, Arial, sans-serif`;
+  };
+  setDateFont(dateSize);
+  const dateText = formatSignDate();
+  while (c.measureText(dateText).width > maxTextWidth && dateSize > 16) {
+    dateSize -= 1;
+    setDateFont(dateSize);
+  }
+  c.fillText(dateText, rx, 222);
 };
 
 const onOpen = () => {
@@ -377,22 +342,6 @@ const confirm = () => {
   display: block;
   width: 100%;
   height: auto;
-}
-
-.preview-badge {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: #ecfdf5;
-  border: 1px solid #bbf7d0;
-  color: #15803d;
-  font-size: 11px;
-  font-weight: 600;
 }
 
 .digital-note {
