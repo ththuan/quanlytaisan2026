@@ -47,8 +47,10 @@ function resolveSecret(): string {
 
 const jwtConfig: JWTConfig = {
   secret: resolveSecret(),
-  accessExpiration: process.env.JWT_ACCESS_EXPIRATION || '31m',
-  refreshExpiration: process.env.JWT_REFRESH_EXPIRATION || '7d',
+  // Phiên đăng nhập chỉ kết thúc khi người dùng bấm "Đăng xuất".
+  // Access token ngắn để vẫn xoay vòng an toàn, refresh token dài (10 năm).
+  accessExpiration: process.env.JWT_ACCESS_EXPIRATION || '7d',
+  refreshExpiration: process.env.JWT_REFRESH_EXPIRATION || '3650d',
   algorithm: 'HS256',
   issuer: 'asset-management-system',
 };

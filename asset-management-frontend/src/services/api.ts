@@ -151,9 +151,35 @@ api.interceptors.response.use(
             }
             // newAccessToken empty — fall through to logout
             throw new Error('Empty access token in refresh response');
-          } catch {
+          } catch (refreshError) {
             isRefreshing = false;
             refreshSubscribers = [];
+
+            // Tab khác có thể vừa xoay vòng refresh token — thử lại bằng token mới nhất
+            // thay vì đăng xuất oan.
+            const latestRefreshToken = localStorage.getItem('refreshToken');
+            const latestAccessToken = localStorage.getItem('accessToken');
+            if (latestRefreshToken && latestRefreshToken !== storedRefreshToken && latestAccessToken) {
+              const retryConfig = { ...error.config! };
+              (retryConfig as any).__authRefreshRetried = true;
+              retryConfig.headers = retryConfig.headers ?? {};
+              retryConfig.headers['Authorization'] = `Bearer ${latestAccessToken}`;
+              return api(retryConfig);
+            }
+
+            // Lỗi mạng / server tạm thời: giữ nguyên phiên, không đăng xuất.
+            // Chỉ 401 từ chính endpoint refresh mới coi là phiên đã hết hiệu lực.
+            if (axios.isAxiosError(refreshError)) {
+              const status = refreshError.response?.status;
+              if (!status || status >= 500) {
+                ElNotification.error({
+                  title: t('common.error'),
+                  message: t('common.apiErrors.network'),
+                  duration: 8000,
+                });
+                return Promise.reject(error);
+              }
+            }
           }
         } else if (storedRefreshToken && isRefreshing) {
           // Queue requests while refresh is in progress
