@@ -179,15 +179,17 @@ class TransferService {
       status: 'pending',
     });
 
-    // Thông báo cho Trưởng đơn vị nơi giao + admin
+    // Thông báo cho đơn vị nhận (viên chức/trưởng đơn vị) để ký xác nhận
     try {
-      const fromHeadIds = await notificationService.getUserIdsByDepartmentRoles(fromDepartmentId, ['department_head']);
-      const adminIds = await notificationService.getAdminIds();
+      const receiverIds = await notificationService.getUserIdsByDepartmentRoles(
+        data.to_department_id,
+        ['department_head', 'staff'],
+      );
       await notificationService.notify({
-        userIds: [...fromHeadIds, ...adminIds],
+        userIds: receiverIds,
         type: 'transfer',
-        title: 'Yêu cầu điều chuyển chờ duyệt',
-        message: `Điều chuyển tài sản ${asset.asset_code} - ${asset.name} đến ${toDepartment.name}, đang chờ Trưởng đơn vị phê duyệt.`,
+        title: 'Yêu cầu điều chuyển chờ đơn vị nhận ký',
+        message: `Điều chuyển tài sản ${asset.asset_code} - ${asset.name} đến ${toDepartment.name}, chờ viên chức/Trưởng đơn vị nơi nhận ký số.`,
         link: '/transfers',
         entityType: 'asset_transfer',
         entityId: transfer.id,
@@ -345,16 +347,13 @@ class TransferService {
     const isAdmin = approver.role === 'admin';
     const receiverRoles = ['staff', 'department_head'];
 
-    // Luồng ký: đơn vị giao → đơn vị nhận (viên chức hoặc trưởng đơn vị) → quản trị viên.
+    // Luồng ký: người tạo gửi → đơn vị nhận (viên chức hoặc trưởng đơn vị) → quản trị viên.
+    // Không cần Trưởng đơn vị nơi giao duyệt.
     if (isAdmin) {
       if (transfer.status !== 'approved_by_destination') {
         throw new ForbiddenError('Quản trị viên chỉ ký duyệt sau khi đơn vị nhận đã ký');
       }
-    } else if (transfer.status === 'pending') {
-      if (approver.role !== 'department_head' || approverDept !== Number(transfer.from_department_id)) {
-        throw new ForbiddenError('Chỉ Trưởng đơn vị nơi giao được duyệt bước này');
-      }
-    } else if (transfer.status === 'approved_by_head') {
+    } else if (transfer.status === 'pending' || transfer.status === 'approved_by_head') {
       if (!receiverRoles.includes(approver.role) || approverDept !== Number(transfer.to_department_id)) {
         throw new ForbiddenError('Chỉ viên chức hoặc Trưởng đơn vị nơi nhận được ký bước này');
       }
@@ -363,7 +362,7 @@ class TransferService {
     }
 
     const previousStatus = transfer.status;
-    const approvalLevel = previousStatus === 'pending' ? 1 : previousStatus === 'approved_by_head' ? 2 : 3;
+    const approvalLevel = previousStatus === 'approved_by_destination' ? 3 : 2;
 
     const transaction = await sequelize.transaction();
     const now = new Date();
@@ -384,22 +383,14 @@ class TransferService {
       }, { transaction });
 
       if (decision === 'approved') {
-        if (previousStatus === 'pending') {
-          // Bước 1: Trưởng đơn vị nơi giao duyệt, tài sản vẫn ở đơn vị giao.
-          await transfer.update({
-            status: 'approved_by_head',
-            head_approved_by: approver.id,
-            head_approved_at: now,
-            head_notes: notes,
-          }, { transaction });
-        } else if (previousStatus === 'approved_by_head') {
-          // Bước 2: Viên chức/Trưởng đơn vị nơi nhận ký, chờ quản trị viên ký.
+        if (previousStatus === 'pending' || previousStatus === 'approved_by_head') {
+          // Đơn vị nhận ký, chờ quản trị viên ký duyệt cuối.
           await transfer.update({
             status: 'approved_by_destination',
             notes: notes || transfer.notes,
           }, { transaction });
         } else {
-          // Bước 3: Quản trị viên ký duyệt cuối và chuyển tài sản.
+          // Quản trị viên ký duyệt cuối và chuyển tài sản.
           const asset = await Asset.findByPk(transfer.asset_id);
           if (asset) {
             if (asset.current_department_id !== transfer.from_department_id) {
@@ -436,22 +427,7 @@ class TransferService {
       // Thông báo theo bước duyệt (không nằm trong transaction)
       try {
         const requesterIds = transfer.requested_by ? [transfer.requested_by] : [];
-        if (decision === 'approved' && transfer.status === 'approved_by_head') {
-          const receiverIds = await notificationService.getUserIdsByDepartmentRoles(
-            transfer.to_department_id,
-            ['department_head', 'staff'],
-          );
-          await notificationService.notify({
-            userIds: receiverIds,
-            type: 'transfer',
-            title: 'Yêu cầu điều chuyển chờ đơn vị nhận ký',
-            message: `Yêu cầu điều chuyển #${id} đã được đơn vị giao duyệt, chờ viên chức/Trưởng đơn vị nơi nhận ký số.`,
-            link: '/transfers',
-            entityType: 'asset_transfer',
-            entityId: id,
-            excludeUserId: approver.id,
-          });
-        } else if (decision === 'approved' && transfer.status === 'approved_by_destination') {
+        if (decision === 'approved' && transfer.status === 'approved_by_destination') {
           const adminIds = await notificationService.getAdminIds();
           await notificationService.notify({
             userIds: adminIds,

@@ -141,16 +141,8 @@ export const canApproveTransfer = async (req: RequestWithUser, res: Response, ne
       throw new ForbiddenError('Quản trị viên chỉ ký duyệt sau khi đơn vị nhận đã ký');
     }
 
-    // Trưởng đơn vị nơi giao duyệt bước 1.
-    if (status === 'pending') {
-      if (user.role === 'department_head' && userDepartmentId === Number(transfer.from_department_id)) {
-        return next();
-      }
-      throw new ForbiddenError('Chỉ Trưởng đơn vị nơi giao được duyệt bước này');
-    }
-
-    // Đơn vị nhận ký bước 2: viên chức hoặc trưởng đơn vị đều được.
-    if (status === 'approved_by_head') {
+    // Đơn vị nhận ký ngay sau khi người tạo gửi: viên chức hoặc trưởng đơn vị đều được.
+    if (status === 'pending' || status === 'approved_by_head') {
       const receiverRoles = ['staff', 'department_head'];
       if (receiverRoles.includes(user.role) && userDepartmentId === Number(transfer.to_department_id)) {
         return next();

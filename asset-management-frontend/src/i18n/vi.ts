@@ -110,9 +110,9 @@ export default {
 
       sec3Title: 'Đề nghị điều chuyển tài sản (menu Điều chuyển)',
       sec3Body: `1. Khi cần chuyển tài sản sang phòng ban khác: vào “Điều chuyển” → tạo yêu cầu mới, chọn tài sản, đơn vị đi, đơn vị đến, ghi rõ lý do và thời gian bàn giao dự kiến (theo biểu mẫu trên màn hình).
-2. Gửi yêu cầu. Trạng thái sẽ hiển thị dạng “chờ xử lý” cho đến khi Trưởng đơn vị nơi xuất tài sản xử lý.
-3. Trong hệ thống: chỉ Trưởng đơn vị của phòng ban đang giữ tài sản (đơn vị xuất) mới được phê duyệt hoặc từ chối. Nếu bị từ chối, đọc lý do và chỉnh lại hồ sơ hoặc liên hệ trưởng đơn vị.
-4. Sau khi được duyệt, phần mềm cập nhật phòng ban hiện tại của tài sản; bạn có thể kiểm tra lại trong chi tiết tài sản.`,
+2. Gửi yêu cầu kèm chữ ký số. Trạng thái hiển thị “chờ đơn vị nhận ký”.
+3. Đơn vị nhận (viên chức hoặc Trưởng đơn vị) ký xác nhận; sau đó quản trị viên ký duyệt cuối. Nếu bị từ chối, đọc lý do và liên hệ người xử lý.
+4. Sau khi quản trị viên ký duyệt, phần mềm cập nhật phòng ban hiện tại của tài sản; bạn có thể kiểm tra lại trong chi tiết tài sản.`,
 
       sec4Title: 'Đề nghị mua sắm (menu Đề nghị mua sắm)',
       sec4Body: `1. Dùng khi đơn vị cần mua thiết bị/vật tư theo quy trình nội bộ: tạo phiếu đề nghị, điền nội dung, số lượng, dự toán (nếu có), lý do.
@@ -571,12 +571,12 @@ export default {
     rejectReason: 'Nhập lý do từ chối',
     sameDepartmentError: 'Phòng ban đích phải khác phòng ban hiện tại',
     status: {
-      pending: 'Chờ duyệt',
+      pending: 'Chờ đơn vị nhận ký',
       approved: 'Đã duyệt',
       rejected: 'Từ chối',
       cancelled: 'Đã hủy',
       completed: 'Hoàn thành',
-      approved_by_head: 'Đơn vị giao đã duyệt, chờ đơn vị nhận ký',
+      approved_by_head: 'Chờ đơn vị nhận ký',
       approved_by_destination: 'Đơn vị nhận đã ký, chờ quản trị viên ký',
       rejected_by_head: 'Đề nghị điều chuyển bị từ chối',
     },
@@ -836,8 +836,8 @@ export default {
         pending_repair: 'Đang đề nghị sửa chữa',
       },
       transferStatus: {
-        pending: 'Chờ xử lý',
-        approved_by_head: 'Đơn vị giao đã duyệt',
+        pending: 'Chờ đơn vị nhận ký',
+        approved_by_head: 'Chờ đơn vị nhận ký',
         approved_by_destination: 'Đơn vị nhận đã ký',
         approved: 'Đã duyệt',
         rejected: 'Từ chối',

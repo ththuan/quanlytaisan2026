@@ -307,11 +307,7 @@ const handleView = (transfer: any) => {
 const canApprove = (transfer: any) => {
   const departmentId = Number(authStore.userDepartmentId);
   if (authStore.isAdmin) return transfer.status === 'approved_by_destination';
-  if (transfer.status === 'pending') {
-    return authStore.user?.role === 'department_head'
-      && Number(transfer.from_department_id) === departmentId;
-  }
-  if (transfer.status === 'approved_by_head') {
+  if (transfer.status === 'pending' || transfer.status === 'approved_by_head') {
     return ['department_head', 'staff'].includes(authStore.user?.role || '')
       && Number(transfer.to_department_id) === departmentId;
   }

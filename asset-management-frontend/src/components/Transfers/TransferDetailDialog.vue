@@ -195,11 +195,7 @@ const canApprove = computed(() => {
   if (!transfer) return false;
   const departmentId = Number(authStore.user?.department_id);
   if (authStore.isAdmin) return transfer.status === 'approved_by_destination';
-  if (transfer.status === 'pending') {
-    return authStore.user?.role === 'department_head'
-      && departmentId === Number(transfer.from_department_id);
-  }
-  if (transfer.status === 'approved_by_head') {
+  if (transfer.status === 'pending' || transfer.status === 'approved_by_head') {
     return ['department_head', 'staff'].includes(authStore.user?.role || '')
       && departmentId === Number(transfer.to_department_id);
   }
