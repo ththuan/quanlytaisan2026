@@ -19,21 +19,35 @@ export function escapeHtml(value: unknown): string {
     .replace(/'/g, '&#39;');
 }
 
-/** Khối ô ký: hiển thị ảnh chữ ký sống (nếu có) + họ tên + thời điểm ký. */
+const ROLE_LABELS: Record<string, string> = {
+  admin: 'Quản trị viên',
+  director: 'Giám hiệu',
+  department_head: 'Trưởng đơn vị',
+  manager: 'Quản lý',
+  staff: 'Viên chức',
+  user: 'Viên chức',
+};
+
+/** Khối ô ký: hiển thị ảnh chữ ký số (nếu có) + họ tên + vai trò + thời điểm ký. */
 export function signatureCell(label: string, sign: SignatureLike | undefined): string {
   const img = sign?.signature_image
     ? `<img class="sig-img" src="${sign.signature_image}" alt="chữ ký" />`
     : '<div class="sig-space"></div>';
   const name = sign?.signer_name ? escapeHtml(sign.signer_name) : '';
+  const role = sign?.signer_role
+    ? escapeHtml(ROLE_LABELS[sign.signer_role] || sign.signer_role)
+    : '';
   const time = sign?.signed_at ? new Date(sign.signed_at).toLocaleString('vi-VN') : '';
+  const roleLine = role ? `<div class="sig-role">${role}</div>` : '';
   const meta = sign
-    ? `<div class="sig-meta">Ký điện tử: ${escapeHtml(time)}</div>`
+    ? `<div class="sig-meta">Ký số: ${escapeHtml(time)}</div>`
     : '';
   return `
     <div class="sig-cell">
       <div class="sig-label">${escapeHtml(label)}</div>
       ${img}
       <div class="sig-name">${name}</div>
+      ${roleLine}
       ${meta}
     </div>`;
 }
@@ -58,6 +72,7 @@ const BASE_STYLES = `
   .sig-img { height: 60px; object-fit: contain; }
   .sig-space { height: 60px; }
   .sig-name { font-weight: bold; font-size: 13px; }
+  .sig-role { font-size: 12px; color: #333; }
   .sig-meta { font-size: 11px; color: #555; }
   .toolbar { text-align: center; margin-bottom: 12px; }
   .toolbar button { padding: 6px 18px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }

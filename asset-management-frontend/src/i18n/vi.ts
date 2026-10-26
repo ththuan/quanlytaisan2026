@@ -74,6 +74,8 @@ export default {
     auditLogs: 'Nhật ký hoạt động',
     notifications: 'Hộp thư thông báo',
     assetCategories: 'Danh mục tài sản',
+    lossDamage: 'Tài sản mất / hư hỏng',
+    norms: 'Định mức tài sản',
     documentation: 'Tài liệu',
     support: 'Hỗ trợ',
   },
