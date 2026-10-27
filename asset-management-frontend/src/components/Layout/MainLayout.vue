@@ -61,7 +61,7 @@
             index="/reports"
           >
             <el-icon><DataAnalysis /></el-icon>
-            <span>Báo cáo</span>
+            <span>{{ $t('menu.reports') }}</span>
           </el-menu-item>
 
           <el-menu-item index="/loss-damage">

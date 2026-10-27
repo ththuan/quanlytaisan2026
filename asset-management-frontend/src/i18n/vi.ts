@@ -62,7 +62,7 @@ export default {
     assets: 'Quản lý tài sản',
     departments: 'Phòng ban',
     users: 'Người dùng',
-    reports: 'Báo cáo',
+    reports: 'Báo cáo thường niên',
     maintenance: 'Mua sắm / Sửa chữa',
     purchaseRequests: 'Đề nghị mua sắm',
     repairTracking: 'Theo dõi sửa chữa',
