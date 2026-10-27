@@ -24,13 +24,12 @@
         <el-row
           :gutter="16"
           class="stats-row"
-          justify="space-between"
         >
           <!-- 1. Tổng tài sản -->
           <el-col
             :xs="12"
             :sm="8"
-            :md="3"
+            :md="4"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -60,12 +59,46 @@
             </el-card>
           </el-col>
 
-          <!-- 2. Mua sắm (chỉ admin và director) -->
+          <!-- 2. Tài sản mới -->
+          <el-col
+            :xs="12"
+            :sm="8"
+            :md="4"
+          >
+            <el-card
+              class="stat-card stat-clickable"
+              shadow="hover"
+              @click="$router.push('/assets')"
+            >
+              <div class="stat-icon new-assets-icon">
+                <el-icon size="24">
+                  <Box />
+                </el-icon>
+              </div>
+              <div class="stat-content">
+                <el-skeleton
+                  v-if="loading"
+                  :rows="1"
+                  animated
+                />
+                <template v-else>
+                  <div class="stat-value text-truncate">
+                    {{ formatNumber(stats.assetsNew) }}
+                  </div>
+                  <div class="stat-label">
+                    Tài sản mới
+                  </div>
+                </template>
+              </div>
+            </el-card>
+          </el-col>
+
+          <!-- 3. Mua sắm (chỉ admin và director) -->
           <el-col
             v-if="FEATURES.auxiliaryModules && isAdminOrDirector"
             :xs="12"
             :sm="8"
-            :md="3"
+            :md="4"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -100,7 +133,7 @@
             v-if="FEATURES.auxiliaryModules && isAdminOrDirector"
             :xs="12"
             :sm="8"
-            :md="3"
+            :md="4"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -134,7 +167,7 @@
           <el-col
             :xs="12"
             :sm="8"
-            :md="3"
+            :md="4"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -168,7 +201,7 @@
           <el-col
             :xs="12"
             :sm="8"
-            :md="3"
+            :md="4"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -202,7 +235,7 @@
           <el-col
             :xs="12"
             :sm="8"
-            :md="3"
+            :md="4"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -236,7 +269,7 @@
           <el-col
             :xs="12"
             :sm="8"
-            :md="3"
+            :md="4"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -260,9 +293,6 @@
                   </div>
                   <div class="stat-label">
                     Mất / hư hỏng
-                  </div>
-                  <div class="stat-sub">
-                    {{ lostDamageTotals.lost }} mất • {{ lostDamageTotals.damaged }} hỏng
                   </div>
                 </template>
               </div>
@@ -966,6 +996,7 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
 
 /* Professional Gradients */
 .assets-icon       { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+.new-assets-icon   { background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); }
 .active-icon       { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
 .departments-icon  { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
 .procurements-icon { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); }
@@ -994,17 +1025,6 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
   color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-}
-
-.stat-sub {
-  margin-top: 2px;
-  font-size: 10px;
-  font-weight: 600;
-  color: #94a3b8;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.2;
 }
 
 .maintenance-section {
