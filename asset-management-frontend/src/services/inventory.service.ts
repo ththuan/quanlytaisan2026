@@ -4,6 +4,7 @@
  */
 
 import api from './api';
+import { prepareImageForUpload } from '@/utils/image';
 
 export interface InventoryRound {
   id: number;
@@ -284,10 +285,11 @@ class InventoryService {
 
   /** Upload ảnh hiện trạng (tài sản hoặc tổng thể) → trả URL /storage/... */
   async uploadImage(file: File): Promise<string> {
+    const prepared = await prepareImageForUpload(file);
     const form = new FormData();
-    form.append('image', file);
+    form.append('image', prepared);
     const payload: any = await api.post('/inventory/images', form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000,
     });
     return payload?.image_url || payload?.data?.image_url || '';
   }

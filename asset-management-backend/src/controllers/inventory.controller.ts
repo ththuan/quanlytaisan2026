@@ -414,9 +414,12 @@ export const uploadInventoryImage = async (req: AuthRequest, res: Response, next
 
     const mimeToExt: Record<string, string> = {
       'image/jpeg': 'jpg',
+      'image/jpg': 'jpg',
       'image/png': 'png',
       'image/gif': 'gif',
       'image/webp': 'webp',
+      'image/heic': 'heic',
+      'image/heif': 'heif',
     };
     const ext = mimeToExt[file.mimetype] || 'jpg';
     const filename = `inv_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;

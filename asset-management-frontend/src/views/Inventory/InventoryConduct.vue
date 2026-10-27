@@ -1907,8 +1907,8 @@ const onCheckImagesSelected = async (e: Event) => {
         checkForm.value.image_urls.push(url);
       }
     }
-  } catch {
-    ElMessage.error('Không tải được ảnh, vui lòng thử lại');
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || 'Không tải được ảnh, vui lòng thử lại');
   } finally {
     uploadingCheckImage.value = false;
   }
@@ -1934,8 +1934,8 @@ const onReportImagesSelected = async (e: Event) => {
     }
     const updated = await inventoryService.updateReportImages(report.value.id, urls);
     report.value = { ...report.value, ...(updated as any) };
-  } catch {
-    ElMessage.error('Không tải được ảnh tổng thể, vui lòng thử lại');
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || 'Không tải được ảnh tổng thể, vui lòng thử lại');
   } finally {
     uploadingReportImage.value = false;
   }
@@ -1965,8 +1965,8 @@ const onBatchImagesSelected = async (categoryId: number, e: Event) => {
       const url = await inventoryService.uploadImage(f);
       if (url && !target.image_urls.includes(url)) target.image_urls.push(url);
     }
-  } catch {
-    ElMessage.error('Không tải được ảnh nhóm');
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || 'Không tải được ảnh nhóm');
   }
 };
 

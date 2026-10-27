@@ -12,11 +12,14 @@ const router = Router();
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 25 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowed = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+      'image/heic', 'image/heif',
+    ];
     if (allowed.includes(file.mimetype)) cb(null, true);
-    else cb(new Error('Chỉ cho phép ảnh (JPEG, PNG, GIF, WebP)') as any, false);
+    else cb(new Error('Chỉ cho phép ảnh (JPEG, PNG, GIF, WebP, HEIC)') as any, false);
   },
 });
 
