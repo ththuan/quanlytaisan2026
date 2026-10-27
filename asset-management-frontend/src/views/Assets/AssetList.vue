@@ -65,7 +65,7 @@
         <el-col
           :xs="12"
           :sm="8"
-          :md="4"
+          :md="3"
         >
           <div
             class="stat-card total"
@@ -88,7 +88,7 @@
         <el-col
           :xs="12"
           :sm="8"
-          :md="4"
+          :md="3"
         >
           <div
             class="stat-card active"
@@ -111,7 +111,7 @@
         <el-col
           :xs="12"
           :sm="8"
-          :md="4"
+          :md="3"
         >
           <div
             class="stat-card inactive"
@@ -134,7 +134,30 @@
         <el-col
           :xs="12"
           :sm="8"
-          :md="4"
+          :md="3"
+        >
+          <div
+            class="stat-card damaged"
+            :class="{ 'is-active': filterStatus === 'damaged' }"
+            @click="handleStatClick('damaged')"
+          >
+            <div class="stat-icon">
+              <el-icon><Warning /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">
+                {{ statistics.damaged }}
+              </div>
+              <div class="stat-label">
+                Hư hỏng
+              </div>
+            </div>
+          </div>
+        </el-col>
+        <el-col
+          :xs="12"
+          :sm="8"
+          :md="3"
         >
           <div
             class="stat-card pending-disposal"
@@ -157,7 +180,7 @@
         <el-col
           :xs="12"
           :sm="8"
-          :md="4"
+          :md="3"
         >
           <div
             class="stat-card lost"
@@ -180,7 +203,30 @@
         <el-col
           :xs="12"
           :sm="8"
-          :md="4"
+          :md="3"
+        >
+          <div
+            class="stat-card missing"
+            :class="{ 'is-active': filterStatus === 'missing' }"
+            @click="handleStatClick('missing')"
+          >
+            <div class="stat-icon">
+              <el-icon><Search /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">
+                {{ statistics.missing || 0 }}
+              </div>
+              <div class="stat-label">
+                Thiếu
+              </div>
+            </div>
+          </div>
+        </el-col>
+        <el-col
+          :xs="12"
+          :sm="8"
+          :md="3"
         >
           <div
             class="stat-card disposed"
@@ -240,45 +286,6 @@
                 :key="cat.value"
                 :label="cat.label"
                 :value="cat.value"
-              />
-            </el-select>
-          </div>
-          <div class="filter-item">
-            <el-select
-              v-model="filterStatus"
-              placeholder="Trạng thái"
-              clearable
-              size="large"
-              @change="handleFilter"
-              @clear="handleFilter"
-            >
-              <el-option
-                label="Đang sử dụng"
-                value="active"
-              />
-              <el-option
-                label="Không sử dụng"
-                value="inactive"
-              />
-              <el-option
-                label="Hư hỏng"
-                value="damaged"
-              />
-              <el-option
-                label="Mất"
-                value="lost"
-              />
-              <el-option
-                label="Thiếu"
-                value="missing"
-              />
-              <el-option
-                label="Chờ thanh lý"
-                value="pending_disposal"
-              />
-              <el-option
-                label="Đã thanh lý"
-                value="disposed"
               />
             </el-select>
           </div>
@@ -727,7 +734,7 @@ import { useI18n } from 'vue-i18n';
 import { useAssetStore } from '@/stores/asset.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useDepartments } from '@/composables/useDepartments';
-import { Plus, Search, Delete, Box, CircleCheck, Refresh, Upload, Download, CircleClose, QuestionFilled, DeleteFilled, Printer } from '@element-plus/icons-vue';
+import { Plus, Search, Delete, Box, CircleCheck, Refresh, Upload, Download, CircleClose, QuestionFilled, DeleteFilled, Printer, Warning } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import AssetFormDialog from '@/components/Assets/AssetFormDialog.vue';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
@@ -1513,6 +1520,11 @@ const handleExportQRPDF = async () => {
 
 .stat-card.lost .stat-icon {
   background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+}
+
+.stat-card.missing .stat-icon {
+  background: linear-gradient(135deg, #0891b2, #0e7490);
   color: white;
 }
 
