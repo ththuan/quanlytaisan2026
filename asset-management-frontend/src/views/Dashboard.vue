@@ -7,6 +7,18 @@
           Tổng quan hoạt động - Phần mềm Quản lý tài sản
         </p>
       </div>
+      <div
+        v-if="authStore.user?.role === 'admin'"
+        class="dashboard-header-actions"
+      >
+        <el-button
+          type="primary"
+          :icon="Document"
+          @click="$router.push('/procurements')"
+        >
+          Tăng tài sản
+        </el-button>
+      </div>
     </div>
 
     <!-- Tabs wrapper -->
@@ -456,7 +468,7 @@
 import { ref, reactive, onMounted, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { Box, ShoppingCart, Setting, Sort, List, Delete, Warning } from '@element-plus/icons-vue';
+import { Box, ShoppingCart, Setting, Sort, List, Delete, Warning, Document } from '@element-plus/icons-vue';
 import VChart from 'vue-echarts';
 import * as dashboardService from '@/services/dashboard.service';
 import { inventoryService } from '@/services/inventory.service';
@@ -926,6 +938,13 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
   font-size: 1.4rem;
   font-weight: 800;
   color: #0f172a;
+}
+
+.dashboard-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .header-subtitle {

@@ -69,13 +69,6 @@
             <span>Tài sản mất / hư hỏng</span>
           </el-menu-item>
 
-          <el-divider
-            v-if="authStore.user?.role === 'admin'"
-            class="sidebar-divider"
-          />
-
-          <!-- Các module phụ trợ (Sửa chữa, Mua sắm, Kho): tạm ẩn theo phạm vi hiện tại.
-               Bật lại bằng FEATURES.auxiliaryModules = true trong src/constants/features.ts -->
           <el-menu-item
             v-if="authStore.user?.role === 'admin'"
             index="/procurements"
@@ -84,6 +77,13 @@
             <span>Tăng tài sản</span>
           </el-menu-item>
 
+          <el-divider
+            v-if="authStore.user?.role === 'admin'"
+            class="sidebar-divider"
+          />
+
+          <!-- Các module phụ trợ (Sửa chữa, Mua sắm, Kho): tạm ẩn theo phạm vi hiện tại.
+               Bật lại bằng FEATURES.auxiliaryModules = true trong src/constants/features.ts -->
           <el-menu-item
             v-if="FEATURES.auxiliaryModules && authStore.user?.role === 'admin'"
             index="/purchase-requests"
