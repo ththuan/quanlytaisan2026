@@ -41,11 +41,27 @@ export const assetService = {
 
   async uploadImage(id: number, file: File): Promise<ApiResponse<{ image_url: string }>> {
     const prepared = await prepareImageForUpload(file);
+    const uploadFile = prepared.size > 0 ? prepared : file;
+    if (!uploadFile.size) {
+      throw new Error('Ảnh không hợp lệ hoặc rỗng, vui lòng chọn ảnh khác');
+    }
+
     const formData = new FormData();
-    formData.append('image', prepared);
-    return api.post(`/assets/${id}/image`, formData, {
-      timeout: 60000,
+    formData.append('image', uploadFile, uploadFile.name || `asset_${Date.now()}.jpg`);
+
+    // fetch để trình duyệt tự đặt multipart boundary (ổn định trên iOS Safari)
+    const baseUrl = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(`${baseUrl}/assets/${id}/image`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: formData,
     });
+    const payload: any = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw { response: { status: response.status, data: payload } };
+    }
+    return payload;
   },
 
   async getAssetHistory(id: number): Promise<ApiResponse<any[]>> {

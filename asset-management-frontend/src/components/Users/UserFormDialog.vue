@@ -112,10 +112,22 @@
             label="Chức danh"
             prop="job_title"
           >
-            <el-input
+            <el-select
               v-model="formData.job_title"
-              placeholder="VD: Trưởng phòng, Giảng viên, Nhân viên..."
-            />
+              filterable
+              allow-create
+              default-first-option
+              clearable
+              placeholder="Chọn hoặc nhập chức danh..."
+              style="width: 100%"
+            >
+              <el-option
+                v-for="title in jobTitleSuggestions"
+                :key="title"
+                :label="title"
+                :value="title"
+              />
+            </el-select>
           </el-form-item>
         </el-col>
         <el-col
@@ -186,6 +198,42 @@ const { t } = useI18n();
 const departmentStore = useDepartmentStore();
 const formRef = ref<FormInstance>();
 const loading = ref(false);
+
+const jobTitleSuggestions = ref<string[]>([]);
+
+const DEFAULT_JOB_TITLES = [
+  'Hiệu trưởng',
+  'Phó Hiệu trưởng',
+  'Trưởng phòng',
+  'Phó Trưởng phòng',
+  'Trưởng khoa',
+  'Phó Trưởng khoa',
+  'Trưởng bộ môn',
+  'Giảng viên',
+  'Giáo viên',
+  'Kế toán trưởng',
+  'Kế toán',
+  'Thủ quỹ',
+  'Văn thư',
+  'Nhân viên',
+];
+
+const fetchJobTitleSuggestions = async () => {
+  const set = new Set<string>(DEFAULT_JOB_TITLES);
+  try {
+    const res: any = await api.get('/norms');
+    const norms = res?.data || res?.data?.data || [];
+    if (Array.isArray(norms)) {
+      norms.forEach((n: any) => {
+        const title = String(n?.position_group || '').trim();
+        if (title) set.add(title);
+      });
+    }
+  } catch {
+    // Nếu chưa tải được định mức thì vẫn dùng danh sách gợi ý mặc định.
+  }
+  jobTitleSuggestions.value = Array.from(set);
+};
 
 const dialogVisible = computed({
   get: () => props.visible,
@@ -316,6 +364,7 @@ const handleSubmit = async () => {
 
 watch(() => props.visible, async (newVal) => {
   if (newVal) {
+    fetchJobTitleSuggestions();
     if (!departmentStore.departments.length) {
       await departmentStore.fetchDepartments({ limit: 1000 });
     }

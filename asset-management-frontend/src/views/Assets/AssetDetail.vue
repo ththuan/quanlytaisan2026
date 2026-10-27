@@ -736,8 +736,16 @@ const openCamera = () => cameraInputRef.value?.click();
 const handleCameraImageSelected = async (e: Event) => {
   const input = e.target as HTMLInputElement;
   const file = input.files?.[0];
-  input.value = '';
-  if (file) await uploadAssetImageFile(file);
+  if (!file) {
+    input.value = '';
+    return;
+  }
+  try {
+    await uploadAssetImageFile(file);
+  } finally {
+    // Xóa sau khi upload xong để iOS không làm mất File trước khi gửi.
+    input.value = '';
+  }
 };
 
 // Computed properties
