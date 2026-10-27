@@ -620,7 +620,6 @@
           <input
             type="file"
             accept="image/*"
-            capture="environment"
             multiple
             :disabled="uploadingReportImage"
             @change="onReportImagesSelected"
@@ -808,7 +807,6 @@
                 <input
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   multiple
                   @change="(e) => onBatchImagesSelected(row.category_id, e)"
                 >
@@ -1147,7 +1145,6 @@
                 <input
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   multiple
                   :disabled="uploadingCheckImage"
                   @change="onCheckImagesSelected"
@@ -1897,8 +1894,10 @@ const uploadingReportImage = ref(false);
 const onCheckImagesSelected = async (e: Event) => {
   const input = e.target as HTMLInputElement;
   const files = Array.from(input.files || []);
-  input.value = '';
-  if (!files.length) return;
+  if (!files.length) {
+    input.value = '';
+    return;
+  }
   uploadingCheckImage.value = true;
   try {
     for (const f of files) {
@@ -1908,8 +1907,10 @@ const onCheckImagesSelected = async (e: Event) => {
       }
     }
   } catch (e: any) {
-    ElMessage.error(e?.response?.data?.message || 'Không tải được ảnh, vui lòng thử lại');
+    ElMessage.error(e?.response?.data?.message || e.message || 'Không tải được ảnh, vui lòng thử lại');
   } finally {
+    // Xóa sau khi upload xong: iOS Safari có thể làm mất File nếu reset input quá sớm.
+    input.value = '';
     uploadingCheckImage.value = false;
   }
 };
@@ -1923,8 +1924,10 @@ const reportImages = computed<string[]>(() => (report.value as any)?.image_urls 
 const onReportImagesSelected = async (e: Event) => {
   const input = e.target as HTMLInputElement;
   const files = Array.from(input.files || []);
-  input.value = '';
-  if (!files.length || !report.value) return;
+  if (!files.length || !report.value) {
+    input.value = '';
+    return;
+  }
   uploadingReportImage.value = true;
   try {
     const urls = [...reportImages.value];
@@ -1935,8 +1938,9 @@ const onReportImagesSelected = async (e: Event) => {
     const updated = await inventoryService.updateReportImages(report.value.id, urls);
     report.value = { ...report.value, ...(updated as any) };
   } catch (e: any) {
-    ElMessage.error(e?.response?.data?.message || 'Không tải được ảnh tổng thể, vui lòng thử lại');
+    ElMessage.error(e?.response?.data?.message || e.message || 'Không tải được ảnh tổng thể, vui lòng thử lại');
   } finally {
+    input.value = '';
     uploadingReportImage.value = false;
   }
 };
@@ -1956,17 +1960,24 @@ const removeReportImage = async (url: string) => {
 const onBatchImagesSelected = async (categoryId: number, e: Event) => {
   const input = e.target as HTMLInputElement;
   const files = Array.from(input.files || []);
-  input.value = '';
-  if (!files.length) return;
+  if (!files.length) {
+    input.value = '';
+    return;
+  }
   const target = batchInputs.value[categoryId];
-  if (!target) return;
+  if (!target) {
+    input.value = '';
+    return;
+  }
   try {
     for (const f of files) {
       const url = await inventoryService.uploadImage(f);
       if (url && !target.image_urls.includes(url)) target.image_urls.push(url);
     }
   } catch (e: any) {
-    ElMessage.error(e?.response?.data?.message || 'Không tải được ảnh nhóm');
+    ElMessage.error(e?.response?.data?.message || e.message || 'Không tải được ảnh nhóm');
+  } finally {
+    input.value = '';
   }
 };
 

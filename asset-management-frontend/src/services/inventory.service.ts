@@ -286,11 +286,26 @@ class InventoryService {
   /** Upload ảnh hiện trạng (tài sản hoặc tổng thể) → trả URL /storage/... */
   async uploadImage(file: File): Promise<string> {
     const prepared = await prepareImageForUpload(file);
+    const uploadFile = prepared.size > 0 ? prepared : file;
+    if (!uploadFile.size) {
+      throw new Error('Ảnh không hợp lệ hoặc rỗng, vui lòng chọn ảnh khác');
+    }
+
     const form = new FormData();
-    form.append('image', prepared);
-    const payload: any = await api.post('/inventory/images', form, {
-      timeout: 60000,
+    form.append('image', uploadFile, uploadFile.name || `photo_${Date.now()}.jpg`);
+
+    // Dùng fetch để trình duyệt tự đặt multipart boundary (ổn định hơn trên iOS Safari).
+    const baseUrl = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(`${baseUrl}/inventory/images`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: form,
     });
+    const payload: any = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw { response: { status: response.status, data: payload } };
+    }
     return payload?.image_url || payload?.data?.image_url || '';
   }
 
