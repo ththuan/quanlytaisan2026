@@ -16,6 +16,7 @@ export interface Department {
   id: number;
   name: string;
   type?: 'center' | 'faculty' | 'room' | 'lab' | 'office';
+  campus?: string;
   parent_department_id?: number;
   manager_id?: number;
   description?: string;
@@ -58,6 +59,7 @@ export interface Asset {
   serial_number?: string;
   warranty_date?: string;
   current_department_id?: number;
+  campus?: string;
   status: 'active' | 'inactive' | 'damaged' | 'lost' | 'disposed';
   location?: string;
   discrepancy_reason?: string;

@@ -9,6 +9,7 @@ export interface AssetQueryParams {
   category_code?: string;
   asset_type?: string;
   status?: string;
+  campus?: string;
   current_department_id?: number | string;
   /** Lọc theo phòng ban cha + tất cả phòng ban con (backend) */
   include_children?: string | boolean;
@@ -84,11 +85,11 @@ export const assetService = {
     return api.post('/assets/qrcode/generate-all', params || {});
   },
 
-  async getLossDamage(params?: { department_id?: number; status?: string }): Promise<ApiResponse<any[]>> {
+  async getLossDamage(params?: { department_id?: number; status?: string; campus?: string }): Promise<ApiResponse<any[]>> {
     return api.get('/assets/loss-damage', { params });
   },
 
-  async exportLossDamage(params?: { department_id?: number; status?: string }): Promise<Blob> {
+  async exportLossDamage(params?: { department_id?: number; status?: string; campus?: string }): Promise<Blob> {
     return api.get('/assets/loss-damage/export', { params, responseType: 'blob' });
   },
 };

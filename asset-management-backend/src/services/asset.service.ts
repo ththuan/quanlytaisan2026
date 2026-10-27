@@ -107,6 +107,9 @@ class AssetService {
         where.current_department_id = query.current_department_id;
       }
     }
+    if (query.campus) {
+      where.campus = String(query.campus);
+    }
 
     const { count, rows } = await Asset.findAndCountAll({
       where,
@@ -437,6 +440,14 @@ class AssetService {
       year_in_use: data.year_in_use ? Number(data.year_in_use) : undefined,
     };
 
+    // Cơ sở luôn lấy theo phòng ban hiện tại (không cho client tự đặt).
+    if (data.current_department_id) {
+      const dept = await Department.findByPk(data.current_department_id, { attributes: ['id', 'campus'] });
+      finalData.campus = (dept as any)?.campus || 'main';
+    } else {
+      finalData.campus = 'main';
+    }
+
     // Điền thông tin từ category nếu chưa có
     if (category) {
       if (!finalData.category) finalData.category = category.name;
@@ -508,7 +519,7 @@ class AssetService {
     }
 
     // Sanitize numeric fields
-    const sanitizedData = {
+    const sanitizedData: any = {
       ...data,
       purchase_price: data.purchase_price ? Number(data.purchase_price) : undefined,
       residual_value: data.residual_value ? Number(data.residual_value) : undefined,
@@ -518,7 +529,15 @@ class AssetService {
       year_in_use: data.year_in_use ? Number(data.year_in_use) : undefined,
     };
 
-    await asset.update(sanitizedData as any);
+    // Nếu đổi phòng ban thì cập nhật lại cơ sở theo phòng ban mới.
+    if (data.current_department_id) {
+      const dept = await Department.findByPk(data.current_department_id, { attributes: ['id', 'campus'] });
+      sanitizedData.campus = (dept as any)?.campus || 'main';
+    } else if (data.current_department_id === null) {
+      sanitizedData.campus = 'main';
+    }
+
+    await asset.update(sanitizedData);
     return this.getAssetById(id);
   }
 
@@ -714,6 +733,10 @@ class AssetService {
       where.category = query.category;
     }
 
+    if (query.campus) {
+      where.campus = String(query.campus);
+    }
+
     // Áp dụng filter theo status nếu có - đây là điểm quan trọng!
     // Nếu có filter status, chỉ đếm các tài sản có status đó
     if (query.status) {
@@ -840,6 +863,7 @@ class AssetService {
   async getLossDamageAssets(query: any): Promise<any[]> {
     const where: any = { status: { [Op.in]: ['lost', 'damaged'] } };
     if (query.department_id) where.current_department_id = Number(query.department_id);
+    if (query.campus) where.campus = String(query.campus);
     if (query.status && ['lost', 'damaged'].includes(String(query.status))) {
       where.status = query.status;
     }
@@ -879,6 +903,7 @@ class AssetService {
         department: d.current_department,
         current_department_id: d.current_department_id,
         last_inventory_date: d.last_inventory_date,
+        campus: d.campus || null,
         discrepancy_reason: d.discrepancy_reason || latest?.discrepancy_reason || null,
         responsibility: d.responsibility || latest?.responsibility || null,
         compensation_amount: d.compensation_amount != null

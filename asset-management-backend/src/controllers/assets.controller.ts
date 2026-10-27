@@ -9,6 +9,7 @@ import qrcodeService from '../services/qrcode.service';
 import assetDisposalService from '../services/assetDisposal.service';
 import { AuthRequest } from '../middleware/auth.middleware';
 import normService from '../services/norm.service';
+import { campusLabel } from '../constants/campuses';
 
 // Helper: check if a non-admin/director user can access an asset's data
 async function checkAssetDeptAccess(assetId: number, user: { role: string; department_id?: number | null }): Promise<boolean> {
@@ -748,6 +749,7 @@ export const exportLossDamage = async (req: AuthRequest, res: Response, next: Ne
       { header: 'M� t�i s?n', key: 'asset_code', width: 18 },
       { header: 'T�n t�i s?n', key: 'name', width: 32 },
       { header: '�on v?', key: 'department', width: 26 },
+      { header: 'Cơ sở', key: 'campus', width: 18 },
       { header: 'Tr?ng th�i', key: 'status', width: 14 },
       { header: 'Nguy�n gi�', key: 'purchase_price', width: 18 },
       { header: 'Gi� tr? c�n l?i', key: 'current_value', width: 18 },
@@ -762,6 +764,7 @@ export const exportLossDamage = async (req: AuthRequest, res: Response, next: Ne
         asset_code: r.asset_code || '',
         name: r.name || '',
         department: r.department?.name || '',
+        campus: campusLabel(r.campus),
         status: r.status === 'lost' ? 'M?t' : 'Hu h?ng',
         purchase_price: Number(r.purchase_price || 0),
         current_value: Number(r.current_value || 0),

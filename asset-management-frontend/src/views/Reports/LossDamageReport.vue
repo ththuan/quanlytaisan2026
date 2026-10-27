@@ -31,6 +31,19 @@
           clearable
         />
         <el-select
+          v-model="campus"
+          placeholder="Cơ sở"
+          clearable
+          style="width: 160px"
+        >
+          <el-option
+            v-for="c in campusOptions"
+            :key="c.value"
+            :label="c.label"
+            :value="c.value"
+          />
+        </el-select>
+        <el-select
           v-model="status"
           placeholder="Trạng thái"
           clearable
@@ -92,6 +105,14 @@
         >
           <template #default="{ row }">
             {{ row.department?.name || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="Cơ sở"
+          width="150"
+        >
+          <template #default="{ row }">
+            {{ campusLabel(row.campus) }}
           </template>
         </el-table-column>
         <el-table-column
@@ -267,6 +288,7 @@ import { Download, Edit, EditPen, Printer } from '@element-plus/icons-vue';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 import { assetService } from '@/services/asset.service';
 import { useAuthStore } from '@/stores/auth.store';
+import { CAMPUS_OPTIONS, campusLabel } from '@/constants/campuses';
 import { openPrintWindow, escapeHtml } from '@/utils/print';
 
 const authStore = useAuthStore();
@@ -278,6 +300,8 @@ const loading = ref(false);
 const exporting = ref(false);
 const departmentId = ref<number | null>(null);
 const status = ref<string>('');
+const campus = ref<string>('');
+const campusOptions = CAMPUS_OPTIONS;
 
 const selectedRows = ref<any[]>([]);
 const bulkVisible = ref(false);
@@ -374,6 +398,7 @@ const load = async () => {
     const res: any = await assetService.getLossDamage({
       department_id: departmentId.value ?? undefined,
       status: status.value || undefined,
+      campus: campus.value || undefined,
     });
     rows.value = res?.data || [];
   } catch {
@@ -389,6 +414,7 @@ const exportExcel = async () => {
     const blob: any = await assetService.exportLossDamage({
       department_id: departmentId.value ?? undefined,
       status: status.value || undefined,
+      campus: campus.value || undefined,
     });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -410,13 +436,14 @@ const printReport = () => {
     <div class="doc-header"><div class="org">Báo cáo tài sản mất / hư hỏng</div></div>
     <div class="doc-title">Biên bản tài sản mất / hư hỏng</div>
     <table class="data">
-      <thead><tr><th>STT</th><th>Mã TS</th><th>Tên tài sản</th><th>Đơn vị</th><th>Trạng thái</th><th>Nguyên nhân</th><th>Trách nhiệm</th></tr></thead>
+      <thead><tr><th>STT</th><th>Mã TS</th><th>Tên tài sản</th><th>Đơn vị</th><th>Cơ sở</th><th>Trạng thái</th><th>Nguyên nhân</th><th>Trách nhiệm</th></tr></thead>
       <tbody>
         ${rows.value.map((r, i) => `<tr>
           <td class="num">${i + 1}</td>
           <td>${escapeHtml(r.asset_code || '')}</td>
           <td>${escapeHtml(r.name || '')}</td>
           <td>${escapeHtml(r.department?.name || '')}</td>
+          <td>${escapeHtml(campusLabel(r.campus))}</td>
           <td>${r.status === 'lost' ? 'Mất' : 'Hư hỏng'}</td>
           <td>${escapeHtml(r.discrepancy_reason || '')}</td>
           <td>${escapeHtml(r.responsibility || '')}</td>

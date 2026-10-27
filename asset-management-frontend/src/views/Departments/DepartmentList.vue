@@ -44,7 +44,11 @@
       <!-- Search & Filter -->
       <div class="filter-section">
         <el-row :gutter="16">
-          <el-col :xs="24" :sm="12" :md="8">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="8"
+          >
             <el-input
               v-model="searchQuery"
               :placeholder="$t('departments.searchPlaceholder')"
@@ -57,7 +61,11 @@
               </template>
             </el-input>
           </el-col>
-          <el-col :xs="24" :sm="12" :md="6">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="6"
+          >
             <el-select
               v-model="filterType"
               :placeholder="$t('departments.filterByType')"
@@ -72,7 +80,11 @@
               />
             </el-select>
           </el-col>
-          <el-col :xs="24" :sm="12" :md="6">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="6"
+          >
             <el-button
               type="primary"
               @click="handleSearch"
@@ -102,6 +114,15 @@
                 <span v-if="row.parent_department_id">└ </span>
                 {{ row.name }}
               </span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="campus"
+            label="Cơ sở"
+            width="150"
+          >
+            <template #default="{ row }">
+              {{ campusLabel(row.campus) }}
             </template>
           </el-table-column>
           <el-table-column
@@ -208,6 +229,9 @@
         <el-descriptions-item :label="$t('departments.departmentName')">
           {{ currentDepartment.name }}
         </el-descriptions-item>
+        <el-descriptions-item label="Cơ sở">
+          {{ campusLabel(currentDepartment.campus) }}
+        </el-descriptions-item>
         <el-descriptions-item :label="$t('departments.departmentType')">
           <el-tag :type="getTypeColor(currentDepartment.type || '')">
             {{ getTypeText(currentDepartment.type || '') }}
@@ -240,11 +264,13 @@ import api from '@/services/api';
 import DepartmentFormDialog from '@/components/Departments/DepartmentFormDialog.vue';
 import departmentService from '@/services/department.service';
 import { invalidateGlobalDepartmentCache } from '@/composables/useDepartments';
+import { campusLabel } from '@/constants/campuses';
 
 interface Department {
   id: number;
   name: string;
   type?: string;
+  campus?: string;
   description?: string;
   parent_department_id?: number;
   parent_department?: { id: number; name: string };

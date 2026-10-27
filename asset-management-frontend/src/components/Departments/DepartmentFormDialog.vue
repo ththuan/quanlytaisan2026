@@ -44,6 +44,24 @@
       </el-form-item>
 
       <el-form-item
+        label="Cơ sở"
+        prop="campus"
+      >
+        <el-select
+          v-model="formData.campus"
+          placeholder="Chọn cơ sở"
+          style="width: 100%"
+        >
+          <el-option
+            v-for="c in campusOptions"
+            :key="c.value"
+            :label="c.label"
+            :value="c.value"
+          />
+        </el-select>
+      </el-form-item>
+
+      <el-form-item
         :label="$t('departments.parentDepartment')"
         prop="parent_department_id"
       >
@@ -92,11 +110,13 @@ import { ElMessage } from 'element-plus';
 import api from '@/services/api';
 import { useDepartmentStore } from '@/stores/department.store';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
+import { CAMPUS_OPTIONS } from '@/constants/campuses';
 
 interface Department {
   id: number;
   name: string;
   type?: string;
+  campus?: string;
   parent_department_id?: number;
   description?: string;
 }
@@ -126,9 +146,12 @@ const isEdit = computed(() => !!props.department?.id);
 const formData = reactive({
   name: '',
   type: 'room' as string,
+  campus: 'main',
   parent_department_id: null as number | null,
   description: '',
 });
+
+const campusOptions = CAMPUS_OPTIONS;
 
 const departmentTypes = computed(() => [
   { value: 'department', label: t('departments.types.department') },
@@ -171,6 +194,7 @@ const fetchDepartments = async () => {
 const resetForm = () => {
   formData.name = '';
   formData.type = 'department';
+  formData.campus = 'main';
   formData.parent_department_id = null;
   formData.description = '';
 };
@@ -225,6 +249,7 @@ watch(() => props.visible, (newVal) => {
     if (props.department) {
       formData.name = props.department.name || '';
       formData.type = props.department.type || 'room';
+      formData.campus = props.department.campus || 'main';
       formData.parent_department_id = props.department.parent_department_id || null;
       formData.description = props.department.description || '';
     } else {

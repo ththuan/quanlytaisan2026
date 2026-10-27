@@ -243,6 +243,23 @@
               />
             </el-select>
           </div>
+          <div class="filter-item">
+            <el-select
+              v-model="filterCampus"
+              placeholder="Cơ sở"
+              clearable
+              size="large"
+              @change="handleFilter"
+              @clear="handleFilter"
+            >
+              <el-option
+                v-for="c in campusOptions"
+                :key="c.value"
+                :label="c.label"
+                :value="c.value"
+              />
+            </el-select>
+          </div>
           <div class="filter-item filter-item--dept">
             <DepartmentTreeSelect
               v-if="authStore.isAdmin"
@@ -376,6 +393,15 @@
               >
                 {{ getStatusText(row.status) }}
               </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="campus"
+            label="Cơ sở"
+            width="150"
+          >
+            <template #default="{ row }">
+              {{ campusLabel(row.campus) }}
             </template>
           </el-table-column>
           <el-table-column
@@ -669,6 +695,7 @@ import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.
 import importService, { type ImportResult } from '@/services/import.service';
 import exportService from '@/services/export.service';
 import { assetService, type AssetQueryParams } from '@/services/asset.service';
+import { CAMPUS_OPTIONS, campusLabel } from '@/constants/campuses';
 
 const router = useRouter();
 const route = useRoute();
@@ -685,6 +712,8 @@ const { activeDepartments: departments } = useDepartments({
 const searchQuery = ref('');
 const filterCategory = ref('');
 const filterStatus = ref('');
+const filterCampus = ref('');
+const campusOptions = CAMPUS_OPTIONS;
 const filterDepartment = ref<number | null>(null);
 const formDialogVisible = ref(false);
 const currentAsset = ref<any>(null);
@@ -762,6 +791,7 @@ const fetchStatistics = async () => {
     const response = await assetService.getStatistics({
       category_code: filterCategory.value || undefined,
       status: filterStatus.value || undefined,
+      campus: filterCampus.value || undefined,
       current_department_id: departmentId,
     });
     if (response.success && response.data) {
@@ -783,6 +813,7 @@ const getListFetchParams = (overrides: Partial<AssetQueryParams> = {}): AssetQue
     search: searchQuery.value,
     category_code: filterCategory.value,
     status: filterStatus.value,
+    campus: filterCampus.value || undefined,
     current_department_id: departmentId,
     ...overrides,
   };
@@ -855,6 +886,7 @@ const handleReset = async () => {
   searchQuery.value = '';
   filterCategory.value = '';
   filterStatus.value = '';
+  filterCampus.value = '';
   if (authStore.isAdmin) {
     filterDepartment.value = null;
   } else {
@@ -1005,6 +1037,7 @@ const handleExport = async () => {
     if (searchQuery.value) exportParams.search = searchQuery.value;
     if (filterCategory.value) exportParams.category_code = filterCategory.value;
     if (filterStatus.value) exportParams.status = filterStatus.value;
+    if (filterCampus.value) exportParams.campus = filterCampus.value;
     
     // Apply department filter based on user role
     // Admin và Director: có thể export tất cả hoặc theo filter

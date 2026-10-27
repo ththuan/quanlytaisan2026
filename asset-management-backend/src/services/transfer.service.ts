@@ -142,6 +142,11 @@ class TransferService {
 
     // Set from_department_id from asset's current department if not provided
     const fromDepartmentId = data.from_department_id || asset.current_department_id;
+    const fromDepartment = fromDepartmentId
+      ? await Department.findByPk(fromDepartmentId, { attributes: ['id', 'campus'] })
+      : null;
+    const fromCampus = (fromDepartment as any)?.campus || (asset as any).campus || 'main';
+    const toCampus = (toDepartment as any).campus || 'main';
 
     // Only allow creating transfer from requester's own department (except admin/director)
     if (requester.role !== 'admin') {
@@ -173,6 +178,8 @@ class TransferService {
       asset_id: data.asset_id,
       from_department_id: fromDepartmentId,
       to_department_id: data.to_department_id,
+      from_campus: fromCampus,
+      to_campus: toCampus,
       requested_by: requester.id,
       reason: data.reason,
       notes: data.notes,
@@ -240,6 +247,7 @@ class TransferService {
         await asset.update(
           {
             current_department_id: transfer.to_department_id,
+            campus: (toDepartment as any)?.campus || (transfer as any).to_campus || 'main',
             location: newLocation, // Cập nhật vị trí theo phòng ban mới
           },
           { transaction }
@@ -399,6 +407,7 @@ class TransferService {
             const toDepartment = (transfer as any).to_department;
             await asset.update({
               current_department_id: transfer.to_department_id,
+              campus: (toDepartment as any)?.campus || (transfer as any).to_campus || 'main',
               location: toDepartment ? toDepartment.name : null,
             }, { transaction });
           }

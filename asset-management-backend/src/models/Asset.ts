@@ -51,6 +51,7 @@ export interface AssetAttributes {
   warranty_date?: Date;
   last_repair_date?: Date; // Ngày sửa chữa gần nhất
   current_department_id?: number;
+  campus?: string;
   status: AssetStatus;
   location?: string;
   discrepancy_reason?: string;
@@ -110,6 +111,7 @@ class Asset extends Model<AssetAttributes, AssetCreationAttributes> implements A
   public warranty_date?: Date;
   public last_repair_date?: Date;
   public current_department_id?: number;
+  public campus?: string;
   public status!: AssetStatus;
   public location?: string;
   public discrepancy_reason?: string;
@@ -297,6 +299,12 @@ Asset.init(
         model: 'departments',
         key: 'id',
       },
+    },
+    campus: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      defaultValue: 'main',
+      comment: 'Cơ sở của tài sản (theo phòng ban hiện tại)',
     },
     status: {
       type: DataTypes.ENUM('active', 'inactive', 'damaged', 'lost', 'disposed', 'pending_disposal', 'pending_repair'),

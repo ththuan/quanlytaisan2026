@@ -18,9 +18,11 @@
         </el-descriptions-item>
         <el-descriptions-item :label="$t('transfers.fromDepartment')">
           {{ transfer.from_department?.name || '-' }}
+          <span class="campus-tag">({{ campusLabel(transfer.from_campus) }})</span>
         </el-descriptions-item>
         <el-descriptions-item :label="$t('transfers.toDepartment')">
           {{ transfer.to_department?.name || '-' }}
+          <span class="campus-tag">({{ campusLabel(transfer.to_campus) }})</span>
         </el-descriptions-item>
         <el-descriptions-item :label="$t('transfers.requestedBy')">
           {{ transfer.requester?.fullname || transfer.requester?.username }}
@@ -157,6 +159,7 @@ import { useTransferStore } from '@/stores/transfer.store';
 import { useSignature } from '@/composables/useSignature';
 import SignaturePad from '@/components/Common/SignaturePad.vue';
 import { openPrintWindow, signatureCell } from '@/utils/print';
+import { campusLabel } from '@/constants/campuses';
 
 const props = defineProps<{
   visible: boolean;
@@ -337,7 +340,7 @@ const handlePrint = () => {
     <div class="subtitle">Mã phiếu: DC-${escapeHtml(transfer.id)} | Ngày lập: ${escapeHtml(formatDate(transfer.created_at))}</div>
     <table>
       <tr><th>Mã tài sản</th><td>${escapeHtml(transfer.asset?.asset_code)}</td><th>Tên tài sản</th><td>${escapeHtml(transfer.asset?.name)}</td></tr>
-      <tr><th>Đơn vị giao</th><td>${escapeHtml(transfer.from_department?.name)}</td><th>Đơn vị nhận</th><td>${escapeHtml(transfer.to_department?.name)}</td></tr>
+      <tr><th>Đơn vị giao</th><td>${escapeHtml(transfer.from_department?.name)} (${escapeHtml(campusLabel(transfer.from_campus))})</td><th>Đơn vị nhận</th><td>${escapeHtml(transfer.to_department?.name)} (${escapeHtml(campusLabel(transfer.to_campus))})</td></tr>
       <tr><th>Người đề nghị</th><td>${escapeHtml(transfer.requester?.fullname || transfer.requester?.username)}</td><th>Trạng thái</th><td>${escapeHtml(getStatusText(transfer.status))}</td></tr>
       <tr><th>Lý do</th><td colspan="3">${escapeHtml(transfer.reason)}</td></tr>
       <tr><th>Ghi chú</th><td colspan="3">${escapeHtml(transfer.notes)}</td></tr>
@@ -426,5 +429,10 @@ const handlePrint = () => {
 .transfer-signature-meta strong {
   color: #0f172a;
   font-size: 14px;
+}
+.campus-tag {
+  color: #64748b;
+  font-size: 12px;
+  margin-left: 4px;
 }
 </style>

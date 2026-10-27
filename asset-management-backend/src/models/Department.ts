@@ -5,6 +5,7 @@ export interface DepartmentAttributes {
   id: number;
   name: string;
   type?: string;
+  campus?: string;
   organization_code?: string;
   parent_department_id?: number;
   manager_id?: number;
@@ -19,6 +20,7 @@ class Department extends Model<DepartmentAttributes, DepartmentCreationAttribute
   public id!: number;
   public name!: string;
   public type?: string;
+  public campus?: string;
   public organization_code?: string;
   public parent_department_id?: number;
   public manager_id?: number;
@@ -41,6 +43,12 @@ Department.init(
     type: {
       type: DataTypes.STRING,
       allowNull: true,
+    },
+    campus: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      defaultValue: 'main',
+      comment: 'Cơ sở: main = Trụ sở chính, tan_an = Cơ sở Tân An',
     },
     organization_code: {
       type: DataTypes.STRING(50),

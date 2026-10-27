@@ -8,6 +8,7 @@ import sequelize from '../config/database';
 export interface CreateDepartmentInput {
   name: string;
   type?: string;
+  campus?: string;
   parent_department_id?: number;
   manager_id?: number;
   description?: string;
@@ -16,6 +17,7 @@ export interface CreateDepartmentInput {
 export interface UpdateDepartmentInput {
   name?: string;
   type?: string;
+  campus?: string;
   parent_department_id?: number;
   manager_id?: number;
   description?: string;
@@ -136,6 +138,15 @@ class DepartmentService {
     }
 
     await department.update(data);
+
+    // Khi đổi cơ sở của phòng ban, cập nhật cơ sở cho toàn bộ tài sản đang thuộc phòng ban đó.
+    if (data.campus) {
+      await Asset.update(
+        { campus: data.campus },
+        { where: { current_department_id: id } },
+      );
+    }
+
     return this.getDepartmentById(id);
   }
 

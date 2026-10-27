@@ -578,6 +578,9 @@ export const importAssetsFromExcel = async (
     
     // Lấy danh sách departments và categories để validate
     const departments = await Department.findAll();
+    const departmentCampusById = new Map<number, string>(
+      departments.map((d: any) => [d.id, d.campus || 'main']),
+    );
 
     // Chuẩn hóa tên: lowercase, bỏ dấu câu thừa (dấu phẩy, chấm, gạch ngang...), chuẩn hóa khoảng trắng
     const normalizeName = (s: string): string =>
@@ -795,6 +798,7 @@ export const importAssetsFromExcel = async (
           category_id: category!.id,
           category_code: categoryCode,
           current_department_id: departmentId!,
+          campus: departmentCampusById.get(departmentId!) || 'main',
           purchase_date: acquisitionDate,
           purchase_price: hasOriginalValue ? originalVal : null,
           current_value: hasOriginalValue ? currentValue : null,

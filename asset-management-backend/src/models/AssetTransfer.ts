@@ -8,6 +8,8 @@ export interface AssetTransferAttributes {
   asset_id: number;
   from_department_id?: number;
   to_department_id?: number;
+  from_campus?: string;
+  to_campus?: string;
   requested_by?: number;
   approved_by?: number;
   head_approved_by?: number;
@@ -29,6 +31,8 @@ class AssetTransfer extends Model<AssetTransferAttributes, AssetTransferCreation
   public asset_id!: number;
   public from_department_id?: number;
   public to_department_id?: number;
+  public from_campus?: string;
+  public to_campus?: string;
   public requested_by?: number;
   public approved_by?: number;
   public head_approved_by?: number;
@@ -67,15 +71,23 @@ AssetTransfer.init(
         key: 'id',
       },
     },
-    to_department_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'departments',
-        key: 'id',
+      to_department_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'departments',
+          key: 'id',
+        },
       },
-    },
-    requested_by: {
+      from_campus: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+      },
+      to_campus: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+      },
+      requested_by: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
