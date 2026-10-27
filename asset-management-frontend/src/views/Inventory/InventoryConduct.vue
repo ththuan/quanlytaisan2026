@@ -2009,8 +2009,6 @@ const handleScanCode = async () => {
         if (!assetData) {
           ElMessage.error('Không tìm thấy tài sản với mã QR này');
           scannedCode.value = '';
-          scanning.value = false;
-          if (showCameraDialog.value) await restartCamera();
           return;
         }
         
@@ -2080,10 +2078,8 @@ const handleScanCode = async () => {
         offset: 60,
       });
       scanSuccessMessage.value = `⏭ ${label} - Đã kiểm kê rồi`;
-      scanning.value = false;
       scannedCode.value = '';
       setTimeout(() => { scanSuccessMessage.value = ''; }, 1800);
-      if (showCameraDialog.value) await restartCamera();
       return;
     }
     
@@ -2783,30 +2779,23 @@ const onQRCodeScanned = async (decodedText: string) => {
   
   try {
     await handleScanCode();
-    
-    // Resume camera after processing with minimal flicker
-    const resumeDelay = isIOS() ? 2000 : 800;
-    if (!showCheckDialog.value && showCameraDialog.value) {
-      setTimeout(async () => {
-        if (html5QrCode.value && !showCheckDialog.value && showCameraDialog.value) {
-          scanning.value = false;
-          scannedCode.value = '';
-          // Prefer resume() over restart to avoid flicker
-          try {
-            await html5QrCode.value.resume();
-          } catch {
-            await restartCamera();
-          }
-        }
-      }, resumeDelay);
-    }
-    
   } catch (error: any) {
     console.error('Error processing scanned code:', error);
+    ElMessage.error(error?.response?.data?.message || error?.message || 'Không xử lý được mã QR');
+  } finally {
+    // Luôn mở lại camera sau khi xử lý xong (kể cả lỗi/trùng) để quét tiếp ngay.
     scannedCode.value = '';
     scanning.value = false;
-    if (showCameraDialog.value) {
-      await restartCamera();
+    if (!showCheckDialog.value && showCameraDialog.value) {
+      const resumeDelay = isIOS() ? 1200 : 500;
+      setTimeout(async () => {
+        if (!html5QrCode.value || showCheckDialog.value || !showCameraDialog.value) return;
+        try {
+          await html5QrCode.value.resume();
+        } catch {
+          try { await restartCamera(); } catch { /* ignore */ }
+        }
+      }, resumeDelay);
     }
   }
 };
