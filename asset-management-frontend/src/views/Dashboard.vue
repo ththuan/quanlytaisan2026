@@ -7,18 +7,6 @@
           Tổng quan hoạt động - Phần mềm Quản lý tài sản
         </p>
       </div>
-      <div
-        v-if="authStore.user?.role === 'admin'"
-        class="dashboard-header-actions"
-      >
-        <el-button
-          type="primary"
-          :icon="Document"
-          @click="$router.push('/procurements')"
-        >
-          Tăng tài sản
-        </el-button>
-      </div>
     </div>
 
     <!-- Tabs wrapper -->
@@ -36,6 +24,7 @@
         <el-row
           :gutter="16"
           class="stats-row"
+          justify="space-between"
         >
           <!-- 1. Tổng tài sản -->
           <el-col
@@ -71,41 +60,7 @@
             </el-card>
           </el-col>
 
-          <!-- 2. Tài sản mới -->
-          <el-col
-            :xs="12"
-            :sm="8"
-            :md="4"
-          >
-            <el-card
-              class="stat-card stat-clickable"
-              shadow="hover"
-              @click="$router.push('/assets')"
-            >
-              <div class="stat-icon new-assets-icon">
-                <el-icon size="24">
-                  <Box />
-                </el-icon>
-              </div>
-              <div class="stat-content">
-                <el-skeleton
-                  v-if="loading"
-                  :rows="1"
-                  animated
-                />
-                <template v-else>
-                  <div class="stat-value text-truncate">
-                    {{ formatNumber(stats.assetsNew) }}
-                  </div>
-                  <div class="stat-label">
-                    Tài sản mới
-                  </div>
-                </template>
-              </div>
-            </el-card>
-          </el-col>
-
-          <!-- 3. Mua sắm (chỉ admin và director) -->
+          <!-- 2. Mua sắm (chỉ admin và director) -->
           <el-col
             v-if="FEATURES.auxiliaryModules && isAdminOrDirector"
             :xs="12"
@@ -305,6 +260,41 @@
                   </div>
                   <div class="stat-label">
                     Mất / hư hỏng
+                  </div>
+                </template>
+              </div>
+            </el-card>
+          </el-col>
+
+          <!-- 8. Tăng tài sản -->
+          <el-col
+            v-if="authStore.user?.role === 'admin'"
+            :xs="12"
+            :sm="8"
+            :md="4"
+          >
+            <el-card
+              class="stat-card stat-clickable"
+              shadow="hover"
+              @click="$router.push('/procurements')"
+            >
+              <div class="stat-icon procurements-icon">
+                <el-icon size="24">
+                  <Document />
+                </el-icon>
+              </div>
+              <div class="stat-content">
+                <el-skeleton
+                  v-if="loading"
+                  :rows="1"
+                  animated
+                />
+                <template v-else>
+                  <div class="stat-value text-truncate">
+                    {{ formatNumber(stats.procurements) }}
+                  </div>
+                  <div class="stat-label">
+                    Tăng tài sản
                   </div>
                 </template>
               </div>
@@ -940,13 +930,6 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
   color: #0f172a;
 }
 
-.dashboard-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
 .header-subtitle {
   margin: 2px 0 0;
   font-size: 0.85rem;
@@ -1015,7 +998,6 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
 
 /* Professional Gradients */
 .assets-icon       { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
-.new-assets-icon   { background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); }
 .active-icon       { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
 .departments-icon  { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
 .procurements-icon { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); }
