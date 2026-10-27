@@ -121,11 +121,36 @@ class NormService {
     const haystack = `${a.name || ''} ${a.category || ''} ${a.category_code || ''}`.toLowerCase();
     if (!haystack.trim()) return [];
 
+    const normalize = (v: unknown) => String(v ?? '').toLowerCase().normalize('NFC').trim();
+    const assignedUserId = a.assigned_user_id ? Number(a.assigned_user_id) : null;
+    const assignedUser: any = assignedUserId
+      ? await User.findByPk(assignedUserId, { attributes: ['id', 'fullname', 'job_title'] })
+      : null;
+    const jobTitle = normalize(assignedUser?.job_title);
+
     const norms = await EquipmentNorm.findAll({ where: { is_active: true } });
-    // Chọn định mức khớp cụ thể nhất (tên dài nhất nằm trong tên/loại tài sản)
-    const matched = norms
-      .filter((n) => haystack.includes(String(n.equipment_name).toLowerCase()))
-      .sort((x, y) => String(y.equipment_name).length - String(x.equipment_name).length)[0];
+    // Chọn định mức khớp cụ thể nhất:
+    // - Ưu tiên định mức đúng nhóm chức danh của người sử dụng.
+    // - Tài sản dùng chung (chưa gán ai) ưu tiên định mức phòng/thiết bị dùng chung.
+    // - Sau đó mới đến tên thiết bị dài nhất khớp với tên/loại tài sản.
+    const titleMatches = (n: any) => {
+      if (!jobTitle || n.scope !== 'title' || !n.position_group) return false;
+      const group = normalize(n.position_group);
+      return !!group && (jobTitle.includes(group) || group.includes(jobTitle));
+    };
+    const candidates = norms.filter((n) => haystack.includes(String(n.equipment_name).toLowerCase()));
+    candidates.sort((x: any, y: any) => {
+      if (jobTitle) {
+        const diff = Number(titleMatches(y)) - Number(titleMatches(x));
+        if (diff !== 0) return diff;
+      } else {
+        const xGeneric = x.scope !== 'title' || !x.position_group ? 1 : 0;
+        const yGeneric = y.scope !== 'title' || !y.position_group ? 1 : 0;
+        if (xGeneric !== yGeneric) return yGeneric - xGeneric;
+      }
+      return String(y.equipment_name).length - String(x.equipment_name).length;
+    });
+    const matched = candidates[0];
 
     if (!matched) return [];
 
@@ -163,15 +188,9 @@ class NormService {
     // - Định mức theo chức danh: đối chiếu chức danh người sử dụng với nhóm chức danh, đếm theo cá nhân.
     // - Còn lại (hoặc tài sản dùng chung chưa gán ai): đếm theo đơn vị.
     let quantityMessage = '';
-    const assignedUserId = (a as any).assigned_user_id ? Number((a as any).assigned_user_id) : null;
-    const normalize = (v: unknown) => String(v ?? '').toLowerCase().normalize('NFC').trim();
 
-    if (matched.max_quantity != null && matched.scope === 'title' && matched.position_group && assignedUserId) {
-      const assignedUser: any = await User.findByPk(assignedUserId, { attributes: ['id', 'fullname', 'job_title'] });
-      const jobTitle = normalize(assignedUser?.job_title);
-      const positionGroup = normalize(matched.position_group);
-      const titleMatches = jobTitle && positionGroup && (jobTitle.includes(positionGroup) || positionGroup.includes(jobTitle));
-      if (titleMatches) {
+    if (matched.max_quantity != null && matched.scope === 'title' && matched.position_group && assignedUserId && titleMatches(matched)) {
+      {
         const count = await Asset.count({
           where: {
             assigned_user_id: assignedUserId,

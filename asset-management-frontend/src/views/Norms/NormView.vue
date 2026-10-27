@@ -26,12 +26,14 @@
             @keyup.enter="loadNorms"
             @clear="loadNorms"
           />
-          <el-button @click="loadNorms">Tìm</el-button>
+          <el-button @click="loadNorms">
+            Tìm
+          </el-button>
         </div>
         <el-table
+          v-loading="loadingNorms"
           :data="norms"
           stripe
-          v-loading="loadingNorms"
         >
           <el-table-column
             prop="equipment_name"
@@ -127,12 +129,17 @@
           >
             Hiện cả cảnh báo đã xử lý
           </el-checkbox>
-          <el-button :icon="Refresh" @click="loadWarnings">Làm mới</el-button>
+          <el-button
+            :icon="Refresh"
+            @click="loadWarnings"
+          >
+            Làm mới
+          </el-button>
         </div>
         <el-table
+          v-loading="loadingWarnings"
           :data="warnings"
           stripe
-          v-loading="loadingWarnings"
         >
           <el-table-column
             label="Thời gian"
@@ -219,50 +226,116 @@
       width="560px"
     >
       <el-form label-width="150px">
-        <el-form-item label="Máy móc, thiết bị" required>
-          <el-input v-model="form.equipment_name" placeholder="VD: Máy in, Máy vi tính để bàn..." />
+        <el-form-item
+          label="Máy móc, thiết bị"
+          required
+        >
+          <el-input
+            v-model="form.equipment_name"
+            placeholder="VD: Máy in, Máy vi tính để bàn..."
+          />
         </el-form-item>
         <el-form-item label="Phạm vi">
-          <el-select v-model="form.scope" style="width: 100%">
-            <el-option value="title" label="Theo chức danh" />
-            <el-option value="room" label="Theo phòng làm việc" />
-            <el-option value="digital" label="Thiết bị số" />
-            <el-option value="secret" label="Bảo mật nhà nước" />
-            <el-option value="other" label="Khác" />
+          <el-select
+            v-model="form.scope"
+            style="width: 100%"
+          >
+            <el-option
+              value="title"
+              label="Theo chức danh"
+            />
+            <el-option
+              value="room"
+              label="Theo phòng làm việc"
+            />
+            <el-option
+              value="digital"
+              label="Thiết bị số"
+            />
+            <el-option
+              value="secret"
+              label="Bảo mật nhà nước"
+            />
+            <el-option
+              value="other"
+              label="Khác"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="Nhóm chức danh">
-          <el-input v-model="form.position_group" placeholder="Không bắt buộc" />
+          <el-select
+            v-model="form.position_group"
+            filterable
+            allow-create
+            default-first-option
+            clearable
+            placeholder="Chọn hoặc nhập nhóm chức danh..."
+            style="width: 100%"
+          >
+            <el-option
+              v-for="group in positionGroupOptions"
+              :key="group"
+              :label="group"
+              :value="group"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="Đơn vị tính">
-          <el-input v-model="form.unit" placeholder="bộ / chiếc" />
+          <el-input
+            v-model="form.unit"
+            placeholder="bộ / chiếc"
+          />
         </el-form-item>
         <el-form-item label="Số lượng tối đa">
-          <el-input-number v-model="form.max_quantity" :min="0" style="width: 100%" />
+          <el-input-number
+            v-model="form.max_quantity"
+            :min="0"
+            style="width: 100%"
+          />
         </el-form-item>
         <el-form-item label="Mức giá tối đa (triệu)">
-          <el-input-number v-model="form.max_price" :min="0" :precision="2" style="width: 100%" />
+          <el-input-number
+            v-model="form.max_price"
+            :min="0"
+            :precision="2"
+            style="width: 100%"
+          />
         </el-form-item>
         <el-form-item label="Văn bản">
-          <el-input v-model="form.document_no" placeholder="VD: 10/2026/QĐ-TTg" />
+          <el-input
+            v-model="form.document_no"
+            placeholder="VD: 10/2026/QĐ-TTg"
+          />
         </el-form-item>
         <el-form-item label="Ghi chú">
-          <el-input v-model="form.note" type="textarea" :rows="2" />
+          <el-input
+            v-model="form.note"
+            type="textarea"
+            :rows="2"
+          />
         </el-form-item>
         <el-form-item label="Đang áp dụng">
           <el-switch v-model="form.is_active" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showDialog = false">Hủy</el-button>
-        <el-button type="primary" :loading="saving" @click="saveNorm">Lưu</el-button>
+        <el-button @click="showDialog = false">
+          Hủy
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="saving"
+          @click="saveNorm"
+        >
+          Lưu
+        </el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus, Refresh } from '@element-plus/icons-vue';
 import normService, { type EquipmentNorm, type NormWarning } from '@/services/norm.service';
@@ -290,6 +363,24 @@ const form = ref<any>({
   document_no: '10/2026/QĐ-TTg',
   note: '',
   is_active: true,
+});
+
+const DEFAULT_POSITION_GROUPS = [
+  'Hiệu trưởng',
+  'Phó Hiệu trưởng',
+  'Trưởng phòng, Phó Trưởng phòng và các chức danh tương đương',
+  'Chuyên viên và các chức danh tương đương',
+  'Chuyên viên và các chức danh tương đương; Cá nhân ký hợp đồng lao động',
+  'Cá nhân ký hợp đồng lao động khác',
+];
+
+const positionGroupOptions = computed(() => {
+  const set = new Set<string>(DEFAULT_POSITION_GROUPS);
+  norms.value.forEach((n) => {
+    const group = String(n.position_group || '').trim();
+    if (group) set.add(group);
+  });
+  return Array.from(set);
 });
 
 const unwrap = (res: any) => res?.data ?? res ?? [];
