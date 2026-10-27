@@ -10,6 +10,7 @@
           In biên bản
         </el-button>
         <el-button
+          v-if="canExport"
           type="primary"
           :icon="Download"
           :loading="exporting"
@@ -23,6 +24,7 @@
     <el-card>
       <div class="toolbar">
         <DepartmentTreeSelect
+          v-if="isAdmin"
           v-model="departmentId"
           placeholder="Chọn đơn vị"
           style="width: 280px"
@@ -47,6 +49,7 @@
           Lọc
         </el-button>
         <el-button
+          v-if="isAdmin"
           type="warning"
           :icon="EditPen"
           :disabled="selectedRows.length === 0"
@@ -63,6 +66,7 @@
         @selection-change="handleSelectionChange"
       >
         <el-table-column
+          v-if="isAdmin"
           type="selection"
           width="46"
         />
@@ -133,6 +137,7 @@
           min-width="160"
         />
         <el-table-column
+          v-if="isAdmin"
           label="Thao tác"
           width="90"
           align="center"
@@ -256,12 +261,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Download, Edit, EditPen, Printer } from '@element-plus/icons-vue';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 import { assetService } from '@/services/asset.service';
+import { useAuthStore } from '@/stores/auth.store';
 import { openPrintWindow, escapeHtml } from '@/utils/print';
+
+const authStore = useAuthStore();
+const isAdmin = computed(() => authStore.user?.role === 'admin');
+const canExport = computed(() => ['admin', 'director'].includes(authStore.user?.role || ''));
 
 const rows = ref<any[]>([]);
 const loading = ref(false);

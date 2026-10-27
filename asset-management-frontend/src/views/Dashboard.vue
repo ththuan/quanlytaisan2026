@@ -24,6 +24,7 @@
         <el-row
           :gutter="16"
           class="stats-row"
+          justify="space-between"
         >
           <!-- 1. Tổng tài sản -->
           <el-col
@@ -269,98 +270,6 @@
           </el-col>
         </el-row>
 
-        <!-- Tài sản mất / hư hỏng (mọi người dùng; tự lọc theo đơn vị nếu không phải admin) -->
-        <el-row
-          id="loss-damage-section"
-          :gutter="16"
-          class="loss-damage-row"
-        >
-          <el-col :span="24">
-            <el-card
-              class="chart-card loss-damage-card"
-              shadow="hover"
-            >
-              <template #header>
-                <div class="card-header chart-card-header">
-                  <div class="header-left">
-                    <span class="card-title">Tài sản mất / hư hỏng</span>
-                    <span class="loss-summary">
-                      {{ lostDamageTotals.lost }} mất • {{ lostDamageTotals.damaged }} hư hỏng
-                    </span>
-                  </div>
-                  <div
-                    v-if="authStore.isAdmin"
-                    class="header-right"
-                  >
-                    <el-button
-                      link
-                      type="primary"
-                      @click="$router.push('/loss-damage')"
-                    >
-                      Xem chi tiết
-                    </el-button>
-                  </div>
-                </div>
-              </template>
-
-              <el-table
-                v-loading="loading"
-                :data="lossDamageAssets"
-                stripe
-                size="small"
-                max-height="320"
-                empty-text="Không có tài sản mất/hư hỏng"
-              >
-                <el-table-column
-                  prop="asset_code"
-                  label="Mã tài sản"
-                  width="140"
-                />
-                <el-table-column
-                  prop="name"
-                  label="Tên tài sản"
-                  min-width="200"
-                />
-                <el-table-column
-                  v-if="authStore.isAdmin"
-                  label="Đơn vị"
-                  min-width="170"
-                >
-                  <template #default="{ row }">
-                    {{ row.department?.name || '-' }}
-                  </template>
-                </el-table-column>
-                <el-table-column
-                  label="Trạng thái"
-                  width="110"
-                  align="center"
-                >
-                  <template #default="{ row }">
-                    <el-tag
-                      :type="row.status === 'lost' ? 'danger' : 'warning'"
-                      size="small"
-                    >
-                      {{ row.status === 'lost' ? 'Mất' : 'Hư hỏng' }}
-                    </el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column
-                  prop="discrepancy_reason"
-                  label="Nguyên nhân"
-                  min-width="200"
-                  show-overflow-tooltip
-                />
-                <el-table-column
-                  prop="responsibility"
-                  label="Trách nhiệm"
-                  min-width="160"
-                  show-overflow-tooltip
-                />
-              </el-table>
-            </el-card>
-          </el-col>
-        </el-row>
-
         <el-row
           :gutter="16"
           class="charts-row"
@@ -575,11 +484,7 @@ const lostDamageTotals = computed(() => {
 });
 
 const handleLossDamageClick = () => {
-  if (authStore.isAdmin) {
-    router.push('/loss-damage');
-    return;
-  }
-  document.getElementById('loss-damage-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  router.push('/loss-damage');
 };
 
 const auditLogs = ref<any[]>([]);
@@ -1177,17 +1082,6 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
   font-size: 1.05rem;
   font-weight: 800;
   color: #0f172a;
-}
-
-.loss-damage-row {
-  margin-top: 16px;
-}
-
-.loss-summary {
-  margin-left: 10px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #b45309;
 }
 
 .status-list, .category-list, .dept-list {

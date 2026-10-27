@@ -47,7 +47,10 @@
           </el-menu-item>
 
           <!-- Thanh lý / Tiêu hủy -->
-          <el-menu-item v-if="authStore.user?.role === 'admin'" index="/asset-disposals">
+          <el-menu-item
+            v-if="authStore.user?.role === 'admin'"
+            index="/asset-disposals"
+          >
             <el-icon><DeleteFilled /></el-icon>
             <span>Thanh lý tài sản</span>
           </el-menu-item>
@@ -61,15 +64,15 @@
             <span>Báo cáo</span>
           </el-menu-item>
 
-          <el-menu-item
-            v-if="authStore.user?.role === 'admin'"
-            index="/loss-damage"
-          >
+          <el-menu-item index="/loss-damage">
             <el-icon><Warning /></el-icon>
             <span>Tài sản mất / hư hỏng</span>
           </el-menu-item>
 
-          <el-divider v-if="authStore.user?.role === 'admin'" class="sidebar-divider" />
+          <el-divider
+            v-if="authStore.user?.role === 'admin'"
+            class="sidebar-divider"
+          />
 
           <!-- Các module phụ trợ (Sửa chữa, Mua sắm, Kho): tạm ẩn theo phạm vi hiện tại.
                Bật lại bằng FEATURES.auxiliaryModules = true trong src/constants/features.ts -->
