@@ -497,8 +497,8 @@
             </template>
           </el-table-column>
           <el-table-column
-            label="Nguyên giá"
-            width="130"
+            label="Nguyên giá (đồng)"
+            width="160"
             align="right"
           >
             <template #default="{ row }">
@@ -506,8 +506,8 @@
             </template>
           </el-table-column>
           <el-table-column
-            label="Giá trị còn lại"
-            width="130"
+            label="Giá trị còn lại (đồng)"
+            width="170"
             align="right"
           >
             <template #default="{ row }">
@@ -2509,7 +2509,7 @@ const formatDate = (date: string) => {
 };
 
 const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
+  return Number(value || 0).toLocaleString('vi-VN');
 };
 
 // Tính chênh lệch theo logic mới:

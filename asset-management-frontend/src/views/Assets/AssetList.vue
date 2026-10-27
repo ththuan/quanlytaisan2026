@@ -362,8 +362,8 @@
           </el-table-column>
           <el-table-column
             prop="purchase_price"
-            label="Nguyên giá"
-            width="160"
+            label="Nguyên giá (đồng)"
+            width="170"
             align="right"
           >
             <template #default="{ row }">
@@ -372,8 +372,8 @@
           </el-table-column>
           <el-table-column
             prop="residual_value"
-            label="Còn lại"
-            width="160"
+            label="Giá trị còn lại (đồng)"
+            width="180"
             align="right"
           >
             <template #default="{ row }">

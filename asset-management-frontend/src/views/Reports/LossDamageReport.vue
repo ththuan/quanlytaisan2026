@@ -130,8 +130,8 @@
           </template>
         </el-table-column>
         <el-table-column
-          label="Nguyên giá"
-          width="140"
+          label="Nguyên giá (đồng)"
+          width="160"
           align="right"
         >
           <template #default="{ row }">
@@ -139,8 +139,8 @@
           </template>
         </el-table-column>
         <el-table-column
-          label="Giá trị còn lại"
-          width="140"
+          label="Giá trị còn lại (đồng)"
+          width="170"
           align="right"
         >
           <template #default="{ row }">
@@ -390,7 +390,7 @@ const saveEdit = async () => {
 };
 
 const formatMoney = (v: any) =>
-  v != null ? Number(v).toLocaleString('vi-VN') + ' đ' : '-';
+  v != null ? Number(v).toLocaleString('vi-VN') : '-';
 
 const load = async () => {
   loading.value = true;

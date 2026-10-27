@@ -245,8 +245,8 @@
                     min-width="220"
                   />
                   <el-table-column
-                    label="Nguyên giá"
-                    width="150"
+                    label="Nguyên giá (đồng)"
+                    width="170"
                     align="right"
                   >
                     <template #default="{ row }">
@@ -254,8 +254,8 @@
                     </template>
                   </el-table-column>
                   <el-table-column
-                    label="Giá trị còn lại"
-                    width="150"
+                    label="Giá trị còn lại (đồng)"
+                    width="180"
                     align="right"
                   >
                     <template #default="{ row }">
@@ -337,8 +337,8 @@
                 </template>
               </el-table-column>
               <el-table-column
-                label="Nguyên giá"
-                width="140"
+                label="Nguyên giá (đồng)"
+                width="160"
                 align="right"
               >
                 <template #default="{ row }">
@@ -712,7 +712,7 @@ const resetForm = () => {
 };
 
 const formatVND = (v: any) =>
-  v ? Number(v).toLocaleString('vi-VN') + ' ₫' : '—';
+  v ? Number(v).toLocaleString('vi-VN') : '—';
 </script>
 
 <style scoped>

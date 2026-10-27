@@ -196,7 +196,12 @@
           <p v-else>
             Đề nghị sửa chữa đã được tạo tự động trong module <strong>Sửa chữa / Bảo dưỡng</strong>. 
             Admin cần phê duyệt trước khi kỹ thuật tiến hành sửa chữa.
-            <el-link type="primary" :underline="false" @click="$router.push('/maintenance?request_type=repair&source=inventory')" style="margin-left:8px">
+            <el-link
+              type="primary"
+              :underline="false"
+              style="margin-left:8px"
+              @click="$router.push('/maintenance?request_type=repair&source=inventory')"
+            >
               Xem đề nghị sửa chữa →
             </el-link>
           </p>
@@ -361,8 +366,8 @@
               </template>
             </el-table-column>
             <el-table-column
-              label="Nguyên giá"
-              width="130"
+              label="Nguyên giá (đồng)"
+              width="160"
               align="right"
             >
               <template #default="{ row }">
@@ -370,8 +375,8 @@
               </template>
             </el-table-column>
             <el-table-column
-              label="Giá trị còn lại"
-              width="130"
+              label="Giá trị còn lại (đồng)"
+              width="170"
               align="right"
             >
               <template #default="{ row }">
@@ -1042,7 +1047,7 @@ const formatDateTime = (date: string | Date) => {
 };
 
 const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
+  return Number(value || 0).toLocaleString('vi-VN');
 };
 
 const getQuantityClass = (row: any) => {

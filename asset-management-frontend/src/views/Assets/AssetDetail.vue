@@ -571,7 +571,6 @@
       :asset="assetStore.currentAsset"
       @saved="handleSaved"
     />
-
   </div>
 </template>
 
@@ -835,10 +834,7 @@ const formatCurrency = (value?: number | string | null) => {
   if (value === null || value === undefined) return '-';
   const numericValue = Number(value);
   if (Number.isNaN(numericValue)) return '-';
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-  }).format(numericValue);
+  return numericValue.toLocaleString('vi-VN');
 };
 
 const formatDate = (date?: string) => {
