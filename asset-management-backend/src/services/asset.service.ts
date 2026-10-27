@@ -95,6 +95,7 @@ class AssetService {
       const statuses = String(query.status).split(',').map((s: string) => s.trim()).filter(Boolean);
       if (statuses.length === 1 && statuses[0] === 'missing') {
         where.inventory_status = 'missing';
+        where.status = { [Op.ne]: 'lost' };
       } else {
         where.status = statuses.length === 1 ? statuses[0] : { [Op.in]: statuses };
       }
@@ -746,6 +747,7 @@ class AssetService {
     if (query.status) {
       if (String(query.status) === 'missing') {
         where.inventory_status = 'missing';
+        where.status = { [Op.ne]: 'lost' };
       } else {
         where.status = query.status;
       }
@@ -784,20 +786,19 @@ class AssetService {
       Asset.count({ where: { ...where, status: 'active' } }),
       Asset.count({ where: { ...where, status: 'inactive' } }),
       Asset.count({ where: { ...where, status: 'damaged' } }),
-      // Đếm mất: status = lost hoặc inventory_status = missing
-      Asset.count({
-        where: {
-          ...where,
-          [Op.or]: [
-            { status: 'lost' },
-            { inventory_status: 'missing' },
-          ],
-        },
-      }),
+      // Mất: chỉ tính tài sản có status = lost
+      Asset.count({ where: { ...where, status: 'lost' } }),
       Asset.count({ where: { ...where, status: 'disposed' } }),
       Asset.count({ where: { ...where, status: 'pending_disposal' } }),
       Asset.count({ where: { ...where, status: 'pending_repair' } }),
-      Asset.count({ where: { ...where, inventory_status: 'missing' } }),
+      // Thiếu: inventory_status = missing và chưa chuyển sang status lost (tránh trùng)
+      Asset.count({
+        where: {
+          ...where,
+          inventory_status: 'missing',
+          status: { [Op.ne]: 'lost' },
+        },
+      }),
     ]);
 
     return {
