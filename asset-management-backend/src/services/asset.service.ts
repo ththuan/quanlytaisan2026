@@ -93,7 +93,11 @@ class AssetService {
     if (query.asset_type) where.asset_type = query.asset_type;
     if (query.status) {
       const statuses = String(query.status).split(',').map((s: string) => s.trim()).filter(Boolean);
-      where.status = statuses.length === 1 ? statuses[0] : { [Op.in]: statuses };
+      if (statuses.length === 1 && statuses[0] === 'missing') {
+        where.inventory_status = 'missing';
+      } else {
+        where.status = statuses.length === 1 ? statuses[0] : { [Op.in]: statuses };
+      }
     } else if (query.exclude_disposed === 'true') {
       where.status = { [Op.ne]: 'disposed' };
     }
@@ -740,7 +744,11 @@ class AssetService {
     // Áp dụng filter theo status nếu có - đây là điểm quan trọng!
     // Nếu có filter status, chỉ đếm các tài sản có status đó
     if (query.status) {
-      where.status = query.status;
+      if (String(query.status) === 'missing') {
+        where.inventory_status = 'missing';
+      } else {
+        where.status = query.status;
+      }
     }
 
     // Nếu có filter status, chỉ đếm tài sản có status đó cho tất cả các thống kê
@@ -753,6 +761,7 @@ class AssetService {
         inactive: query.status === 'inactive' ? filteredCount : 0,
         damaged: query.status === 'damaged' ? filteredCount : 0,
         lost: query.status === 'lost' ? filteredCount : 0,
+        missing: query.status === 'missing' ? filteredCount : 0,
         disposed: query.status === 'disposed' ? filteredCount : 0,
         pending_disposal: query.status === 'pending_disposal' ? filteredCount : 0,
         pending_repair: query.status === 'pending_repair' ? filteredCount : 0,
@@ -769,6 +778,7 @@ class AssetService {
       disposedAssets,
       pendingDisposal,
       pendingRepair,
+      missingAssets,
     ] = await Promise.all([
       Asset.count({ where }),
       Asset.count({ where: { ...where, status: 'active' } }),
@@ -787,6 +797,7 @@ class AssetService {
       Asset.count({ where: { ...where, status: 'disposed' } }),
       Asset.count({ where: { ...where, status: 'pending_disposal' } }),
       Asset.count({ where: { ...where, status: 'pending_repair' } }),
+      Asset.count({ where: { ...where, inventory_status: 'missing' } }),
     ]);
 
     return {
@@ -795,6 +806,7 @@ class AssetService {
       inactive: inactiveAssets,
       damaged: damagedAssets,
       lost: lostAssets,
+      missing: missingAssets,
       disposed: disposedAssets,
       pending_disposal: pendingDisposal,
       pending_repair: pendingRepair,

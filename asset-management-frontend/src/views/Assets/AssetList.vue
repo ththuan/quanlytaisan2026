@@ -245,6 +245,45 @@
           </div>
           <div class="filter-item">
             <el-select
+              v-model="filterStatus"
+              placeholder="Trạng thái"
+              clearable
+              size="large"
+              @change="handleFilter"
+              @clear="handleFilter"
+            >
+              <el-option
+                label="Đang sử dụng"
+                value="active"
+              />
+              <el-option
+                label="Không sử dụng"
+                value="inactive"
+              />
+              <el-option
+                label="Hư hỏng"
+                value="damaged"
+              />
+              <el-option
+                label="Mất"
+                value="lost"
+              />
+              <el-option
+                label="Thiếu"
+                value="missing"
+              />
+              <el-option
+                label="Chờ thanh lý"
+                value="pending_disposal"
+              />
+              <el-option
+                label="Đã thanh lý"
+                value="disposed"
+              />
+            </el-select>
+          </div>
+          <div class="filter-item">
+            <el-select
               v-model="filterCampus"
               placeholder="Cơ sở"
               clearable
@@ -725,6 +764,7 @@ const statistics = ref<any>({
   inactive: 0,
   damaged: 0,
   lost: 0,
+  missing: 0,
   disposed: 0,
   pending_repair: 0,
   pending_disposal: 0,
