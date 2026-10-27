@@ -161,9 +161,6 @@
                 class="sidebar-toggle"
                 @click="toggleSidebar"
               />
-              <div class="header-app-title">
-                <span class="app-title-main">Quản lý tài sản</span>
-              </div>
               <div class="breadcrumb">
                 <el-breadcrumb separator="/">
                   <el-breadcrumb-item :to="{ path: '/' }">
