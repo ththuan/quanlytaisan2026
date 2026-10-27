@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { AssetTransfer, Asset, Department, User, RequestApproval } from '../models';
+import { AssetTransfer, Asset, Department, User, RequestApproval, AssetAssignment } from '../models';
 import { NotFoundError, ForbiddenError, ConflictError } from '../utils/errorHandler';
 import { getPaginationParams, buildPaginationResult, getOffset, PaginationResult } from '../utils/pagination';
 import sequelize from '../config/database';
@@ -244,14 +244,29 @@ class TransferService {
         const toDepartment = (transfer as any).to_department;
         const newLocation = toDepartment ? toDepartment.name : null;
         
+        const previousAssignedUserId = asset.assigned_user_id ?? null;
         await asset.update(
           {
             current_department_id: transfer.to_department_id,
             campus: (toDepartment as any)?.campus || (transfer as any).to_campus || 'main',
             location: newLocation, // Cập nhật vị trí theo phòng ban mới
+            assigned_user_id: null,
+            assigned_at: null,
           },
           { transaction }
         );
+
+        if (previousAssignedUserId) {
+          await AssetAssignment.create({
+            asset_id: asset.id,
+            from_user_id: previousAssignedUserId,
+            to_user_id: null,
+            assigned_by: approvedBy,
+            department_id: transfer.to_department_id,
+            notes: 'Thu hồi người sử dụng khi điều chuyển đơn vị',
+            assigned_at: new Date(),
+          } as any, { transaction });
+        }
       }
 
       // Mark as completed
@@ -405,11 +420,26 @@ class TransferService {
               throw new ConflictError('Tài sản không còn thuộc đơn vị giao ban đầu');
             }
             const toDepartment = (transfer as any).to_department;
+            const previousAssignedUserId = asset.assigned_user_id ?? null;
             await asset.update({
               current_department_id: transfer.to_department_id,
               campus: (toDepartment as any)?.campus || (transfer as any).to_campus || 'main',
               location: toDepartment ? toDepartment.name : null,
+              assigned_user_id: null,
+              assigned_at: null,
             }, { transaction });
+
+            if (previousAssignedUserId) {
+              await AssetAssignment.create({
+                asset_id: asset.id,
+                from_user_id: previousAssignedUserId,
+                to_user_id: null,
+                assigned_by: approver.id,
+                department_id: transfer.to_department_id,
+                notes: 'Thu hồi người sử dụng khi điều chuyển đơn vị',
+                assigned_at: new Date(),
+              } as any, { transaction });
+            }
           }
 
           await transfer.update({

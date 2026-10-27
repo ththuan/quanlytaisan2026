@@ -200,12 +200,78 @@
               </div>
               <div class="info-row">
                 <div class="info-label">
+                  Người sử dụng
+                </div>
+                <div class="info-value">
+                  <template v-if="assetStore.currentAsset.assigned_user">
+                    <span>{{ assetStore.currentAsset.assigned_user.fullname || assetStore.currentAsset.assigned_user.username }}</span>
+                    <el-tag
+                      v-if="assetStore.currentAsset.assigned_user.job_title"
+                      size="small"
+                      type="info"
+                      style="margin-left: 6px"
+                    >
+                      {{ assetStore.currentAsset.assigned_user.job_title }}
+                    </el-tag>
+                  </template>
+                  <el-tag
+                    v-else
+                    size="small"
+                    type="info"
+                  >
+                    Dùng chung
+                  </el-tag>
+                </div>
+              </div>
+              <div class="info-row">
+                <div class="info-label">
                   {{ $t('assets.detailLocation') }}
                 </div>
                 <div class="info-value">
                   {{ assetStore.currentAsset.location || '-' }}
                 </div>
               </div>
+            </div>
+          </el-card>
+
+          <!-- Lịch sử bàn giao người sử dụng -->
+          <el-card
+            class="info-card"
+            shadow="never"
+          >
+            <template #header>
+              <div class="card-title">
+                <el-icon><User /></el-icon>
+                <span>Lịch sử bàn giao</span>
+              </div>
+            </template>
+            <div v-loading="loadingAssignmentHistory">
+              <el-timeline v-if="assignmentHistory.length > 0">
+                <el-timeline-item
+                  v-for="item in assignmentHistory"
+                  :key="item.id"
+                  :timestamp="formatDateTime(item.assigned_at)"
+                  type="primary"
+                  placement="top"
+                >
+                  <div class="timeline-event">
+                    <div class="timeline-title">
+                      <strong>{{ item.to_user ? (item.to_user.fullname || item.to_user.username) : 'Thu hồi về đơn vị' }}</strong>
+                      <span v-if="item.to_user?.job_title"> — {{ item.to_user.job_title }}</span>
+                    </div>
+                    <div class="timeline-description">
+                      Từ: {{ item.from_user ? (item.from_user.fullname || item.from_user.username) : 'Chưa gán' }}
+                      • Thực hiện: {{ item.assigner ? (item.assigner.fullname || item.assigner.username) : '-' }}
+                      <span v-if="item.notes"> • {{ item.notes }}</span>
+                    </div>
+                  </div>
+                </el-timeline-item>
+              </el-timeline>
+              <el-empty
+                v-else
+                description="Chưa có lịch sử bàn giao"
+                :image-size="60"
+              />
             </div>
           </el-card>
 
@@ -543,6 +609,14 @@
                 class="image-actions"
                 style="margin-top: 15px;"
               >
+                <el-button
+                  type="primary"
+                  :icon="Camera"
+                  :loading="uploadingImage"
+                  @click="openCamera"
+                >
+                  Chụp ảnh
+                </el-button>
                 <el-upload
                   action="#"
                   :auto-upload="false"
@@ -551,13 +625,20 @@
                   :on-change="handleImageChange"
                 >
                   <el-button
-                    type="primary"
                     :icon="Upload"
                     :loading="uploadingImage"
                   >
-                    {{ assetStore.currentAsset.image_url ? 'Cập nhật hình ảnh' : 'Tải lên hình ảnh' }}
+                    {{ assetStore.currentAsset.image_url ? 'Cập nhật từ thiết bị' : 'Tải ảnh từ thiết bị' }}
                   </el-button>
                 </el-upload>
+                <input
+                  ref="cameraInputRef"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  style="display: none"
+                  @change="handleCameraImageSelected"
+                >
               </div>
             </div>
           </el-card>
@@ -580,7 +661,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAssetStore } from '@/stores/asset.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { ArrowLeft, Edit, Delete, Document, Location, Box, TrendCharts, Download, Refresh, Picture, Upload, Clock } from '@element-plus/icons-vue';
+import { ArrowLeft, Edit, Delete, Document, Location, Box, TrendCharts, Download, Refresh, Picture, Upload, Clock, User, Camera } from '@element-plus/icons-vue';
 import AssetFormDialog from '@/components/Assets/AssetFormDialog.vue';
 import { assetService } from '@/services/asset.service';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -599,6 +680,8 @@ const authStore = useAuthStore();
 const showEditDialog = ref(false);
 const timeline = ref<any[]>([]);
 const loadingTimeline = ref(false);
+const assignmentHistory = ref<any[]>([]);
+const loadingAssignmentHistory = ref(false);
 const qrCodeImage = ref<string | null>(null);
 const loadingQRCode = ref(false);
 const generatingQR = ref(false);
@@ -618,31 +701,43 @@ const getImageUrl = (url: string) => {
   return `${baseUrl}${url}`;
 };
 
-const handleImageChange = async (file: any) => {
-  if (!file || !file.raw) return;
-  
-  const isImage = file.raw.type.startsWith('image/');
-  if (!isImage) {
+const cameraInputRef = ref<HTMLInputElement | null>(null);
+
+const uploadAssetImageFile = async (file: File) => {
+  if (!assetStore.currentAsset) return;
+  if (!file.type.startsWith('image/')) {
     ElMessage.error('Chỉ hỗ trợ upload file định dạng hình ảnh!');
     return;
   }
-  
-  const isLt10M = file.raw.size / 1024 / 1024 < 10;
-  if (!isLt10M) {
+  if (file.size / 1024 / 1024 >= 10) {
     ElMessage.error('Dung lượng ảnh không được vượt quá 10MB!');
     return;
   }
 
   try {
     uploadingImage.value = true;
-    await assetService.uploadImage(assetStore.currentAsset!.id, file.raw);
+    await assetService.uploadImage(assetStore.currentAsset.id, file);
     ElMessage.success('Cập nhật hình ảnh thành công');
-    await assetStore.fetchAssetById(assetStore.currentAsset!.id);
+    await assetStore.fetchAssetById(assetStore.currentAsset.id);
   } catch (error: any) {
     ElMessage.error(error.response?.data?.message || 'Lỗi khi cập nhật hình ảnh');
   } finally {
     uploadingImage.value = false;
   }
+};
+
+const handleImageChange = async (file: any) => {
+  if (!file?.raw) return;
+  await uploadAssetImageFile(file.raw);
+};
+
+const openCamera = () => cameraInputRef.value?.click();
+
+const handleCameraImageSelected = async (e: Event) => {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = '';
+  if (file) await uploadAssetImageFile(file);
 };
 
 // Computed properties
@@ -706,12 +801,24 @@ onMounted(async () => {
   const id = parseInt(route.params.id as string);
   const asset = await assetStore.fetchAssetById(id);
   if (!asset) return;
-  await loadTimeline(id);
+  await Promise.all([loadTimeline(id), loadAssignmentHistory(id)]);
   const categoryGroup = assetStore.currentAsset?.assetCategory?.category_group;
   if (authStore.isAdmin && categoryGroup !== 'nha_cua') {
     await loadQRCode(id);
   }
 });
+
+const loadAssignmentHistory = async (assetId: number) => {
+  loadingAssignmentHistory.value = true;
+  try {
+    const response: any = await assetService.getAssignmentHistory(assetId);
+    assignmentHistory.value = response?.data || [];
+  } catch {
+    assignmentHistory.value = [];
+  } finally {
+    loadingAssignmentHistory.value = false;
+  }
+};
 
 const loadTimeline = async (assetId: number) => {
   loadingTimeline.value = true;
@@ -840,6 +947,11 @@ const formatCurrency = (value?: number | string | null) => {
 const formatDate = (date?: string) => {
   if (!date) return '-';
   return moment(date).format('DD/MM/YYYY');
+};
+
+const formatDateTime = (date?: string) => {
+  if (!date) return '-';
+  return moment(date).format('DD/MM/YYYY HH:mm');
 };
 
 const formatNumber = (value?: number | null) => {

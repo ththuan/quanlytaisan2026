@@ -96,7 +96,7 @@ export const createAsset = async (req: Request, res: Response, next: NextFunctio
   try {
     console.log('📝 Creating asset with data:', JSON.stringify(req.body, null, 2));
 
-    const asset = await assetService.createAsset(req.body);
+    const asset = await assetService.createAsset(req.body, (req as any).user?.id);
 
     // Cảnh báo vượt định mức (chỉ cảnh báo, không chặn)
     let normWarnings: any[] = [];
@@ -120,7 +120,7 @@ export const createAsset = async (req: Request, res: Response, next: NextFunctio
 
 export const updateAsset = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const asset = await assetService.updateAsset(parseInt(req.params.id), req.body);
+    const asset = await assetService.updateAsset(parseInt(req.params.id), req.body, (req as any).user?.id);
 
     let normWarnings: any[] = [];
     try {
@@ -280,6 +280,21 @@ export const getRepairHistory = async (req: AuthRequest, res: Response, next: Ne
       success: true,
       data: history,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAssignmentHistory = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const user = req.user!;
+    const assetId = parseInt(req.params.id);
+    if (!await checkAssetDeptAccess(assetId, user)) {
+      res.status(403).json({ success: false, message: 'Bạn không có quyền truy cập tài sản này' });
+      return;
+    }
+    const history = await assetService.getAssignmentHistory(assetId);
+    res.status(200).json({ success: true, data: history });
   } catch (error) {
     next(error);
   }

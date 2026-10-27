@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { Asset, Department, EquipmentNorm, NormWarning } from '../models';
+import { Asset, Department, EquipmentNorm, NormWarning, User } from '../models';
 import { NotFoundError } from '../utils/errorHandler';
 
 interface AssetLike {
@@ -159,8 +159,33 @@ class NormService {
       }
     }
 
-    // 2) Cảnh báo số lượng vượt mức trong đơn vị
-    if (matched.max_quantity != null && a.current_department_id) {
+    // 2) Cảnh báo số lượng vượt mức.
+    // - Định mức theo chức danh: đối chiếu chức danh người sử dụng với nhóm chức danh, đếm theo cá nhân.
+    // - Còn lại (hoặc tài sản dùng chung chưa gán ai): đếm theo đơn vị.
+    let quantityMessage = '';
+    const assignedUserId = (a as any).assigned_user_id ? Number((a as any).assigned_user_id) : null;
+    const normalize = (v: unknown) => String(v ?? '').toLowerCase().normalize('NFC').trim();
+
+    if (matched.max_quantity != null && matched.scope === 'title' && matched.position_group && assignedUserId) {
+      const assignedUser: any = await User.findByPk(assignedUserId, { attributes: ['id', 'fullname', 'job_title'] });
+      const jobTitle = normalize(assignedUser?.job_title);
+      const positionGroup = normalize(matched.position_group);
+      const titleMatches = jobTitle && positionGroup && (jobTitle.includes(positionGroup) || positionGroup.includes(jobTitle));
+      if (titleMatches) {
+        const count = await Asset.count({
+          where: {
+            assigned_user_id: assignedUserId,
+            [Op.or]: [
+              { name: { [Op.iLike]: `%${matched.equipment_name}%` } },
+              { category: { [Op.iLike]: `%${matched.equipment_name}%` } },
+            ],
+          },
+        });
+        if (count > Number(matched.max_quantity)) {
+          quantityMessage = `${assignedUser?.fullname || 'Người sử dụng'} (${assignedUser?.job_title || matched.position_group}) đang có ${count} "${matched.equipment_name}", vượt số lượng tối đa ${matched.max_quantity} theo định mức chức danh.`;
+        }
+      }
+    } else if (matched.max_quantity != null && a.current_department_id) {
       const count = await Asset.count({
         where: {
           current_department_id: a.current_department_id,
@@ -171,25 +196,29 @@ class NormService {
         },
       });
       if (count > Number(matched.max_quantity)) {
-        const exists = await NormWarning.findOne({
-          where: { asset_id: a.id, norm_id: matched.id, warning_type: 'quantity', acknowledged: false },
-          attributes: ['id'],
-        });
-        if (!exists) {
-          created.push(
-            await NormWarning.create({
-              asset_id: a.id,
-              department_id: a.current_department_id,
-              norm_id: matched.id,
-              warning_type: 'quantity',
-              message: `Đơn vị đang có ${count} "${matched.equipment_name}", vượt số lượng tối đa ${matched.max_quantity} theo định mức.`,
-              asset_code: a.asset_code ?? null,
-              asset_name: a.name ?? null,
-              purchase_price: a.purchase_price != null ? Number(a.purchase_price) : null,
-              created_by: userId ?? null,
-            } as any)
-          );
-        }
+        quantityMessage = `Đơn vị đang có ${count} "${matched.equipment_name}", vượt số lượng tối đa ${matched.max_quantity} theo định mức.`;
+      }
+    }
+
+    if (quantityMessage) {
+      const exists = await NormWarning.findOne({
+        where: { asset_id: a.id, norm_id: matched.id, warning_type: 'quantity', acknowledged: false },
+        attributes: ['id'],
+      });
+      if (!exists) {
+        created.push(
+          await NormWarning.create({
+            asset_id: a.id,
+            department_id: a.current_department_id ?? null,
+            norm_id: matched.id,
+            warning_type: 'quantity',
+            message: quantityMessage,
+            asset_code: a.asset_code ?? null,
+            asset_name: a.name ?? null,
+            purchase_price: a.purchase_price != null ? Number(a.purchase_price) : null,
+            created_by: userId ?? null,
+          } as any)
+        );
       }
     }
 

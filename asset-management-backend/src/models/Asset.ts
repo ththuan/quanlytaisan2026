@@ -52,6 +52,8 @@ export interface AssetAttributes {
   last_repair_date?: Date; // Ngày sửa chữa gần nhất
   current_department_id?: number;
   campus?: string;
+  assigned_user_id?: number | null;
+  assigned_at?: Date | null;
   status: AssetStatus;
   location?: string;
   discrepancy_reason?: string;
@@ -112,6 +114,8 @@ class Asset extends Model<AssetAttributes, AssetCreationAttributes> implements A
   public last_repair_date?: Date;
   public current_department_id?: number;
   public campus?: string;
+  public assigned_user_id?: number | null;
+  public assigned_at?: Date | null;
   public status!: AssetStatus;
   public location?: string;
   public discrepancy_reason?: string;
@@ -122,6 +126,7 @@ class Asset extends Model<AssetAttributes, AssetCreationAttributes> implements A
   public qr_code_image?: string;
 
   // Associations (added for TS support)
+  public assigned_user?: any;
   public current_department?: any;
   public assetCategory?: any;
 
@@ -305,6 +310,19 @@ Asset.init(
       allowNull: false,
       defaultValue: 'main',
       comment: 'Cơ sở của tài sản (theo phòng ban hiện tại)',
+    },
+    assigned_user_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: { model: 'users', key: 'id' },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+      comment: 'Người đang sử dụng tài sản',
+    },
+    assigned_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      comment: 'Thời điểm bàn giao cho người sử dụng hiện tại',
     },
     status: {
       type: DataTypes.ENUM('active', 'inactive', 'damaged', 'lost', 'disposed', 'pending_disposal', 'pending_repair'),

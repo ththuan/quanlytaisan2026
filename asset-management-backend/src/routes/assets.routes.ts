@@ -93,6 +93,9 @@ router.get('/:id/timeline', assetsController.getAssetTimeline);
 // GET /api/assets/:id/repair-history - Get asset repair history
 router.get('/:id/repair-history', assetsController.getRepairHistory);
 
+// GET /api/assets/:id/assignment-history - Lịch sử bàn giao người sử dụng
+router.get('/:id/assignment-history', assetsController.getAssignmentHistory);
+
 // GET /api/assets/:id/depreciation - Get depreciation history by year
 router.get('/:id/depreciation', assetsController.getDepreciationHistory);
 router.get('/:id/disposal-history', assetsController.getDisposalHistory);

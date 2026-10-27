@@ -499,6 +499,27 @@
               <span v-else>-</span>
             </template>
           </el-table-column>
+          <el-table-column
+            label="Người sử dụng"
+            min-width="190"
+          >
+            <template #default="{ row }">
+              <div
+                v-if="row.assigned_user"
+                class="assigned-user-cell"
+              >
+                <span>{{ row.assigned_user.fullname || row.assigned_user.username }}</span>
+                <small v-if="row.assigned_user.job_title">{{ row.assigned_user.job_title }}</small>
+              </div>
+              <el-tag
+                v-else
+                size="small"
+                type="info"
+              >
+                Dùng chung
+              </el-tag>
+            </template>
+          </el-table-column>
         </el-table>
       </div>
 
@@ -1490,6 +1511,17 @@ const handleExportQRPDF = async () => {
 .stat-card.is-active {
   border-color: #3b82f6;
   box-shadow: 0 2px 6px -1px rgba(59, 130, 246, 0.25);
+}
+
+.assigned-user-cell {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.assigned-user-cell small {
+  color: #94a3b8;
+  font-size: 11.5px;
 }
 
 @media (max-width: 768px) {

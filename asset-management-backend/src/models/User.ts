@@ -10,6 +10,7 @@ export interface UserAttributes {
   username: string;
   password_hash: string | null;
   fullname?: string;
+  job_title?: string;
   role: UserRole;
   department_id?: number;
   is_active: boolean;
@@ -29,6 +30,7 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   public username!: string;
   public password_hash!: string | null;
   public fullname?: string;
+  public job_title?: string;
   public role!: UserRole;
   public department_id?: number;
   public is_active!: boolean;
@@ -82,6 +84,11 @@ User.init(
     fullname: {
       type: DataTypes.STRING(255),
       allowNull: true,
+    },
+    job_title: {
+      type: DataTypes.STRING(150),
+      allowNull: true,
+      comment: 'Chức danh (Trưởng phòng, Giảng viên, Nhân viên...)',
     },
     role: {
       type: DataTypes.ENUM('admin', 'director', 'department_head', 'staff'),

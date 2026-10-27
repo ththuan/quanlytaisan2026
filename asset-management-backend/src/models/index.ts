@@ -21,6 +21,7 @@ import Notification from './Notification';
 import Signature from './Signature';
 import EquipmentNorm from './EquipmentNorm';
 import NormWarning from './NormWarning';
+import AssetAssignment from './AssetAssignment';
 
 import StockItem from './StockItem';
 import StockReceipt from './StockReceipt';
@@ -81,6 +82,24 @@ Department.hasMany(Asset, {
   foreignKey: 'current_department_id',
   as: 'assets',
 });
+
+// Asset <-> người sử dụng
+Asset.belongsTo(User, {
+  foreignKey: 'assigned_user_id',
+  as: 'assigned_user',
+});
+
+User.hasMany(Asset, {
+  foreignKey: 'assigned_user_id',
+  as: 'assigned_assets',
+});
+
+AssetAssignment.belongsTo(Asset, { foreignKey: 'asset_id', as: 'asset' });
+Asset.hasMany(AssetAssignment, { foreignKey: 'asset_id', as: 'assignments' });
+AssetAssignment.belongsTo(User, { foreignKey: 'from_user_id', as: 'from_user' });
+AssetAssignment.belongsTo(User, { foreignKey: 'to_user_id', as: 'to_user' });
+AssetAssignment.belongsTo(User, { foreignKey: 'assigned_by', as: 'assigner' });
+AssetAssignment.belongsTo(Department, { foreignKey: 'department_id', as: 'department' });
 
 // AssetTransfer associations
 AssetTransfer.belongsTo(Asset, {
@@ -557,6 +576,7 @@ export {
   Signature,
   EquipmentNorm,
   NormWarning,
+  AssetAssignment,
 };
 
 export default {
@@ -588,4 +608,5 @@ export default {
   Signature,
   EquipmentNorm,
   NormWarning,
+  AssetAssignment,
 };

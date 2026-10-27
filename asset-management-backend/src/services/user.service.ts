@@ -8,6 +8,7 @@ export interface CreateUserInput {
   username: string;
   password?: string; // Optional - will use default if not provided
   fullname?: string;
+  job_title?: string;
   role?: 'admin' | 'director' | 'department_head' | 'staff';
   department_id?: number;
 }
@@ -15,6 +16,7 @@ export interface CreateUserInput {
 export interface UpdateUserInput {
   username?: string;
   fullname?: string;
+  job_title?: string;
   role?: 'admin' | 'director' | 'department_head' | 'staff';
   department_id?: number;
   is_active?: boolean;

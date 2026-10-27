@@ -1,4 +1,4 @@
-import { Asset, Department, AssetTransfer, AssetCondition, AssetCategory, User, RequestApproval } from '../models';
+import { Asset, Department, AssetTransfer, AssetCondition, AssetCategory, User, RequestApproval, AssetAssignment } from '../models';
 import MaintenanceRequest from '../models/MaintenanceRequest';
 import AssetDisposalItem from '../models/AssetDisposalItem';
 import AssetDisposalCase from '../models/AssetDisposalCase';
@@ -35,6 +35,7 @@ export interface CreateAssetInput {
   serial_number?: string;
   warranty_date?: Date;
   current_department_id?: number;
+  assigned_user_id?: number | null;
   status?: 'active' | 'inactive' | 'damaged' | 'lost' | 'disposed';
   location?: string;
   image_url?: string;
@@ -144,6 +145,12 @@ class AssetService {
           model: Department,
           as: 'current_department',
           attributes: ['id', 'name', 'type'],
+        },
+        {
+          model: User,
+          as: 'assigned_user',
+          required: false,
+          attributes: ['id', 'fullname', 'username', 'job_title', 'role'],
         },
       ],
     });
@@ -258,6 +265,12 @@ class AssetService {
           model: AssetCategory,
           as: 'assetCategory',
           required: false,
+        },
+        {
+          model: User,
+          as: 'assigned_user',
+          required: false,
+          attributes: ['id', 'fullname', 'username', 'job_title', 'role'],
         },
       ],
     });
@@ -418,7 +431,7 @@ class AssetService {
     return this.getAssetById(id);
   }
 
-  async createAsset(data: CreateAssetInput): Promise<Asset> {
+  async createAsset(data: CreateAssetInput, actorId?: number): Promise<Asset> {
     const existing = await Asset.findOne({ where: { asset_code: data.asset_code } });
     if (existing) {
       throw new ConflictError('Asset code already exists');
@@ -453,6 +466,10 @@ class AssetService {
       finalData.campus = 'main';
     }
 
+    const assignedUserId = data.assigned_user_id ? Number(data.assigned_user_id) : null;
+    finalData.assigned_user_id = assignedUserId;
+    finalData.assigned_at = assignedUserId ? new Date() : null;
+
     // Điền thông tin từ category nếu chưa có
     if (category) {
       if (!finalData.category) finalData.category = category.name;
@@ -478,6 +495,18 @@ class AssetService {
     }
 
     const asset = await Asset.create(finalData);
+
+    if (assignedUserId) {
+      await AssetAssignment.create({
+        asset_id: asset.id,
+        from_user_id: null,
+        to_user_id: assignedUserId,
+        assigned_by: actorId ?? null,
+        department_id: finalData.current_department_id ?? null,
+        notes: 'Gán người sử dụng khi tạo tài sản',
+        assigned_at: new Date(),
+      } as any);
+    }
     
     // Tự động generate QR code cho tài sản mới
     try {
@@ -492,11 +521,12 @@ class AssetService {
     return this.getAssetById(asset.id);
   }
 
-  async updateAsset(id: number, data: Partial<CreateAssetInput>): Promise<Asset> {
+  async updateAsset(id: number, data: Partial<CreateAssetInput>, actorId?: number): Promise<Asset> {
     const asset = await Asset.findByPk(id);
     if (!asset) {
       throw new NotFoundError('Asset not found');
     }
+    const previousAssignedUserId = asset.assigned_user_id ?? null;
 
     if (data.asset_code && data.asset_code !== asset.asset_code) {
       const existing = await Asset.findOne({ where: { asset_code: data.asset_code } });
@@ -542,8 +572,41 @@ class AssetService {
       sanitizedData.campus = 'main';
     }
 
+    const nextAssignedUserId = data.assigned_user_id !== undefined
+      ? (data.assigned_user_id ? Number(data.assigned_user_id) : null)
+      : previousAssignedUserId;
+    sanitizedData.assigned_user_id = nextAssignedUserId;
+    if (nextAssignedUserId !== previousAssignedUserId) {
+      sanitizedData.assigned_at = nextAssignedUserId ? new Date() : null;
+    }
+
     await asset.update(sanitizedData);
+
+    if (nextAssignedUserId !== previousAssignedUserId) {
+      await AssetAssignment.create({
+        asset_id: id,
+        from_user_id: previousAssignedUserId,
+        to_user_id: nextAssignedUserId,
+        assigned_by: actorId ?? null,
+        department_id: (sanitizedData.current_department_id ?? asset.current_department_id) || null,
+        notes: nextAssignedUserId ? 'Bàn giao người sử dụng' : 'Thu hồi tài sản về đơn vị',
+        assigned_at: new Date(),
+      } as any);
+    }
     return this.getAssetById(id);
+  }
+
+  async getAssignmentHistory(assetId: number): Promise<any[]> {
+    return AssetAssignment.findAll({
+      where: { asset_id: assetId },
+      include: [
+        { model: User, as: 'from_user', attributes: ['id', 'fullname', 'username', 'job_title'], required: false },
+        { model: User, as: 'to_user', attributes: ['id', 'fullname', 'username', 'job_title'], required: false },
+        { model: User, as: 'assigner', attributes: ['id', 'fullname', 'username'], required: false },
+        { model: Department, as: 'department', attributes: ['id', 'name'], required: false },
+      ],
+      order: [['assigned_at', 'DESC']],
+    });
   }
 
   async deleteAsset(id: number): Promise<void> {

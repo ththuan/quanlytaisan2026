@@ -50,6 +50,7 @@ export const createAssetSchema = Joi.object({
   warranty_date: Joi.date().allow(null).optional(),
   current_department_id: Joi.number().integer().positive().allow(null).optional(),
   status: Joi.string().valid('active', 'inactive', 'damaged', 'lost', 'disposed', 'pending_disposal', 'pending_repair').optional(),
+  assigned_user_id: Joi.number().integer().positive().allow(null).optional(),
   location: Joi.string().max(255).allow('', null).optional(),
   year_in_use: Joi.number().integer().min(1990).max(2100).allow(null).optional(),
   quantity: Joi.when('unit', {
@@ -90,6 +91,7 @@ export const updateAssetSchema = Joi.object({
   warranty_date: Joi.date().allow(null).optional(),
   current_department_id: Joi.number().integer().positive().allow(null).optional(),
   status: Joi.string().valid('active', 'inactive', 'damaged', 'lost', 'disposed', 'pending_disposal', 'pending_repair').optional(),
+  assigned_user_id: Joi.number().integer().positive().allow(null).optional(),
   location: Joi.string().max(255).allow('', null).optional(),
   year_in_use: Joi.number().integer().min(1990).max(2100).allow(null).optional(),
   quantity: Joi.when('unit', {
@@ -278,6 +280,7 @@ export const createUserSchema = Joi.object({
       'string.pattern.base': 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
     }),
   fullname: Joi.string().max(255).optional(),
+  job_title: Joi.string().max(150).allow('', null).optional(),
   role: Joi.string().valid('admin', 'director', 'department_head', 'staff').optional(),
   department_id: Joi.number().integer().positive().optional(),
   is_active: Joi.boolean().optional(),
@@ -285,6 +288,7 @@ export const createUserSchema = Joi.object({
 
 export const updateUserSchema = Joi.object({
   fullname: Joi.string().max(255).optional(),
+  job_title: Joi.string().max(150).allow('', null).optional(),
   role: Joi.string().valid('admin', 'director', 'department_head', 'staff').optional(),
   department_id: Joi.number().integer().positive().optional(),
   is_active: Joi.boolean().optional(),

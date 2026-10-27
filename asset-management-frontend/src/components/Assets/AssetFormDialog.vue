@@ -290,6 +290,32 @@
         </el-col>
       </el-row>
 
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="Người sử dụng">
+            <el-select
+              v-model="formData.assigned_user_id"
+              clearable
+              filterable
+              placeholder="Dùng chung (không gán)"
+              style="width: 100%"
+            >
+              <el-option
+                v-for="u in selectableUsers"
+                :key="u.id"
+                :label="userOptionLabel(u)"
+                :value="u.id"
+              />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <div class="shared-asset-hint">
+            Không chọn người sử dụng = tài sản dùng chung của đơn vị.
+          </div>
+        </el-col>
+      </el-row>
+
       <!-- Giá trị tài sản -->
       <el-divider content-position="left">
         <el-icon><Money /></el-icon> Chỉ tiêu về giá trị
@@ -539,6 +565,29 @@ const selectedCategory = ref<string[]>([]);
 const loadingCategories = ref(false);
 const generatingQR = ref(false);
 const qrCodeImage = ref<string | null>(null);
+const assignableUsers = ref<any[]>([]);
+
+const selectableUsers = computed(() =>
+  assignableUsers.value.filter(
+    (u) => !formData.current_department_id
+      || Number(u.department_id) === Number(formData.current_department_id),
+  ),
+);
+
+const userOptionLabel = (u: any) =>
+  `${u.fullname || u.username}${u.job_title ? ` - ${u.job_title}` : ''}`;
+
+const fetchAssignableUsers = async () => {
+  try {
+    const res: any = await api.get('/users', { params: { limit: 1000 } });
+    const list = res?.data || res?.data?.data || [];
+    assignableUsers.value = Array.isArray(list)
+      ? list.filter((u: any) => u.is_active !== false)
+      : [];
+  } catch {
+    assignableUsers.value = [];
+  }
+};
 
 const dialogVisible = computed({
   get: () => props.visible,
@@ -557,6 +606,7 @@ const formData = reactive({
   asset_type: '',
   status: 'active',
   current_department_id: null as number | null,
+  assigned_user_id: null as number | null,
   discrepancy_reason: '',
   responsibility: '',
   location: '',
@@ -932,6 +982,7 @@ const resetForm = () => {
   formData.asset_type = '';
   formData.status = 'active';
   formData.current_department_id = null;
+  formData.assigned_user_id = null;
   formData.discrepancy_reason = '';
   formData.responsibility = '';
   formData.location = '';
@@ -972,6 +1023,7 @@ const handleSubmit = async () => {
       const submitData = { ...formData };
       // Remove null values
       Object.keys(submitData).forEach((key) => {
+        if (key === 'assigned_user_id') return;
         if (submitData[key as keyof typeof submitData] === null || submitData[key as keyof typeof submitData] === '') {
           delete submitData[key as keyof typeof submitData];
         }
@@ -1130,6 +1182,7 @@ watch(() => props.visible, async (val) => {
         asset_type: props.asset.asset_type || '',
         status: props.asset.status || 'active',
         current_department_id: props.asset.current_department_id ?? null,
+        assigned_user_id: props.asset.assigned_user_id ?? null,
         discrepancy_reason: props.asset.discrepancy_reason || '',
         responsibility: props.asset.responsibility || '',
         location: props.asset.location || '',
@@ -1180,6 +1233,7 @@ watch(() => formData.depreciation_rate, () => {
 onMounted(() => {
   // Departments tự động load qua composable
   fetchCategories();
+  fetchAssignableUsers();
 });
 </script>
 
@@ -1188,6 +1242,13 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.shared-asset-hint {
+  font-size: 12px;
+  color: #909399;
+  padding-top: 8px;
+  line-height: 1.4;
 }
 
 :deep(.el-divider__text) {

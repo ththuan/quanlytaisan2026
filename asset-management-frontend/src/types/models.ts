@@ -2,6 +2,7 @@ export interface User {
   id: number;
   username: string;
   fullname?: string;
+  job_title?: string;
   role: 'admin' | 'director' | 'department_head' | 'manager' | 'staff' | 'user';
   department_id?: number;
   department?: Department;
@@ -60,6 +61,9 @@ export interface Asset {
   warranty_date?: string;
   current_department_id?: number;
   campus?: string;
+  assigned_user_id?: number | null;
+  assigned_at?: string | null;
+  assigned_user?: User;
   status: 'active' | 'inactive' | 'damaged' | 'lost' | 'disposed';
   location?: string;
   discrepancy_reason?: string;

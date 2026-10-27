@@ -28,7 +28,11 @@
       <!-- Search & Filter -->
       <div class="filter-section">
         <el-row :gutter="16">
-          <el-col :xs="24" :sm="12" :md="8">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="8"
+          >
             <el-input
               v-model="searchQuery"
               :placeholder="$t('users.searchPlaceholder')"
@@ -41,7 +45,11 @@
               </template>
             </el-input>
           </el-col>
-          <el-col :xs="24" :sm="12" :md="5">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="5"
+          >
             <el-select
               v-model="filterRole"
               :placeholder="$t('users.filterByRole')"
@@ -56,7 +64,11 @@
               />
             </el-select>
           </el-col>
-          <el-col :xs="24" :sm="12" :md="5">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="5"
+          >
             <el-select
               v-model="filterStatus"
               :placeholder="$t('users.filterByStatus')"
@@ -73,7 +85,11 @@
               />
             </el-select>
           </el-col>
-          <el-col :xs="24" :sm="12" :md="6">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="6"
+          >
             <el-button
               type="primary"
               @click="handleSearch"
@@ -103,6 +119,11 @@
             prop="fullname"
             :label="$t('users.fullname')"
             min-width="180"
+          />
+          <el-table-column
+            prop="job_title"
+            label="Chức danh"
+            min-width="160"
           />
           <el-table-column
             prop="role"
@@ -384,6 +405,7 @@ interface User {
   id: number;
   username: string;
   fullname?: string;
+  job_title?: string;
   role: string;
   is_active: boolean;
   created_at: string;

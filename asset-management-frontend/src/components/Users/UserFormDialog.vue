@@ -107,6 +107,17 @@
             />
           </el-form-item>
         </el-col>
+        <el-col :span="12">
+          <el-form-item
+            label="Chức danh"
+            prop="job_title"
+          >
+            <el-input
+              v-model="formData.job_title"
+              placeholder="VD: Trưởng phòng, Giảng viên, Nhân viên..."
+            />
+          </el-form-item>
+        </el-col>
         <el-col
           v-if="isEdit"
           :span="12"
@@ -155,6 +166,7 @@ interface User {
   id: number;
   username: string;
   fullname?: string;
+  job_title?: string;
   role: string;
   department_id?: number;
   is_active: boolean;
@@ -185,6 +197,7 @@ const isEdit = computed(() => !!props.user?.id);
 const formData = reactive({
   username: '',
   fullname: '',
+  job_title: '',
   role: 'staff' as string,
   department_id: null as number | null,
   password: '',
@@ -236,6 +249,7 @@ const rules = computed<FormRules>(() => ({
 const resetForm = () => {
   formData.username = '';
   formData.fullname = '';
+  formData.job_title = '';
       formData.role = 'staff';
   formData.department_id = null;
   formData.password = '';
@@ -263,6 +277,7 @@ const handleSubmit = async () => {
       if (isEdit.value && props.user) {
         const updateData: any = {
           fullname: formData.fullname,
+          job_title: formData.job_title || null,
           role: formData.role,
           is_active: formData.is_active,
         };
@@ -275,6 +290,7 @@ const handleSubmit = async () => {
         const createData: any = {
           username: formData.username,
           fullname: formData.fullname,
+          job_title: formData.job_title || null,
           role: formData.role,
         };
         // Only include password if provided, otherwise backend will use default
@@ -306,6 +322,7 @@ watch(() => props.visible, async (newVal) => {
     if (props.user) {
       formData.username = props.user.username;
       formData.fullname = props.user.fullname || '';
+      formData.job_title = props.user.job_title || '';
       formData.role = props.user.role;
       formData.department_id = props.user.department_id || null;
       formData.is_active = props.user.is_active;
