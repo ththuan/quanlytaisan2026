@@ -253,6 +253,7 @@ export const createReportSchema = Joi.object({
   department_id: Joi.number().integer().positive().required(),
   year: Joi.number().integer().min(2000).max(2100).required(),
   notes: Joi.string().allow('', null).optional(),
+  signature: Joi.string().max(2_000_000).required(),
 });
 
 export const updateReportSchema = Joi.object({
@@ -262,6 +263,7 @@ export const updateReportSchema = Joi.object({
   lost_assets: Joi.number().integer().min(0).optional(),
   total_value: Joi.number().positive().precision(2).optional().allow(null),
   notes: Joi.string().allow('', null).optional(),
+  signature: Joi.string().max(2_000_000).required(),
 }).min(1);
 
 // User CRUD validation schemas

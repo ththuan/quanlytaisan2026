@@ -141,6 +141,13 @@
       </el-button>
     </template>
   </el-dialog>
+
+  <SignaturePad
+    v-model="showSignDialog"
+    :title="signTitle"
+    :signer-name="signerName"
+    @confirm="onSignConfirm"
+  />
 </template>
 
 <script setup lang="ts">
@@ -149,6 +156,8 @@ import { useI18n } from 'vue-i18n';
 import { useReportStore } from '@/stores/report.store';
 import { useDepartmentStore } from '@/stores/department.store';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
+import SignaturePad from '@/components/Common/SignaturePad.vue';
+import { useSignature } from '@/composables/useSignature';
 import { ElMessage } from 'element-plus';
 import type { FormInstance, FormRules } from '@/types/element-plus';
 import api from '@/services/api';
@@ -166,6 +175,14 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const reportStore = useReportStore();
 const departmentStore = useDepartmentStore();
+
+const {
+  show: showSignDialog,
+  title: signTitle,
+  signerName,
+  request: requestSignature,
+  onConfirm: onSignConfirm,
+} = useSignature();
 
 const formRef = ref<FormInstance>();
 const loading = ref(false);
@@ -268,6 +285,9 @@ const handleSubmit = async () => {
   const valid = await formRef.value.validate().catch(() => false);
   if (!valid) return;
 
+  const signature = await requestSignature('Ký số xác nhận lưu báo cáo thường niên');
+  if (!signature) return;
+
   loading.value = true;
   try {
     if (isEdit.value) {
@@ -278,6 +298,7 @@ const handleSubmit = async () => {
         lost_assets: formData.lost_assets,
         total_value: formData.total_value,
         notes: formData.notes,
+        signature,
       });
       ElMessage.success(t('reports.updateSuccess'));
     } else {
@@ -285,6 +306,7 @@ const handleSubmit = async () => {
         department_id: formData.department_id!,
         year: formData.year,
         notes: formData.notes || undefined,
+        signature,
       });
       ElMessage.success(t('reports.createSuccess'));
       emit('success', { year: formData.year, department_id: formData.department_id! });

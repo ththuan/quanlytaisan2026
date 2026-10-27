@@ -25,6 +25,7 @@ export interface CreateReportData {
   department_id: number;
   year: number;
   notes?: string;
+  signature: string;
 }
 
 export interface UpdateReportData {
@@ -34,6 +35,7 @@ export interface UpdateReportData {
   lost_assets?: number;
   total_value?: number;
   notes?: string;
+  signature: string;
 }
 
 class ReportService {

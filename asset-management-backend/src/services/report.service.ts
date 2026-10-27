@@ -326,7 +326,10 @@ class ReportService {
       lost_assets: stats.lost_assets,
       total_value: stats.total_value,
       notes: data.notes,
-      status: 'draft',
+      // Admin lập và ký số trực tiếp → báo cáo hoàn tất, không qua duyệt.
+      status: 'approved',
+      approved_by: _userId,
+      approved_date: new Date(),
       created_by: _userId,
     });
 
@@ -338,10 +341,6 @@ class ReportService {
 
     if (!report) {
       throw new NotFoundError('Report not found');
-    }
-
-    if (report.status === 'approved') {
-      throw new ConflictError('Cannot update approved reports');
     }
 
     await report.update(data);

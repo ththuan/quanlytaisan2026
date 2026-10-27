@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import reportService from '../services/report.service';
 import { AuthRequest } from '../middleware/auth.middleware';
+import { assertSignature, recordSignature } from '../services/signature.service';
 
 class ReportsController {
   async getAllReports(req: AuthRequest, res: Response, next: NextFunction) {
@@ -36,8 +37,21 @@ class ReportsController {
 
   async createReport(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const userId = req.user!.id;
-      const report = await reportService.createReport(req.body, userId);
+      const user = req.user!;
+      const signatureImage = assertSignature(req.body?.signature);
+      const report = await reportService.createReport(req.body, user.id);
+
+      await recordSignature({
+        entityType: 'annual_report',
+        entityId: report.id,
+        action: 'create',
+        signerId: user.id,
+        signerName: user.fullname || user.username || `user#${user.id}`,
+        signerRole: user.role,
+        signatureImage,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'] as string | undefined,
+      });
 
       return res.status(201).json({
         success: true,
@@ -49,10 +63,24 @@ class ReportsController {
     }
   }
 
-  async updateReport(req: Request, res: Response, next: NextFunction) {
+  async updateReport(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const id = parseInt(req.params.id);
+      const user = req.user!;
+      const signatureImage = assertSignature(req.body?.signature);
       const report = await reportService.updateReport(id, req.body);
+
+      await recordSignature({
+        entityType: 'annual_report',
+        entityId: id,
+        action: 'update',
+        signerId: user.id,
+        signerName: user.fullname || user.username || `user#${user.id}`,
+        signerRole: user.role,
+        signatureImage,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'] as string | undefined,
+      });
 
       return res.json({
         success: true,

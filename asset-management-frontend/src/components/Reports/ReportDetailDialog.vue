@@ -499,24 +499,7 @@
 
     <template #footer>
       <div class="detail-footer">
-        <div class="detail-footer__left">
-          <el-button
-            v-if="report.status === 'submitted' && canApproveInDetail"
-            type="success"
-            :loading="actionLoading"
-            @click="onApprove"
-          >
-            {{ $t('reports.approve') }}
-          </el-button>
-          <el-button
-            v-if="report.status === 'submitted' && canApproveInDetail"
-            type="danger"
-            :loading="actionLoading"
-            @click="onReject"
-          >
-            {{ $t('reports.reject') }}
-          </el-button>
-        </div>
+        <span />
         <el-button @click="emit('update:visible', false)">
           {{ $t('common.close') }}
         </el-button>
@@ -530,9 +513,6 @@ import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Box, CircleCheck, Warning, CircleClose } from '@element-plus/icons-vue';
 import { formatI18nOrRaw } from '@/utils/assetDisplay';
-import { useAuthStore } from '@/stores/auth.store';
-import { useReportStore } from '@/stores/report.store';
-import { ElMessage, ElMessageBox } from 'element-plus';
 
 const props = defineProps<{
   visible: boolean;
@@ -544,60 +524,10 @@ const { t, te } = useI18n();
 const reportStatusLabel = (status: string | null | undefined) =>
   formatI18nOrRaw('reports.status', status, t, te);
 
-const authStore = useAuthStore();
-const reportStore = useReportStore();
-
-const actionLoading = ref(false);
-const canApproveInDetail = computed(() => authStore.isAdmin || authStore.isDirector);
-
-const apiErr = (e: any) =>
-  e?.response?.data?.message || e?.response?.data?.error || e?.message || t('common.error');
-
 const emit = defineEmits<{
   'update:visible': [value: boolean];
   'report-updated': [];
 }>();
-
-async function onApprove() {
-  if (!props.report?.id) return;
-  try {
-    await ElMessageBox.confirm(t('reports.approveConfirm'), t('common.confirm'), {
-      type: 'warning',
-    });
-    actionLoading.value = true;
-    await reportStore.approveReport(props.report.id);
-    ElMessage.success(t('reports.approveSuccess'));
-    emit('report-updated');
-  } catch (e: any) {
-    if (e !== 'cancel') ElMessage.error(apiErr(e));
-  } finally {
-    actionLoading.value = false;
-  }
-}
-
-async function onReject() {
-  if (!props.report?.id) return;
-  try {
-    const { value: notes } = await ElMessageBox.prompt(
-      t('reports.rejectConfirm'),
-      t('common.confirm'),
-      {
-        confirmButtonText: t('reports.reject'),
-        cancelButtonText: t('common.cancel'),
-        inputPlaceholder: t('reports.rejectReasonHint'),
-        type: 'warning',
-      }
-    );
-    actionLoading.value = true;
-    await reportStore.rejectReport(props.report.id, notes || '');
-    ElMessage.success(t('reports.rejectSuccess'));
-    emit('report-updated');
-  } catch (e: any) {
-    if (e !== 'cancel') ElMessage.error(apiErr(e));
-  } finally {
-    actionLoading.value = false;
-  }
-}
 
 const summaryOpenPanels = ref(['snapshot', 'activity']);
 

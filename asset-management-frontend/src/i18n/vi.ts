@@ -714,7 +714,7 @@ export default {
     activeAssets: 'Tài sản hoạt động',
     damagedAssets: 'Tài sản hỏng',
     lostAssets: 'Tài sản mất',
-    totalValue: 'Tổng giá trị',
+    totalValue: 'Tổng giá trị (đồng)',
     notes: 'Ghi chú',
     selectDepartment: 'Chọn phòng ban',
     selectYear: 'Chọn năm',

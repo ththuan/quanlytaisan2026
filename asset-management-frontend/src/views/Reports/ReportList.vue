@@ -6,19 +6,14 @@
           <h3>{{ $t('reports.title') }}</h3>
           <div class="card-header__actions">
             <el-button
-              v-if="canBulkApprove"
-              type="success"
-              :disabled="selectedSubmittableCount === 0"
-              :loading="reportStore.loading"
-              @click="handleBulkApprove"
+              :icon="Download"
+              :disabled="reportStore.reports.length === 0"
+              @click="handleExport"
             >
-              {{ $t('reports.bulkApprove') }}
-              <template v-if="selectedSubmittableCount">
-                ({{ selectedSubmittableCount }})
-              </template>
+              Xuất Excel
             </el-button>
             <el-button
-              v-if="authStore.isManager"
+              v-if="authStore.isAdmin"
               type="primary"
               :icon="Plus"
               @click="handleCreate"
@@ -32,7 +27,11 @@
       <!-- Filters -->
       <div class="filter-section">
         <el-row :gutter="16">
-          <el-col :xs="24" :sm="12" :md="5">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="5"
+          >
             <el-select
               v-model="filterYear"
               :placeholder="$t('reports.filterByYear')"
@@ -47,7 +46,11 @@
               />
             </el-select>
           </el-col>
-          <el-col :xs="24" :sm="12" :md="5">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="5"
+          >
             <el-select
               v-model="filterStatus"
               :placeholder="$t('reports.filterByStatus')"
@@ -74,7 +77,11 @@
               @change="handleFilter"
             />
           </el-col>
-          <el-col :xs="24" :sm="12" :md="canFilterByDepartment ? 6 : 12">
+          <el-col
+            :xs="24"
+            :sm="12"
+            :md="canFilterByDepartment ? 6 : 12"
+          >
             <el-button
               type="primary"
               @click="handleFilter"
@@ -94,14 +101,7 @@
           :data="reportStore.reports"
           border
           stripe
-          @selection-change="onSelectionChange"
         >
-          <el-table-column
-            v-if="canBulkApprove"
-            type="selection"
-            width="48"
-            :selectable="selectableRow"
-          />
           <el-table-column
             type="index"
             width="50"
@@ -162,7 +162,7 @@
           </el-table-column>
           <el-table-column
             :label="$t('common.actions')"
-            width="240"
+            width="160"
             fixed="right"
           >
             <template #default="{ row }">
@@ -181,31 +181,6 @@
               >
                 {{ $t('common.edit') }}
               </el-button>
-              <template v-if="row.status === 'draft' && authStore.isManager">
-                <el-button
-                  size="small"
-                  type="primary"
-                  @click="handleSubmit(row.id)"
-                >
-                  {{ $t('reports.submit') }}
-                </el-button>
-              </template>
-              <template v-if="row.status === 'submitted' && (authStore.isAdmin || authStore.isDirector)">
-                <el-button
-                  size="small"
-                  type="success"
-                  @click="handleApprove(row.id)"
-                >
-                  {{ $t('reports.approve') }}
-                </el-button>
-                <el-button
-                  size="small"
-                  type="danger"
-                  @click="handleReject(row.id)"
-                >
-                  {{ $t('reports.reject') }}
-                </el-button>
-              </template>
             </template>
           </el-table-column>
         </el-table>
@@ -245,8 +220,9 @@ import { useI18n } from 'vue-i18n';
 import { useReportStore } from '@/stores/report.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useDepartments } from '@/composables/useDepartments';
-import { Plus } from '@element-plus/icons-vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { Download, Plus } from '@element-plus/icons-vue';
+import * as XLSX from 'xlsx';
+import { ElMessage } from 'element-plus';
 import ReportFormDialog from '@/components/Reports/ReportFormDialog.vue';
 import ReportDetailDialog from '@/components/Reports/ReportDetailDialog.vue';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
@@ -255,17 +231,7 @@ const { t } = useI18n();
 const reportStore = useReportStore();
 const authStore = useAuthStore();
 
-const canBulkApprove = computed(() => authStore.isAdmin || authStore.isDirector);
 const canFilterByDepartment = computed(() => authStore.isAdmin || authStore.isDirector);
-
-const selectedRows = ref<any[]>([]);
-const onSelectionChange = (rows: any[]) => {
-  selectedRows.value = rows;
-};
-const selectableRow = (row: any) => row?.status === 'submitted';
-const selectedSubmittableCount = computed(
-  () => selectedRows.value.filter((r) => r?.status === 'submitted').length
-);
 
 const apiErr = (e: any) =>
   e?.response?.data?.message || e?.response?.data?.error || e?.message || t('common.error');
@@ -350,92 +316,7 @@ const handleView = async (report: any) => {
   }
 };
 
-const canEdit = (report: any) => {
-  return report.status === 'draft' && authStore.isManager;
-};
-
-const handleSubmit = async (id: number) => {
-  try {
-    await ElMessageBox.confirm(t('reports.submitConfirm'), t('common.confirm'), {
-      type: 'warning',
-    });
-    await reportStore.submitReport(id);
-    ElMessage.success(t('reports.submitSuccess'));
-    await reportStore.fetchReports(listQueryParams());
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(apiErr(error));
-    }
-  }
-};
-
-const handleApprove = async (id: number) => {
-  try {
-    await ElMessageBox.confirm(t('reports.approveConfirm'), t('common.confirm'), {
-      type: 'warning',
-    });
-    await reportStore.approveReport(id);
-    ElMessage.success(t('reports.approveSuccess'));
-    selectedRows.value = [];
-    await reportStore.fetchReports(listQueryParams());
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(apiErr(error));
-    }
-  }
-};
-
-const handleBulkApprove = async () => {
-  const ids = selectedRows.value.filter((r) => r?.status === 'submitted').map((r) => r.id);
-  if (!ids.length) {
-    ElMessage.warning(t('reports.bulkApproveNoSelection'));
-    return;
-  }
-  try {
-    await ElMessageBox.confirm(t('reports.bulkApproveConfirm'), t('common.confirm'), {
-      type: 'warning',
-    });
-    const summary = await reportStore.bulkApproveReports(ids);
-    const ok = summary.approved?.length ?? 0;
-    const skip = summary.skipped?.length ?? 0;
-    const fail = summary.failed?.length ?? 0;
-    ElMessage.success(
-      t('reports.bulkApproveDetail', { ok, skip, fail })
-    );
-    if (fail > 0) {
-      ElMessage.warning(t('reports.bulkApproveFailedHint'));
-    }
-    selectedRows.value = [];
-    await reportStore.fetchReports(listQueryParams());
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(apiErr(error));
-    }
-  }
-};
-
-const handleReject = async (id: number) => {
-  try {
-    const { value: notes } = await ElMessageBox.prompt(
-      t('reports.rejectConfirm'),
-      t('common.confirm'),
-      {
-        confirmButtonText: t('reports.reject'),
-        cancelButtonText: t('common.cancel'),
-        inputPlaceholder: t('reports.rejectReasonHint'),
-        type: 'warning',
-      }
-    );
-    await reportStore.rejectReport(id, notes || '');
-    ElMessage.success(t('reports.rejectSuccess'));
-    selectedRows.value = [];
-    await reportStore.fetchReports(listQueryParams());
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(apiErr(error));
-    }
-  }
-};
+const canEdit = (_report: any) => authStore.isAdmin;
 
 function listQueryParams(page?: number) {
   return {
@@ -498,7 +379,25 @@ const getStatusText = (status: string) => {
 };
 
 const formatCurrency = (value: number) => {
-  return value ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value) : '-';
+  return value != null ? Number(value).toLocaleString('vi-VN') : '-';
+};
+
+const handleExport = () => {
+  const rows = reportStore.reports.map((r: any, index: number) => ({
+    STT: index + 1,
+    'Đơn vị': r.department?.name || '',
+    'Năm': r.year,
+    'Tổng tài sản': r.total_assets || 0,
+    'Đang hoạt động': r.active_assets || 0,
+    'Hư hỏng': r.damaged_assets || 0,
+    'Mất': r.lost_assets || 0,
+    'Tổng giá trị (đồng)': Number(r.total_value || 0),
+    'Ghi chú': r.notes || '',
+  }));
+  const worksheet = XLSX.utils.json_to_sheet(rows);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Bao cao thuong nien');
+  XLSX.writeFile(workbook, `bao-cao-thuong-nien-${Date.now()}.xlsx`);
 };
 </script>
 
