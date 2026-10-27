@@ -57,7 +57,7 @@
 
           <!-- Báo cáo: admin + director -->
           <el-menu-item
-            v-if="authStore.user?.role === 'admin'"
+            v-if="authStore.user?.role === 'admin' || authStore.user?.role === 'director'"
             index="/reports"
           >
             <el-icon><DataAnalysis /></el-icon>
@@ -125,7 +125,7 @@
           </el-menu-item>
 
           <el-menu-item
-            v-if="authStore.user?.role === 'admin'"
+            v-if="authStore.user?.role === 'admin' || authStore.user?.role === 'director'"
             index="/norms"
           >
             <el-icon><DataAnalysis /></el-icon>

@@ -9,13 +9,15 @@ const router = Router();
 
 // Apply authentication to all routes
 router.use(authenticateToken);
-router.use(requireRole('admin'));
 
-// Statistics (all authenticated users can view)
-router.get('/statistics', reportsController.getStatistics);
+// Giám hiệu được xem/đánh giá toàn bộ báo cáo (chỉ đọc)
+const READ_ROLES = requireRole('admin', 'director');
 
-// Procurement annual summary (all authenticated users can view)
-router.get('/procurement', reportsController.getProcurementSummary);
+// Statistics
+router.get('/statistics', READ_ROLES, reportsController.getStatistics);
+
+// Procurement annual summary
+router.get('/procurement', READ_ROLES, reportsController.getProcurementSummary);
 
 router.post(
   '/bulk-approve',
@@ -23,9 +25,9 @@ router.post(
   reportsController.bulkApproveReports
 );
 
-// All authenticated users can view reports
-router.get('/', reportsController.getAllReports);
-router.get('/:id', reportsController.getReportById);
+// Admin và giám hiệu được xem báo cáo
+router.get('/', READ_ROLES, reportsController.getAllReports);
+router.get('/:id', READ_ROLES, reportsController.getReportById);
 
 // Create/Update reports (Manager/Admin only)
 router.post(

@@ -46,7 +46,7 @@
             In QR hàng loạt
           </el-button>
           <el-button
-            v-if="authStore.isAdmin"
+            v-if="canManageAssets"
             type="primary"
             :icon="Plus"
             size="default"
@@ -347,7 +347,7 @@
           </div>
           <div class="filter-item filter-item--dept">
             <DepartmentTreeSelect
-              v-if="authStore.isAdmin"
+              v-if="canFilterAllDepartments"
               v-model="filterDepartment"
               :placeholder="$t('assets.filterByDepartment')"
               size="large"
@@ -807,6 +807,8 @@ const router = useRouter();
 const route = useRoute();
 const assetStore = useAssetStore();
 const authStore = useAuthStore();
+const canManageAssets = computed(() => authStore.isAdmin || authStore.user?.role === 'department_head');
+const canFilterAllDepartments = computed(() => authStore.isAdmin || authStore.isDirector);
 const { t } = useI18n();
 
 // Sử dụng composable để lấy tất cả departments với limit 1000
@@ -894,7 +896,9 @@ const fetchCategories = async () => {
 
 const fetchStatistics = async () => {
   try {
-    const departmentId = authStore.isAdmin ? (filterDepartment.value || undefined) : authStore.userDepartmentId;
+    const departmentId = canFilterAllDepartments.value
+      ? (filterDepartment.value || undefined)
+      : authStore.userDepartmentId;
     const response = await assetService.getStatistics({
       category_code: filterCategory.value || undefined,
       status: filterStatus.value || undefined,
@@ -911,7 +915,7 @@ const fetchStatistics = async () => {
 
 const getListFetchParams = (overrides: Partial<AssetQueryParams> = {}): AssetQueryParams => {
   const DEFAULT_PAGE_SIZE = 50;
-  const departmentId = authStore.isAdmin
+  const departmentId = canFilterAllDepartments.value
     ? (filterDepartment.value ?? undefined)
     : authStore.userDepartmentId;
   return {
@@ -962,7 +966,7 @@ onMounted(async () => {
     filterCategory.value = q.category_code;
   }
 
-  if (!authStore.isAdmin && authStore.userDepartmentId) {
+  if (!canFilterAllDepartments.value && authStore.userDepartmentId) {
     filterDepartment.value = authStore.userDepartmentId;
   }
 
@@ -994,7 +998,7 @@ const handleReset = async () => {
   filterCategory.value = '';
   filterStatus.value = '';
   filterCampus.value = '';
-  if (authStore.isAdmin) {
+  if (canFilterAllDepartments.value) {
     filterDepartment.value = null;
   } else {
     filterDepartment.value = authStore.userDepartmentId ?? null;

@@ -79,7 +79,7 @@ const routes: RouteRecordRaw[] = [
         path: '/reports',
         name: 'Reports',
         component: () => import('@/views/Reports/ReportList.vue'),
-        meta: { requiresAdmin: true, titleKey: 'menu.reports' },
+        meta: { requiresAdminOrDirector: true, titleKey: 'menu.reports' },
       },
       {
         path: '/loss-damage',
@@ -175,7 +175,7 @@ const routes: RouteRecordRaw[] = [
         path: '/norms',
         name: 'Norms',
         component: () => import('@/views/Norms/NormView.vue'),
-        meta: { requiresAdmin: true, titleKey: 'menu.norms' },
+        meta: { requiresAdminOrDirector: true, titleKey: 'menu.norms' },
       },
     ],
   },

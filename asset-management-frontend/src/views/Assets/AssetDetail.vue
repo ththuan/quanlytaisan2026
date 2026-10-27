@@ -17,7 +17,7 @@
       </div>
       <div class="header-right">
         <el-tooltip
-          v-if="authStore.isAdmin"
+          v-if="canManageAssets"
           content="Chỉ xóa khi nhập liệu sai, chưa qua quy trình nào"
           placement="bottom"
         >
@@ -31,7 +31,7 @@
           </el-button>
         </el-tooltip>
         <el-button 
-          v-if="authStore.isAdmin" 
+          v-if="canManageAssets" 
           type="primary" 
           :icon="Edit" 
           @click="handleEdit"
@@ -606,6 +606,7 @@
               </div>
               
               <div
+                v-if="canManageAssets"
                 class="image-actions"
                 style="margin-top: 15px;"
               >
@@ -749,6 +750,8 @@ const handleCameraImageSelected = async (e: Event) => {
 };
 
 // Computed properties
+const canManageAssets = computed(() => authStore.isAdmin || authStore.user?.role === 'department_head');
+
 // Kiểm tra xem tài sản có phải là nhà cửa công trình không
 const isBuildingAsset = computed(() => {
   if (!assetStore.currentAsset) return false;

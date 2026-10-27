@@ -133,10 +133,19 @@ class NormService {
     // - Ưu tiên định mức đúng nhóm chức danh của người sử dụng.
     // - Tài sản dùng chung (chưa gán ai) ưu tiên định mức phòng/thiết bị dùng chung.
     // - Sau đó mới đến tên thiết bị dài nhất khớp với tên/loại tài sản.
+    // Quy đổi chức danh thực tế về nhóm định mức tương ứng:
+    // - Trưởng khoa/Phó khoa → nhóm Trưởng phòng/Phó Trưởng phòng
+    // - Trưởng bộ môn/Giảng viên → nhóm Chuyên viên và tương đương
+    const effectiveTitle = (() => {
+      if (!jobTitle) return '';
+      if (jobTitle.includes('trưởng khoa') || jobTitle.includes('phó khoa')) return 'trưởng phòng';
+      if (jobTitle.includes('trưởng bộ môn') || jobTitle.includes('giảng viên')) return 'chuyên viên';
+      return jobTitle;
+    })();
     const titleMatches = (n: any) => {
-      if (!jobTitle || n.scope !== 'title' || !n.position_group) return false;
+      if (!effectiveTitle || n.scope !== 'title' || !n.position_group) return false;
       const group = normalize(n.position_group);
-      return !!group && (jobTitle.includes(group) || group.includes(jobTitle));
+      return !!group && (group.includes(effectiveTitle) || effectiveTitle.includes(group));
     };
     const candidates = norms.filter((n) => haystack.includes(String(n.equipment_name).toLowerCase()));
     candidates.sort((x: any, y: any) => {

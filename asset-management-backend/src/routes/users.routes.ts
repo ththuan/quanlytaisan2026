@@ -17,10 +17,10 @@ router.get('/profile', usersController.getProfile);
 // Update current user profile (chỉ trường an toàn, KHÔNG cho sửa role/quyền)
 router.put('/profile', validateRequest(updateProfileSchema), invalidateCache('users'), usersController.updateProfile);
 
-// Admin only routes
+// Admin xem tất cả; Trưởng đơn vị chỉ xem người thuộc đơn vị mình
 router.get(
   '/',
-  requireRole('admin'),
+  requireRole('admin', 'department_head'),
   usersController.getAllUsers
 );
 

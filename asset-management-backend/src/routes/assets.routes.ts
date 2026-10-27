@@ -52,7 +52,7 @@ router.get('/:id', assetsController.getAssetById);
 // POST /api/assets - Create new asset with image (Admin/Manager only)
 router.post(
   '/',
-  requireRole('admin'),
+  requireRole('admin', 'department_head'),
   upload.single('image'),
   validateBody(createAssetSchema),
   auditLog('create'),
@@ -63,7 +63,7 @@ router.post(
 // PUT /api/assets/:id - Update asset with image (Admin/Manager only)
 router.put(
   '/:id',
-  requireRole('admin'),
+  requireRole('admin', 'department_head'),
   upload.single('image'),
   validateBody(updateAssetSchema),
   auditLog('update'),
@@ -74,7 +74,7 @@ router.put(
 // POST /api/assets/:id/image - Upload image strictly for an asset (admin/director/staff)
 router.post(
   '/:id/image',
-  requireRole('admin'),
+  requireRole('admin', 'department_head'),
   upload.single('image'),
   auditLog('update'),
   invalidateCache('assets'),
@@ -82,7 +82,7 @@ router.post(
 );
 
 // DELETE /api/assets/:id - Delete asset (Admin/Manager only)
-router.delete('/:id', requireRole('admin'), auditLog('delete'), invalidateCache('assets'), assetsController.deleteAsset);
+router.delete('/:id', requireRole('admin', 'department_head'), auditLog('delete'), invalidateCache('assets'), assetsController.deleteAsset);
 
 // GET /api/assets/:id/history - Get asset transfer history
 router.get('/:id/history', assetsController.getAssetHistory);

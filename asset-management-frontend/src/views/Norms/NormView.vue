@@ -3,7 +3,7 @@
     <div class="page-head">
       <h2>Định mức &amp; Cảnh báo thiết bị</h2>
       <el-button
-        v-if="activeTab === 'norms'"
+        v-if="activeTab === 'norms' && canEditNorms"
         type="primary"
         :icon="Plus"
         @click="openCreate"
@@ -92,6 +92,7 @@
             </template>
           </el-table-column>
           <el-table-column
+            v-if="canEditNorms"
             label="Thao tác"
             width="140"
             align="center"
@@ -339,6 +340,10 @@ import { ref, computed, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus, Refresh } from '@element-plus/icons-vue';
 import normService, { type EquipmentNorm, type NormWarning } from '@/services/norm.service';
+import { useAuthStore } from '@/stores/auth.store';
+
+const authStore = useAuthStore();
+const canEditNorms = computed(() => authStore.isAdmin);
 
 const activeTab = ref<'norms' | 'warnings'>('norms');
 

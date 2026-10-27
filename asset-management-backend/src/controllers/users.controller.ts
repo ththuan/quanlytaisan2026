@@ -17,9 +17,13 @@ const upload = multer({
 });
 
 class UsersController {
-  async getAllUsers(req: Request, res: Response, next: NextFunction) {
+  async getAllUsers(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const result = await userService.getAllUsers(req.query);
+      const query: any = { ...req.query };
+      if (req.user?.role === 'department_head') {
+        query.department_id = req.user.department_id;
+      }
+      const result = await userService.getAllUsers(query);
 
       return res.json({
         success: true,

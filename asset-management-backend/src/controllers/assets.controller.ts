@@ -14,7 +14,7 @@ import { imageExtension } from '../constants/imageMime';
 
 // Helper: check if a non-admin/director user can access an asset's data
 async function checkAssetDeptAccess(assetId: number, user: { role: string; department_id?: number | null }): Promise<boolean> {
-  if (user.role === 'admin') return true;
+  if (user.role === 'admin' || user.role === 'director') return true;
   if (!user.department_id) return false;
   const asset = await assetService.getAssetById(assetId);
   if (!asset) return false;
@@ -26,11 +26,11 @@ export const getAllAssets = async (req: AuthRequest, res: Response, next: NextFu
     const user = req.user!;
     const query = { ...req.query };
 
-    // Phân quyền: Cán bộ và Trưởng đơn vị chỉ xem tài sản của phòng ban mình
-    if (user.role !== 'admin') {
+    // Phân quyền: admin và giám hiệu xem toàn bộ; cán bộ/trưởng đơn vị chỉ xem phòng ban mình
+    if (user.role !== 'admin' && user.role !== 'director') {
       if (user.department_id) {
         query.current_department_id = String(user.department_id);
-        // Không ẩn tài sản đã thanh lý — viên chức/trưởng đơn vị có quyền xem tài sản đã thanh lý của đơn vị mình
+        // Không ẩn tài sản đã thanh lý - viên chức/trưởng đơn vị có quyền xem tài sản đã thanh lý của đơn vị mình
       } else {
         // Nếu user không có department_id, trả về danh sách rỗng
         res.status(200).json({
@@ -72,8 +72,8 @@ export const getAssetById = async (req: AuthRequest, res: Response, next: NextFu
       return;
     }
 
-    // Phân quyền: Cán bộ và Trưởng đơn vị chỉ xem tài sản của phòng ban mình
-    if (user.role !== 'admin') {
+    // Phân quyền: admin và giám hiệu xem toàn bộ; cán bộ/trưởng đơn vị chỉ xem phòng ban mình
+    if (user.role !== 'admin' && user.role !== 'director') {
       if (!user.department_id || asset.current_department_id !== user.department_id) {
         res.status(403).json({
           success: false,
@@ -96,7 +96,16 @@ export const createAsset = async (req: Request, res: Response, next: NextFunctio
   try {
     console.log('📝 Creating asset with data:', JSON.stringify(req.body, null, 2));
 
-    const asset = await assetService.createAsset(req.body, (req as any).user?.id);
+    const user = (req as any).user;
+    if (user?.role === 'department_head') {
+      if (!user.department_id) {
+        res.status(403).json({ success: false, message: 'Bạn chưa được gán đơn vị' });
+        return;
+      }
+      req.body.current_department_id = user.department_id;
+    }
+
+    const asset = await assetService.createAsset(req.body, user?.id);
 
     // Cảnh báo vượt định mức (chỉ cảnh báo, không chặn)
     let normWarnings: any[] = [];
@@ -120,7 +129,22 @@ export const createAsset = async (req: Request, res: Response, next: NextFunctio
 
 export const updateAsset = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const asset = await assetService.updateAsset(parseInt(req.params.id), req.body, (req as any).user?.id);
+    const assetId = parseInt(req.params.id);
+    const user = (req as any).user;
+    if (user?.role === 'department_head') {
+      const existing: any = await assetService.getAssetById(assetId);
+      if (!existing || Number(existing.current_department_id) !== Number(user.department_id)) {
+        res.status(403).json({ success: false, message: 'Bạn chỉ được sửa tài sản của đơn vị mình' });
+        return;
+      }
+      if (req.body.current_department_id && Number(req.body.current_department_id) !== Number(user.department_id)) {
+        res.status(403).json({ success: false, message: 'Không thể chuyển tài sản sang đơn vị khác khi sửa. Vui lòng dùng chức năng điều chuyển.' });
+        return;
+      }
+      req.body.current_department_id = user.department_id;
+    }
+
+    const asset = await assetService.updateAsset(assetId, req.body, user?.id);
 
     let normWarnings: any[] = [];
     try {
@@ -199,7 +223,16 @@ export const uploadAssetImage = async (req: AuthRequest, res: Response, next: Ne
 
 export const deleteAsset = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    await assetService.deleteAsset(parseInt(req.params.id));
+    const assetId = parseInt(req.params.id);
+    const user = (req as any).user;
+    if (user?.role === 'department_head') {
+      const existing: any = await assetService.getAssetById(assetId);
+      if (!existing || Number(existing.current_department_id) !== Number(user.department_id)) {
+        res.status(403).json({ success: false, message: 'Bạn chỉ được xóa tài sản của đơn vị mình' });
+        return;
+      }
+    }
+    await assetService.deleteAsset(assetId);
 
     res.status(200).json({
       success: true,
@@ -403,8 +436,8 @@ export const getStatistics = async (req: AuthRequest, res: Response, next: NextF
     const user = req.user!;
     const query: any = { ...req.query };
 
-    // Phân quyền: Cán bộ và Trưởng đơn vị chỉ xem tài sản của phòng ban mình
-    if (user.role !== 'admin') {
+    // Phân quyền: admin và giám hiệu xem toàn bộ; cán bộ/trưởng đơn vị chỉ xem phòng ban mình
+    if (user.role !== 'admin' && user.role !== 'director') {
       if (user.department_id) {
         query.current_department_id = String(user.department_id);
       }
