@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { authenticateToken, requireRoles } from '../middleware/auth.middleware';
 import assetImagesController from '../controllers/assetImages.controller';
+import { ALLOWED_IMAGE_MIME_TYPES } from '../constants/imageMime';
 
 const router = Router();
 
@@ -12,11 +13,10 @@ const upload = multer({
   },
   fileFilter: (_req, file, cb) => {
     // Chỉ cho phép ảnh raster an toàn — CẤM SVG (chứa script → XSS)
-    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (allowed.includes(file.mimetype)) {
+    if (ALLOWED_IMAGE_MIME_TYPES.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Chỉ cho phép upload ảnh (JPEG, PNG, GIF, WebP)') as any, false);
+      cb(new Error('Chỉ cho phép upload ảnh (JPEG, PNG, GIF, WebP, HEIC, AVIF, BMP, TIFF)') as any, false);
     }
   }
 });

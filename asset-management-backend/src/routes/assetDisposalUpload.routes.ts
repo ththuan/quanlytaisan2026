@@ -10,9 +10,15 @@ const ALLOWED_MIME_TYPES = new Set([
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'image/jpeg',
+  'image/jpg',
   'image/png',
   'image/gif',
   'image/webp',
+  'image/heic',
+  'image/heif',
+  'image/avif',
+  'image/bmp',
+  'image/tiff',
 ]);
 
 const upload = multer({

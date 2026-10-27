@@ -1,4 +1,5 @@
 import api from './api';
+import { prepareImageForUpload } from '@/utils/image';
 
 export interface AssetDisposalCaseListParams {
   page?: number;
@@ -45,13 +46,12 @@ class AssetDisposalService {
   }
 
   async uploadDecisionFile(caseId: number, file: File) {
+    const prepared = await prepareImageForUpload(file);
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', prepared);
 
     const response: any = await api.post(`/asset-disposals/${caseId}/decision-file`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      timeout: 60000,
     });
 
     return response;

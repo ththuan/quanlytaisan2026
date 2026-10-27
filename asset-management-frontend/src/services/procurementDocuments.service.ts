@@ -1,4 +1,5 @@
 import api from './api';
+import { prepareImageForUpload } from '@/utils/image';
 
 export interface ProcurementDocumentMeta {
   id: number;
@@ -17,11 +18,12 @@ class ProcurementDocumentsService {
   }
 
   async upload(procurementId: number, file: File) {
+    const prepared = await prepareImageForUpload(file);
     const form = new FormData();
-    form.append('file', file);
+    form.append('file', prepared);
 
     const res: any = await api.post(`/procurements/${procurementId}/documents`, form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000,
     });
     return res;
   }

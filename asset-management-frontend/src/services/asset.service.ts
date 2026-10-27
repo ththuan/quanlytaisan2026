@@ -1,5 +1,6 @@
 import api from './api';
 import type { Asset, ApiResponse } from '@/types/models';
+import { prepareImageForUpload } from '@/utils/image';
 
 export interface AssetQueryParams {
   page?: number;
@@ -39,12 +40,11 @@ export const assetService = {
   },
 
   async uploadImage(id: number, file: File): Promise<ApiResponse<{ image_url: string }>> {
+    const prepared = await prepareImageForUpload(file);
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append('image', prepared);
     return api.post(`/assets/${id}/image`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      timeout: 60000,
     });
   },
 

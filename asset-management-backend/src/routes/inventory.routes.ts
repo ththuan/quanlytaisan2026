@@ -7,6 +7,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import * as inventoryController from '../controllers/inventory.controller';
 import { authenticate, requireRoles } from '../middleware/auth.middleware';
+import { ALLOWED_IMAGE_MIME_TYPES } from '../constants/imageMime';
 
 const router = Router();
 
@@ -14,12 +15,8 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 25 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const allowed = [
-      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
-      'image/heic', 'image/heif',
-    ];
-    if (allowed.includes(file.mimetype)) cb(null, true);
-    else cb(new Error('Chỉ cho phép ảnh (JPEG, PNG, GIF, WebP, HEIC)') as any, false);
+    if (ALLOWED_IMAGE_MIME_TYPES.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Chỉ cho phép ảnh (JPEG, PNG, GIF, WebP, HEIC, AVIF, BMP, TIFF)') as any, false);
   },
 });
 

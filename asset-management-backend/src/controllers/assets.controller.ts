@@ -10,6 +10,7 @@ import assetDisposalService from '../services/assetDisposal.service';
 import { AuthRequest } from '../middleware/auth.middleware';
 import normService from '../services/norm.service';
 import { campusLabel } from '../constants/campuses';
+import { imageExtension } from '../constants/imageMime';
 
 // Helper: check if a non-admin/director user can access an asset's data
 async function checkAssetDeptAccess(assetId: number, user: { role: string; department_id?: number | null }): Promise<boolean> {
@@ -166,7 +167,7 @@ export const uploadAssetImage = async (req: AuthRequest, res: Response, next: Ne
     const uploadDir = path.join(__dirname, '../../storage/public/assets');
     await fs.mkdir(uploadDir, { recursive: true });
 
-    const ext = req.file.mimetype === 'image/jpeg' ? '.jpg' : req.file.mimetype === 'image/png' ? '.png' : req.file.mimetype === 'image/gif' ? '.gif' : '.jpg';
+    const ext = `.${imageExtension(req.file.mimetype)}`;
     const filename = `asset-${assetId}-${Date.now()}${ext}`;
     const filePath = path.join(uploadDir, filename);
 

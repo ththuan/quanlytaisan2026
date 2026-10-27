@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { NotFoundError, ValidationError } from '../utils/errorHandler';
 import { Asset } from '../models';
 import { savePublicFile, deleteImageFile } from '../utils/fileStorage';
+import { imageExtension } from '../constants/imageMime';
 
 class AssetImagesController {
   async uploadAssetImage(req: AuthRequest, res: Response, next: NextFunction) {
@@ -16,13 +17,7 @@ class AssetImagesController {
       if (!asset) throw new NotFoundError('Tài sản không tồn tại');
 
       // Extension từ MIME đã validate (KHÔNG dùng originalname — chống spoof)
-      const mimeToExt: Record<string, string> = {
-        'image/jpeg': 'jpg',
-        'image/png': 'png',
-        'image/gif': 'gif',
-        'image/webp': 'webp',
-      };
-      const safeExt = mimeToExt[file.mimetype] || 'jpg';
+      const safeExt = imageExtension(file.mimetype);
       const filename = `asset_${id}_${Date.now()}.${safeExt}`;
 
       // Save file to storage
