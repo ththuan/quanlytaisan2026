@@ -586,15 +586,23 @@
               </div>
             </template>
             <div class="image-content">
-              <el-image 
-                v-if="assetStore.currentAsset.image_url" 
-                :src="getImageUrl(assetStore.currentAsset.image_url)" 
-                fit="cover" 
-                :preview-src-list="[getImageUrl(assetStore.currentAsset.image_url)]"
-                :preview-teleported="true"
-                hide-on-click-modal
-                class="asset-image-preview"
-              />
+              <ImageZoom
+                v-if="assetStore.currentAsset.image_url"
+                :zoom-scale="2.2"
+                :zoom-on-click="false"
+                width="160px"
+                height="160px"
+                class="asset-image-zoom"
+              >
+                <el-image
+                  :src="getImageUrl(assetStore.currentAsset.image_url)"
+                  fit="cover"
+                  :preview-src-list="[getImageUrl(assetStore.currentAsset.image_url)]"
+                  :preview-teleported="true"
+                  hide-on-click-modal
+                  class="asset-image-preview"
+                />
+              </ImageZoom>
               <div
                 v-else
                 class="image-placeholder-box"
@@ -664,6 +672,7 @@ import { useAssetStore } from '@/stores/asset.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { ArrowLeft, Edit, Delete, Document, Location, Box, TrendCharts, Download, Refresh, Picture, Upload, Clock, User, Camera } from '@element-plus/icons-vue';
 import AssetFormDialog from '@/components/Assets/AssetFormDialog.vue';
+import ImageZoom from '@/components/animate/ImageZoom.vue';
 import { assetService } from '@/services/asset.service';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import moment from 'moment';
@@ -1788,19 +1797,18 @@ const downloadQRCode = () => {
   padding: 10px 0;
 }
 
-.asset-image-preview {
-  width: 160px;
-  height: 160px;
+.asset-image-zoom {
   border-radius: 8px;
   margin-bottom: 12px;
-  cursor: pointer;
   border: 1px solid #dcdfe6;
-  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.08);
-  transition: transform 0.3s ease;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
 }
 
-.asset-image-preview:hover {
-  transform: scale(1.02);
+.asset-image-preview {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
 .image-placeholder-box {

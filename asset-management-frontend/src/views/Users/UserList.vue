@@ -103,7 +103,10 @@
         </el-row>
       </div>
 
-      <div class="responsive-table">
+      <div
+        v-stagger-rows
+        class="responsive-table"
+      >
         <el-table
           :data="filteredUsers"
           :loading="loading"

@@ -13,6 +13,7 @@ import i18n from './i18n';
 import { useAuthStore } from '@/stores/auth.store';
 import { initPWA } from '@/pwa';
 import { initUpdateCheck } from '@/update-check';
+import { installAnimateDirectives } from '@/directives/animate';
 
 import { use } from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -58,6 +59,7 @@ try {
 app.use(router);
 app.use(ElementPlus);
 app.use(i18n);
+installAnimateDirectives(app);
 
 // Initialize PWA (service worker registration, update prompts)
 initPWA();

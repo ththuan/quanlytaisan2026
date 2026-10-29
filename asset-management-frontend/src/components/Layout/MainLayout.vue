@@ -16,138 +16,148 @@
         class="sidebar"
         :class="{ 'sidebar--mobile': isOverlay, 'sidebar--open': isOverlay && !isHidden }"
       >
-        <el-menu
-          :default-active="$route.path"
-          router
-          background-color="#304156"
-          text-color="#bfcbd9"
-          active-text-color="#409EFF"
-          :collapse-transition="false"
-          :unique-opened="true"
-          @select="handleMenuSelect"
+        <div
+          ref="menuWrapperRef"
+          class="menu-wrapper"
         >
-          <el-menu-item index="/">
-            <el-icon><House /></el-icon>
-            <span>{{ $t('menu.dashboard') }}</span>
-          </el-menu-item>
-
-          <el-menu-item index="/assets">
-            <el-icon><Box /></el-icon>
-            <span>Tài sản{{ isStaffOrHead ? ' đơn vị' : '' }}</span>
-          </el-menu-item>
-
-          <el-menu-item index="/transfers">
-            <el-icon><Switch /></el-icon>
-            <span>{{ isStaffOrHead ? 'Đề nghị điều chuyển' : $t('menu.transfers') }}</span>
-          </el-menu-item>
-
-          <el-menu-item index="/inventory">
-            <el-icon><Notebook /></el-icon>
-            <span>{{ $t('inventory.title') }}</span>
-          </el-menu-item>
-
-          <!-- Thanh lý / Tiêu hủy -->
-          <el-menu-item
-            v-if="authStore.user?.role === 'admin'"
-            index="/asset-disposals"
-          >
-            <el-icon><DeleteFilled /></el-icon>
-            <span>Thanh lý tài sản</span>
-          </el-menu-item>
-
-          <!-- Báo cáo: admin + director -->
-          <el-menu-item
-            v-if="authStore.user?.role === 'admin' || authStore.user?.role === 'director'"
-            index="/reports"
-          >
-            <el-icon><DataAnalysis /></el-icon>
-            <span>{{ $t('menu.reports') }}</span>
-          </el-menu-item>
-
-          <el-menu-item index="/loss-damage">
-            <el-icon><Warning /></el-icon>
-            <span>Tài sản mất / hư hỏng</span>
-          </el-menu-item>
-
-          <el-menu-item
-            v-if="authStore.user?.role === 'admin'"
-            index="/procurements"
-          >
-            <el-icon><Document /></el-icon>
-            <span>Tăng tài sản</span>
-          </el-menu-item>
-
-          <el-divider
-            v-if="authStore.user?.role === 'admin'"
-            class="sidebar-divider"
+          <div
+            class="menu-highlight"
+            :style="menuHighlightStyle"
+            aria-hidden="true"
           />
+          <el-menu
+            :default-active="$route.path"
+            router
+            background-color="#304156"
+            text-color="#bfcbd9"
+            active-text-color="#409EFF"
+            :collapse-transition="false"
+            :unique-opened="true"
+            @select="handleMenuSelect"
+          >
+            <el-menu-item index="/">
+              <el-icon><House /></el-icon>
+              <span>{{ $t('menu.dashboard') }}</span>
+            </el-menu-item>
 
-          <!-- Các module phụ trợ (Sửa chữa, Mua sắm, Kho): tạm ẩn theo phạm vi hiện tại.
+            <el-menu-item index="/assets">
+              <el-icon><Box /></el-icon>
+              <span>Tài sản{{ isStaffOrHead ? ' đơn vị' : '' }}</span>
+            </el-menu-item>
+
+            <el-menu-item index="/transfers">
+              <el-icon><Switch /></el-icon>
+              <span>{{ isStaffOrHead ? 'Đề nghị điều chuyển' : $t('menu.transfers') }}</span>
+            </el-menu-item>
+
+            <el-menu-item index="/inventory">
+              <el-icon><Notebook /></el-icon>
+              <span>{{ $t('inventory.title') }}</span>
+            </el-menu-item>
+
+            <!-- Thanh lý / Tiêu hủy -->
+            <el-menu-item
+              v-if="authStore.user?.role === 'admin'"
+              index="/asset-disposals"
+            >
+              <el-icon><DeleteFilled /></el-icon>
+              <span>Thanh lý tài sản</span>
+            </el-menu-item>
+
+            <!-- Báo cáo: admin + director -->
+            <el-menu-item
+              v-if="authStore.user?.role === 'admin' || authStore.user?.role === 'director'"
+              index="/reports"
+            >
+              <el-icon><DataAnalysis /></el-icon>
+              <span>{{ $t('menu.reports') }}</span>
+            </el-menu-item>
+
+            <el-menu-item index="/loss-damage">
+              <el-icon><Warning /></el-icon>
+              <span>Tài sản mất / hư hỏng</span>
+            </el-menu-item>
+
+            <el-menu-item
+              v-if="authStore.user?.role === 'admin'"
+              index="/procurements"
+            >
+              <el-icon><Document /></el-icon>
+              <span>Tăng tài sản</span>
+            </el-menu-item>
+
+            <el-divider
+              v-if="authStore.user?.role === 'admin'"
+              class="sidebar-divider"
+            />
+
+            <!-- Các module phụ trợ (Sửa chữa, Mua sắm, Kho): tạm ẩn theo phạm vi hiện tại.
                Bật lại bằng FEATURES.auxiliaryModules = true trong src/constants/features.ts -->
-          <el-menu-item
-            v-if="FEATURES.auxiliaryModules && authStore.user?.role === 'admin'"
-            index="/purchase-requests"
-          >
-            <el-icon><ShoppingCart /></el-icon>
-            <span>{{ $t('menu.purchaseRequests') }}</span>
-          </el-menu-item>
+            <el-menu-item
+              v-if="FEATURES.auxiliaryModules && authStore.user?.role === 'admin'"
+              index="/purchase-requests"
+            >
+              <el-icon><ShoppingCart /></el-icon>
+              <span>{{ $t('menu.purchaseRequests') }}</span>
+            </el-menu-item>
 
-          <el-menu-item
-            v-if="FEATURES.auxiliaryModules && authStore.user?.role === 'admin'"
-            index="/maintenance"
-          >
-            <el-icon><Tools /></el-icon>
-            <span>{{ $t('menu.repairTracking') }}</span>
-          </el-menu-item>
+            <el-menu-item
+              v-if="FEATURES.auxiliaryModules && authStore.user?.role === 'admin'"
+              index="/maintenance"
+            >
+              <el-icon><Tools /></el-icon>
+              <span>{{ $t('menu.repairTracking') }}</span>
+            </el-menu-item>
 
-          <el-menu-item
-            v-if="FEATURES.auxiliaryModules && authStore.user?.role === 'admin'"
-            index="/stock"
-          >
-            <el-icon><Box /></el-icon>
-            <span>Kho vật tư</span>
-          </el-menu-item>
+            <el-menu-item
+              v-if="FEATURES.auxiliaryModules && authStore.user?.role === 'admin'"
+              index="/stock"
+            >
+              <el-icon><Box /></el-icon>
+              <span>Kho vật tư</span>
+            </el-menu-item>
 
-          <el-menu-item
-            v-if="authStore.user?.role === 'admin'"
-            index="/departments"
-          >
-            <el-icon><OfficeBuilding /></el-icon>
-            <span>{{ $t('menu.departments') }}</span>
-          </el-menu-item>
+            <el-menu-item
+              v-if="authStore.user?.role === 'admin'"
+              index="/departments"
+            >
+              <el-icon><OfficeBuilding /></el-icon>
+              <span>{{ $t('menu.departments') }}</span>
+            </el-menu-item>
 
-          <el-menu-item
-            v-if="authStore.user?.role === 'admin'"
-            index="/users"
-          >
-            <el-icon><UserFilled /></el-icon>
-            <span>{{ $t('menu.users') }}</span>
-          </el-menu-item>
+            <el-menu-item
+              v-if="authStore.user?.role === 'admin'"
+              index="/users"
+            >
+              <el-icon><UserFilled /></el-icon>
+              <span>{{ $t('menu.users') }}</span>
+            </el-menu-item>
 
-          <el-menu-item
-            v-if="authStore.user?.role === 'admin' || authStore.user?.role === 'director'"
-            index="/norms"
-          >
-            <el-icon><DataAnalysis /></el-icon>
-            <span>Định mức tài sản</span>
-          </el-menu-item>
+            <el-menu-item
+              v-if="authStore.user?.role === 'admin' || authStore.user?.role === 'director'"
+              index="/norms"
+            >
+              <el-icon><DataAnalysis /></el-icon>
+              <span>Định mức tài sản</span>
+            </el-menu-item>
 
-          <el-menu-item
-            v-if="authStore.user?.role === 'admin'"
-            index="/asset-categories"
-          >
-            <el-icon><Grid /></el-icon>
-            <span>{{ $t('menu.assetCategories') }}</span>
-          </el-menu-item>
+            <el-menu-item
+              v-if="authStore.user?.role === 'admin'"
+              index="/asset-categories"
+            >
+              <el-icon><Grid /></el-icon>
+              <span>{{ $t('menu.assetCategories') }}</span>
+            </el-menu-item>
 
-          <el-menu-item
-            v-if="authStore.user?.role === 'admin'"
-            index="/system-admin"
-          >
-            <el-icon><Setting /></el-icon>
-            <span>Quản trị hệ thống</span>
-          </el-menu-item>
-        </el-menu>
+            <el-menu-item
+              v-if="authStore.user?.role === 'admin'"
+              index="/system-admin"
+            >
+              <el-icon><Setting /></el-icon>
+              <span>Quản trị hệ thống</span>
+            </el-menu-item>
+          </el-menu>
+        </div>
       </el-aside>
 
       <el-container>
@@ -231,6 +241,7 @@
               </el-dropdown>
             </div>
           </div>
+          <ScrollProgress />
         </el-header>
 
         <el-main>
@@ -257,12 +268,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
+import { computed, nextTick, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
 import { House, HomeFilled, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, Warning } from '@element-plus/icons-vue';
 import NotificationBell from '@/components/Notifications/NotificationBell.vue';
+import ScrollProgress from '@/components/animate/ScrollProgress.vue';
 import TotpSetupDialog from '@/components/Auth/TotpSetupDialog.vue';
 import ChangePasswordDialog from '@/components/Auth/ChangePasswordDialog.vue';
 import { FEATURES } from '@/constants/features';
@@ -322,6 +334,54 @@ const isHidden = ref(false);
 // Overlay mode: sidebar là drawer trên mobile + tablet (iPad)
 const isOverlay = computed(() => isMobile.value || isTablet.value);
 
+const menuWrapperRef = ref<HTMLElement | null>(null);
+const menuHighlight = ref({ top: 0, left: 0, width: 0, height: 0, visible: false });
+let highlightFrame = 0;
+
+const menuHighlightStyle = computed(() => ({
+  transform: `translateY(${menuHighlight.value.top}px)`,
+  left: `${menuHighlight.value.left}px`,
+  width: `${menuHighlight.value.width}px`,
+  height: `${menuHighlight.value.height}px`,
+  opacity: menuHighlight.value.visible ? 1 : 0,
+}));
+
+const hideMenuHighlight = () => {
+  menuHighlight.value = { ...menuHighlight.value, visible: false };
+};
+
+const updateMenuHighlight = () => {
+  cancelAnimationFrame(highlightFrame);
+  highlightFrame = requestAnimationFrame(() => {
+    const wrapper = menuWrapperRef.value;
+    if (!wrapper || isHidden.value) {
+      hideMenuHighlight();
+      return;
+    }
+
+    const activeItem = wrapper.querySelector<HTMLElement>('.el-menu-item.is-active');
+    if (!activeItem) {
+      hideMenuHighlight();
+      return;
+    }
+
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const itemRect = activeItem.getBoundingClientRect();
+    if (!itemRect.height) {
+      hideMenuHighlight();
+      return;
+    }
+
+    menuHighlight.value = {
+      top: itemRect.top - wrapperRect.top,
+      left: itemRect.left - wrapperRect.left,
+      width: itemRect.width,
+      height: itemRect.height,
+      visible: true,
+    };
+  });
+};
+
 const updateIsMobile = () => {
   const prevOverlay = isOverlay.value;
   isMobile.value = window.innerWidth < MOBILE_BREAKPOINT;
@@ -336,6 +396,8 @@ const updateIsMobile = () => {
     const hiddenState = localStorage.getItem('sidebarHidden');
     isHidden.value = hiddenState === 'true';
   }
+
+  nextTick(updateMenuHighlight);
 };
 
 const closeSidebar = () => {
@@ -354,10 +416,23 @@ onMounted(() => {
   if (isOverlay.value) {
     isHidden.value = true;
   }
+
+  nextTick(updateMenuHighlight);
+  if (document.fonts) {
+    document.fonts.ready.then(() => updateMenuHighlight()).catch(() => {});
+  }
 });
+
+watch(
+  () => router.currentRoute.value.path,
+  () => nextTick(updateMenuHighlight),
+);
+
+watch([isHidden, isOverlay], () => nextTick(updateMenuHighlight));
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateIsMobile);
+  cancelAnimationFrame(highlightFrame);
 });
 
 const handleMenuSelect = () => {
@@ -436,13 +511,42 @@ const toggleSidebar = () => {
   box-shadow: 12px 0 40px rgba(0, 0, 0, 0.18);
 }
 
+.menu-wrapper {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.menu-highlight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.38);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  will-change: transform, height, width;
+  transition:
+    transform 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+    left 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s ease;
+}
+
 .el-menu {
+  position: relative;
+  z-index: 1;
   border-right: none !important;
   background-color: transparent !important;
   padding: 12px 10px 10px;
 }
 
 :deep(.el-menu-item) {
+  position: relative;
+  z-index: 1;
   height: 44px !important;
   line-height: 44px !important;
   border-radius: 10px;
@@ -472,10 +576,10 @@ const toggleSidebar = () => {
 }
 
 :deep(.el-menu-item.is-active) {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  background: transparent !important;
   color: #fff !important;
   font-weight: 700;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  box-shadow: none;
 }
 
 :deep(.el-menu-item .el-icon) {
@@ -488,6 +592,12 @@ const toggleSidebar = () => {
   margin: 10px 8px;
   opacity: 0.1;
   background-color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-highlight {
+    transition: opacity 0.01ms !important;
+  }
 }
 
 .el-header {

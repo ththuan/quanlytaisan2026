@@ -8,25 +8,39 @@
       popper-class="notification-popover"
     >
       <template #reference>
-        <el-badge
-          :value="unreadCount"
-          :hidden="unreadCount === 0"
-          :max="99"
-        >
-          <el-button
-            :icon="Bell"
-            circle
-            class="bell-button"
-            @click="handleBellClick"
+        <span class="bell-badge-wrap">
+          <el-badge
+            :key="unreadCount"
+            class="bell-badge"
+            :value="unreadCount"
+            :hidden="unreadCount === 0"
+            :max="99"
+          >
+            <el-button
+              :icon="Bell"
+              circle
+              class="bell-button"
+              :class="{ 'bell-button--pulse': pulse }"
+              @click="handleBellClick"
+            />
+          </el-badge>
+          <ParticlesBurst
+            :active="pulse"
+            :count="10"
+            :radius="30"
           />
-        </el-badge>
+        </span>
       </template>
 
-      <div class="notification-dropdown">
+      <div
+        v-loading="notificationStore.loading"
+        class="notification-dropdown"
+      >
         <div class="notification-header">
           <h3>Thông báo</h3>
           <el-button
             v-if="unreadCount > 0"
+            v-ripple
             text
             size="small"
             @click="markAllAsRead"
@@ -35,12 +49,14 @@
           </el-button>
         </div>
 
-        <div
-          v-loading="notificationStore.loading"
+        <TransitionGroup
+          name="notif"
+          tag="div"
           class="notification-list"
         >
           <div
             v-if="notificationStore.notifications.length === 0"
+            key="empty"
             class="empty-notifications"
           >
             <el-empty
@@ -91,6 +107,7 @@
             </div>
             <div class="notification-actions">
               <el-button
+                v-ripple
                 text
                 size="small"
                 :icon="Close"
@@ -98,13 +115,14 @@
               />
             </div>
           </div>
-        </div>
+        </TransitionGroup>
 
         <div
           v-if="notificationStore.notifications.length > 0"
           class="notification-footer"
         >
           <el-button
+            v-ripple
             text
             @click="viewAll"
           >
@@ -121,6 +139,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useNotificationStore, type Notification } from '@/stores/notification.store';
 import { Bell, Switch, Tools, Document, Close, List, DeleteFilled, ShoppingCart } from '@element-plus/icons-vue';
+import ParticlesBurst from '@/components/animate/ParticlesBurst.vue';
 import moment from 'moment';
 
 const router = useRouter();
@@ -131,6 +150,20 @@ let refreshInterval: number | null = null;
 let visibilityTimeout: number | null = null;
 
 const unreadCount = computed(() => notificationStore.unreadCount);
+const pulse = ref(false);
+let pulseTimer: number | null = null;
+
+watch(unreadCount, (now, previous) => {
+  if (previous === undefined || now <= previous) return;
+  if (pulseTimer) clearTimeout(pulseTimer);
+  pulse.value = false;
+  requestAnimationFrame(() => {
+    pulse.value = true;
+    pulseTimer = window.setTimeout(() => {
+      pulse.value = false;
+    }, 1100);
+  });
+});
 
 // Start/stop polling based on tab visibility to prevent unnecessary API calls and UI flashing
 function startPolling() {
@@ -188,6 +221,9 @@ onUnmounted(() => {
   stopPolling();
   if (visibilityTimeout) {
     clearTimeout(visibilityTimeout);
+  }
+  if (pulseTimer) {
+    clearTimeout(pulseTimer);
   }
   document.removeEventListener('visibilitychange', handleVisibilityChange);
 });
@@ -256,6 +292,11 @@ const formatTime = (date: string) => {
   position: relative;
 }
 
+.bell-badge-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
 .bell-button {
   border: none;
   background: transparent;
@@ -269,8 +310,83 @@ const formatTime = (date: string) => {
   background: #f5f7fa;
 }
 
-:deep(.el-badge__content) {
+.bell-button--pulse {
+  animation: bell-ring 0.9s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+.bell-badge :deep(.el-badge__content) {
   border: 2px solid #fff;
+  animation: badge-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes badge-pop {
+  0% {
+    transform: translateY(-50%) translateX(100%) scale(0.4);
+  }
+  60% {
+    transform: translateY(-50%) translateX(100%) scale(1.25);
+  }
+  100% {
+    transform: translateY(-50%) translateX(100%) scale(1);
+  }
+}
+
+@keyframes bell-ring {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  15% {
+    transform: rotate(-14deg);
+  }
+  35% {
+    transform: rotate(12deg);
+  }
+  55% {
+    transform: rotate(-8deg);
+  }
+  75% {
+    transform: rotate(5deg);
+  }
+}
+
+.notif-enter-active {
+  transition:
+    opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.notif-leave-active {
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.notif-move {
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.notif-enter-from {
+  opacity: 0;
+  transform: translateX(14px) scale(0.98);
+}
+
+.notif-leave-to {
+  opacity: 0;
+  transform: translateX(-10px) scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bell-button--pulse,
+  .bell-badge :deep(.el-badge__content) {
+    animation: none;
+  }
+
+  .notif-enter-active,
+  .notif-leave-active,
+  .notif-move {
+    transition: none;
+  }
 }
 
 .notification-dropdown {

@@ -2,7 +2,9 @@
   <div class="dashboard">
     <div class="dashboard-header">
       <div>
-        <h2>{{ $t('dashboard.title') }}</h2>
+        <h2 class="dashboard-title">
+          <GradientText :text="$t('dashboard.title')" />
+        </h2>
         <p class="header-subtitle">
           Tổng quan hoạt động - Phần mềm Quản lý tài sản
         </p>
@@ -22,6 +24,7 @@
         </template>
 
         <el-row
+          v-stagger="{ step: 55, distance: 18 }"
           :gutter="16"
           class="stats-row"
           justify="space-between"
@@ -33,6 +36,8 @@
             :md="4"
           >
             <el-card
+              v-tilt
+              v-ripple
               class="stat-card stat-clickable"
               shadow="hover"
               @click="$router.push('/assets')"
@@ -50,7 +55,7 @@
                 />
                 <template v-else>
                   <div class="stat-value text-truncate">
-                    {{ formatNumber(stats.assetsTotal) }}
+                    <AnimatedNumber :value="stats.assetsTotal" />
                   </div>
                   <div class="stat-label">
                     Tổng tài sản
@@ -68,6 +73,8 @@
             :md="4"
           >
             <el-card
+              v-tilt
+              v-ripple
               class="stat-card stat-clickable"
               shadow="hover"
               @click="$router.push('/purchase-requests')"
@@ -85,7 +92,7 @@
                 />
                 <template v-else>
                   <div class="stat-value text-truncate">
-                    {{ formatNumber(stats.purchaseRequestsTotal) }}
+                    <AnimatedNumber :value="stats.purchaseRequestsTotal" />
                   </div>
                   <div class="stat-label">
                     Mua sắm
@@ -103,6 +110,8 @@
             :md="4"
           >
             <el-card
+              v-tilt
+              v-ripple
               class="stat-card stat-clickable"
               shadow="hover"
               @click="$router.push('/maintenance')"
@@ -120,7 +129,7 @@
                 />
                 <template v-else>
                   <div class="stat-value text-truncate">
-                    {{ formatNumber(stats.repairTotal) }}
+                    <AnimatedNumber :value="stats.repairTotal" />
                   </div>
                   <div class="stat-label">
                     Sửa chữa
@@ -137,6 +146,8 @@
             :md="4"
           >
             <el-card
+              v-tilt
+              v-ripple
               class="stat-card stat-clickable"
               shadow="hover"
               @click="$router.push('/transfers')"
@@ -154,7 +165,7 @@
                 />
                 <template v-else>
                   <div class="stat-value text-truncate">
-                    {{ formatNumber(stats.transfersTotal) }}
+                    <AnimatedNumber :value="stats.transfersTotal" />
                   </div>
                   <div class="stat-label">
                     Điều chuyển
@@ -171,6 +182,8 @@
             :md="4"
           >
             <el-card
+              v-tilt
+              v-ripple
               class="stat-card stat-clickable"
               shadow="hover"
               @click="$router.push('/inventory')"
@@ -188,7 +201,7 @@
                 />
                 <template v-else>
                   <div class="stat-value text-truncate">
-                    {{ formatNumber(inventoryPending) }}
+                    <AnimatedNumber :value="inventoryPending" />
                   </div>
                   <div class="stat-label">
                     Kiểm kê
@@ -205,6 +218,8 @@
             :md="4"
           >
             <el-card
+              v-tilt
+              v-ripple
               class="stat-card stat-clickable"
               shadow="hover"
               @click="$router.push('/asset-disposals')"
@@ -222,7 +237,7 @@
                 />
                 <template v-else>
                   <div class="stat-value text-truncate">
-                    {{ formatNumber(disposalPending) }}
+                    <AnimatedNumber :value="disposalPending" />
                   </div>
                   <div class="stat-label">
                     Đề nghị thanh lý
@@ -239,6 +254,8 @@
             :md="4"
           >
             <el-card
+              v-tilt
+              v-ripple
               class="stat-card stat-clickable"
               shadow="hover"
               @click="handleLossDamageClick"
@@ -256,7 +273,7 @@
                 />
                 <template v-else>
                   <div class="stat-value text-truncate">
-                    {{ formatNumber(lostDamageTotals.total) }}
+                    <AnimatedNumber :value="lostDamageTotals.total" />
                   </div>
                   <div class="stat-label">
                     Mất / hư hỏng
@@ -274,6 +291,8 @@
             :md="4"
           >
             <el-card
+              v-tilt
+              v-ripple
               class="stat-card stat-clickable"
               shadow="hover"
               @click="$router.push('/procurements')"
@@ -291,7 +310,7 @@
                 />
                 <template v-else>
                   <div class="stat-value text-truncate">
-                    {{ formatNumber(stats.procurements) }}
+                    <AnimatedNumber :value="stats.procurements" />
                   </div>
                   <div class="stat-label">
                     Tăng tài sản
@@ -378,7 +397,10 @@
                 </div>
               </template>
 
-              <div class="responsive-table">
+              <div
+                v-stagger-rows
+                class="responsive-table"
+              >
                 <el-table
                   v-loading="loading"
                   :data="auditLogs"
@@ -460,6 +482,8 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { Box, ShoppingCart, Setting, Sort, List, Delete, Warning, Document } from '@element-plus/icons-vue';
 import VChart from 'vue-echarts';
+import AnimatedNumber from '@/components/animate/AnimatedNumber.vue';
+import GradientText from '@/components/animate/GradientText.vue';
 import * as dashboardService from '@/services/dashboard.service';
 import { inventoryService } from '@/services/inventory.service';
 import { assetService } from '@/services/asset.service';
@@ -928,6 +952,16 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
   font-size: 1.4rem;
   font-weight: 800;
   color: #0f172a;
+}
+
+.dashboard-title {
+  display: inline-block;
+}
+
+.dashboard-title :deep(.gradient-text__label) {
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
 }
 
 .header-subtitle {

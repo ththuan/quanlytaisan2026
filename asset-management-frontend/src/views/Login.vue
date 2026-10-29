@@ -1,9 +1,14 @@
 <template>
   <div class="login-container">
     <canvas ref="canvasRef" id="particle-canvas" />
+    <div class="login-orb login-orb--one" aria-hidden="true" />
+    <div class="login-orb login-orb--two" aria-hidden="true" />
 
     <div class="login-center">
-      <div class="form-card">
+      <div
+        v-stagger="{ delay: 120, step: 70, distance: 18 }"
+        class="form-card"
+      >
         <div class="login-header">
           <div class="logo-wrapper">
             <img
@@ -13,7 +18,9 @@
               @error="onLogoError"
             >
           </div>
-          <p class="sub-welcome">Phần mềm Quản lý Tài sản</p>
+          <p class="sub-welcome">
+            <GradientText text="Phần mềm Quản lý Tài sản" />
+          </p>
           <p class="school-name">Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ</p>
         </div>
 
@@ -98,7 +105,7 @@
             <span>{{ errorMessage }}</span>
           </div>
 
-          <button type="submit" class="btn-login" :disabled="loading">
+          <button v-ripple type="submit" class="btn-login" :disabled="loading">
             <span v-if="loading" class="spinner" />
             <span id="btn-login-text">{{ loading ? 'Đang xử lý...' : (totpRequired ? 'Xác nhận mã' : 'Đăng nhập ngay') }}</span>
           </button>
@@ -115,6 +122,7 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '@/stores/auth.store';
+import GradientText from '@/components/animate/GradientText.vue';
 
 import logoUrl from '@/login/logo-truong.jpg';
 
@@ -304,6 +312,43 @@ onMounted(() => { initCanvas(); });
   pointer-events: none;
 }
 
+.login-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.42;
+  z-index: 1;
+  pointer-events: none;
+  will-change: transform;
+  animation: login-orb-float 16s ease-in-out infinite alternate;
+}
+
+.login-orb--one {
+  width: 420px;
+  height: 420px;
+  top: -140px;
+  left: -120px;
+  background: radial-gradient(circle, #2563eb 0%, transparent 70%);
+}
+
+.login-orb--two {
+  width: 520px;
+  height: 520px;
+  right: -160px;
+  bottom: -200px;
+  background: radial-gradient(circle, #8b5cf6 0%, transparent 70%);
+  animation-delay: -7s;
+}
+
+@keyframes login-orb-float {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(34px, -28px, 0) scale(1.12);
+  }
+}
+
 .login-center {
   position: relative;
   z-index: 10;
@@ -353,6 +398,18 @@ onMounted(() => { initCanvas(); });
   font-weight: 600;
   margin: 0 0 4px;
   line-height: 1.5;
+}
+
+.sub-welcome :deep(.gradient-text__label) {
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-orb {
+    animation: none;
+  }
 }
 
 .school-name {

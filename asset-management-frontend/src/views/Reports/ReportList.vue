@@ -95,7 +95,10 @@
         </el-row>
       </div>
 
-      <div class="responsive-table">
+      <div
+        v-stagger-rows
+        class="responsive-table"
+      >
         <el-table
           v-loading="reportStore.loading"
           :data="reportStore.reports"
