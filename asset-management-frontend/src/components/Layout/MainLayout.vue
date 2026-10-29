@@ -695,12 +695,15 @@ const toggleSidebar = () => {
 
 .header-left .breadcrumb {
   min-width: 0;
+  flex-shrink: 0;
 }
 
 .breadcrumb {
   display: flex;
   align-items: center;
   min-width: 0;
+  flex-shrink: 0;
+  overflow: visible;
 }
 
 .breadcrumb-separator {
@@ -715,6 +718,7 @@ const toggleSidebar = () => {
   color: #64748b;
   font-weight: 400;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .breadcrumb-label--link {
