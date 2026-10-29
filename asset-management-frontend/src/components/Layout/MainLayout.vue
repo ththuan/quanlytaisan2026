@@ -188,22 +188,6 @@
                     <HomeFilled />
                   </el-icon>
                 </span>
-                <template
-                  v-for="(item, idx) in breadcrumbItems"
-                  :key="idx"
-                >
-                  <span class="breadcrumb-separator">/</span>
-                  <span
-                    class="breadcrumb-label"
-                    :class="{
-                      'breadcrumb-label--link': !!item.path,
-                      'breadcrumb-label--current': idx === breadcrumbItems.length - 1,
-                    }"
-                    @click="item.path && router.push(item.path)"
-                  >
-                    {{ item.label }}
-                  </span>
-                </template>
               </nav>
             </div>
             <div class="header-right">
@@ -284,7 +268,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
 import { House, HomeFilled, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, Warning, MagicStick } from '@element-plus/icons-vue';
 import NotificationBell from '@/components/Notifications/NotificationBell.vue';
@@ -298,54 +281,8 @@ import { FEATURES } from '@/constants/features';
 const router = useRouter();
 const authStore = useAuthStore();
 const effectsLite = useEffectsLite();
-const { t } = useI18n();
 const showTotpDialog = ref(false);
 const showChangePasswordDialog = ref(false);
-const ROUTE_NAME_LABELS: Record<string, string> = {
-  Assets: 'Tài sản',
-  Transfers: 'Điều chuyển',
-  Inventory: 'Kiểm kê',
-  Reports: 'Báo cáo thường niên',
-  LossDamageReport: 'Tài sản mất / hư hỏng',
-  Procurements: 'Tăng tài sản',
-  AssetDisposals: 'Thanh lý tài sản',
-  PurchaseRequestView: 'Đề nghị mua sắm',
-  RepairRequestView: 'Theo dõi sửa chữa',
-  StockDashboard: 'Kho vật tư',
-  StockHistory: 'Lịch sử kho',
-  Departments: 'Phòng ban',
-  Users: 'Người dùng',
-  Norms: 'Định mức tài sản',
-  AssetCategories: 'Danh mục tài sản',
-  SystemAdmin: 'Quản trị hệ thống',
-  Documentation: 'Tài liệu',
-  Support: 'Hỗ trợ',
-  Notifications: 'Thông báo',
-};
-
-const breadcrumbItems = computed(() => {
-  const route = router.currentRoute.value;
-  const meta = route.meta as { titleKey?: string; breadcrumbParent?: { path: string; titleKey: string } };
-  const items: { path?: string; label: string }[] = [];
-
-  if (route.name === 'Dashboard') return items;
-
-  const routeName = typeof route.name === 'string' ? route.name : '';
-  const resolveLabel = (titleKey?: string) => {
-    const translated = titleKey ? t(titleKey) : '';
-    if (translated && translated !== titleKey) return translated;
-    return ROUTE_NAME_LABELS[routeName] || translated || routeName;
-  };
-
-  const parent = meta?.breadcrumbParent;
-  if (parent) {
-    const parentLabel = t(parent.titleKey);
-    items.push({ path: parent.path, label: parentLabel && parentLabel !== parent.titleKey ? parentLabel : parent.path });
-  }
-  items.push({ label: resolveLabel(meta?.titleKey) });
-  return items;
-});
-
 const isStaffOrHead = computed(() => {
   const role = authStore.user?.role;
   return role === 'staff' || role === 'department_head';
@@ -704,46 +641,6 @@ const toggleSidebar = () => {
   min-width: 0;
   flex-shrink: 0;
   overflow: visible;
-}
-
-.breadcrumb-separator {
-  color: #cbd5e1;
-  margin: 0 10px;
-  font-weight: 700;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.breadcrumb-label {
-  color: #475569;
-  -webkit-text-fill-color: currentColor;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 999px;
-  padding: 2px 10px;
-  line-height: 1.6;
-  font-weight: 500;
-  white-space: nowrap;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 2;
-}
-
-.breadcrumb-label--link {
-  cursor: pointer;
-}
-
-.breadcrumb-label--link:hover {
-  color: #2563eb;
-  background: #eff6ff;
-  border-color: #bfdbfe;
-}
-
-.breadcrumb-label--current {
-  color: #1d4ed8;
-  background: #eff6ff;
-  border-color: #bfdbfe;
-  font-weight: 700;
 }
 
 .breadcrumb :deep(.el-breadcrumb) {

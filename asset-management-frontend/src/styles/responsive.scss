@@ -481,16 +481,6 @@ body {
   }
 
   /* Giữ breadcrumb trên mobile, cắt bớt nhãn dài nếu thiếu chỗ */
-  .breadcrumb-label {
-    max-width: 38vw;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .breadcrumb-separator {
-    margin: 0 6px;
-  }
-
   /* Thu gọn user info */
   .user-info .el-tag {
     display: none !important;
