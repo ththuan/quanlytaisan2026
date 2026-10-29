@@ -86,12 +86,20 @@
               <span>Tăng tài sản</span>
             </el-menu-item>
 
+            <el-menu-item
+              v-if="FEATURES.stockModule && authStore.user?.role === 'admin'"
+              index="/stock"
+            >
+              <el-icon><Box /></el-icon>
+              <span>Kho vật tư</span>
+            </el-menu-item>
+
             <el-divider
               v-if="authStore.user?.role === 'admin'"
               class="sidebar-divider"
             />
 
-            <!-- Các module phụ trợ (Sửa chữa, Mua sắm, Kho): tạm ẩn theo phạm vi hiện tại.
+            <!-- Các module phụ trợ (Sửa chữa, Mua sắm): tạm ẩn theo phạm vi hiện tại.
                Bật lại bằng FEATURES.auxiliaryModules = true trong src/constants/features.ts -->
             <el-menu-item
               v-if="FEATURES.auxiliaryModules && authStore.user?.role === 'admin'"
@@ -107,14 +115,6 @@
             >
               <el-icon><Tools /></el-icon>
               <span>{{ $t('menu.repairTracking') }}</span>
-            </el-menu-item>
-
-            <el-menu-item
-              v-if="FEATURES.stockModule && authStore.user?.role === 'admin'"
-              index="/stock"
-            >
-              <el-icon><Box /></el-icon>
-              <span>Kho vật tư</span>
             </el-menu-item>
 
             <el-menu-item
