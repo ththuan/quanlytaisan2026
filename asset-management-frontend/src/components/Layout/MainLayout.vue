@@ -184,20 +184,13 @@
                       </el-icon>
                     </span>
                   </el-breadcrumb-item>
-                  <template
+                  <el-breadcrumb-item
                     v-for="(item, idx) in breadcrumbItems"
                     :key="idx"
+                    :to="item.path ? { path: item.path } : undefined"
                   >
-                    <el-breadcrumb-item
-                      v-if="item.path"
-                      :to="item.path"
-                    >
-                      {{ item.label }}
-                    </el-breadcrumb-item>
-                    <el-breadcrumb-item v-else>
-                      {{ item.label }}
-                    </el-breadcrumb-item>
-                  </template>
+                    {{ item.label }}
+                  </el-breadcrumb-item>
                 </el-breadcrumb>
               </div>
             </div>
@@ -296,6 +289,28 @@ const effectsLite = useEffectsLite();
 const { t } = useI18n();
 const showTotpDialog = ref(false);
 const showChangePasswordDialog = ref(false);
+const ROUTE_NAME_LABELS: Record<string, string> = {
+  Assets: 'Tài sản',
+  Transfers: 'Điều chuyển',
+  Inventory: 'Kiểm kê',
+  Reports: 'Báo cáo thường niên',
+  LossDamageReport: 'Tài sản mất / hư hỏng',
+  Procurements: 'Tăng tài sản',
+  AssetDisposals: 'Thanh lý tài sản',
+  PurchaseRequestView: 'Đề nghị mua sắm',
+  RepairRequestView: 'Theo dõi sửa chữa',
+  StockDashboard: 'Kho vật tư',
+  StockHistory: 'Lịch sử kho',
+  Departments: 'Phòng ban',
+  Users: 'Người dùng',
+  Norms: 'Định mức tài sản',
+  AssetCategories: 'Danh mục tài sản',
+  SystemAdmin: 'Quản trị hệ thống',
+  Documentation: 'Tài liệu',
+  Support: 'Hỗ trợ',
+  Notifications: 'Thông báo',
+};
+
 const breadcrumbItems = computed(() => {
   const route = router.currentRoute.value;
   const meta = route.meta as { titleKey?: string; breadcrumbParent?: { path: string; titleKey: string } };
@@ -303,12 +318,19 @@ const breadcrumbItems = computed(() => {
 
   if (route.name === 'Dashboard') return items;
 
+  const routeName = typeof route.name === 'string' ? route.name : '';
+  const resolveLabel = (titleKey?: string) => {
+    const translated = titleKey ? t(titleKey) : '';
+    if (translated && translated !== titleKey) return translated;
+    return ROUTE_NAME_LABELS[routeName] || translated || routeName;
+  };
+
   const parent = meta?.breadcrumbParent;
   if (parent) {
-    items.push({ path: parent.path, label: t(parent.titleKey) });
+    const parentLabel = t(parent.titleKey);
+    items.push({ path: parent.path, label: parentLabel && parentLabel !== parent.titleKey ? parentLabel : parent.path });
   }
-  const titleKey = meta?.titleKey;
-  items.push({ label: titleKey ? t(titleKey) : (typeof route.name === 'string' ? route.name : '') });
+  items.push({ label: resolveLabel(meta?.titleKey) });
   return items;
 });
 
