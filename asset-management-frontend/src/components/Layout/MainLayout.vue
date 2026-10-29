@@ -171,28 +171,40 @@
                 class="sidebar-toggle"
                 @click="toggleSidebar"
               />
-              <div class="breadcrumb">
-                <el-breadcrumb separator="/">
-                  <el-breadcrumb-item :to="{ path: '/' }">
-                    <span
-                      class="breadcrumb-home-chip"
-                      :title="$t('common.home')"
-                      aria-label="Trang chủ"
-                    >
-                      <el-icon>
-                        <HomeFilled />
-                      </el-icon>
-                    </span>
-                  </el-breadcrumb-item>
-                  <el-breadcrumb-item
-                    v-for="(item, idx) in breadcrumbItems"
-                    :key="idx"
-                    :to="item.path ? { path: item.path } : undefined"
+              <nav
+                class="breadcrumb"
+                aria-label="Breadcrumb"
+              >
+                <span
+                  class="breadcrumb-home-chip"
+                  :title="$t('common.home')"
+                  aria-label="Trang chủ"
+                  role="link"
+                  tabindex="0"
+                  @click="router.push('/')"
+                  @keydown.enter="router.push('/')"
+                >
+                  <el-icon>
+                    <HomeFilled />
+                  </el-icon>
+                </span>
+                <template
+                  v-for="(item, idx) in breadcrumbItems"
+                  :key="idx"
+                >
+                  <span class="breadcrumb-separator">/</span>
+                  <span
+                    class="breadcrumb-label"
+                    :class="{
+                      'breadcrumb-label--link': !!item.path,
+                      'breadcrumb-label--current': idx === breadcrumbItems.length - 1,
+                    }"
+                    @click="item.path && router.push(item.path)"
                   >
                     {{ item.label }}
-                  </el-breadcrumb-item>
-                </el-breadcrumb>
-              </div>
+                  </span>
+                </template>
+              </nav>
             </div>
             <div class="header-right">
               <el-button
@@ -688,6 +700,34 @@ const toggleSidebar = () => {
 .breadcrumb {
   display: flex;
   align-items: center;
+  min-width: 0;
+}
+
+.breadcrumb-separator {
+  color: #cbd5e1;
+  margin: 0 10px;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.breadcrumb-label {
+  color: #64748b;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.breadcrumb-label--link {
+  cursor: pointer;
+}
+
+.breadcrumb-label--link:hover {
+  color: #2563eb;
+}
+
+.breadcrumb-label--current {
+  color: #0f172a;
+  font-weight: 700;
 }
 
 .breadcrumb :deep(.el-breadcrumb) {
@@ -813,6 +853,8 @@ const toggleSidebar = () => {
 .breadcrumb-home-chip {
   width: 38px;
   height: 38px;
+  cursor: pointer;
+  flex-shrink: 0;
   border-radius: 12px;
   display: inline-flex;
   align-items: center;
