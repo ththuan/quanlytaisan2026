@@ -11,6 +11,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { animate, motionValue, useInView, useReducedMotion } from 'motion-v';
+import { useEffectsLite } from '@/utils/effects';
 
 const props = withDefaults(
   defineProps<{
@@ -30,7 +31,13 @@ const props = withDefaults(
 
 const root = ref<HTMLElement | null>(null);
 const reduce = useReducedMotion();
+const lite = useEffectsLite();
 const isInView = useInView(root);
+
+const countTransition = {
+  duration: 0.9,
+  ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+};
 
 const formatter = new Intl.NumberFormat('vi-VN', {
   minimumFractionDigits: props.decimalPlaces,
@@ -54,20 +61,14 @@ const run = () => {
   if (hasRun) return;
   hasRun = true;
 
-  if (reduce.value) {
+  if (reduce.value || lite.value) {
     motion.jump(props.value);
     display.value = finalText.value;
     return;
   }
 
   const timer = window.setTimeout(() => {
-    const controls = animate(motion, props.value, {
-      type: 'spring',
-      stiffness: 90,
-      damping: 50,
-      restDelta: 0.001,
-      restSpeed: 0.01,
-    });
+    const controls = animate(motion, props.value, countTransition);
     stopAnimation = () => controls.stop();
   }, props.delay);
 
@@ -82,6 +83,13 @@ watch(isInView, (now) => {
   if (now) run();
 });
 
+watch(lite, (now) => {
+  if (!now) return;
+  stopAnimation?.();
+  motion.jump(props.value);
+  display.value = finalText.value;
+});
+
 watch(
   () => props.value,
   (value) => {
@@ -91,18 +99,12 @@ watch(
       return;
     }
     if (stopAnimation) stopAnimation();
-    if (reduce.value) {
+    if (reduce.value || lite.value) {
       motion.jump(value);
       display.value = finalText.value;
       return;
     }
-    const controls = animate(motion, value, {
-      type: 'spring',
-      stiffness: 90,
-      damping: 50,
-      restDelta: 0.001,
-      restSpeed: 0.01,
-    });
+    const controls = animate(motion, value, countTransition);
     stopAnimation = () => controls.stop();
   },
 );

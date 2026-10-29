@@ -14,6 +14,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { initPWA } from '@/pwa';
 import { initUpdateCheck } from '@/update-check';
 import { installAnimateDirectives } from '@/directives/animate';
+import { initEffectsMode, watchPerformance } from '@/utils/effects';
 
 import { use } from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -30,6 +31,8 @@ use([
   PieChart,
   GraphChart,
 ]);
+
+initEffectsMode();
 
 const app = createApp(App);
 const pinia = createPinia();
@@ -76,3 +79,5 @@ app.config.errorHandler = (err: unknown, _instance, info) => {
 };
 
 app.mount('#app');
+
+watchPerformance();

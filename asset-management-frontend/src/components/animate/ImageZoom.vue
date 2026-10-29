@@ -22,6 +22,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { motion, useReducedMotion } from 'motion-v';
+import { effectsLiteNow } from '@/utils/effects';
 
 const props = withDefaults(
   defineProps<{
@@ -68,7 +69,7 @@ const updateOrigin = (event: MouseEvent) => {
 };
 
 const handleEnter = () => {
-  if (props.disabled || !props.zoomOnHover || reduce.value) return;
+  if (props.disabled || !props.zoomOnHover || reduce.value || effectsLiteNow()) return;
   zoomed.value = true;
 };
 
@@ -83,7 +84,7 @@ const handleMove = (event: MouseEvent) => {
 };
 
 const handleClick = (event: MouseEvent) => {
-  if (props.disabled || !props.zoomOnClick || reduce.value) return;
+  if (props.disabled || !props.zoomOnClick || reduce.value || effectsLiteNow()) return;
   updateOrigin(event);
   zoomed.value = !zoomed.value;
 };

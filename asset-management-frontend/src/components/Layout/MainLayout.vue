@@ -202,6 +202,15 @@
               </div>
             </div>
             <div class="header-right">
+              <el-button
+                :icon="MagicStick"
+                circle
+                size="small"
+                class="effects-toggle"
+                :class="{ 'effects-toggle--active': effectsLite }"
+                :title="effectsLite ? 'Bật lại hiệu ứng' : 'Giảm hiệu ứng để mượt hơn'"
+                @click="toggleEffectsMode"
+              />
               <NotificationBell />
 
               <el-dropdown class="user-dropdown">
@@ -272,9 +281,10 @@ import { computed, nextTick, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
-import { House, HomeFilled, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, Warning } from '@element-plus/icons-vue';
+import { House, HomeFilled, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, Warning, MagicStick } from '@element-plus/icons-vue';
 import NotificationBell from '@/components/Notifications/NotificationBell.vue';
 import ScrollProgress from '@/components/animate/ScrollProgress.vue';
+import { toggleEffectsMode, useEffectsLite } from '@/utils/effects';
 import TotpSetupDialog from '@/components/Auth/TotpSetupDialog.vue';
 import ChangePasswordDialog from '@/components/Auth/ChangePasswordDialog.vue';
 import { FEATURES } from '@/constants/features';
@@ -282,6 +292,7 @@ import { FEATURES } from '@/constants/features';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const effectsLite = useEffectsLite();
 const { t } = useI18n();
 const showTotpDialog = ref(false);
 const showChangePasswordDialog = ref(false);
@@ -472,8 +483,7 @@ const toggleSidebar = () => {
 .sidebar-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.42);
   z-index: 1999;
 }
 
@@ -602,9 +612,7 @@ const toggleSidebar = () => {
 
 .el-header {
   height: 56px !important;
-  background-color: rgba(255, 255, 255, 0.9);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0.97);
   border-bottom: 1px solid #f1f5f9;
   display: flex;
   align-items: center;
@@ -682,6 +690,31 @@ const toggleSidebar = () => {
 .sidebar-toggle:hover {
   background: #e2e8f0;
   color: #0f172a;
+}
+
+.effects-toggle {
+  border: none;
+  background: #f1f5f9;
+  color: #64748b;
+  width: 32px;
+  height: 32px;
+}
+
+.effects-toggle:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.effects-toggle--active {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+@media (max-width: 768px) {
+  .effects-toggle {
+    width: 36px;
+    height: 36px;
+  }
 }
 
 .breadcrumb :deep(.el-breadcrumb__inner) {
@@ -851,8 +884,7 @@ const toggleSidebar = () => {
 /* Desktop-specific optimizations to prevent tab-switch flash */
 @media (min-width: 1024px) {
   .el-main {
-    /* Force GPU compositing layer on desktop */
-    will-change: scroll-position;
+    /* Keep main scrollable without a permanent scroll-position hint */
     transform: translateZ(0);
   }
 }

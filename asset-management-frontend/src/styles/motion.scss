@@ -327,3 +327,46 @@
     transition: none !important;
   }
 }
+
+/* --- Effects-lite mode: auto on low-end devices, toggle in header --- */
+.effects-lite .gradient-text__label {
+  animation: none !important;
+  background-position: 50% 50% !important;
+}
+
+.effects-lite .login-orb {
+  animation: none !important;
+  opacity: 0.22 !important;
+}
+
+.effects-lite .el-skeleton__item {
+  animation: none !important;
+  background: #f1f5f9 !important;
+}
+
+.effects-lite .particles-burst {
+  display: none !important;
+}
+
+.effects-lite .tabs-sliding-highlight,
+.effects-lite .auto-height,
+.effects-lite .menu-highlight {
+  transition: none !important;
+}
+
+.effects-lite .notif-enter-active,
+.effects-lite .notif-leave-active,
+.effects-lite .notif-move {
+  transition: none !important;
+}
+
+.effects-lite .scroll-progress__bar {
+  box-shadow: none !important;
+}
+
+.effects-lite .route-enter-active,
+.effects-lite .route-leave-active,
+.effects-lite .app-view-enter-active,
+.effects-lite .app-view-leave-active {
+  transition-duration: 0.12s !important;
+}

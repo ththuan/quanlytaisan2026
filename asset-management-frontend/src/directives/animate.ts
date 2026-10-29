@@ -1,4 +1,5 @@
 import type { App, Directive, DirectiveBinding } from 'vue';
+import { effectsLiteNow } from '@/utils/effects';
 
 type StaggerOptions = {
   selector?: string;
@@ -19,6 +20,8 @@ const prefersReducedMotion = () =>
   typeof window !== 'undefined' &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+const skipEffects = () => prefersReducedMotion() || effectsLiteNow();
+
 const staggerRows = new WeakMap<HTMLElement, MutationObserver>();
 
 const optionNumber = (
@@ -33,7 +36,7 @@ const optionNumber = (
 
 export const vStagger: Directive<HTMLElement, StaggerOptions | number | undefined> = {
   mounted(el, binding) {
-    if (prefersReducedMotion()) return;
+    if (skipEffects()) return;
 
     const selector = typeof binding.value === 'object' ? binding.value?.selector : undefined;
     const delay = optionNumber(binding, 'delay', 0);
@@ -62,7 +65,7 @@ export const vStagger: Directive<HTMLElement, StaggerOptions | number | undefine
 };
 
 const animateTableRows = (el: HTMLElement) => {
-  if (prefersReducedMotion()) return;
+  if (skipEffects()) return;
   const rows = el.querySelectorAll<HTMLElement>('tr.el-table__row');
   rows.forEach((row, index) => {
     if (row.dataset.staggered === 'true') return;
@@ -98,25 +101,27 @@ export const vStaggerRows: Directive<HTMLElement> = {
 };
 
 const applyTilt = (el: HTMLElement, binding: DirectiveBinding<TiltOptions | undefined>) => {
-  el.style.willChange = 'transform';
-  el.style.transformStyle = 'preserve-3d';
-
   const maxTilt = binding.value?.maxTilt ?? 6;
   const lift = binding.value?.lift ?? 4;
   const scale = binding.value?.scale ?? 1.01;
   const perspective = binding.value?.perspective ?? 900;
 
-  const onMove = (event: MouseEvent) => {
-    if (prefersReducedMotion()) return;
+  let frame = 0;
+  let pointerX = 0;
+  let pointerY = 0;
+
+  const update = () => {
+    frame = 0;
+    if (skipEffects()) return;
+
     const rect = el.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
 
-    const x = (event.clientX - rect.left) / rect.width;
-    const y = (event.clientY - rect.top) / rect.height;
+    const x = (pointerX - rect.left) / rect.width;
+    const y = (pointerY - rect.top) / rect.height;
     const rotateX = (0.5 - y) * maxTilt * 2;
     const rotateY = (x - 0.5) * maxTilt * 2;
 
-    el.style.transition = 'transform 120ms ease-out';
     el.style.transform =
       `perspective(${perspective}px) ` +
       `rotateX(${rotateX.toFixed(2)}deg) ` +
@@ -124,15 +129,36 @@ const applyTilt = (el: HTMLElement, binding: DirectiveBinding<TiltOptions | unde
       `translateY(-${lift}px) scale(${scale})`;
   };
 
-  const onLeave = () => {
-    el.style.transition = 'transform 300ms cubic-bezier(0.22, 1, 0.36, 1)';
-    el.style.transform = '';
+  const onMove = (event: MouseEvent) => {
+    if (skipEffects()) return;
+    pointerX = event.clientX;
+    pointerY = event.clientY;
+    if (!frame) frame = requestAnimationFrame(update);
   };
 
+  const onEnter = () => {
+    if (skipEffects()) return;
+    el.style.willChange = 'transform';
+    el.style.transition = 'transform 140ms ease-out';
+  };
+
+  const onLeave = () => {
+    if (frame) {
+      cancelAnimationFrame(frame);
+      frame = 0;
+    }
+    el.style.transition = 'transform 300ms cubic-bezier(0.22, 1, 0.36, 1)';
+    el.style.transform = '';
+    el.style.willChange = '';
+  };
+
+  el.addEventListener('mouseenter', onEnter);
   el.addEventListener('mousemove', onMove);
   el.addEventListener('mouseleave', onLeave);
 
   const cleanup = () => {
+    if (frame) cancelAnimationFrame(frame);
+    el.removeEventListener('mouseenter', onEnter);
     el.removeEventListener('mousemove', onMove);
     el.removeEventListener('mouseleave', onLeave);
     el.style.transform = '';
@@ -236,7 +262,7 @@ const revealObservers = new WeakMap<HTMLElement, IntersectionObserver>();
 
 export const vReveal: Directive<HTMLElement, RevealOptions | number | undefined> = {
   mounted(el, binding) {
-    if (prefersReducedMotion()) return;
+    if (skipEffects()) return;
 
     const options = typeof binding.value === 'number' ? { delay: binding.value } : binding.value;
     const delay = options?.delay ?? 0;
@@ -287,7 +313,7 @@ export const vRipple: Directive<HTMLElement, string | undefined> = {
     el.style.overflow = 'hidden';
 
     const onPointerDown = (event: PointerEvent) => {
-      if (prefersReducedMotion()) return;
+      if (skipEffects()) return;
       const rect = el.getBoundingClientRect();
       const size = Math.max(rect.width, rect.height) * 2;
       const ripple = document.createElement('span');

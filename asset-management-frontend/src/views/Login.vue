@@ -119,6 +119,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import GradientText from '@/components/animate/GradientText.vue';
 import InputOTP from '@/components/animate/InputOTP.vue';
 import AutoHeight from '@/components/animate/AutoHeight.vue';
+import { effectsLiteNow } from '@/utils/effects';
 
 import logoUrl from '@/login/logo-truong.jpg';
 
@@ -222,8 +223,11 @@ function initCanvas() {
   if (!ctx) return;
 
   let w: number, h: number;
-  const COUNT = 100;
+  const lite = effectsLiteNow();
+  const COUNT = lite ? 36 : 80;
   const MAX_DIST = 140;
+  const MAX_DIST_SQ = MAX_DIST * MAX_DIST;
+  const drawLinks = !lite;
 
   const resize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; };
   resize();
@@ -249,18 +253,21 @@ function initCanvas() {
       ctx.fillStyle = `rgba(180, 210, 255, ${p.alpha})`;
       ctx.fill();
     }
-    for (let i = 0; i < particles.length; i++) {
-      for (let j = i + 1; j < particles.length; j++) {
-        const dx = particles[i].x - particles[j].x;
-        const dy = particles[i].y - particles[j].y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < MAX_DIST) {
-          ctx.beginPath();
-          ctx.moveTo(particles[i].x, particles[i].y);
-          ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.strokeStyle = `rgba(100, 180, 255, ${(1 - dist / MAX_DIST) * 0.28})`;
-          ctx.lineWidth = 0.6;
-          ctx.stroke();
+    if (drawLinks && !effectsLiteNow()) {
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const distSq = dx * dx + dy * dy;
+          if (distSq < MAX_DIST_SQ) {
+            const dist = Math.sqrt(distSq);
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(100, 180, 255, ${(1 - dist / MAX_DIST) * 0.28})`;
+            ctx.lineWidth = 0.6;
+            ctx.stroke();
+          }
         }
       }
     }
@@ -311,8 +318,7 @@ onMounted(() => { initCanvas(); });
 .login-orb {
   position: fixed;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.42;
+  opacity: 0.3;
   z-index: 1;
   pointer-events: none;
   will-change: transform;

@@ -4,7 +4,7 @@
     aria-hidden="true"
   >
     <motion.div
-      v-if="reduce"
+      v-if="instant"
       class="scroll-progress__bar"
       :style="{ scaleX: scrollYProgress }"
     />
@@ -17,11 +17,14 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { motion, useReducedMotion, useScroll, useSpring } from 'motion-v';
+import { useEffectsLite } from '@/utils/effects';
 
 const container = ref<HTMLElement | null>(null);
 const reduce = useReducedMotion();
+const lite = useEffectsLite();
+const instant = computed(() => reduce.value || lite.value);
 
 const { scrollYProgress } = useScroll({ container });
 const smoothProgress = useSpring(scrollYProgress, {
