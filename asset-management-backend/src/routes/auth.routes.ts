@@ -5,11 +5,13 @@ import { validateBody } from '../middleware/validation';
 import { registerSchema, loginSchema, changePasswordSchema } from '../utils/validators';
 import rateLimit from 'express-rate-limit';
 import Joi from 'joi';
+import { createRateLimitStore } from '../config/rateLimiter';
 
 const router = Router();
 
 // Rate limiter chuyên dùng cho 2FA: max 5 lần / 15 phút
 const twoFaLimiter = rateLimit({
+  store: createRateLimitStore('2fa'),
   windowMs: 15 * 60 * 1000,
   max: 5,
   message: { success: false, message: 'Quá nhiều lần thử xác thực. Vui lòng thử lại sau 15 phút.' },

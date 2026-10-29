@@ -15,14 +15,15 @@ export interface RecordSignatureInput {
 }
 
 const MAX_SIGNATURE_LENGTH = 2_000_000; // ~1.5MB base64
+const SIGNATURE_DATA_URL = /^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
 
-/** Kiểm tra chuỗi ảnh chữ ký hợp lệ (data URL ảnh). */
+/** Kiểm tra chuỗi ảnh chữ ký hợp lệ (chỉ raster data URL, không SVG/HTML). */
 export function isValidSignatureImage(input: unknown): input is string {
   return (
     typeof input === 'string' &&
-    input.startsWith('data:image/') &&
     input.length > 50 &&
-    input.length <= MAX_SIGNATURE_LENGTH
+    input.length <= MAX_SIGNATURE_LENGTH &&
+    SIGNATURE_DATA_URL.test(input)
   );
 }
 

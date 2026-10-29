@@ -59,16 +59,21 @@ const devOrigins = [
   'http://localhost:5173',
   'https://localhost:5173',
 ];
+const allowAllOrigins = envConfig.corsOrigin === '*' && envConfig.nodeEnv !== 'production';
 const productionOrigins = envConfig.corsOrigin === '*'
-  ? []
+  ? (envConfig.frontendUrl ? [envConfig.frontendUrl] : [])
   : envConfig.corsOrigin.split(',').map((o) => o.trim()).filter(Boolean);
+
+if (envConfig.nodeEnv === 'production' && envConfig.corsOrigin === '*') {
+  logger.warn('[cors] CORS_ORIGIN=* trong production; chỉ cho phép FRONTEND_URL. Hãy đặt CORS_ORIGIN rõ ràng.');
+}
 
 app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
 
-      if (envConfig.corsOrigin === '*') {
+      if (allowAllOrigins) {
         return callback(null, true);
       }
 
@@ -87,7 +92,7 @@ app.use(
         }
       }
 
-      if (productionOrigins.includes(origin) || devOrigins.includes(origin)) {
+      if (productionOrigins.includes(origin) || (envConfig.nodeEnv === 'development' && devOrigins.includes(origin))) {
         return callback(null, true);
       }
       callback(new Error('Not allowed by CORS'));
@@ -192,12 +197,14 @@ app.use('/api', routes);
 app.use('/scan', scanRoutes);
 
 // Swagger API Documentation (tùy chọn - bỏ qua nếu thiếu module)
-import('./swagger')
-  .then(({ setupSwagger }) => setupSwagger(app as Express))
-  .catch((e: unknown) => {
-    const msg = e instanceof Error ? e.message : String(e);
-    logger.warn('[swagger] Bỏ qua (thiếu swagger-ui-express/swagger-jsdoc): %s', msg);
-  });
+if (envConfig.nodeEnv !== 'production' || process.env.SWAGGER_ENABLED === 'true') {
+  import('./swagger')
+    .then(({ setupSwagger }) => setupSwagger(app as Express))
+    .catch((e: unknown) => {
+      const msg = e instanceof Error ? e.message : String(e);
+      logger.warn('[swagger] Bỏ qua (thiếu swagger-ui-express/swagger-jsdoc): %s', msg);
+    });
+}
 
 // Serve static files from storage/public with compression and caching
 const storagePath = path.join(__dirname, '../storage/public');

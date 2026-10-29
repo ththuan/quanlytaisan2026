@@ -30,6 +30,8 @@ export const getAllAssets = async (req: AuthRequest, res: Response, next: NextFu
     if (user.role !== 'admin' && user.role !== 'director') {
       if (user.department_id) {
         query.current_department_id = String(user.department_id);
+        // Cán bộ/trưởng đơn vị không được tự mở rộng sang đơn vị con.
+        query.include_children = 'false';
         // Không ẩn tài sản đã thanh lý - viên chức/trưởng đơn vị có quyền xem tài sản đã thanh lý của đơn vị mình
       } else {
         // Nếu user không có department_id, trả về danh sách rỗng
@@ -289,7 +291,14 @@ export const getPendingDisposalGrouped = async (req: Request, res: Response, nex
   try {
     const user = (req as any).user;
     // Staff/Head chỉ xem tài sản của phòng mình
-    const departmentId = ['staff', 'department_head'].includes(user?.role) ? user?.department_id : undefined;
+    let departmentId: number | undefined;
+    if (['staff', 'department_head'].includes(user?.role)) {
+      if (!user?.department_id) {
+        res.status(403).json({ success: false, message: 'Tài khoản chưa được gán đơn vị.' });
+        return;
+      }
+      departmentId = user.department_id;
+    }
     const data = await assetService.getPendingDisposalGrouped(departmentId);
     res.status(200).json({ success: true, data });
   } catch (error) {
@@ -438,9 +447,12 @@ export const getStatistics = async (req: AuthRequest, res: Response, next: NextF
 
     // Phân quyền: admin và giám hiệu xem toàn bộ; cán bộ/trưởng đơn vị chỉ xem phòng ban mình
     if (user.role !== 'admin' && user.role !== 'director') {
-      if (user.department_id) {
-        query.current_department_id = String(user.department_id);
+      if (!user.department_id) {
+        res.status(403).json({ success: false, message: 'Tài khoản chưa được gán đơn vị.' });
+        return;
       }
+      query.current_department_id = String(user.department_id);
+      query.include_children = 'false';
     }
 
     const statistics = await assetService.getStatistics(query);

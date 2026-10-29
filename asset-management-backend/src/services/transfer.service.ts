@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
 import { AssetTransfer, Asset, Department, User, RequestApproval, AssetAssignment } from '../models';
-import { NotFoundError, ForbiddenError, ConflictError } from '../utils/errorHandler';
+import { NotFoundError, ForbiddenError, ConflictError, ValidationError } from '../utils/errorHandler';
 import { getPaginationParams, buildPaginationResult, getOffset, PaginationResult } from '../utils/pagination';
 import sequelize from '../config/database';
 import { UserRole } from '../models/User';
@@ -140,11 +140,12 @@ class TransferService {
       throw new NotFoundError('Destination department not found');
     }
 
-    // Set from_department_id from asset's current department if not provided
-    const fromDepartmentId = data.from_department_id || asset.current_department_id;
-    const fromDepartment = fromDepartmentId
-      ? await Department.findByPk(fromDepartmentId, { attributes: ['id', 'campus'] })
-      : null;
+    // Luôn lấy đơn vị nguồn từ tài sản; không tin from_department_id do client gửi.
+    const fromDepartmentId = asset.current_department_id;
+    if (!fromDepartmentId) {
+      throw new ValidationError('Tài sản chưa thuộc đơn vị nào nên không thể điều chuyển.');
+    }
+    const fromDepartment = await Department.findByPk(fromDepartmentId, { attributes: ['id', 'campus'] });
     const fromCampus = (fromDepartment as any)?.campus || (asset as any).campus || 'main';
     const toCampus = (toDepartment as any).campus || 'main';
 
@@ -153,8 +154,8 @@ class TransferService {
       if (!requester.department_id) {
         throw new ForbiddenError('Bạn chưa được gán phòng ban, không thể tạo điều chuyển');
       }
-      if (fromDepartmentId !== requester.department_id) {
-        throw new ForbiddenError('Bạn chỉ có thể tạo điều chuyển từ phòng ban của mình');
+      if (Number(fromDepartmentId) !== Number(requester.department_id)) {
+        throw new ForbiddenError('Bạn chỉ có thể tạo điều chuyển tài sản thuộc phòng ban của mình');
       }
     }
 

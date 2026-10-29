@@ -2,12 +2,11 @@ import speakeasy from 'speakeasy';
 import qrcode from 'qrcode';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { Op } from 'sequelize';
 import { User, Department, AuditLog, AuthSession } from '../models';
 import { UnauthorizedError, ConflictError, NotFoundError, ValidationError } from '../utils/errorHandler';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken, JWTPayload } from '../utils/jwt.utils';
 import jwtConfig from '../config/jwt';
-import envConfig from '../config/env';
-import { SYSTEM_ADMIN_USERNAME } from '../config/adminCredentials';
 
 // Short-lived token issued after password verification when 2FA is enabled.
 const TEMP_TOKEN_EXPIRY = '5m';
@@ -156,9 +155,13 @@ class AuthService {
     // If 2FA is enabled, return a short-lived temp token; secret is verified in validateTotpLogin
     if (user.totp_enabled) {
       const tempToken = jwt.sign(
-        { id: user.id, purpose: TEMP_TOKEN_PURPOSE },
+        { id: user.id, purpose: TEMP_TOKEN_PURPOSE, token_type: '2fa_temp' },
         jwtConfig.secret,
-        { expiresIn: TEMP_TOKEN_EXPIRY }
+        {
+          expiresIn: TEMP_TOKEN_EXPIRY,
+          issuer: jwtConfig.issuer,
+          algorithm: jwtConfig.algorithm,
+        }
       );
       return { requires_2fa: true, temp_token: tempToken };
     }
@@ -189,13 +192,6 @@ class AuthService {
 
     if (!user) {
       throw new NotFoundError('User not found');
-    }
-
-    // Tài khoản admin hệ thống có mật khẩu cố định Admin@123 — không cho đổi qua API.
-    if (user.username === SYSTEM_ADMIN_USERNAME) {
-      throw new ValidationError(
-        'Tài khoản admin hệ thống có mật khẩu cố định Admin@123 và không thể thay đổi.'
-      );
     }
 
     // Verify old password
@@ -266,6 +262,9 @@ class AuthService {
   async generateTotpSetup(userId: number): Promise<{ qrCodeUrl: string; secret: string }> {
     const user = await User.findByPk(userId);
     if (!user) throw new NotFoundError('User not found');
+    if (user.totp_enabled) {
+      throw new ValidationError('Xác thực 2 lớp đang bật. Vui lòng tắt trước khi thiết lập lại.');
+    }
 
     const secret = speakeasy.generateSecret({
       name: `Quản lý tài sản (${user.username})`,
@@ -280,7 +279,7 @@ class AuthService {
   }
 
   /** Verify the 6-digit TOTP code and enable 2FA for the user. */
-  async enableTotp(userId: number, token: string): Promise<void> {
+  async enableTotp(userId: number, token: string, currentSessionId?: string): Promise<void> {
     const user = await User.findByPk(userId);
     if (!user) throw new NotFoundError('User not found');
     if (!user.totp_secret) throw new ValidationError('2FA setup not started. Please start setup first.');
@@ -295,10 +294,22 @@ class AuthService {
     if (!verified) throw new UnauthorizedError('Mã xác minh không đúng. Vui lòng thử lại.');
 
     await user.update({ totp_enabled: true });
+
+    // Bật 2FA là thay đổi mức bảo mật: thu hồi các phiên khác, giữ phiên hiện tại.
+    await AuthSession.update(
+      { revoked_at: new Date() },
+      {
+        where: {
+          user_id: userId,
+          revoked_at: null,
+          ...(currentSessionId ? { id: { [Op.ne]: currentSessionId } } : {}),
+        },
+      },
+    );
   }
 
   /** Disable 2FA for the user (requires current password for safety). */
-  async disableTotp(userId: number, password: string): Promise<void> {
+  async disableTotp(userId: number, password: string, currentSessionId?: string): Promise<void> {
     const user = await User.findByPk(userId);
     if (!user) throw new NotFoundError('User not found');
 
@@ -306,6 +317,18 @@ class AuthService {
     if (!isPasswordValid) throw new UnauthorizedError('Mật khẩu không đúng.');
 
     await user.update({ totp_secret: null, totp_enabled: false });
+
+    // Tắt 2FA cũng thu hồi các phiên khác, giữ phiên hiện tại.
+    await AuthSession.update(
+      { revoked_at: new Date() },
+      {
+        where: {
+          user_id: userId,
+          revoked_at: null,
+          ...(currentSessionId ? { id: { [Op.ne]: currentSessionId } } : {}),
+        },
+      },
+    );
   }
 
   /** Complete the 2FA login: validate temp_token + TOTP code, then return real tokens. */
@@ -327,7 +350,7 @@ class AuthService {
     const user = await User.findByPk(decoded.id, {
       include: [{ model: Department, as: 'department', attributes: ['id', 'name', 'type'] }],
     });
-    if (!user || !user.totp_enabled || !user.totp_secret) {
+    if (!user || !user.is_active || !user.totp_enabled || !user.totp_secret) {
       throw new UnauthorizedError('Không thể xác thực.');
     }
 

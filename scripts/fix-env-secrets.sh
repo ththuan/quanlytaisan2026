@@ -41,11 +41,13 @@ if [ -z "$DP" ] || [ "$DP" = "Ctec@123" ]; then
 fi
 
 AP=$(get_key ADMIN_PASSWORD)
-if [ "$AP" != "Admin@123" ]; then
-    AP="Admin@123"
+if [ -z "$AP" ]; then
+    AP=$(gen_pw)
     set_key ADMIN_PASSWORD "$AP"
-    echo "[OK] Đã đặt ADMIN_PASSWORD cố định = Admin@123"
+    echo "[OK] Da sinh ADMIN_PASSWORD moi (chi dung khi tao admin lan dau)"
     changed=1
+elif [ "$AP" = "Admin@123" ]; then
+    echo "[WARN] ADMIN_PASSWORD dang la mac dinh. Hay doi mat khau admin qua giao dien hoac dat ADMIN_PASSWORD moi truoc khi tao admin moi."
 fi
 
 if [ "$changed" -eq 0 ]; then

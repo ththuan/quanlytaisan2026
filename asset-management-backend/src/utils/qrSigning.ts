@@ -15,6 +15,9 @@ import crypto from 'crypto';
 /** Bắt buộc token hợp lệ trên trang tra cứu công khai? (mặc định: có) */
 export const QR_REQUIRE_SIGNATURE = (process.env.QR_REQUIRE_SIGNATURE ?? 'true') !== 'false';
 
+/** Cho phép tem QR cũ không có token? Mặc định tắt để chống dò mã tài sản. */
+export const QR_ALLOW_LEGACY_NO_TOKEN = process.env.QR_ALLOW_LEGACY_NO_TOKEN === 'true';
+
 /** Sinh token ngẫu nhiên, duy nhất cho một QR (8 ký tự base64url — ngắn để QR bớt dày, dễ quét). */
 export function generateQrToken(): string {
   return crypto.randomBytes(6).toString('base64url');
@@ -49,6 +52,6 @@ export function tokensMatch(a?: string | null, b?: string | null): boolean {
  */
 export function isQrTokenValid(storedQrCode: string | null | undefined, providedToken?: string | null): boolean {
   const stored = extractQrToken(storedQrCode);
-  if (!stored) return true; // tem cũ không token → không chặn
+  if (!stored) return QR_ALLOW_LEGACY_NO_TOKEN; // mặc định từ chối tem không token
   return tokensMatch(stored, providedToken);
 }

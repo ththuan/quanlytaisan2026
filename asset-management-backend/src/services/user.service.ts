@@ -1,8 +1,8 @@
-import { User, Department, InventoryReport, InventoryRound } from '../models';
+import { User, Department, InventoryReport, InventoryRound, AuthSession } from '../models';
 import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errorHandler';
 import { Op } from 'sequelize';
 import { getPaginationParams, buildPaginationResult, getOffset, PaginationResult } from '../utils/pagination';
-import { SYSTEM_ADMIN_USERNAME, SYSTEM_ADMIN_PASSWORD } from '../config/adminCredentials';
+import { SYSTEM_ADMIN_USERNAME } from '../config/adminCredentials';
 
 export interface CreateUserInput {
   username: string;
@@ -225,12 +225,25 @@ class UserService {
       throw new NotFoundError('User not found');
     }
 
-    // Tài khoản admin hệ thống luôn quay về mật khẩu cố định Admin@123.
-    const password = user.username === SYSTEM_ADMIN_USERNAME ? SYSTEM_ADMIN_PASSWORD : DEFAULT_PASSWORD;
-    const password_hash = await User.hashPassword(password);
+    if (user.username === SYSTEM_ADMIN_USERNAME) {
+      throw new ForbiddenError(
+        'Không thể đặt lại mật khẩu admin hệ thống từ màn hình quản lý. Vui lòng dùng chức năng Đổi mật khẩu của chính tài khoản admin.',
+      );
+    }
 
-    // Update password
-    await user.update({ password_hash });
+    const password_hash = await User.hashPassword(DEFAULT_PASSWORD);
+
+    await user.update({
+      password_hash,
+      failed_login_attempts: 0,
+      locked_until: null,
+    });
+
+    // Đặt lại mật khẩu phải vô hiệu hóa mọi phiên đăng nhập cũ của người dùng.
+    await AuthSession.update(
+      { revoked_at: new Date() },
+      { where: { user_id: user.id, revoked_at: null } },
+    );
 
     return this.getUserById(user.id);
   }

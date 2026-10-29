@@ -79,10 +79,9 @@ ${bodyContent}
 }
 
 const ASSET_ATTRIBUTES = [
-  'id', 'asset_code', 'name', 'description', 'category', 'category_code',
+  'id', 'asset_code', 'name', 'category', 'category_code',
   'status', 'condition', 'location', 'unit', 'quantity', 'year_in_use',
-  'serial_number', 'warranty_date', 'current_department_id', 'image_url',
-  'last_inventory_date', 'inventory_status', 'qr_code',
+  'image_url', 'inventory_status', 'qr_code',
 ];
 
 async function findAssetByCode(code: string) {
@@ -187,10 +186,6 @@ export const scanAssetPage = async (req: Request, res: Response): Promise<void> 
     if (d.location) rows.push(['Vị trí', escapeHtml(d.location)]);
     if (d.year_in_use) rows.push(['Năm sử dụng', escapeHtml(d.year_in_use)]);
     if (d.quantity) rows.push(['Số lượng', `${escapeHtml(d.quantity)}${d.unit ? ' ' + escapeHtml(d.unit) : ''}`]);
-    if (d.serial_number) rows.push(['Số sê-ri', escapeHtml(d.serial_number)]);
-    if (d.warranty_date) rows.push(['Bảo hành đến', escapeHtml(new Date(d.warranty_date).toLocaleDateString('vi-VN'))]);
-    if (d.last_inventory_date) rows.push(['Kiểm kê lần cuối', escapeHtml(new Date(d.last_inventory_date).toLocaleDateString('vi-VN'))]);
-    if (d.description) rows.push(['Mô tả', escapeHtml(d.description)]);
 
     const infoRows = rows.map(([label, value]) => `
       <div class="info-row">

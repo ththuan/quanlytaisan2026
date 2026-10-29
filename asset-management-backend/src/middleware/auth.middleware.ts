@@ -107,6 +107,33 @@ export const authenticateToken = authMiddleware;
 export const authenticate = authMiddleware;
 
 // Role-based authorization middleware
+/**
+ * Non-admin/director users must belong to a department. Without one, most
+ * scoped queries would silently omit the department filter (fail-open).
+ */
+export const requireDepartmentScope = (
+  req: AuthRequest,
+  _res: Response,
+  next: NextFunction,
+): void => {
+  if (!req.user) {
+    next(new UnauthorizedError('Authentication required'));
+    return;
+  }
+
+  if (req.user.role === 'admin' || req.user.role === 'director') {
+    next();
+    return;
+  }
+
+  if (!req.user.department_id) {
+    next(new ForbiddenError('Tài khoản chưa được gán đơn vị. Vui lòng liên hệ quản trị viên.'));
+    return;
+  }
+
+  next();
+};
+
 export const requireRoles = (roles: string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {

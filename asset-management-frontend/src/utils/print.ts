@@ -29,9 +29,15 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 /** Khối ô ký: hiển thị ảnh chữ ký số (nếu có) + họ tên + vai trò + thời điểm ký. */
+const SAFE_SIGNATURE_DATA_URL = /^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
+
 export function signatureCell(label: string, sign: SignatureLike | undefined): string {
-  const img = sign?.signature_image
-    ? `<img class="sig-img" src="${sign.signature_image}" alt="chữ ký" />`
+  const signatureImage =
+    typeof sign?.signature_image === 'string' && SAFE_SIGNATURE_DATA_URL.test(sign.signature_image)
+      ? sign.signature_image
+      : '';
+  const img = signatureImage
+    ? `<img class="sig-img" src="${escapeHtml(signatureImage)}" alt="chữ ký" />`
     : '<div class="sig-space"></div>';
   const name = sign?.signer_name ? escapeHtml(sign.signer_name) : '';
   const role = sign?.signer_role
@@ -44,7 +50,7 @@ export function signatureCell(label: string, sign: SignatureLike | undefined): s
     : '';
   // Chữ ký số đã chứa sẵn họ tên/vai trò/thời gian theo chuẩn (Digitally signed by...),
   // nên chỉ hiển thị ảnh để tránh lặp thông tin trên bản in.
-  const hasImage = !!sign?.signature_image;
+  const hasImage = !!signatureImage;
   return `
     <div class="sig-cell">
       <div class="sig-label">${escapeHtml(label)}</div>

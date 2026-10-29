@@ -42,7 +42,8 @@ export const useAuthStore = defineStore('auth', () => {
       }
       return false;
     } catch (error: any) {
-      console.error('Login error:', error);
+      // Không log toàn bộ error: config.data có thể chứa mật khẩu đăng nhập.
+      console.error('Login failed:', error?.response?.status ?? error?.message ?? 'unknown error');
 
       if (error?.response?.status === 429) {
         const errorMessage = error?.response?.data?.message || 'Quá nhiều lần thử đăng nhập. Vui lòng đợi một chút rồi thử lại.';
@@ -114,6 +115,12 @@ export const useAuthStore = defineStore('auth', () => {
         tokenUserId = Number(payload.id) || null;
         const parsedUser = JSON.parse(storedUser) as User;
         if (!tokenUserId || Number(parsedUser.id) !== tokenUserId || payload.token_type !== 'access') {
+          clearAuth();
+          return;
+        }
+
+        // Access token hết hạn nhưng không còn refresh token → phiên không thể phục hồi.
+        if (payload.exp && payload.exp * 1000 <= Date.now() && !localStorage.getItem('refreshToken')) {
           clearAuth();
           return;
         }

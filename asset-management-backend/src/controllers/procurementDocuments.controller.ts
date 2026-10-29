@@ -1,6 +1,24 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import procurementDocumentsService from '../services/procurementDocuments.service';
+import { Asset } from '../models';
+import { ForbiddenError, NotFoundError } from '../utils/errorHandler';
+
+async function assertAssetAccess(
+  user: { role: string; department_id?: number | null },
+  assetId: number,
+): Promise<void> {
+  if (user.role === 'admin' || user.role === 'director') return;
+  if (!user.department_id) {
+    throw new ForbiddenError('Tài khoản chưa được gán đơn vị.');
+  }
+
+  const asset = await Asset.findByPk(assetId, { attributes: ['id', 'current_department_id'] });
+  if (!asset) throw new NotFoundError('Asset not found');
+  if (Number((asset as any).current_department_id) !== Number(user.department_id)) {
+    throw new ForbiddenError('Bạn không có quyền truy cập tài sản này.');
+  }
+}
 
 class ProcurementDocumentsController {
   async listByProcurement(req: AuthRequest, res: Response, next: NextFunction) {
@@ -55,6 +73,7 @@ class ProcurementDocumentsController {
   async listByAsset(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const assetId = parseInt(req.params.assetId, 10);
+      await assertAssetAccess(req.user!, assetId);
       const procurementId = await procurementDocumentsService.findProcurementIdByAssetId(assetId);
       const docs = await procurementDocumentsService.listByProcurementId(procurementId);
       return res.json({ success: true, data: { procurement_id: procurementId, documents: docs } });
@@ -67,6 +86,7 @@ class ProcurementDocumentsController {
     try {
       const assetId = parseInt(req.params.assetId, 10);
       const docId = parseInt(req.params.docId, 10);
+      await assertAssetAccess(req.user!, assetId);
       const procurementId = await procurementDocumentsService.findProcurementIdByAssetId(assetId);
       const doc = await procurementDocumentsService.getContent(procurementId, docId);
 

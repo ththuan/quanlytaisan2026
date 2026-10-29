@@ -63,13 +63,14 @@
           {{ maintenanceData.justification || '-' }}
         </el-descriptions-item>
         <el-descriptions-item
-          v-if="maintenanceData.product_link"
+          v-if="safeProductLink"
           label="Link sản phẩm"
           :span="2"
         >
           <el-link
-            :href="maintenanceData.product_link"
+            :href="safeProductLink"
             target="_blank"
+            rel="noopener noreferrer"
             type="primary"
           >
             {{ maintenanceData.product_link }}
@@ -728,6 +729,11 @@ const createdDate = computed(() => {
 // Computed property để lấy maintenance data (ưu tiên full data nếu có)
 const maintenanceData = computed(() => {
   return fullMaintenanceData.value || props.maintenance;
+});
+
+const safeProductLink = computed(() => {
+  const link = maintenanceData.value?.product_link;
+  return typeof link === 'string' && /^https?:\/\//i.test(link) ? link : '';
 });
 
 // Computed property để kiểm tra có damageImages không

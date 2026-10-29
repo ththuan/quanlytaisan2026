@@ -12,7 +12,6 @@ const PUBLIC_ATTRIBUTES = [
   'id',
   'asset_code',
   'name',
-  'description',
   'category',
   'category_code',
   'status',
@@ -22,10 +21,6 @@ const PUBLIC_ATTRIBUTES = [
   'quantity',
   'image_url',
   'year_in_use',
-  'serial_number',
-  'warranty_date',
-  'current_department_id',
-  'last_inventory_date',
   'qr_code',
 ];
 

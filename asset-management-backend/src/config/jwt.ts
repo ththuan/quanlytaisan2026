@@ -20,6 +20,10 @@ const WEAK_SECRETS = new Set([
   'default',
 ]);
 
+function isPlaceholderSecret(value: string): boolean {
+  return /change[_-]?me|your[_-]?secret|replace[_-]?me|placeholder|example/i.test(value);
+}
+
 function resolveSecret(): string {
   const fromEnv =
     process.env.JWT_SECRET ||
@@ -27,7 +31,12 @@ function resolveSecret(): string {
     process.env.ACCESS_TOKEN_SECRET ||
     '';
 
-  if (fromEnv && !WEAK_SECRETS.has(fromEnv) && fromEnv.length >= 32) {
+  if (
+    fromEnv &&
+    !WEAK_SECRETS.has(fromEnv.toLowerCase()) &&
+    !isPlaceholderSecret(fromEnv) &&
+    fromEnv.length >= 32
+  ) {
     return fromEnv;
   }
 
@@ -47,10 +56,9 @@ function resolveSecret(): string {
 
 const jwtConfig: JWTConfig = {
   secret: resolveSecret(),
-  // Phiên đăng nhập chỉ kết thúc khi người dùng bấm "Đăng xuất".
-  // Access token ngắn để vẫn xoay vòng an toàn, refresh token dài (10 năm).
-  accessExpiration: process.env.JWT_ACCESS_EXPIRATION || '7d',
-  refreshExpiration: process.env.JWT_REFRESH_EXPIRATION || '3650d',
+  // Access token ngắn; refresh token được xoay vòng tự động bởi frontend.
+  accessExpiration: process.env.JWT_ACCESS_EXPIRATION || '1h',
+  refreshExpiration: process.env.JWT_REFRESH_EXPIRATION || '30d',
   algorithm: 'HS256',
   issuer: 'asset-management-system',
 };

@@ -2,45 +2,44 @@
 
 const bcrypt = require('bcryptjs');
 
-/** Mật khẩu admin CỐ ĐỊNH — đồng bộ với src/config/adminCredentials.ts */
-const ADMIN_PASSWORD = 'Admin@123';
+const ADMIN_USERNAME = (process.env.ADMIN_USERNAME || 'admin').trim() || 'admin';
+const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || '').trim();
+
+const isStrongPassword = (value) =>
+  value.length >= 12 &&
+  !/^(admin|admin123|admin@123|ctec@123|password|changeme)$/i.test(value) &&
+  !/change[_-]?me/i.test(value);
 
 /**
- * Luôn đảm bảo tài khoản admin tồn tại với mật khẩu cố định Admin@123.
- * Idempotent: nếu đã có thì đặt lại mật khẩu + bật tài khoản + tắt 2FA.
+ * Chỉ tạo admin khi tài khoản CHƯA tồn tại.
+ * Không bao giờ đặt lại mật khẩu / tắt 2FA / mở khóa của admin hiện có.
  */
 module.exports = {
   async up(queryInterface) {
-    const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
     const [existing] = await queryInterface.sequelize.query(
-      "SELECT id FROM users WHERE username = 'admin' LIMIT 1;"
+      'SELECT id FROM users WHERE username = :username LIMIT 1;',
+      { replacements: { username: ADMIN_USERNAME } },
     );
 
     if (existing && existing.length > 0) {
-      await queryInterface.sequelize.query(
-        `UPDATE users
-           SET password_hash = :hash,
-               role = 'admin',
-               is_active = true,
-               department_id = NULL,
-               totp_enabled = false,
-               totp_secret = NULL,
-               failed_login_attempts = 0,
-               locked_until = NULL,
-               updated_at = :now
-         WHERE username = 'admin'`,
-        {
-          replacements: { hash: passwordHash, now: new Date() },
-        }
+      console.warn(`[seed:admin] Tài khoản "${ADMIN_USERNAME}" đã tồn tại; giữ nguyên thông tin đăng nhập.`);
+      return;
+    }
+
+    if (!isStrongPassword(ADMIN_PASSWORD)) {
+      console.warn(
+        '[seed:admin] Bỏ qua tạo admin: ADMIN_PASSWORD chưa được đặt hoặc quá yếu (cần >= 12 ký tự).',
       );
       return;
     }
+
+    const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
 
     await queryInterface.bulkInsert(
       'users',
       [
         {
-          username: 'admin',
+          username: ADMIN_USERNAME,
           password_hash: passwordHash,
           fullname: 'System Admin',
           role: 'admin',
@@ -50,11 +49,11 @@ module.exports = {
           updated_at: new Date(),
         },
       ],
-      {}
+      {},
     );
   },
 
   async down(queryInterface) {
-    await queryInterface.bulkDelete('users', { username: 'admin' }, {});
+    await queryInterface.bulkDelete('users', { username: ADMIN_USERNAME }, {});
   },
 };

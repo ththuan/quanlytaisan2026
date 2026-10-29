@@ -6,6 +6,7 @@
 
 import ExcelJS from 'exceljs';
 import assetService from './asset.service';
+import { ForbiddenError } from '../utils/errorHandler';
 
 /**
  * Export assets to Excel
@@ -22,11 +23,14 @@ export const exportAssetsToExcel = async (
   // Apply permission-based filtering
   const exportQuery: any = { ...query };
   
-  // Trưởng đơn vị và cán bộ chỉ export tài sản của phòng ban mình
+  // Trưởng đơn vị và cán bộ chỉ export tài sản của phòng ban mình.
+  // Không gán đơn vị thì từ chối, tránh fail-open xuất toàn bộ dữ liệu.
   if (userRole !== 'admin' && userRole !== 'director') {
-    if (userDepartmentId) {
-      exportQuery.current_department_id = String(userDepartmentId);
+    if (!userDepartmentId) {
+      throw new ForbiddenError('Tài khoản chưa được gán đơn vị nên không thể export dữ liệu.');
     }
+    exportQuery.current_department_id = String(userDepartmentId);
+    exportQuery.include_children = 'false';
   }
 
   // Remove pagination to get all assets

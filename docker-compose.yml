@@ -84,7 +84,7 @@ services:
       - /app/node_modules
       # Cho phép trang Quản trị hệ thống gọi lệnh docker (xem/start/stop container)
       - /var/run/docker.sock:/var/run/docker.sock
-    command: sh -c "npm install --production=false && (npm run migrate || echo 'MIGRATE FAILED') && (npm run seed:admin || true) && npm run dev"
+    command: sh -c "npm install --production=false && (npm run migrate || echo 'MIGRATE FAILED') && npm run dev"
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:5000/api/health', r => process.exit(r.statusCode===200?0:1)).on('error', () => process.exit(1))\""]
       interval: 15s

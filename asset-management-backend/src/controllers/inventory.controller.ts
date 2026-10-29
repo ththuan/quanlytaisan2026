@@ -237,7 +237,7 @@ export const updateInventoryDetail = async (req: AuthRequest, res: Response, nex
       throw new ForbiddenError('Bạn không có quyền cập nhật chi tiết báo cáo này');
     }
 
-    const detail = await InventoryService.updateInventoryDetail(detailId, req.body);
+    const detail = await InventoryService.updateInventoryDetail(detailId, reportId, req.body);
     res.json({
       success: true,
       message: 'Inventory detail updated successfully',
@@ -374,7 +374,8 @@ export const getPendingReportsCount = async (req: AuthRequest, res: Response, ne
   try {
     const result = await InventoryService.getPendingReportsByRole(
       req.user!.role,
-      req.user!.department_id
+      req.user!.department_id,
+      req.user!.id
     );
     res.json({
       success: true,

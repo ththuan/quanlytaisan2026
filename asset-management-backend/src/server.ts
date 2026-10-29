@@ -41,7 +41,7 @@ const startServer = async () => {
     // Luôn khôi phục tài khoản admin mặc định (admin / Admin@123) mỗi lần khởi động.
     try {
       await ensureDefaultAdminAccount();
-      logger.info('Default admin account ensured (admin / Admin@123)');
+      logger.info('Default admin account check completed');
     } catch (error) {
       logger.error('Failed to ensure default admin account:', error);
     }

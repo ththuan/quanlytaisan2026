@@ -6,6 +6,14 @@ type AuthenticatedRequest = Request & { user?: { id: number; sid?: string } };
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
+    if (process.env.ALLOW_PUBLIC_REGISTRATION !== 'true') {
+      res.status(403).json({
+        success: false,
+        message: 'Tự đăng ký đã bị tắt. Vui lòng liên hệ quản trị viên để được cấp tài khoản.',
+      });
+      return;
+    }
+
     const result = await authService.register(req.body);
 
     res.status(201).json({
@@ -125,7 +133,7 @@ export const enableTotp = async (req: AuthenticatedRequest, res: Response, next:
       res.status(400).json({ success: false, message: 'totp_code là bắt buộc' });
       return;
     }
-    await authService.enableTotp(req.user!.id, String(totp_code));
+    await authService.enableTotp(req.user!.id, String(totp_code), req.user!.sid);
     res.status(200).json({ success: true, message: 'Xác thực 2 bước đã được bật.' });
   } catch (error) {
     next(error);
@@ -140,7 +148,7 @@ export const disableTotp = async (req: AuthenticatedRequest, res: Response, next
       res.status(400).json({ success: false, message: 'password là bắt buộc' });
       return;
     }
-    await authService.disableTotp(req.user!.id, password);
+    await authService.disableTotp(req.user!.id, password, req.user!.sid);
     res.status(200).json({ success: true, message: 'Xác thực 2 bước đã được tắt.' });
   } catch (error) {
     next(error);

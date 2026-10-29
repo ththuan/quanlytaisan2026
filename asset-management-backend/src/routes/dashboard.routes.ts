@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { authenticateToken } from '../middleware/auth.middleware';
+import { authenticateToken, requireDepartmentScope } from '../middleware/auth.middleware';
 import { requireRole } from '../middleware/authorization.middleware';
 import * as dashboardController from '../controllers/dashboard.controller';
 
 const router = Router();
 
-router.use(authenticateToken);
+router.use(authenticateToken, requireDepartmentScope);
 // Mọi vai trò sau khi đăng nhập đều có thể truy cập dashboard thống kê
 // router.use(requireRole('admin', 'director'));
 

@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
+import { Op } from 'sequelize';
 import transferService from '../services/transfer.service';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { assertSignature, recordSignature } from '../services/signature.service';
+import { Asset, AssetTransfer } from '../models';
+import { ForbiddenError, NotFoundError } from '../utils/errorHandler';
 
 class TransfersController {
   async getAllTransfers(req: AuthRequest, res: Response, next: NextFunction) {
@@ -239,7 +242,38 @@ class TransfersController {
 
   async getTransferHistory(req: Request, res: Response, next: NextFunction) {
     try {
+      const user = (req as AuthRequest).user!;
       const assetId = parseInt(req.params.assetId);
+
+      if (user.role !== 'admin' && user.role !== 'director') {
+        if (!user.department_id) {
+          throw new ForbiddenError('Tài khoản chưa được gán đơn vị.');
+        }
+        const asset = await Asset.findByPk(assetId, {
+          attributes: ['id', 'current_department_id'],
+        });
+        if (!asset) throw new NotFoundError('Asset not found');
+
+        const isCurrentDepartment =
+          Number((asset as any).current_department_id) === Number(user.department_id);
+        if (!isCurrentDepartment) {
+          const involved = await AssetTransfer.findOne({
+            where: {
+              asset_id: assetId,
+              [Op.or]: [
+                { from_department_id: user.department_id },
+                { to_department_id: user.department_id },
+                { requested_by: user.id },
+              ],
+            },
+            attributes: ['id'],
+          });
+          if (!involved) {
+            throw new ForbiddenError('Bạn không có quyền xem lịch sử điều chuyển của tài sản này.');
+          }
+        }
+      }
+
       const history = await transferService.getTransferHistory(assetId);
 
       return res.json({

@@ -55,15 +55,18 @@ export function saveBase64Image(
   const prefix = parts[0]; // e.g., "data:image/png"
   const imageData = parts[1]; // Base64 data
 
-  // Extract extension more robustly
-  // Example: "data:image/png" -> "png"
-  // Example: "data:image/jpeg;name=test.jpg" -> "jpeg"
-  let extension = 'png';
-  try {
-    const mimeType = prefix.split(':')[1]?.split(';')[0] || 'image/png';
-    extension = mimeType.split('/')[1] || 'png';
-  } catch (e) {
-    logger.warn('⚠️ [fileStorage] Failed to parse extension, defaulting to png', { error: e });
+  // Chỉ chấp nhận ảnh raster; không lấy phần mở rộng tùy ý từ dữ liệu client.
+  const mimeType = (prefix.split(':')[1]?.split(';')[0] || '').toLowerCase();
+  const allowedSubtypes: Record<string, string> = {
+    'image/png': 'png',
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+  };
+  const extension = allowedSubtypes[mimeType];
+  if (!extension) {
+    throw new Error('Chỉ chấp nhận ảnh PNG, JPEG, WebP hoặc GIF.');
   }
 
   // Decode base64 to binary

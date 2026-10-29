@@ -569,6 +569,10 @@ class InventoryService {
       throw new NotFoundError('Asset not found');
     }
 
+    if (Number((asset as any).current_department_id) !== Number((report as any).department_id)) {
+      throw new ForbiddenError('Tài sản không thuộc đơn vị của báo cáo kiểm kê này.');
+    }
+
     // Chặn kiểm kê trùng: mỗi tài sản chỉ có 1 kết quả trong một đợt
     const existingDetail = await InventoryReportDetail.findOne({
       where: { inventory_report_id: reportId, asset_id: assetId },
@@ -647,6 +651,7 @@ class InventoryService {
 
   async updateInventoryDetail(
     detailId: number,
+    reportId: number,
     data: Partial<{
       actual_quantity: number;
       actual_value?: number;
@@ -669,7 +674,7 @@ class InventoryService {
       include: [{ model: InventoryReport, as: 'inventory_report' }],
     });
 
-    if (!detail) {
+    if (!detail || Number(detail.inventory_report_id) !== Number(reportId)) {
       throw new NotFoundError('Detail not found');
     }
 
@@ -829,16 +834,18 @@ class InventoryService {
       }
 
       // Verify the dept head has authority: own dept OR parent dept head approving child dept
-      if (approverDepartmentId) {
-        const isOwnDept = report.department_id === approverDepartmentId;
-        if (!isOwnDept) {
-          const reportDept = await Department.findByPk(report.department_id, {
-            attributes: ['id', 'parent_department_id'],
-          });
-          const isParentHead = reportDept && (reportDept as any).parent_department_id === approverDepartmentId;
-          if (!isParentHead) {
-            throw new ForbiddenError('Bạn không có quyền duyệt báo cáo của đơn vị này');
-          }
+      if (!approverDepartmentId) {
+        throw new ForbiddenError('Tài khoản trưởng đơn vị chưa được gán đơn vị.');
+      }
+
+      const isOwnDept = report.department_id === approverDepartmentId;
+      if (!isOwnDept) {
+        const reportDept = await Department.findByPk(report.department_id, {
+          attributes: ['id', 'parent_department_id'],
+        });
+        const isParentHead = reportDept && (reportDept as any).parent_department_id === approverDepartmentId;
+        if (!isParentHead) {
+          throw new ForbiddenError('Bạn không có quyền duyệt báo cáo của đơn vị này');
         }
       }
 
@@ -1124,8 +1131,12 @@ class InventoryService {
     return buildPaginationResult(mappedRows, count, page, limit);
   }
 
-  async getPendingReportsByRole(role: string, departmentId?: number) {
+  async getPendingReportsByRole(role: string, departmentId?: number, userId?: number) {
     let where: any = {};
+
+    if ((role === 'department_head' || role === 'staff') && !departmentId) {
+      return { count: 0, reports: [] };
+    }
 
     if (role === 'department_head') {
       // Show pending reports for own dept + all child depts
@@ -1140,6 +1151,12 @@ class InventoryService {
       where = {
         department_id: deptIds.length > 1 ? { [Op.in]: deptIds } : (deptIds[0] ?? departmentId),
         status: 'pending',
+      };
+    } else if (role === 'staff') {
+      // Staff chỉ thấy báo cáo do chính mình tạo trong đơn vị của mình.
+      where = {
+        created_by: userId ?? -1,
+        department_id: departmentId,
       };
     } else if (role === 'admin') {
       where = {
