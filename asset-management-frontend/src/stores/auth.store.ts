@@ -5,6 +5,7 @@ import type { AuthResponse } from '@/services/auth.service';
 import type { User } from '@/types/models';
 import { ElMessage } from 'element-plus';
 import { decodeJwtPayload } from '@/utils/jwt';
+import { clearAccessToken, setAccessToken } from '@/services/authToken';
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null);
@@ -94,6 +95,7 @@ export const useAuthStore = defineStore('auth', () => {
     } finally {
       user.value = null;
       accessToken.value = null;
+      clearAccessToken();
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
@@ -102,12 +104,11 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function checkAuth() {
-    let token = localStorage.getItem('accessToken');
-    let payload = token ? decodeJwtPayload(token) : null;
-    const isExpired = !payload?.exp || payload.exp * 1000 <= Date.now();
+    let token = accessToken.value;
 
-    // Access token h?t h?n ho?c chua cï¿½: dï¿½ng refresh token trong cookie HttpOnly.
-    if (!token || isExpired) {
+    // Access token ch? n?m trong b? nh? nên sau khi t?i l?i trang ph?i l?y token m?i
+    // b?ng refresh token trong cookie HttpOnly.
+    if (!token) {
       try {
         const refreshed = await authService.refresh();
         token = refreshed.data?.accessToken || null;
@@ -115,15 +116,14 @@ export const useAuthStore = defineStore('auth', () => {
           clearAuth();
           return;
         }
-        localStorage.setItem('accessToken', token);
-        payload = decodeJwtPayload(token);
       } catch {
         clearAuth();
         return;
       }
     }
 
-    if (!token || !payload) {
+    const payload = decodeJwtPayload(token);
+    if (!payload) {
       clearAuth();
       return;
     }
@@ -133,6 +133,9 @@ export const useAuthStore = defineStore('auth', () => {
       clearAuth();
       return;
     }
+
+    setAccessToken(token);
+    accessToken.value = token;
 
     const storedUser = localStorage.getItem('user');
     let parsedUser: User | null = null;
@@ -149,7 +152,6 @@ export const useAuthStore = defineStore('auth', () => {
       }
     }
 
-    accessToken.value = token;
     user.value = parsedUser;
 
     try {
@@ -174,6 +176,7 @@ export const useAuthStore = defineStore('auth', () => {
   function clearAuth() {
     user.value = null;
     accessToken.value = null;
+    clearAccessToken();
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
@@ -182,7 +185,7 @@ export const useAuthStore = defineStore('auth', () => {
   function _applyAuthResponse(data: AuthResponse) {
     user.value = data.user;
     accessToken.value = data.accessToken;
-    localStorage.setItem('accessToken', data.accessToken);
+    setAccessToken(data.accessToken);
     localStorage.setItem('user', JSON.stringify(data.user));
 
     setTimeout(() => {

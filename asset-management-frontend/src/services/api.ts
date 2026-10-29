@@ -5,6 +5,7 @@ import router from '@/router';
 import { useAuthStore } from '@/stores/auth.store';
 import i18n from '@/i18n';
 import { decodeJwtPayload } from '@/utils/jwt';
+import { clearAccessToken, getAccessToken, setAccessToken } from '@/services/authToken';
 
 function t(key: string): string {
   const v = i18n.global?.t?.(key);
@@ -25,7 +26,7 @@ const api: AxiosInstance = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('accessToken');
+    const token = getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -172,7 +173,7 @@ api.interceptors.response.use(
               return Promise.reject(error);
             }
 
-            localStorage.setItem('accessToken', newAccessToken);
+            setAccessToken(newAccessToken);
             authStore.accessToken = newAccessToken;
             onRefreshed(newAccessToken);
             isRefreshing = false;
@@ -193,7 +194,7 @@ api.interceptors.response.use(
           const authStore = useAuthStore();
           authStore.clearAuth();
         } catch {
-          localStorage.removeItem('accessToken');
+          clearAccessToken();
           localStorage.removeItem('user');
         }
         router.replace('/login');

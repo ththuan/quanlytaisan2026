@@ -224,7 +224,7 @@ import { useReportStore } from '@/stores/report.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useDepartments } from '@/composables/useDepartments';
 import { Download, Plus } from '@element-plus/icons-vue';
-import * as XLSX from 'xlsx';
+import { exportObjectsToExcel } from '@/utils/excelExport';
 import { ElMessage } from 'element-plus';
 import ReportFormDialog from '@/components/Reports/ReportFormDialog.vue';
 import ReportDetailDialog from '@/components/Reports/ReportDetailDialog.vue';
@@ -385,7 +385,7 @@ const formatCurrency = (value: number) => {
   return value != null ? Number(value).toLocaleString('vi-VN') : '-';
 };
 
-const handleExport = () => {
+const handleExport = async () => {
   const rows = reportStore.reports.map((r: any, index: number) => ({
     STT: index + 1,
     'Đơn vị': r.department?.name || '',
@@ -397,10 +397,11 @@ const handleExport = () => {
     'Tổng giá trị (đồng)': Number(r.total_value || 0),
     'Ghi chú': r.notes || '',
   }));
-  const worksheet = XLSX.utils.json_to_sheet(rows);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Bao cao thuong nien');
-  XLSX.writeFile(workbook, `bao-cao-thuong-nien-${Date.now()}.xlsx`);
+  await exportObjectsToExcel(
+    `bao-cao-thuong-nien-${Date.now()}.xlsx`,
+    'Bao cao thuong nien',
+    rows,
+  );
 };
 </script>
 

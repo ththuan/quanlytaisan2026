@@ -371,7 +371,7 @@ import { ElMessage } from 'element-plus';
 import { Download } from '@element-plus/icons-vue';
 import inventoryService, { type InventoryRound, type InventoryReport } from '@/services/inventory.service';
 import { useAuthStore } from '@/stores/auth.store';
-import * as XLSX from 'xlsx';
+import { exportSheetsToExcel } from '@/utils/excelExport';
 
 const route = useRoute();
 const router = useRouter();
@@ -584,39 +584,19 @@ const exportReport = async () => {
       ]);
     });
 
-    // Tạo workbook
-    const wb = XLSX.utils.book_new();
-    
-    const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
-    const ws2 = XLSX.utils.aoa_to_sheet(departmentData);
-
-    // Định dạng cột
-    ws1['!cols'] = [
-      { wch: 30 }, // Chỉ tiêu
-      { wch: 15 }, // Số lượng
-      { wch: 12 }, // Tỷ lệ
-      { wch: 20 }, // Giá trị
-    ];
-
-    ws2['!cols'] = [
-      { wch: 5 },  // STT
-      { wch: 30 }, // Phòng ban
-      { wch: 10 }, // Tổng TS
-      { wch: 10 }, // Khớp
-      { wch: 12 }, // Thiếu/Mất
-      { wch: 10 }, // Cần sửa
-      { wch: 15 }, // Hỏng/Thanh lý
-      { wch: 20 }, // Trạng thái
-      { wch: 18 }, // Nguyên giá
-      { wch: 18 }, // Giá trị còn lại
-    ];
-
-    XLSX.utils.book_append_sheet(wb, ws1, 'Tổng quan');
-    XLSX.utils.book_append_sheet(wb, ws2, 'Chi tiết phòng ban');
-
-    // Xuất file
     const fileName = `BaoCaoKiemKe_${round.value.round_year}_${new Date().getTime()}.xlsx`;
-    XLSX.writeFile(wb, fileName);
+    await exportSheetsToExcel(fileName, [
+      {
+        name: 'Tổng quan',
+        rows: summaryData,
+        widths: [30, 15, 12, 20],
+      },
+      {
+        name: 'Chi tiết phòng ban',
+        rows: departmentData,
+        widths: [5, 30, 10, 10, 12, 10, 15, 20, 18, 18],
+      },
+    ]);
 
     ElMessage.success('Đã xuất báo cáo thành công');
   } catch (error: any) {
