@@ -14,6 +14,7 @@
     <!-- Tabs wrapper -->
     <el-tabs
       v-model="activeTab"
+      v-tabs-highlight
       type="border-card"
       class="dashboard-tabs"
     >
@@ -327,6 +328,7 @@
         >
           <el-col :span="24">
             <el-card
+              v-reveal
               class="chart-card"
               shadow="hover"
             >
@@ -388,6 +390,7 @@
             :md="24"
           >
             <el-card
+              v-reveal
               class="chart-card"
               shadow="hover"
             >

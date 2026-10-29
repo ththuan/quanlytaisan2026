@@ -14,6 +14,7 @@
 
     <el-tabs
       v-model="activeRole"
+      v-tabs-highlight
       class="help-role-tabs"
       type="border-card"
     >
@@ -132,6 +133,7 @@
         :md="12"
       >
         <el-card
+          v-reveal="{ delay: i * 60 }"
           class="help-card"
           shadow="hover"
         >

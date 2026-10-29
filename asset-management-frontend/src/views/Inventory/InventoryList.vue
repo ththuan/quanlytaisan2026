@@ -162,6 +162,7 @@
     <!-- Tabs -->
     <el-tabs
       v-model="activeTab"
+      v-tabs-highlight
       class="inventory-tabs"
     >
       <!-- Tab: Danh sách đợt kiểm kê -->

@@ -64,23 +64,15 @@
             <p class="field-hint">Vui lòng nhập mật khẩu</p>
           </div>
 
-          <div v-if="totpRequired" class="form-group">
-            <label class="form-label" for="f-totp"><span class="required">*</span> Mã xác thực 2 lớp</label>
-            <div class="input-wrap">
-              <span class="material-symbols-rounded input-icon">pin</span>
-              <input
-                ref="totpRef"
-                v-model="totpCode"
-                class="input-field"
-                type="text"
-                inputmode="numeric"
-                maxlength="6"
-                id="f-totp"
-                placeholder="Nhập mã 6 chữ số từ ứng dụng xác thực"
-                autocomplete="one-time-code"
-                @keyup.enter="handleSubmit"
-              >
-            </div>
+          <div v-if="totpRequired" class="form-group otp-group">
+            <label class="form-label"><span class="required">*</span> Mã xác thực 2 lớp</label>
+            <InputOTP
+              ref="totpRef"
+              v-model="totpCode"
+              :disabled="loading"
+              aria-label="Mã xác thực 2 lớp"
+              @complete="handleSubmit"
+            />
             <p class="field-hint">Mã gồm 6 chữ số từ Google Authenticator (hoặc ứng dụng TOTP tương tự)</p>
           </div>
 
@@ -95,10 +87,12 @@
             </button>
           </div>
 
-          <div id="admin-help" class="admin-help" :class="{ show: showForgotPassword }" role="status">
-            <strong>Quên mật khẩu?</strong><br>
-            Vui lòng liên hệ Quản trị viên hệ thống để được cấp lại mật khẩu.
-          </div>
+          <AutoHeight :open="showForgotPassword">
+            <div id="admin-help" class="admin-help" role="status">
+              <strong>Quên mật khẩu?</strong><br>
+              Vui lòng liên hệ Quản trị viên hệ thống để được cấp lại mật khẩu.
+            </div>
+          </AutoHeight>
 
           <div v-if="errorMessage" class="login-error" role="alert">
             <span class="material-symbols-rounded">error</span>
@@ -123,6 +117,8 @@
 import { reactive, ref, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '@/stores/auth.store';
 import GradientText from '@/components/animate/GradientText.vue';
+import InputOTP from '@/components/animate/InputOTP.vue';
+import AutoHeight from '@/components/animate/AutoHeight.vue';
 
 import logoUrl from '@/login/logo-truong.jpg';
 
@@ -136,7 +132,7 @@ const loading = ref(false);
 const errorMessage = ref('');
 const totpRequired = ref(false);
 const totpCode = ref('');
-const totpRef = ref<HTMLInputElement | null>(null);
+const totpRef = ref<{ focus: () => void } | null>(null);
 
 const loginForm = reactive({ username: '', password: '' });
 
@@ -424,6 +420,11 @@ onMounted(() => { initCanvas(); });
   margin-bottom: 20px;
 }
 
+.otp-group :deep(.otp) {
+  justify-content: flex-start;
+  margin: 4px 0 8px;
+}
+
 .form-label {
   display: block;
   font-weight: 600;
@@ -556,7 +557,7 @@ onMounted(() => { initCanvas(); });
 }
 
 .admin-help {
-  display: none;
+  margin-top: 10px;
   padding: 10px 14px;
   background: #eff6ff;
   border: 1px solid #bfdbfe;
@@ -565,10 +566,6 @@ onMounted(() => { initCanvas(); });
   color: #1e293b;
   line-height: 1.6;
   margin-bottom: 16px;
-}
-
-.admin-help.show {
-  display: block;
 }
 
 .admin-help strong {

@@ -75,13 +75,12 @@
       <p class="step-hint">
         Sau khi quét, nhập mã 6 chữ số từ ứng dụng để xác nhận:
       </p>
-      <el-input
+      <InputOTP
         v-model="verifyCode"
-        placeholder="000000"
-        maxlength="6"
-        size="large"
         class="code-input"
-        @keyup.enter="handleEnable"
+        aria-label="Mã xác thực 2 lớp"
+        autofocus
+        @complete="handleEnable"
       />
       <div class="dialog-footer">
         <el-button @click="innerStep = 'status'">
@@ -132,6 +131,7 @@ import { CircleCheck, Warning } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/stores/auth.store';
+import InputOTP from '@/components/animate/InputOTP.vue';
 
 interface Props {
   modelValue: boolean;
@@ -248,7 +248,6 @@ function onClosed() {
 .qr-image { width: 200px; height: 200px; border: 1px solid #eee; border-radius: 8px; }
 .secret-hint { text-align: center; font-size: 13px; color: #606266; margin: 0 0 12px; }
 .step-hint { font-size: 14px; color: #606266; line-height: 1.7; margin: 0 0 12px; }
-.code-input { max-width: 200px; display: block; margin: 0 auto; }
-.code-input :deep(.el-input__inner) { text-align: center; font-size: 22px; letter-spacing: 5px; font-weight: 700; }
+.code-input { max-width: 320px; margin: 0 auto; }
 .dialog-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 </style>

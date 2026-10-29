@@ -48,6 +48,7 @@
     >
       <!-- Asset Header Card -->
       <el-card
+        v-reveal
         class="asset-header-card"
         shadow="never"
       >
@@ -103,6 +104,7 @@
         >
           <!-- Thông tin cơ bản -->
           <el-card
+            v-reveal
             class="info-card"
             shadow="never"
           >
@@ -175,6 +177,7 @@
 
           <!-- Vị trí & Phòng ban -->
           <el-card
+            v-reveal
             class="info-card"
             shadow="never"
           >
@@ -236,6 +239,7 @@
 
           <!-- Lịch sử bàn giao người sử dụng -->
           <el-card
+            v-reveal
             class="info-card"
             shadow="never"
           >
@@ -278,6 +282,7 @@
           <!-- QR Code Card - CHỈ admin và tài sản không phải nhà cửa công trình -->
           <el-card
             v-if="authStore.isAdmin && !isBuildingAsset"
+            v-reveal
             class="info-card qrcode-card"
             shadow="never"
           >
@@ -373,6 +378,7 @@
         >
           <!-- Thông tin hao mòn -->
           <el-card
+            v-reveal
             class="info-card depreciation-card"
             shadow="never"
           >
@@ -515,6 +521,7 @@
           <!-- Lịch sử tài sản (hợp nhất: nhập → điều chuyển → kiểm kê → thanh lý) -->
           <el-card
             v-if="timeline.length > 0"
+            v-reveal
             class="info-card timeline-card"
             shadow="never"
           >
@@ -575,6 +582,7 @@
 
           <!-- Hình ảnh tài sản -->
           <el-card
+            v-reveal
             class="info-card image-card"
             shadow="never"
             style="margin-top: 20px;"

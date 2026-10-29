@@ -152,6 +152,133 @@ export const vTilt: Directive<HTMLElement, TiltOptions | undefined> = {
   },
 };
 
+type RevealOptions = {
+  delay?: number;
+  distance?: number;
+  duration?: number;
+  once?: boolean;
+};
+
+const tabsState = new WeakMap<HTMLElement, () => void>();
+const tabsCleanup = new WeakMap<HTMLElement, () => void>();
+
+const createTabsHighlight = (root: HTMLElement) => {
+  const header = root.querySelector<HTMLElement>('.el-tabs__header');
+  if (!header) return null;
+
+  header.classList.add('has-tabs-highlight');
+  const line = document.createElement('div');
+  line.className = 'tabs-sliding-highlight';
+  header.appendChild(line);
+
+  let frame = 0;
+  const update = () => {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => {
+      const active = header.querySelector<HTMLElement>('.el-tabs__item.is-active');
+      if (!active || !active.offsetParent) {
+        line.style.opacity = '0';
+        return;
+      }
+      const headerRect = header.getBoundingClientRect();
+      const activeRect = active.getBoundingClientRect();
+      line.style.transform = `translateX(${activeRect.left - headerRect.left}px)`;
+      line.style.width = `${activeRect.width}px`;
+      line.style.opacity = '1';
+    });
+  };
+
+  update();
+
+  const observer = new MutationObserver(update);
+  observer.observe(header, {
+    attributes: true,
+    attributeFilter: ['class'],
+    childList: true,
+    subtree: true,
+  });
+
+  const resize = new ResizeObserver(update);
+  resize.observe(header);
+
+  const onWindowResize = () => update();
+  window.addEventListener('resize', onWindowResize);
+
+  const cleanup = () => {
+    observer.disconnect();
+    resize.disconnect();
+    cancelAnimationFrame(frame);
+    window.removeEventListener('resize', onWindowResize);
+    line.remove();
+    header.classList.remove('has-tabs-highlight');
+  };
+
+  tabsCleanup.set(root, cleanup);
+  return update;
+};
+
+export const vTabsHighlight: Directive<HTMLElement> = {
+  mounted(el) {
+    const update = createTabsHighlight(el);
+    if (update) tabsState.set(el, update);
+  },
+  updated(el) {
+    tabsState.get(el)?.();
+  },
+  beforeUnmount(el) {
+    tabsState.delete(el);
+    tabsCleanup.get(el)?.();
+    tabsCleanup.delete(el);
+  },
+};
+
+const revealObservers = new WeakMap<HTMLElement, IntersectionObserver>();
+
+export const vReveal: Directive<HTMLElement, RevealOptions | number | undefined> = {
+  mounted(el, binding) {
+    if (prefersReducedMotion()) return;
+
+    const options = typeof binding.value === 'number' ? { delay: binding.value } : binding.value;
+    const delay = options?.delay ?? 0;
+    const distance = options?.distance ?? 18;
+    const duration = options?.duration ?? 520;
+    const once = options?.once ?? true;
+
+    el.style.opacity = '0';
+    el.style.transform = `translateY(${distance}px)`;
+    el.style.transition =
+      `opacity ${duration}ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, ` +
+      `transform ${duration}ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms`;
+    el.style.willChange = 'opacity, transform';
+
+    const reveal = () => {
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+      window.setTimeout(() => {
+        el.style.willChange = '';
+      }, duration + delay);
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          reveal();
+          if (once) observer.disconnect();
+        }
+      },
+      { threshold: 0.12 },
+    );
+
+    observer.observe(el);
+    revealObservers.set(el, observer);
+  },
+  beforeUnmount(el) {
+    revealObservers.get(el)?.disconnect();
+    revealObservers.delete(el);
+  },
+};
+
 const rippleCleanup = new WeakMap<HTMLElement, () => void>();
 
 export const vRipple: Directive<HTMLElement, string | undefined> = {
@@ -200,4 +327,6 @@ export const installAnimateDirectives = (app: App) => {
   app.directive('stagger-rows', vStaggerRows);
   app.directive('tilt', vTilt);
   app.directive('ripple', vRipple);
+  app.directive('reveal', vReveal);
+  app.directive('tabs-highlight', vTabsHighlight);
 };

@@ -12,7 +12,10 @@
       </el-button>
     </div>
 
-    <el-tabs v-model="activeTab">
+    <el-tabs
+      v-model="activeTab"
+      v-tabs-highlight
+    >
       <el-tab-pane
         label="Danh mục định mức"
         name="norms"
