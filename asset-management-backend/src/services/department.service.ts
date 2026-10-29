@@ -2,8 +2,8 @@ import { Department, User, Asset, AssetTransfer, MaintenanceRequest } from '../m
 import { NotFoundError, ConflictError, ValidationError } from '../utils/errorHandler';
 import { getPaginationParams, buildPaginationResult, getOffset, PaginationResult } from '../utils/pagination';
 import ExcelJS from 'exceljs';
-import * as XLSX from 'xlsx';
 import sequelize from '../config/database';
+import { readFirstSheetAsObjects } from '../utils/excel';
 
 export interface CreateDepartmentInput {
   name: string;
@@ -416,11 +416,8 @@ class DepartmentService {
     let total = 0;
 
     try {
-      // Parse Excel file
-      const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const rows: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+      // Parse Excel file (ExcelJS, có giới hạn dòng/cột)
+      const rows: any[] = await readFirstSheetAsObjects(fileBuffer);
 
       if (rows.length === 0) {
         throw new ValidationError('File Excel không có dữ liệu');

@@ -9,7 +9,6 @@ import { decodeJwtPayload } from '@/utils/jwt';
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null);
   const accessToken = ref<string | null>(null);
-  const refreshToken = ref<string | null>(null);
   const loading = ref(false);
   // Holds the temp token while waiting for the user to enter their TOTP code
   const totpPendingToken = ref<string | null>(null);
@@ -90,12 +89,11 @@ export const useAuthStore = defineStore('auth', () => {
   async function logout() {
     try {
       await authService.logout();
-    } catch (error) {
-      console.error('Logout error:', error);
+    } catch (error: any) {
+      console.error('Logout failed:', error?.response?.status ?? error?.message ?? 'unknown error');
     } finally {
       user.value = null;
       accessToken.value = null;
-      refreshToken.value = null;
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
@@ -104,23 +102,44 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function checkAuth() {
-    const token = localStorage.getItem('accessToken');
-    const storedUser = localStorage.getItem('user');
+    let token = localStorage.getItem('accessToken');
+    let payload = token ? decodeJwtPayload(token) : null;
+    const isExpired = !payload?.exp || payload.exp * 1000 <= Date.now();
 
-    if (token && storedUser) {
-      let tokenUserId: number | null = null;
+    // Access token h?t h?n ho?c chua c�: d�ng refresh token trong cookie HttpOnly.
+    if (!token || isExpired) {
       try {
-        const payload = decodeJwtPayload(token);
-        if (!payload) throw new Error('Invalid token payload');
-        tokenUserId = Number(payload.id) || null;
-        const parsedUser = JSON.parse(storedUser) as User;
-        if (!tokenUserId || Number(parsedUser.id) !== tokenUserId || payload.token_type !== 'access') {
+        const refreshed = await authService.refresh();
+        token = refreshed.data?.accessToken || null;
+        if (!token) {
           clearAuth();
           return;
         }
+        localStorage.setItem('accessToken', token);
+        payload = decodeJwtPayload(token);
+      } catch {
+        clearAuth();
+        return;
+      }
+    }
 
-        // Access token hết hạn nhưng không còn refresh token → phiên không thể phục hồi.
-        if (payload.exp && payload.exp * 1000 <= Date.now() && !localStorage.getItem('refreshToken')) {
+    if (!token || !payload) {
+      clearAuth();
+      return;
+    }
+
+    const tokenUserId = Number(payload.id) || null;
+    if (!tokenUserId || payload.token_type !== 'access') {
+      clearAuth();
+      return;
+    }
+
+    const storedUser = localStorage.getItem('user');
+    let parsedUser: User | null = null;
+    if (storedUser) {
+      try {
+        parsedUser = JSON.parse(storedUser) as User;
+        if (Number(parsedUser.id) !== tokenUserId) {
           clearAuth();
           return;
         }
@@ -128,36 +147,33 @@ export const useAuthStore = defineStore('auth', () => {
         clearAuth();
         return;
       }
+    }
 
-      accessToken.value = token;
-      refreshToken.value = localStorage.getItem('refreshToken');
-      user.value = JSON.parse(storedUser);
+    accessToken.value = token;
+    user.value = parsedUser;
 
-      try {
-        const response = await authService.getCurrentUser();
-        if (response.success && response.data) {
-          // Never let a stale proxy/service-worker response silently switch the
-          // visible account. The JWT identity is authoritative for this session.
-          if (Number(response.data.id) !== tokenUserId) {
-            clearAuth();
-            return;
-          }
-          user.value = response.data;
-          localStorage.setItem('user', JSON.stringify(response.data));
+    try {
+      const response = await authService.getCurrentUser();
+      if (response.success && response.data) {
+        // Never let a stale proxy/service-worker response silently switch the
+        // visible account. The JWT identity is authoritative for this session.
+        if (Number(response.data.id) !== tokenUserId) {
+          clearAuth();
+          return;
         }
-      } catch (error: any) {
-        if (error?.response?.status === 401) {
-          logout();
-        }
+        user.value = response.data;
+        localStorage.setItem('user', JSON.stringify(response.data));
+      }
+    } catch (error: any) {
+      if (error?.response?.status === 401) {
+        clearAuth();
       }
     }
   }
-
   // Clears auth state synchronously WITHOUT calling the backend logout API.
   function clearAuth() {
     user.value = null;
     accessToken.value = null;
-    refreshToken.value = null;
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
@@ -166,9 +182,7 @@ export const useAuthStore = defineStore('auth', () => {
   function _applyAuthResponse(data: AuthResponse) {
     user.value = data.user;
     accessToken.value = data.accessToken;
-    refreshToken.value = data.refreshToken;
     localStorage.setItem('accessToken', data.accessToken);
-    localStorage.setItem('refreshToken', data.refreshToken);
     localStorage.setItem('user', JSON.stringify(data.user));
 
     setTimeout(() => {
@@ -179,7 +193,6 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     user,
     accessToken,
-    refreshToken,
     loading,
     totpPendingToken,
     isAuthenticated,

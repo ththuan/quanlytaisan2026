@@ -9,6 +9,7 @@ import logger from './utils/logger';
 import routes from './routes';
 import scanRoutes from './routes/scan.routes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { storageAuthMiddleware } from './middleware/storageAuth';
 import { requestLogger } from './middleware/logging';
 import { cachingMiddleware } from './middleware/caching';
 import { createRateLimitStore } from './config/rateLimiter';
@@ -210,6 +211,7 @@ if (envConfig.nodeEnv !== 'production' || process.env.SWAGGER_ENABLED === 'true'
 const storagePath = path.join(__dirname, '../storage/public');
 app.use(
   '/storage',
+  storageAuthMiddleware,
   express.static(storagePath, {
     // Enable ETag for cache validation
     etag: true,

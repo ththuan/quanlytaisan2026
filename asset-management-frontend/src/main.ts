@@ -50,16 +50,6 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 }
 
 app.use(pinia);
-
-// Load auth state from localStorage as early as possible
-try {
-  const authStore = useAuthStore(pinia);
-  authStore.checkAuth();
-} catch (_e) {
-  // ignore
-}
-
-app.use(router);
 app.use(ElementPlus);
 app.use(i18n);
 installAnimateDirectives(app);
@@ -78,6 +68,18 @@ app.config.errorHandler = (err: unknown, _instance, info) => {
   }
 };
 
-app.mount('#app');
+const bootstrap = async () => {
+  // Đợi kiểm tra/refresh phiên trước khi router chạy guard, tránh chớp trang login.
+  try {
+    const authStore = useAuthStore(pinia);
+    await authStore.checkAuth();
+  } catch (_e) {
+    // ignore
+  }
 
-watchPerformance();
+  app.use(router);
+  app.mount('#app');
+  watchPerformance();
+};
+
+bootstrap();

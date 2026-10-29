@@ -82,8 +82,7 @@ services:
       - ./asset-management-backend/storage:/app/storage
       - backend_backups:/app/backups
       - /app/node_modules
-      # Cho phép trang Quản trị hệ thống gọi lệnh docker (xem/start/stop container)
-      - /var/run/docker.sock:/var/run/docker.sock
+    # Không mount docker.sock: ứng dụng không có quyền điều khiển Docker daemon.
     command: sh -c "npm install --production=false && (npm run migrate || echo 'MIGRATE FAILED') && npm run dev"
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:5000/api/health', r => process.exit(r.statusCode===200?0:1)).on('error', () => process.exit(1))\""]

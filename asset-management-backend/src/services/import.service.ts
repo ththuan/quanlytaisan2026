@@ -5,7 +5,7 @@
  */
 
 import ExcelJS from 'exceljs';
-import * as XLSX from 'xlsx';
+import { readFirstSheetAsObjects } from '../utils/excel';
 import { Asset, Department, AssetCategory } from '../models';
 import { Op } from 'sequelize';
 
@@ -536,13 +536,8 @@ export const importAssetsFromExcel = async (
   };
   
   try {
-    // Đọc file Excel
-    const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0]; // Lấy sheet đầu tiên
-    const sheet = workbook.Sheets[sheetName];
-    
-    // Chuyển sheet sang JSON
-    const allRows = XLSX.utils.sheet_to_json<ExcelAssetRow>(sheet);
+    // Đọc file Excel bằng ExcelJS (có giới hạn dòng/cột)
+    const allRows = (await readFirstSheetAsObjects(fileBuffer)) as unknown as ExcelAssetRow[];
     
     // Chuỗi nhận diện dòng mẫu (template cũ hoặc file cache có thể còn dữ liệu mẫu)
     const isSampleRow = (name: string, category?: string, department?: string): boolean => {

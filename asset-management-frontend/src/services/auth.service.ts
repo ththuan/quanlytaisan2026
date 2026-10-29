@@ -1,5 +1,8 @@
+import axios from 'axios';
 import api from './api';
 import type { User, ApiResponse } from '@/types/models';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 export interface LoginCredentials {
   username: string;
@@ -15,7 +18,6 @@ export interface RegisterData {
 export interface AuthResponse {
   user: User;
   accessToken: string;
-  refreshToken: string;
 }
 
 export interface TotpPendingResponse {
@@ -34,6 +36,16 @@ export const authService = {
 
   async getCurrentUser(): Promise<ApiResponse<User>> {
     return api.get('/auth/me');
+  },
+
+  /** Dùng refresh token trong cookie HttpOnly để lấy access token mới. */
+  async refresh(): Promise<ApiResponse<{ accessToken: string }>> {
+    const response = await axios.post(
+      `${API_BASE_URL}/auth/refresh`,
+      {},
+      { withCredentials: true, timeout: 8000 },
+    );
+    return response.data;
   },
 
   async changePassword(oldPassword: string, newPassword: string): Promise<ApiResponse<void>> {

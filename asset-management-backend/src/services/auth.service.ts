@@ -92,6 +92,11 @@ class AuthService {
       );
     }
 
+    // Hết thời gian khóa: đặt lại bộ đếm để lần sai tiếp theo không khóa ngay lập tức.
+    if (user.locked_until && user.locked_until <= new Date()) {
+      await user.update({ failed_login_attempts: 0, locked_until: null });
+    }
+
     // Verify password (guard: bcrypt can throw if password_hash is invalid)
     let isPasswordValid = false;
     try {
@@ -272,7 +277,7 @@ class AuthService {
     });
 
     // Persist the secret (not enabled yet — must be confirmed first)
-    await user.update({ totp_secret: secret.base32, totp_enabled: false });
+    await user.update({ totp_secret: secret.base32, totp_enabled: false, last_totp_step: null });
 
     const qrCodeUrl = await qrcode.toDataURL(secret.otpauth_url!);
     return { qrCodeUrl, secret: secret.base32 };
@@ -284,16 +289,21 @@ class AuthService {
     if (!user) throw new NotFoundError('User not found');
     if (!user.totp_secret) throw new ValidationError('2FA setup not started. Please start setup first.');
 
-    const verified = speakeasy.totp.verify({
+    const verification = speakeasy.totp.verifyDelta({
       secret: user.totp_secret,
       encoding: 'base32',
       token,
       window: 1, // allow 30s drift
     });
 
-    if (!verified) throw new UnauthorizedError('Mã xác minh không đúng. Vui lòng thử lại.');
+    if (!verification) throw new UnauthorizedError('Mã xác minh không đúng. Vui lòng thử lại.');
 
-    await user.update({ totp_enabled: true });
+    const usedStep = Math.floor(Date.now() / 30_000) + (verification.delta ?? 0);
+    if (typeof user.last_totp_step === 'number' && usedStep <= user.last_totp_step) {
+      throw new UnauthorizedError('Mã xác minh đã được sử dụng. Vui lòng chờ mã mới.');
+    }
+
+    await user.update({ totp_enabled: true, last_totp_step: usedStep });
 
     // Bật 2FA là thay đổi mức bảo mật: thu hồi các phiên khác, giữ phiên hiện tại.
     await AuthSession.update(
@@ -316,7 +326,7 @@ class AuthService {
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) throw new UnauthorizedError('Mật khẩu không đúng.');
 
-    await user.update({ totp_secret: null, totp_enabled: false });
+    await user.update({ totp_secret: null, totp_enabled: false, last_totp_step: null });
 
     // Tắt 2FA cũng thu hồi các phiên khác, giữ phiên hiện tại.
     await AuthSession.update(
@@ -343,7 +353,7 @@ class AuthService {
       throw new UnauthorizedError('Phiên xác thực đã hết hạn. Vui lòng đăng nhập lại.');
     }
 
-    if (decoded.purpose !== TEMP_TOKEN_PURPOSE) {
+    if (decoded.purpose !== TEMP_TOKEN_PURPOSE || decoded.token_type !== '2fa_temp') {
       throw new UnauthorizedError('Token không hợp lệ.');
     }
 
@@ -354,14 +364,21 @@ class AuthService {
       throw new UnauthorizedError('Không thể xác thực.');
     }
 
-    const verified = speakeasy.totp.verify({
+    const verification = speakeasy.totp.verifyDelta({
       secret: user.totp_secret,
       encoding: 'base32',
       token: totpCode,
       window: 1,
     });
 
-    if (!verified) throw new UnauthorizedError('Mã xác minh không đúng. Vui lòng thử lại.');
+    if (!verification) throw new UnauthorizedError('Mã xác minh không đúng. Vui lòng thử lại.');
+
+    const usedStep = Math.floor(Date.now() / 30_000) + (verification.delta ?? 0);
+    if (typeof user.last_totp_step === 'number' && usedStep <= user.last_totp_step) {
+      throw new UnauthorizedError('Mã xác minh đã được sử dụng. Vui lòng chờ mã mới.');
+    }
+
+    await user.update({ last_totp_step: usedStep });
 
     return this._issueTokens(user);
   }

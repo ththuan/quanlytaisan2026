@@ -3,7 +3,7 @@
  */
 
 import ExcelJS from 'exceljs';
-import * as XLSX from 'xlsx';
+import { readFirstSheetAsObjects } from '../utils/excel';
 import { User, Department } from '../models';
 
 export interface UserImportResult {
@@ -118,10 +118,7 @@ export async function importUsersFromExcel(
   };
 
   try {
-    const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const rows: any[] = XLSX.utils.sheet_to_json(sheet);
+    const rows: any[] = await readFirstSheetAsObjects(fileBuffer);
 
     const dataRows = rows.filter((row) => {
       const u = String(row['Tên đăng nhập (*)'] ?? row['Tên đăng nhập'] ?? '').trim();

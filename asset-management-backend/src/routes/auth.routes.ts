@@ -5,6 +5,7 @@ import { validateBody } from '../middleware/validation';
 import { registerSchema, loginSchema, changePasswordSchema } from '../utils/validators';
 import rateLimit from 'express-rate-limit';
 import Joi from 'joi';
+import crypto from 'crypto';
 import { createRateLimitStore } from '../config/rateLimiter';
 
 const router = Router();
@@ -14,6 +15,15 @@ const twoFaLimiter = rateLimit({
   store: createRateLimitStore('2fa'),
   windowMs: 15 * 60 * 1000,
   max: 5,
+  keyGenerator: (req) => {
+    const tempToken = typeof (req.body as { temp_token?: unknown })?.temp_token === 'string'
+      ? (req.body as { temp_token: string }).temp_token
+      : '';
+    const tokenKey = tempToken
+      ? crypto.createHash('sha256').update(tempToken).digest('hex').slice(0, 24)
+      : 'none';
+    return `${req.ip}:${tokenKey}`;
+  },
   message: { success: false, message: 'Quá nhiều lần thử xác thực. Vui lòng thử lại sau 15 phút.' },
   standardHeaders: true,
   legacyHeaders: false,

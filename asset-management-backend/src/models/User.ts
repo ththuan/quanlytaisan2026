@@ -17,6 +17,7 @@ export interface UserAttributes {
   last_login?: Date;
   totp_secret?: string | null;
   totp_enabled: boolean;
+  last_totp_step?: number | null;
   failed_login_attempts: number;
   locked_until?: Date | null;
   created_at?: Date;
@@ -37,6 +38,7 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   public last_login?: Date;
   public totp_secret!: string | null;
   public totp_enabled!: boolean;
+  public last_totp_step!: number | null;
   public failed_login_attempts!: number;
   public locked_until!: Date | null;
   public readonly created_at!: Date;
@@ -121,6 +123,11 @@ User.init(
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: false,
+    },
+    last_totp_step: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: null,
     },
     failed_login_attempts: {
       type: DataTypes.INTEGER,

@@ -1,6 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import authService from '../services/auth.service';
 import { getClientIp } from '../utils/clientIp';
+import {
+  REFRESH_COOKIE_NAME,
+  clearRefreshCookie,
+  clearStorageCookie,
+  readCookie,
+  setRefreshCookie,
+  setStorageCookie,
+} from '../middleware/storageAuth';
 
 type AuthenticatedRequest = Request & { user?: { id: number; sid?: string } };
 
@@ -15,11 +23,15 @@ export const register = async (req: Request, res: Response, next: NextFunction):
     }
 
     const result = await authService.register(req.body);
+    setStorageCookie(req, res, result.accessToken);
+    setRefreshCookie(req, res, result.refreshToken);
+    const safeResult = { ...(result as unknown as Record<string, unknown>) };
+    delete safeResult.refreshToken;
 
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
-      data: result,
+      data: safeResult,
     });
   } catch (error) {
     next(error);
@@ -32,10 +44,18 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
     const userAgent = req.headers['user-agent'];
     const result = await authService.login(req.body ?? {}, ipAddress, userAgent);
 
+    if ('accessToken' in result) {
+      setStorageCookie(req, res, result.accessToken);
+      setRefreshCookie(req, res, result.refreshToken);
+    }
+
+    const safeResult = { ...(result as unknown as Record<string, unknown>) };
+    delete safeResult.refreshToken;
+
     res.status(200).json({
       success: true,
       message: 'Login successful',
-      data: result,
+      data: safeResult,
     });
   } catch (error) {
     next(error);
@@ -62,6 +82,8 @@ export const changePassword = async (req: AuthenticatedRequest, res: Response, n
     const { old_password, new_password } = req.body;
 
     await authService.changePassword(userId, old_password, new_password);
+    clearStorageCookie(req, res);
+    clearRefreshCookie(req, res);
 
     res.status(200).json({
       success: true,
@@ -75,6 +97,8 @@ export const changePassword = async (req: AuthenticatedRequest, res: Response, n
 export const logout = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     await authService.logout(req.user!.id, req.user!.sid);
+    clearStorageCookie(req, res);
+    clearRefreshCookie(req, res);
     res.status(200).json({
       success: true,
       message: 'Logout successful',
@@ -86,13 +110,23 @@ export const logout = async (req: AuthenticatedRequest, res: Response, next: Nex
 
 export const refreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { refresh_token } = req.body;
-    if (!refresh_token || typeof refresh_token !== 'string') {
-      res.status(400).json({ success: false, message: 'refresh_token là bắt buộc' });
+    const refreshTokenFromBody = typeof req.body?.refresh_token === 'string'
+      ? req.body.refresh_token
+      : null;
+    const refreshToken = refreshTokenFromBody || readCookie(req, REFRESH_COOKIE_NAME);
+
+    if (!refreshToken) {
+      res.status(400).json({ success: false, message: 'Thiếu refresh token.' });
       return;
     }
-    const result = await authService.refreshAccessToken(refresh_token);
-    res.status(200).json({ success: true, data: result });
+
+    const result = await authService.refreshAccessToken(refreshToken);
+    setStorageCookie(req, res, result.accessToken);
+    setRefreshCookie(req, res, result.refreshToken);
+    res.status(200).json({
+      success: true,
+      data: { accessToken: result.accessToken },
+    });
   } catch (error) {
     next(error);
   }
@@ -109,7 +143,11 @@ export const validateTotpLogin = async (req: Request, res: Response, next: NextF
       return;
     }
     const result = await authService.validateTotpLogin(temp_token, String(totp_code));
-    res.status(200).json({ success: true, message: 'Login successful', data: result });
+    setStorageCookie(req, res, result.accessToken);
+    setRefreshCookie(req, res, result.refreshToken);
+    const safeResult = { ...(result as unknown as Record<string, unknown>) };
+    delete safeResult.refreshToken;
+    res.status(200).json({ success: true, message: 'Login successful', data: safeResult });
   } catch (error) {
     next(error);
   }

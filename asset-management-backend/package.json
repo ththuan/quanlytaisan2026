@@ -59,8 +59,7 @@
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "winston": "^3.11.0",
-    "winston-daily-rotate-file": "^4.7.1",
-    "xlsx": "^0.18.5"
+    "winston-daily-rotate-file": "^4.7.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

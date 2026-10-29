@@ -16,6 +16,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -111,78 +112,11 @@ api.interceptors.response.use(
         error.config?.url?.includes('/auth/register') ||
         error.config?.url?.includes('/auth/2fa/validate-login') ||
         error.config?.url?.includes('/auth/refresh');
-      // Đừng clear auth / redirect khi 401 từ chính request đăng nhập/đăng ký
+
       if (!isAuthRequest) {
-        const storedRefreshToken = localStorage.getItem('refreshToken');
         const hasRetriedAfterRefresh = Boolean((error.config as any)?.__authRefreshRetried);
-        if (storedRefreshToken && !isRefreshing && !hasRetriedAfterRefresh) {
-          isRefreshing = true;
-          try {
-            const authStore = useAuthStore();
-            const currentUserId = authStore.user?.id;
-            const res = await axios.post(`${API_BASE_URL}/auth/refresh`, { refresh_token: storedRefreshToken });
-            const newAccessToken: string = (res as any)?.data?.data?.accessToken || (res as any)?.data?.accessToken;
-            const newRefreshToken: string | undefined = (res as any)?.data?.data?.refreshToken || (res as any)?.data?.refreshToken;
-            if (newAccessToken) {
-              // Decode JWT to verify this token still belongs to the same user
-              try {
-                const payload = decodeJwtPayload(newAccessToken);
-                if (!payload) throw new Error('Invalid token payload');
-                if (currentUserId && payload.id && currentUserId !== payload.id) {
-                  console.warn('[Auth] Token refresh returned different user — session overwritten by another tab');
-                  authStore.clearAuth();
-                  router.replace('/login');
-                  isRefreshing = false;
-                  refreshSubscribers = [];
-                  return Promise.reject(error);
-                }
-              } catch { /* ignore decode errors */ }
-              localStorage.setItem('accessToken', newAccessToken);
-              if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
-              authStore.accessToken = newAccessToken;
-              onRefreshed(newAccessToken);
-              isRefreshing = false;
-              // Retry the original failed request
-              const retryConfig = { ...error.config! };
-              (retryConfig as any).__authRefreshRetried = true;
-              retryConfig.headers = retryConfig.headers ?? {};
-              retryConfig.headers['Authorization'] = `Bearer ${newAccessToken}`;
-              return api(retryConfig);
-            }
-            // newAccessToken empty — fall through to logout
-            throw new Error('Empty access token in refresh response');
-          } catch (refreshError) {
-            isRefreshing = false;
-            refreshSubscribers = [];
 
-            // Tab khác có thể vừa xoay vòng refresh token — thử lại bằng token mới nhất
-            // thay vì đăng xuất oan.
-            const latestRefreshToken = localStorage.getItem('refreshToken');
-            const latestAccessToken = localStorage.getItem('accessToken');
-            if (latestRefreshToken && latestRefreshToken !== storedRefreshToken && latestAccessToken) {
-              const retryConfig = { ...error.config! };
-              (retryConfig as any).__authRefreshRetried = true;
-              retryConfig.headers = retryConfig.headers ?? {};
-              retryConfig.headers['Authorization'] = `Bearer ${latestAccessToken}`;
-              return api(retryConfig);
-            }
-
-            // Lỗi mạng / server tạm thời: giữ nguyên phiên, không đăng xuất.
-            // Chỉ 401 từ chính endpoint refresh mới coi là phiên đã hết hiệu lực.
-            if (axios.isAxiosError(refreshError)) {
-              const status = refreshError.response?.status;
-              if (!status || status >= 500) {
-                ElNotification.error({
-                  title: t('common.error'),
-                  message: t('common.apiErrors.network'),
-                  duration: 8000,
-                });
-                return Promise.reject(error);
-              }
-            }
-          }
-        } else if (storedRefreshToken && isRefreshing) {
-          // Queue requests while refresh is in progress
+        if (isRefreshing && !hasRetriedAfterRefresh) {
           return new Promise((resolve, reject) => {
             addRefreshSubscriber((newToken: string) => {
               const retryConfig = { ...error.config! };
@@ -194,19 +128,77 @@ api.interceptors.response.use(
             setTimeout(() => reject(error), 10000);
           });
         }
-        // No refresh token or refresh failed — logout
+
+        if (!isRefreshing && !hasRetriedAfterRefresh) {
+          isRefreshing = true;
+          try {
+            let res: any;
+            try {
+              res = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, { withCredentials: true, timeout: 8000 });
+            } catch {
+              // Nhi?u tab c� th? v?a xoay v�ng cookie; th? l?i m?t l?n.
+              await new Promise((resolve) => setTimeout(resolve, 400));
+              try {
+                res = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, { withCredentials: true, timeout: 8000 });
+              } catch (secondError) {
+                const status = axios.isAxiosError(secondError) ? secondError.response?.status : undefined;
+                if (!status || status >= 500) {
+                  ElNotification.error({
+                    title: t('common.error'),
+                    message: t('common.apiErrors.network'),
+                    duration: 8000,
+                  });
+                  isRefreshing = false;
+                  refreshSubscribers = [];
+                  return Promise.reject(error);
+                }
+                throw secondError;
+              }
+            }
+
+            const newAccessToken: string | undefined = res?.data?.data?.accessToken;
+            if (!newAccessToken) throw new Error('Empty access token in refresh response');
+
+            const payload = decodeJwtPayload(newAccessToken);
+            if (!payload) throw new Error('Invalid token payload');
+
+            const authStore = useAuthStore();
+            if (authStore.user?.id && payload.id && authStore.user.id !== payload.id) {
+              console.warn('[Auth] Token refresh returned different user - session overwritten by another tab');
+              authStore.clearAuth();
+              router.replace('/login');
+              isRefreshing = false;
+              refreshSubscribers = [];
+              return Promise.reject(error);
+            }
+
+            localStorage.setItem('accessToken', newAccessToken);
+            authStore.accessToken = newAccessToken;
+            onRefreshed(newAccessToken);
+            isRefreshing = false;
+
+            const retryConfig = { ...error.config! };
+            (retryConfig as any).__authRefreshRetried = true;
+            retryConfig.headers = retryConfig.headers ?? {};
+            retryConfig.headers['Authorization'] = `Bearer ${newAccessToken}`;
+            return api(retryConfig);
+          } catch {
+            isRefreshing = false;
+            refreshSubscribers = [];
+          }
+        }
+
+        // Refresh th?t b?i -> dang xu?t
         try {
           const authStore = useAuthStore();
           authStore.clearAuth();
         } catch {
           localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
           localStorage.removeItem('user');
         }
         router.replace('/login');
         ElMessage.error(t('common.apiErrors.sessionExpired'));
-      }
-    } else if (error.response?.status === 403) {
+      }    } else if (error.response?.status === 403) {
       ElMessage.error(t('common.apiErrors.forbidden'));
     } else if (error.response?.status === 400) {
       // Validation errors - show detailed message
