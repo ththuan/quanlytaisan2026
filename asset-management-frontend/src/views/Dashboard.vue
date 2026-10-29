@@ -3,11 +3,8 @@
     <div class="dashboard-header">
       <div>
         <h2 class="dashboard-title">
-          <GradientText :text="$t('dashboard.title')" />
+          <GradientText text="Phần mềm Quản lý tài sản" />
         </h2>
-        <p class="header-subtitle">
-          Tổng quan hoạt động - Phần mềm Quản lý tài sản
-        </p>
       </div>
     </div>
 
@@ -965,13 +962,6 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
   font-size: inherit;
   font-weight: inherit;
   line-height: inherit;
-}
-
-.header-subtitle {
-  margin: 2px 0 0;
-  font-size: 0.85rem;
-  color: #64748b;
-  font-weight: 500;
 }
 
 /* Stats Cards Section */
