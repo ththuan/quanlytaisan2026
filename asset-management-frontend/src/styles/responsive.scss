@@ -480,10 +480,15 @@ body {
     padding-right: calc(10px + var(--safe-right)) !important;
   }
 
-  /* Giữ icon trang chủ, ẩn nhãn breadcrumb để tiết kiệm không gian */
-  .breadcrumb-label,
+  /* Giữ breadcrumb trên mobile, cắt bớt nhãn dài nếu thiếu chỗ */
+  .breadcrumb-label {
+    max-width: 38vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .breadcrumb-separator {
-    display: none !important;
+    margin: 0 6px;
   }
 
   /* Thu gọn user info */
