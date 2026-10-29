@@ -110,7 +110,7 @@
             </el-menu-item>
 
             <el-menu-item
-              v-if="FEATURES.auxiliaryModules && authStore.user?.role === 'admin'"
+              v-if="FEATURES.stockModule && authStore.user?.role === 'admin'"
               index="/stock"
             >
               <el-icon><Box /></el-icon>

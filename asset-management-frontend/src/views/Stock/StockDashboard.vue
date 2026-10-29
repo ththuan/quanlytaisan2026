@@ -62,7 +62,12 @@
           <el-table-column
             prop="name"
             label="Tên vật tư"
-            min-width="280"
+            min-width="260"
+          />
+          <el-table-column
+            prop="category"
+            label="Nhóm vật tư"
+            min-width="160"
           />
           <el-table-column
             prop="unit"

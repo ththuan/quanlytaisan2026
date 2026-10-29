@@ -1,14 +1,14 @@
 /**
- * Cờ bật/tắt tính năng theo phạm vi triển khai.
+ * Bật/tắt tính năng theo phạm vi triển khai.
  *
- * Phạm vi hiện tại của phần mềm: quản lý tài sản + kiểm kê + thanh lý.
- * Các module phụ trợ (Sửa chữa/Bảo trì, Mua sắm/Tăng tài sản, Kho vật tư)
- * CHƯA cần thiết — ẩn khỏi menu nhưng giữ nguyên code, có thể bật lại
- * bằng cách đổi cờ dưới đây thành `true`.
+ * Các module phụ trợ có thể bật lại bằng cách đổi cờ tương ứng thành `true`.
+ * Code vẫn được giữ nguyên, chỉ ẩn/hiện menu và chức năng.
  */
 export const FEATURES = {
-  /** Bật các module Sửa chữa/Bảo trì, Mua sắm/Tăng tài sản, Kho vật tư */
+  /** Module Sửa chữa/Bảo trì, Mua sắm/Tăng tài sản (admin) */
   auxiliaryModules: false,
-  /** Bật xác thực 2 bước (TOTP). Hiện chưa cần thiết → ẩn khỏi giao diện. */
+  /** Module Kho vật tư (admin) */
+  stockModule: true,
+  /** Xác thực 2 bước (TOTP) */
   twoFactor: false,
 };
