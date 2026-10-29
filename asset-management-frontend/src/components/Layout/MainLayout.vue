@@ -715,10 +715,18 @@ const toggleSidebar = () => {
 }
 
 .breadcrumb-label {
-  color: #64748b;
-  font-weight: 400;
+  color: #475569;
+  -webkit-text-fill-color: currentColor;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 2px 10px;
+  line-height: 1.6;
+  font-weight: 500;
   white-space: nowrap;
   flex-shrink: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .breadcrumb-label--link {
@@ -727,10 +735,14 @@ const toggleSidebar = () => {
 
 .breadcrumb-label--link:hover {
   color: #2563eb;
+  background: #eff6ff;
+  border-color: #bfdbfe;
 }
 
 .breadcrumb-label--current {
-  color: #0f172a;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #bfdbfe;
   font-weight: 700;
 }
 
