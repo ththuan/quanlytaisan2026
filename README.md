@@ -1,330 +1,715 @@
-# 🏢 Hệ thống Quản lý Tài sản
+# Hệ thống Quản lý Tài sản
 
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/postgresql-14-blue.svg)](https://www.postgresql.org/)
+[![Vue](https://img.shields.io/badge/vue-3-42b883.svg)](https://vuejs.org/)
 
-Hệ thống quản lý tài sản cho các tổ chức, trường học, doanh nghiệp.
+Phần mềm quản lý tài sản dùng cho Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ, hỗ trợ quản lý tài sản theo đơn vị, danh mục, quy trình điều chuyển - kiểm kê - mua sắm - sửa chữa - thanh lý, tra cứu QR công khai và báo cáo phục vụ quản trị nội bộ.
 
 **Repository**: [github.com/ththuan/quanlytaisan2026](https://github.com/ththuan/quanlytaisan2026)
 
 ---
 
-## ✨ Tính năng chính
+## 1. Tổng quan
 
-### 📦 Quản lý Tài sản
-- Thêm, sửa, xóa tài sản
-- Phân loại theo danh mục (theo Thông tư 141/2025/TT-BTC)
-- Quản lý theo phòng ban
-- QR Code cho mỗi tài sản
-- Theo dõi khấu hao, lịch sử thay đổi
+Hệ thống gồm 3 phần chính:
 
-### 🔄 Điều chuyển Tài sản
-- Đề nghị điều chuyển, quy trình phê duyệt
-- Lịch sử điều chuyển, thông báo
+- **Backend API**: Node.js + Express + TypeScript + Sequelize + PostgreSQL + Redis.
+- **Frontend**: Vue 3 + TypeScript + Element Plus + Pinia + Vite + ECharts.
+- **Hạ tầng**: Docker Compose + nginx + Cloudflare Tunnel (tùy chọn), có thể chạy trên Debian/Linux.
 
-### 🛠️ Sửa chữa & Bảo trì
-- Đề nghị sửa chữa, theo dõi tiến độ
-- Quản lý chi phí, lịch sử bảo trì
-- Mua sắm, kho vật tư, cấp phát
+Đối tượng sử dụng:
 
-### 📋 Kiểm kê Tài sản
-- Tạo đợt kiểm kê, quét QR Code
-- Báo cáo chi tiết, phê duyệt, xuất Excel
+| Vai trò | Phạm vi chính |
+|---|---|
+| `admin` | Quản trị toàn hệ thống, người dùng, danh mục, cấu hình, sao lưu |
+| `director` | Xem toàn trường, duyệt các quy trình ở cấp giám hiệu |
+| `department_head` | Quản lý tài sản và quy trình thuộc đơn vị được gán |
+| `staff` | Xem/khai báo tài sản, tạo đề nghị, kiểm kê trong phạm vi đơn vị |
 
-### 🗑️ Thanh lý Tài sản
-- Đề nghị thanh lý, hồ sơ thanh lý, biên bản tiêu hủy
-
-### 📊 Báo cáo & Thống kê
-- Dashboard tổng quan, báo cáo theo phòng ban/danh mục
-- Xuất Excel/PDF, biểu đồ
-
-### 👥 Quản lý Người dùng
-- Phân quyền (Admin, Director, Department Head, Staff)
-- Xác thực 2 bước (TOTP), Audit logs
+Người dùng không có `department_id` sẽ bị từ chối ở các chức năng yêu cầu phạm vi đơn vị (fail-closed).
 
 ---
 
-## 🛠️ Tech Stack
+## 2. Chức năng theo phân hệ
+
+### 2.1 Xác thực và phân quyền
+
+- Đăng nhập bằng username/password, phân quyền theo 4 vai trò.
+- Access token ngắn hạn (mặc định 1 giờ) chỉ giữ trong bộ nhớ trình duyệt.
+- Refresh token lưu trong cookie `HttpOnly`, `SameSite=Strict`, tự động xoay vòng khi hết hạn.
+- Xác thực 2 lớp TOTP (Google Authenticator):
+  - Bật/tắt 2FA, quét QR để thêm thiết bị.
+  - Chống dùng lại cùng một mã TOTP.
+  - Giới hạn số lần thử và thu hồi phiên khi thay đổi 2FA.
+- Khóa tài khoản tạm thời sau nhiều lần nhập sai mật khẩu.
+- Đổi mật khẩu, thu hồi toàn bộ phiên cũ.
+- Quản trị viên có thể đặt lại mật khẩu người dùng; phiên cũ bị thu hồi.
+- Tự đăng ký công khai **tắt mặc định** (`ALLOW_PUBLIC_REGISTRATION=false`).
+- Audit log cho đăng nhập, thao tác quản trị và các thay đổi quan trọng.
+
+### 2.2 Bảng điều khiển
+
+- Thống kê tổng quan: tổng tài sản, mua sắm, sửa chữa, điều chuyển, kiểm kê, thanh lý, tài sản mất/hư hỏng.
+- Biểu đồ mạng lưới tài sản theo đơn vị và danh mục.
+- Danh sách hoạt động gần đây (audit log).
+- Số liệu động, hiệu ứng xuất hiện, tiêu đề gradient.
+- Chế độ **giảm hiệu ứng** (Effects Lite) để chạy nhẹ hơn trên máy yếu.
+
+### 2.3 Quản lý tài sản
+
+- Thêm, sửa, xóa, xem chi tiết tài sản.
+- Danh mục tài sản theo Thông tư 141/2025/TT-BTC và danh mục bổ sung của trường.
+- Quản lý theo đơn vị, campus, vị trí, người sử dụng, chức danh.
+- Tính khấu hao, giá trị còn lại, thời gian sử dụng hữu ích.
+- QR code cho từng tài sản.
+- Hình ảnh tài sản: chụp từ camera, tải lên, xem và zoom ảnh.
+- Lịch sử thay đổi, lịch sử bàn giao, lịch sử sửa chữa, lịch sử điều chuyển.
+- Import/Export Excel:
+  - Import có kiểm tra dữ liệu trước khi ghi DB.
+  - Giới hạn 20.000 dòng và 100 cột mỗi file.
+  - Export danh sách tài sản, báo cáo mất/hư hỏng.
+
+### 2.4 Điều chuyển tài sản
+
+- Tạo đề nghị điều chuyển kèm chữ ký sống.
+- Kiểm tra tài sản thuộc đơn vị nguồn, không tin `from_department_id` do client gửi.
+- Quy trình duyệt nhiều cấp: trưởng đơn vị nguồn/đơn vị nhận, admin/giám hiệu.
+- Thông báo cho đơn vị nhận.
+- Xem lịch sử điều chuyển theo tài sản, có kiểm tra phạm vi đơn vị.
+- In biên bản điều chuyển.
+
+### 2.5 Kiểm kê tài sản
+
+- Tạo đợt kiểm kê, báo cáo kiểm kê theo đơn vị.
+- Kiểm kê bằng quét QR, nhập tay hoặc theo khu vực.
+- Ghi nhận số lượng thực tế, tình trạng, chênh lệch, đề xuất sửa chữa/thanh lý.
+- Đính kèm hình ảnh kiểm kê.
+- Duyệt nhiều cấp: trưởng đơn vị → admin.
+- Chặn thêm tài sản ngoài đơn vị vào báo cáo kiểm kê.
+- Xuất báo cáo kiểm kê Excel nhiều sheet.
+
+### 2.6 Mua sắm và sửa chữa
+
+- Đề nghị mua sắm/cấp phát, đề nghị sửa chữa.
+- Quy trình duyệt theo cấp, ghi nhận lịch sử duyệt.
+- Theo dõi trạng thái, chi phí, nhà cung cấp, chứng từ.
+- Khi hoàn tất mua sắm có thể tạo tài sản mới từ danh sách hàng hóa.
+- Quản lý chứng từ PDF của gói mua sắm.
+- In phiếu/ biên bản liên quan.
+
+### 2.7 Thanh lý và tiêu hủy
+
+- Tạo hồ sơ thanh lý/tiêu hủy từ tài sản hoặc từ kết quả kiểm kê.
+- Quy trình duyệt, ngày quyết định, số quyết định, đơn vị gốc.
+- Đính kèm quyết định thanh lý (PDF/Word/ảnh).
+- Chữ ký sống của các bên liên quan.
+- In biên bản thanh lý/tiêu hủy.
+
+### 2.8 Kho vật tư
+
+- Quản lý vật tư, nhóm vật tư, đơn vị tính.
+- Nhập kho, xuất kho, theo dõi tồn kho.
+- Lịch sử nhập/xuất, báo cáo kho.
+- Dashboard kho vật tư.
+
+### 2.9 Định mức tài sản
+
+- Danh mục định mức theo chức danh, nhóm chức danh.
+- Định mức diện tích, số lượng, giá trị.
+- Cảnh báo vượt định mức.
+- Nạp định mức theo Quy chế 188 của trường.
+
+### 2.10 Báo cáo
+
+- Báo cáo thường niên theo đơn vị.
+- Báo cáo tài sản mất/hư hỏng.
+- Báo cáo kiểm kê.
+- Xuất Excel theo mẫu TT120 và báo cáo nội bộ.
+- Xuất báo cáo trực tiếp trên trình duyệt bằng ExcelJS.
+
+### 2.11 Quản trị hệ thống
+
+- Quản lý phòng ban/đơn vị theo cây, campus, loại đơn vị.
+- Quản lý người dùng, vai trò, chức danh, trạng thái hoạt động.
+- Nhật ký hoạt động (audit log).
+- Thông báo trong hệ thống.
+- Sao lưu/khôi phục database.
+- Chạy migration, seed dữ liệu.
+- Kiểm tra sức khỏe hệ thống (database, Docker nếu có).
+- Điều khiển container chỉ khi được cấu hình Docker socket (mặc định không bật vì lý do bảo mật).
+
+### 2.12 Tra cứu QR công khai
+
+- Mỗi tài sản có QR chứa URL: `https://<domain>/scan/<MÃ>?t=<token>`.
+- Trang tra cứu công khai không cần đăng nhập, hiển thị thông tin cơ bản:
+  - Mã tài sản, tên, loại, đơn vị, vị trí, trạng thái, tình trạng, năm sử dụng, số lượng, ảnh.
+- Không hiển thị giá trị, serial, bảo hành, mô tả nội bộ.
+- Token QR bắt buộc mặc định (`QR_REQUIRE_SIGNATURE=true`).
+- Tem QR cũ không token bị từ chối mặc định; có thể bật `QR_ALLOW_LEGACY_NO_TOKEN=true` nếu cần tương thích.
+- Giới hạn tần suất tra cứu công khai.
+
+### 2.13 Giao diện và hiệu ứng
+
+- Giao diện tiếng Việt, responsive cho máy tính, tablet, điện thoại.
+- Hiệu ứng bằng `motion-v` (số liệu động, chuyển trang, sidebar, thông báo, ảnh, form).
+- Nút **MagicStick** trên header bật/tắt chế độ giảm hiệu ứng.
+- Tự động giảm hiệu ứng trên thiết bị yếu hoặc khi FPS thấp.
+- Tôn trọng `prefers-reduced-motion`.
+- PWA: cài như ứng dụng, có cơ chế cập nhật phiên bản.
+
+---
+
+## 3. Kiến trúc và công nghệ
 
 | Thành phần | Công nghệ |
-|------------|-----------|
-| **Backend** | Node.js 18+, Express, TypeScript, PostgreSQL 14, Sequelize, Redis, JWT + TOTP |
-| **Frontend** | Vue 3, Element Plus, Pinia, Vite, TypeScript, ECharts, html5-qrcode, Vue I18n |
-| **DevOps** | Docker, Docker Compose, nginx, GitHub Actions (self-hosted runner), Cloudflare Tunnel |
+|---|---|
+| Backend | Node.js 18+, Express, TypeScript, Sequelize, PostgreSQL 14, Redis 7 |
+| Xác thực | JWT HS256, refresh token cookie HttpOnly, TOTP (speakeasy), bcrypt |
+| Frontend | Vue 3, TypeScript, Vite, Element Plus, Pinia, Vue Router, Vue I18n |
+| Biểu đồ | ECharts + vue-echarts |
+| Excel | ExcelJS (backend và frontend) |
+| QR | qrcode, html5-qrcode |
+| Giao diện động | motion-v, @vueuse/core |
+| Hạ tầng | Docker, Docker Compose, nginx, Cloudflare Tunnel |
+| CI/CD | GitHub Actions, self-hosted runner (tùy chọn) |
+
+Luồng cơ bản:
+
+```text
+Trình duyệt (Vue SPA)
+        |
+        | HTTPS / Cloudflare Tunnel
+        v
+      nginx
+      /    \
+     /      \
+frontend   backend (Express API)
+              |
+       +------+------+
+       |             |
+  PostgreSQL      Redis
+```
 
 ---
 
-## 🚀 Chạy development (Windows + Docker Desktop)
+## 4. Cấu trúc thư mục
 
-### Yêu cầu
-- **Docker** + Docker Compose (khuyến nghị)
-- **Không Docker**: Node.js 18+, PostgreSQL 14, npm
+```text
+quanlytaisan2026/
+├── asset-management-backend/
+│   ├── src/
+│   │   ├── config/          # env, database, redis, jwt, rate limit
+│   │   ├── controllers/     # xử lý HTTP
+│   │   ├── middleware/      # auth, authorization, validation, storage auth
+│   │   ├── migrations/      # Sequelize migrations
+│   │   ├── models/          # Sequelize models
+│   │   ├── routes/          # khai báo API
+│   │   ├── services/        # nghiệp vụ
+│   │   └── utils/           # excel, file, jwt, qr, logger...
+│   ├── seeders/
+│   ├── scripts/
+│   └── Dockerfile
+├── asset-management-frontend/
+│   ├── src/
+│   │   ├── components/      # layout, dialog, animate components
+│   │   ├── composables/
+│   │   ├── directives/      # stagger, tilt, ripple, reveal, tabs
+│   │   ├── i18n/
+│   │   ├── router/
+│   │   ├── services/
+│   │   ├── stores/
+│   │   ├── styles/
+│   │   ├── types/
+│   │   ├── utils/
+│   │   └── views/
+│   └── Dockerfile
+├── nginx/
+│   ├── nginx.conf
+│   └── nginx.dev.conf
+├── scripts/
+├── .github/workflows/
+│   ├── ci.yml
+│   └── deploy.yml
+├── docker-compose.yml
+├── docker-compose.dev.yml
+├── docker-compose.prod.yml
+├── setup.sh
+├── deploy.sh
+├── .env.example
+├── .env.prod.example
+└── README.md
+```
 
-### Chạy bằng Docker
+---
+
+## 5. Yêu cầu hệ thống
+
+### Khuyến nghị
+
+- Docker Engine 24+ và Docker Compose plugin.
+- PostgreSQL 14 (container).
+- Redis 7 (container).
+- 2 GB RAM trở lên cho server nhỏ; 4 GB khuyến nghị.
+- HTTPS nếu dùng camera quét QR hoặc cài PWA.
+
+### Chạy không Docker
+
+- Node.js 18+ (khuyến nghị Node 20/22).
+- PostgreSQL 14.
+- Redis 7.
+- npm 9+.
+
+---
+
+## 6. Chạy development
+
+### 6.1 Bằng Docker
 
 ```bash
-# Clone
 git clone https://github.com/ththuan/quanlytaisan2026.git
 cd quanlytaisan2026
 
-# Cấu hình (lần đầu)
 cp .env.example .env
+# Chỉnh DB_PASSWORD, JWT_SECRET, ADMIN_PASSWORD, DEFAULT_PASSWORD...
 
-# Tạo volume (bắt buộc lần đầu)
 docker volume create quanlytaisan_postgres_data
 docker volume create quanlytaisan_redis_data
 
-# Khởi động (development — hot-reload)
 docker compose up -d
-
-# Xem log
 docker compose logs -f
 ```
 
-**Truy cập (development):**
-- **Frontend (Vite)**: http://localhost:4000 — Vite tự proxy `/api` về backend
-- **Backend API**: http://localhost:5000
-- **nginx (tuỳ chọn)**: http://localhost:8080 / https://localhost:8443
+Truy cập:
 
-**Các file docker-compose:**
+- Frontend Vite: `http://localhost:4000` hoặc `https://localhost:4000` nếu bật `VITE_HTTPS=true`.
+- Backend API: `http://localhost:5000`.
+- nginx (nếu dùng): `http://localhost:8080` / `https://localhost:8443`.
 
-| File | Mô tả |
-|------|-------|
-| `docker-compose.yml` | Development (hot-reload, mount source code, nginx proxy) |
-| `docker-compose.dev.yml` | Development nâng cao (healthcheck, không mount node_modules) |
-| `docker-compose.prod.yml` | Production (build tối ưu, nginx 80/443, Cloudflare Tunnel) |
+Các file compose:
 
-### Chạy không Docker (phát triển)
+| File | Mục đích |
+|---|---|
+| `docker-compose.yml` | Development, mount source, hot-reload |
+| `docker-compose.dev.yml` | Development nâng cao, healthcheck |
+| `docker-compose.prod.yml` | Production, build tối ưu, nginx, Cloudflare Tunnel |
 
-**1. Backend**
+### 6.2 Không dùng Docker
+
+Backend:
+
 ```bash
 cd asset-management-backend
-cp ../.env.example .env      # chỉnh DB_HOST=localhost, DB_PORT...
+cp ../.env.example .env
+# Sửa DB_HOST=localhost, DB_PORT=5432, REDIS_URL=redis://localhost:6379
 npm install
 npm run migrate
-npm run seed:admin
 npm run dev
 ```
 
-**2. Frontend** (terminal mới)
+Frontend:
+
 ```bash
 cd asset-management-frontend
 npm install
 npm run dev
 ```
 
----
+Lưu ý:
 
-## 🔐 HTTPS / SSL (mạng nội bộ)
-
-Development và production đều dùng **nginx** làm reverse proxy với HTTPS. Để tạo SSL certificate tự ký (10 năm, bao gồm SAN cho IP nội bộ + `localhost`):
-
-```powershell
-# Tự động phát hiện IP nội bộ và tạo cert vào nginx/ssl/
-powershell -ExecutionPolicy Bypass -File scripts\generate-ssl.ps1
-
-# Hoặc chỉ định IP cụ thể
-powershell -ExecutionPolicy Bypass -File scripts\generate-ssl.ps1 -IP 192.168.1.100
-```
-
-> Trên server Debian, `setup.sh` tự sinh cert này bằng `openssl`. Trình duyệt sẽ báo "Không bảo mật" (cert tự ký) → bấm **Nâng cao → Vẫn tiếp tục**.
+- Không cần chạy `seed:admin`; backend tự tạo admin lần đầu nếu chưa tồn tại.
+- Nếu chưa đặt `ADMIN_PASSWORD`, môi trường development dùng mặc định `admin / Admin@123`.
+- Production **bắt buộc** đặt `ADMIN_PASSWORD` mạnh.
 
 ---
 
-## 🚀 Triển khai production (Debian home server)
+## 7. Cấu hình môi trường
 
-Máy Windows chỉ dùng để code/test. Chạy thực tế trên **Debian home server** bằng `docker-compose.prod.yml` + **Cloudflare Tunnel** (public ra internet không cần mở cổng).
+Các biến quan trọng:
 
-### 1. Cài đặt 1 lần duy nhất (tự động)
+| Biến | Mô tả | Ghi chú |
+|---|---|---|
+| `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT` | Kết nối PostgreSQL | Production bắt buộc mật khẩu mạnh |
+| `JWT_SECRET` | Khóa ký JWT | Bắt buộc >= 32 ký tự, không dùng placeholder |
+| `JWT_ACCESS_EXPIRATION` | Thời hạn access token | Mặc định `1h` |
+| `JWT_REFRESH_EXPIRATION` | Thời hạn refresh token | Mặc định `30d` |
+| `DEFAULT_PASSWORD` | Mật khẩu khi tạo/import user | Production bắt buộc, không dùng `Ctec@123` |
+| `ADMIN_USERNAME` | Username admin khởi tạo | Mặc định `admin` |
+| `ADMIN_PASSWORD` | Mật khẩu admin khởi tạo | Production bắt buộc mạnh; chỉ dùng khi tạo admin lần đầu |
+| `CORS_ORIGIN` | Domain frontend được phép gọi API | Production bắt buộc domain cụ thể |
+| `FRONTEND_URL` | URL frontend | Dùng cho CORS và link công khai |
+| `ALLOW_PUBLIC_REGISTRATION` | Cho phép tự đăng ký | Mặc định `false` |
+| `QR_REQUIRE_SIGNATURE` | Bắt buộc token QR hợp lệ | Mặc định `true` |
+| `QR_ALLOW_LEGACY_NO_TOKEN` | Cho phép tem QR cũ không token | Mặc định `false` |
+| `PUBLIC_SCAN_RATE_LIMIT_*` | Giới hạn tra cứu QR công khai | Mặc định 60/phút/IP |
+| `SWAGGER_ENABLED` | Bật Swagger trong production | Mặc định `false` |
+| `BODY_LIMIT` | Giới hạn body request | Mặc định `10mb` |
+| `REDIS_URL` | Kết nối Redis | Mặc định `redis://redis:6379` trong Docker |
+| `CF_TUNNEL_TOKEN` | Token Cloudflare Tunnel | Chỉ dùng khi public qua Cloudflare |
+| `VITE_API_BASE_URL` | URL API frontend gọi | Mặc định `/api` |
 
-Trên server Debian mới chỉ cần chạy:
+Tạo secret:
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/ththuan/quanlytaisan2026/main/setup.sh -o setup.sh
-sudo bash setup.sh
-```
-
-[`setup.sh`](./setup.sh) tự động: cài Docker + Compose → clone repo → tạo `.env` với secret sinh ngẫu nhiên → tạo volume → sinh SSL cert → khởi động toàn bộ. Có thể ghi đè cấu hình qua biến môi trường:
-
-```bash
-sudo DOMAIN=quanlytaisanctec.dpdns.org \
-     CF_TUNNEL_TOKEN=<token> \
-     bash setup.sh
-```
-
-> Tài khoản admin luôn là `admin / Admin@123` (không nhận `ADMIN_PASSWORD` từ môi trường).
-
-> Các file quan trọng (`.env`, `nginx/ssl/`, `storage/`, `backups/`) nằm **ngoài git** nên mọi lần `git pull`/deploy **không bao giờ ghi đè** — không phải cấu hình lại từ đầu.
-
-### 2. Tự động deploy khi push code lên GitHub
-
-**Cách 1 — Tự động hoàn toàn (khuyến nghị):** cài **GitHub Actions self-hosted runner** ngay trên server. Runner tự kết nối *ra ngoài* tới GitHub nên **không cần mở cổng vào**. Sau khi cài, mỗi lần push lên `main` là server tự pull + rebuild.
-
-```bash
-# GitHub repo -> Settings -> Actions -> Runners -> New self-hosted runner (Linux x64) -> copy TOKEN
-RUNNER_TOKEN=<TOKEN> bash scripts/setup-github-runner.sh
-```
-
-Workflow nằm tại [`.github/workflows/deploy.yml`](./.github/workflows/deploy.yml).
-
-**Cách 2 — Thủ công (khi chưa cài runner):** SSH vào server rồi chạy:
-
-```bash
-cd /root/quanlytaisan2026 && ./deploy.sh
-```
-
-[`deploy.sh`](./deploy.sh) tự `git fetch` + `reset --hard origin/main` (tránh merge conflict) rồi rebuild `backend`/`frontend`. Container `cloudflared` không bị động tới nên tunnel không gián đoạn khi deploy.
-
-### 3. Public ra internet với Cloudflare Tunnel
-
-Không cần mở port trên router/firewall — Cloudflare tạo kết nối outbound từ server ra Cloudflare edge.
-
-1. Vào [Cloudflare Zero Trust](https://one.dash.cloudflare.com/) → **Networks → Tunnels → Create a tunnel** (loại **Cloudflared**).
-2. Copy giá trị token ở bước cài đặt connector, dán vào `.env`: `CF_TUNNEL_TOKEN=<token>`.
-3. Tab **Public Hostname** → Add a public hostname:
-   - Hostname: `quanlytaisanctec.dpdns.org`
-   - Service: `HTTP` → `nginx:80` (tên service trong Docker network nội bộ, **không phải** localhost)
-4. Trong `.env` đặt `CORS_ORIGIN` và `FRONTEND_URL` = `https://quanlytaisanctec.dpdns.org`.
-5. Khởi động tunnel:
-   ```bash
-   docker compose -f docker-compose.prod.yml --profile cloudflare up -d
-   ```
-6. Kiểm tra: `docker logs asset-management-cloudflared -f` phải thấy `Registered tunnel connection`.
-
-> **Lưu ý:** Cloudflare Tunnel dạng "Public Hostname" yêu cầu domain nằm trong **tài khoản Cloudflare của bạn**. Nếu `dpdns.org` không cho quản lý zone trên Cloudflare, hãy dùng domain riêng hoặc dùng DDNS + mở cổng.
-
----
-
-## ⚙️ Cấu hình (.env)
-
-| Biến | Mô tả | Mặc định |
-|------|-------|----------|
-| `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT` | Kết nối PostgreSQL | postgres / postgres / asset_management / 5432 |
-| `BACKEND_PORT` | Port backend expose ra host | `5000` |
-| `FRONTEND_PORT` | Port frontend expose ra host | `4000` |
-| `JWT_SECRET` | Secret ký JWT. **Production bắt buộc ≥32 ký tự** | `your-secret-key-change-in-production` |
-| `DEFAULT_PASSWORD` | Mật khẩu mặc định khi tạo user mới / import user | `Ctec@123` |
-| `ADMIN_PASSWORD` | *(bỏ qua)* — mật khẩu admin luôn cố định `Admin@123` | `Admin@123` |
-| `QR_REQUIRE_SIGNATURE` | Bắt buộc token hợp lệ trên trang tra cứu QR công khai | `true` |
-| `PUBLIC_SCAN_RATE_LIMIT_*` | Giới hạn tần suất tra cứu QR công khai (`/scan`, `/api/public`) | 60/phút |
-| `CORS_ORIGIN` | Origin cho phép. **Production**: domain cụ thể | `*` |
-| `FRONTEND_URL` | URL frontend (CORS/redirect) | `http://localhost:4000` |
-| `LOG_LEVEL` | Mức log backend | `info` |
-| `BODY_LIMIT` | Giới hạn body request | `10mb` |
-| `VITE_API_BASE_URL` | URL API backend mà frontend gọi | `/api` |
-| `CF_TUNNEL_TOKEN` | Token Cloudflare Tunnel (public ra internet) | *(trống)* |
-
-> ⚠️ **Production bắt buộc:** `JWT_SECRET` ≥32 ký tự, `DEFAULT_PASSWORD` ≠ `Ctec@123`. Backend sẽ **từ chối khởi động** nếu dùng giá trị yếu. Riêng tài khoản `admin` **luôn cố định `admin / Admin@123`** (bỏ qua env, tự khôi phục mỗi lần khởi động). `setup.sh` và `scripts/fix-env-secrets.sh` tự sinh/xử lý secret còn lại.
-
-**Tạo secret ngẫu nhiên:**
 ```bash
 node scripts/generate-secrets.js
 ```
 
+Production bắt buộc kiểm tra:
+
+```bash
+grep -E '^(DB_PASSWORD|JWT_SECRET|DEFAULT_PASSWORD|CORS_ORIGIN|FRONTEND_URL)=' .env
+```
+
+Thiếu các biến này, `docker-compose.prod.yml` sẽ dừng ngay để tránh chạy với cấu hình yếu.
+
 ---
 
-## 🔐 Tài khoản admin
+## 8. Database, migration và tài khoản admin
 
-| | |
+### Migration
+
+Production tự chạy migration khi backend khởi động:
+
+```bash
+docker compose -f docker-compose.prod.yml exec backend npm run migrate
+```
+
+Hoặc chạy thủ công trong thư mục backend:
+
+```bash
+npm run migrate
+npm run migrate:undo
+```
+
+### Tạo admin lần đầu
+
+- Chỉ tạo khi username admin **chưa tồn tại**.
+- Không đặt lại mật khẩu, không tắt 2FA, không mở khóa admin mỗi lần khởi động.
+- Production yêu cầu `ADMIN_PASSWORD` mạnh (>= 12 ký tự, không phải mật khẩu mặc định).
+
+### Quên mật khẩu admin
+
+Đặt `ADMIN_PASSWORD` mới trong `.env`, sau đó:
+
+```bash
+docker compose -f docker-compose.prod.yml exec backend npm run reset-admin
+```
+
+Script sẽ cập nhật mật khẩu admin theo `ADMIN_PASSWORD`; không tự tắt 2FA.
+
+Nếu mất luôn thiết bị 2FA:
+
+```bash
+docker compose -f docker-compose.prod.yml exec postgres \
+  psql -U postgres -d asset_management \
+  -c "UPDATE users SET totp_enabled=false, totp_secret=NULL WHERE username='admin';"
+```
+
+Sau đó đăng nhập lại và bật 2FA mới.
+
+### Reset dữ liệu nghiệp vụ
+
+```bash
+docker compose -f docker-compose.prod.yml exec backend npm run reset:business
+```
+
+Chỉ dùng khi thật sự cần; thao tác này xóa dữ liệu nghiệp vụ và có thể yêu cầu biến xác nhận.
+
+---
+
+## 9. Triển khai production trên Debian/Linux
+
+### 9.1 Chuẩn bị server
+
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y git curl openssl ufw
+# Cài Docker Engine + Docker Compose plugin theo hướng dẫn chính thức của Docker
+sudo systemctl enable --now docker
+```
+
+Khuyến nghị tạo user riêng:
+
+```bash
+sudo adduser deploy
+sudo usermod -aG docker deploy
+```
+
+### 9.2 Cài lần đầu
+
+Có thể dùng `setup.sh`:
+
+```bash
+git clone https://github.com/ththuan/quanlytaisan2026.git
+cd quanlytaisan2026
+sudo bash setup.sh
+```
+
+`setup.sh` sẽ:
+
+- Cài Docker/Compose nếu cần.
+- Tạo `.env` với secret ngẫu nhiên.
+- Tạo volume PostgreSQL/Redis.
+- Sinh SSL tự ký cho nginx.
+- Khởi động hệ thống.
+
+Nên đọc script trước khi chạy bằng quyền root.
+
+Có thể ghi đè cấu hình:
+
+```bash
+sudo DOMAIN=quanlytaisanctec.dpdns.org \
+     ADMIN_PASSWORD='mat-khau-manh' \
+     CF_TUNNEL_TOKEN='<token>' \
+     APP_DIR=/opt/quanlytaisan2026 \
+     bash setup.sh
+```
+
+### 9.3 Deploy khi có code mới
+
+Thủ công:
+
+```bash
+cd /root/quanlytaisan2026
+./deploy.sh
+```
+
+Nếu đặt repo ở đường dẫn khác:
+
+```bash
+REPO_PATH=/opt/quanlytaisan2026 ./deploy.sh
+```
+
+Tự động: cài GitHub self-hosted runner:
+
+```bash
+RUNNER_TOKEN=<TOKEN> bash scripts/setup-github-runner.sh
+```
+
+Workflow: `.github/workflows/deploy.yml`.
+
+### 9.4 Cloudflare Tunnel
+
+1. Vào Cloudflare Zero Trust → Networks → Tunnels → Create tunnel (Cloudflared).
+2. Copy token vào `.env`: `CF_TUNNEL_TOKEN=<token>`.
+3. Public Hostname:
+   - Hostname: domain của bạn.
+   - Service: `http://nginx:80`.
+4. Đặt `CORS_ORIGIN` và `FRONTEND_URL` đúng domain.
+5. Khởi động:
+
+```bash
+docker compose -f docker-compose.prod.yml --profile cloudflare up -d
+docker logs -f asset-management-cloudflared
+```
+
+### 9.5 Chuyển sang server mới
+
+1. Cài Docker + Compose trên server mới.
+2. Clone repo.
+3. Copy từ server cũ:
+   - `.env`
+   - `nginx/ssl/`
+   - `asset-management-backend/storage/`
+   - `asset-management-backend/logs/` (nếu cần)
+   - `backups/` (nếu có)
+4. Backup database server cũ:
+
+```bash
+cd /root/quanlytaisan2026
+docker compose -f docker-compose.prod.yml exec -T postgres \
+  pg_dump -U postgres -d asset_management -Fc > /tmp/quanlytaisan.dump
+```
+
+5. Copy file dump sang server mới, khởi động PostgreSQL rồi restore:
+
+```bash
+cd /opt/quanlytaisan2026
+docker compose -f docker-compose.prod.yml up -d postgres
+cat /tmp/quanlytaisan.dump | docker compose -f docker-compose.prod.yml exec -T postgres \
+  pg_restore -U postgres -d asset_management --clean --if-exists
+```
+
+6. Build và chạy:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+7. Cấu hình lại Cloudflare Tunnel/domain nếu đổi domain.
+8. Kiểm tra:
+
+```bash
+docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml logs -f backend nginx
+```
+
+9. Cập nhật firewall:
+   - Dùng Cloudflare Tunnel: chỉ mở SSH, không mở 80/443 ra Internet.
+   - Truy cập trực tiếp: mở 80/443 và giới hạn IP nếu có thể.
+
+---
+
+## 10. QR code và tra cứu công khai
+
+- QR chứa URL `/scan/<MÃ>?t=<token>`.
+- Token được lưu cùng QR trong DB, không phụ thuộc domain hay JWT secret.
+- Tạo lại QR khi cần đổi token hoặc in lại tem.
+- Trang công khai chỉ hiển thị thông tin nhận diện cơ bản, không có giá trị tài chính.
+- `QR_REQUIRE_SIGNATURE=true`: bắt buộc token hợp lệ.
+- `QR_ALLOW_LEGACY_NO_TOKEN=false`: từ chối tem cũ không token.
+- Nếu cần dùng tem cũ, bật tạm `QR_ALLOW_LEGACY_NO_TOKEN=true`, sau đó in lại QR mới.
+
+---
+
+## 11. Bảo mật
+
+Đã triển khai:
+
+- Helmet, CSP và security headers tại nginx.
+- JWT HS256, kiểm tra issuer/algorithm; access token ngắn hạn.
+- Refresh token trong cookie HttpOnly, SameSite=Strict.
+- Access token không lưu localStorage; chỉ giữ trong bộ nhớ.
+- TOTP chống phát lại mã, giới hạn số lần thử.
+- Khóa tài khoản sau nhiều lần sai mật khẩu.
+- Thu hồi phiên khi đổi mật khẩu, đổi 2FA, đăng xuất.
+- Phân quyền theo vai trò và phạm vi đơn vị; fail-closed khi thiếu đơn vị.
+- Kiểm tra quyền truy cập tài sản, chứng từ, chữ ký, kiểm kê, điều chuyển.
+- File nội bộ trong `/storage` yêu cầu đăng nhập; ảnh tài sản công khai được tách riêng.
+- Upload giới hạn MIME/extension; chặn HTML/SVG độc hại.
+- Chữ ký sống được kiểm tra allowlist data URL khi lưu và khi in.
+- QR công khai yêu cầu token, giới hạn tần suất.
+- Excel import dùng ExcelJS, giới hạn số dòng/cột.
+- Swagger tắt mặc định trong production.
+- Tự đăng ký công khai tắt mặc định.
+- CORS production chỉ cho phép domain cấu hình.
+- Audit log, rate limit, validation bằng Joi.
+- `docker.sock` không mount mặc định.
+
+Khuyến nghị trước khi đưa lên Internet:
+
+1. Dùng HTTPS thật (Cloudflare/Let's Encrypt), tránh truy cập HTTP trực tiếp.
+2. Đặt `ADMIN_PASSWORD`, `DB_PASSWORD`, `JWT_SECRET`, `DEFAULT_PASSWORD` mạnh.
+3. Đổi mật khẩu admin nếu vẫn dùng `Admin@123`.
+4. Giới hạn firewall, chỉ mở cổng cần thiết.
+5. Chạy GitHub runner bằng user riêng, không dùng root.
+6. Sao lưu database và thư mục `storage` định kỳ.
+7. Kiểm tra `npm audit` định kỳ.
+8. Cân nhắc nâng Node.js lên bản còn hỗ trợ (20/22).
+
+---
+
+## 12. Scripts
+
+| Script | Mục đích |
 |---|---|
-| **Username** | `admin` (cố định) |
-| **Password** | `Admin@123` (cố định, không đổi được) |
-
-- Tài khoản `admin / Admin@123` là **cố định**: tự tạo nếu chưa có và **tự đặt lại mật khẩu mỗi lần backend khởi động** (mở khoá + tắt 2FA). Reset dữ liệu, xoá DB hay cài mới đều quay về `admin / Admin@123`.
-- **Đặt lại mật khẩu admin** (về `Admin@123`, đồng thời mở khoá + tắt 2FA):
-  ```bash
-  docker compose exec backend npm run reset-admin
-  ```
-- **`DEFAULT_PASSWORD`** chỉ dùng cho **tạo user mới / import user**, không áp dụng cho `admin`.
-- **Không đăng nhập được?** Khởi động lại backend hoặc chạy `npm run reset-admin` trong thư mục `asset-management-backend` (hoặc `docker compose exec backend npm run reset-admin`).
-
----
-
-## 📷 QR code & tra cứu công khai
-
-- Mỗi tài sản có QR chứa URL công khai kèm token ngẫu nhiên: `https://<FRONTEND_URL>/scan/<MÃ>?t=<token>`.
-- Quét bằng camera điện thoại → mở trang HTML tra cứu (không cần đăng nhập): tên, mã, loại, phòng ban, vị trí, trạng thái, ngày kiểm kê gần nhất, thông tin thanh lý (nếu có), nút **Mở trong hệ thống**.
-- Endpoint: `GET /scan/:code` (trang HTML) và `GET /api/public/asset/:code` (JSON). Cả hai đều xác thực token (khi `QR_REQUIRE_SIGNATURE=true`) và bị giới hạn tần suất.
-- **QR là BẤT BIẾN:** sau khi sinh, mã QR **không bao giờ tự thay đổi** (kể cả khi đổi `FRONTEND_URL`, `JWT_SECRET`). Token tra cứu được đối chiếu với token **đã lưu trong DB**, không tính lại.
-  - Chỉ thay đổi khi **xóa tài sản rồi tạo lại** (QR mới — token ngẫu nhiên nên luôn khác), hoặc admin bấm **"Tạo lại QR Code"** ở trang chi tiết (thao tác chủ động).
-  - `POST /api/assets/qrcode/generate-all` chỉ tạo cho tài sản **chưa có** QR, không đụng tới QR đã tồn tại.
-  - **Reset data** (`reset-data.ps1` / `reset:business`) `TRUNCATE assets RESTART IDENTITY` → xóa sạch tài sản + QR; import/tạo lại sẽ sinh QR hoàn toàn mới.
-- **Tem cũ (in trước khi bật token)** vẫn tra cứu được bình thường (hệ thống cho phép QR không token). Muốn bảo vệ tem cũ thì tạo lại QR cho tài sản đó (sẽ đổi nội dung QR → cần in lại tem).
+| `setup.sh` | Cài đặt lần đầu trên server Debian |
+| `deploy.sh` | Pull code mới và rebuild container |
+| `scripts/setup-github-runner.sh` | Cài GitHub self-hosted runner |
+| `scripts/fix-env-secrets.sh` | Kiểm tra/sửa secret yếu trong `.env` |
+| `scripts/generate-secrets.js` | Sinh JWT_SECRET/DEFAULT_PASSWORD |
+| `scripts/backup-db.ps1` | Sao lưu database (Windows) |
+| `scripts/list-backups.ps1` | Liệt kê backup |
+| `scripts/restore-db.ps1` | Khôi phục database |
+| `scripts/reset-data.ps1` | Reset dữ liệu nghiệp vụ |
+| `scripts/generate-ssl.ps1` | Sinh SSL tự ký cho development |
+| `scripts/sync-push.*`, `scripts/sync-pull.*` | Đồng bộ code giữa nhiều máy |
 
 ---
 
-## 📜 Scripts
+## 13. Kiểm thử và chất lượng mã
 
-| Script | Mô tả |
-|--------|--------|
-| **setup.sh** | Cài đặt 1 lần toàn bộ hệ thống trên server Debian |
-| **deploy.sh** | Pull code mới + rebuild container trên server (gọi bởi runner) |
-| **scripts/setup-github-runner.sh** | Cài GitHub self-hosted runner (push là tự deploy) |
-| **scripts/fix-env-secrets.sh** | Tự sửa secret yếu trong `.env` (JWT/DEFAULT/ADMIN) |
-| **backup-db.ps1** | Tạo backup database |
-| **list-backups.ps1** | Liệt kê file backup + thống kê DB |
-| **restore-db.ps1** | Khôi phục từ file backup |
-| **reset-data.ps1** | Reset dữ liệu nghiệp vụ |
-| **generate-secrets.js** | Tạo `JWT_SECRET`/`DEFAULT_PASSWORD` ngẫu nhiên |
-| **generate-ssl.ps1** | Tạo SSL cert tự ký cho nginx |
-| **sync-push / sync-pull** | Đẩy/kéo code GitHub khi làm việc nhiều máy |
+Backend:
 
-Chi tiết: [scripts/README.md](./scripts/README.md).
-
----
-
-## 📁 Cấu trúc dự án
-
-```
-quanlytaisan2026/
-├── asset-management-backend/   # API Express + Sequelize
-│   ├── src/                    # controllers, services, models, routes, middleware, migrations, config
-│   ├── seeders/                # Sequelize seeders (admin)
-│   ├── scripts/                # reset-admin-password.js...
-│   └── Dockerfile
-├── asset-management-frontend/  # Vue 3 + Vite + Element Plus
-│   └── Dockerfile
-├── nginx/
-│   ├── nginx.conf              # Cấu hình nginx production
-│   └── nginx.dev.conf          # Cấu hình nginx development
-├── scripts/                    # setup/deploy/backup/reset/sync scripts
-├── .github/workflows/
-│   ├── ci.yml                  # Typecheck trên mỗi push/PR
-│   └── deploy.yml              # Auto-deploy production (self-hosted runner)
-├── docker-compose.yml          # Development
-├── docker-compose.dev.yml      # Development nâng cao
-├── docker-compose.prod.yml     # Production
-├── setup.sh                    # Cài đặt 1 lần cho server Debian
-├── deploy.sh                   # Pull + rebuild trên server
-├── .env.example
-└── README.md
+```bash
+cd asset-management-backend
+npm run typecheck
+npm run build
+npm run test
+npm run lint
 ```
 
----
+Frontend:
 
-## 🔒 Bảo mật
+```bash
+cd asset-management-frontend
+npm run typecheck
+npm run build
+npm run lint:ci
+```
 
-**Đã có sẵn:** Helmet, rate limiting, JWT (HS256, access 15 phút + refresh 7 ngày, có issuer/algorithm xác thực), phân quyền theo role, 2FA (TOTP), bcrypt, CORS, SQL parameterized, MIME filter cho file upload, audit log chống giả mạo, session-bound token (lưu theo thiết bị/IP).
+CI:
 
-**Trước khi triển khai production:**
-1. `JWT_SECRET`, `DEFAULT_PASSWORD` phải là giá trị mạnh (backend tự chặn nếu yếu). Tài khoản `admin` **luôn cố định `admin / Admin@123`** để không bao giờ mất quyền truy cập.
-2. Cấu hình `CORS_ORIGIN`/`FRONTEND_URL` đúng domain.
-3. `DB_PASSWORD` mạnh.
-4. Nếu upload ảnh base64 lớn: `BODY_LIMIT=50mb`.
-
----
-
-## 💡 Tính năng đề xuất (chưa có)
-
-| Ưu tiên | Tính năng | Lý do |
-|--------|------------|--------|
-| **1** | **Quên mật khẩu qua email** | Trang đăng nhập có link "Quên mật khẩu?" nhưng chưa có luồng gửi link đặt lại qua email. |
-| **2** | **Gửi email thông báo** | Backend chưa tích hợp SMTP — gửi email khi có việc cần phê duyệt, nhắc bảo trì đến hạn... |
-| **3** | **Refresh token rotation** | Đã có refresh token; có thể nâng cao thêm rotation để giảm rủi ro token lộ. |
-| **4** | **Xuất báo cáo định kỳ** | Lập lịch xuất báo cáo tháng/năm, lưu file hoặc gửi email. |
+- `.github/workflows/ci.yml`: typecheck/build khi push hoặc pull request.
+- `.github/workflows/deploy.yml`: deploy production qua self-hosted runner.
 
 ---
 
-## 📞 Liên hệ & Đóng góp
+## 14. API và tài liệu
 
-- 🐛 Báo lỗi: [GitHub Issues](https://github.com/ththuan/quanlytaisan2026/issues)
+- Health check: `GET /api/health`.
+- Swagger:
+  - Development: `http://localhost:5000/api-docs`.
+  - Production: tắt mặc định; bật bằng `SWAGGER_ENABLED=true`.
+- Các nhóm API chính:
+  - `/api/auth`
+  - `/api/assets`
+  - `/api/transfers`
+  - `/api/inventory`
+  - `/api/procurements`
+  - `/api/maintenance`
+  - `/api/asset-disposals`
+  - `/api/stock`
+  - `/api/reports`
+  - `/api/departments`
+  - `/api/users`
+  - `/api/dashboard`
+  - `/api/notifications`
+  - `/api/system-admin`
+  - `/api/public`, `/scan`
+
+---
+
+## 15. Xử lý sự cố thường gặp
+
+### Đăng nhập bị đăng xuất sau deploy
+
+- Access token chỉ nằm trong bộ nhớ; refresh token nằm trong cookie.
+- Đăng xuất rồi đăng nhập lại sau khi đổi domain hoặc deploy bản mới.
+
+### Không xem được ảnh/tài liệu trong `/storage`
+
+- Các thư mục nội bộ yêu cầu đăng nhập và đúng quyền.
+- Đăng nhập lại để nhận cookie storage mới.
+- Ảnh tài sản công khai vẫn nằm dưới `/storage/assets/...`.
+
+### QR cũ không tra cứu được
+
+- Mặc định tem không token bị từ chối.
+- Bật `QR_ALLOW_LEGACY_NO_TOKEN=true` nếu cần tương thích, hoặc tạo lại QR.
+
+### Deploy báo thiếu biến môi trường
+
+- Kiểm tra `.env` có `DB_PASSWORD`, `JWT_SECRET`, `DEFAULT_PASSWORD`, `CORS_ORIGIN`, `FRONTEND_URL`.
+- Thiếu biến, compose sẽ dừng để tránh cấu hình yếu.
+
+### Giao diện còn bản cũ
+
+- Hard refresh `Ctrl + Shift + R`.
+- Gỡ service worker: DevTools → Application → Service Workers → Unregister.
+- Clear site data rồi tải lại.
+
+### Backend không kết nối database/redis
+
+```bash
+docker compose -f docker-compose.prod.yml logs postgres redis backend
+```
+
+Kiểm tra `DB_PASSWORD`, `REDIS_URL`, volume và healthcheck.
+
+---
+
+## 16. Giấy phép và liên hệ
+
+- Mã nguồn phục vụ nội bộ Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ.
+- Báo lỗi/góp ý: [GitHub Issues](https://github.com/ththuan/quanlytaisan2026/issues).
