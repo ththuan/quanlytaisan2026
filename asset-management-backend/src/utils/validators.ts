@@ -235,7 +235,7 @@ export const fulfillProcurementSchema = Joi.object({
 export const createDepartmentSchema = Joi.object({
   name: Joi.string().max(255).required(),
   type: Joi.string().valid('department', 'faculty', 'center', 'classroom', 'lab', 'meeting_room', 'hall').optional(),
-  campus: Joi.string().valid('main', 'tan_an').optional(),
+  campus: Joi.string().valid('main', 'tan_an', 'trai_thuc_nghiem').optional(),
   parent_department_id: Joi.number().integer().positive().optional().allow(null),
   manager_id: Joi.number().integer().positive().optional().allow(null),
   description: Joi.string().allow('', null).optional(),
@@ -244,7 +244,7 @@ export const createDepartmentSchema = Joi.object({
 export const updateDepartmentSchema = Joi.object({
   name: Joi.string().max(255).optional(),
   type: Joi.string().valid('department', 'faculty', 'center', 'classroom', 'lab', 'meeting_room', 'hall').optional(),
-  campus: Joi.string().valid('main', 'tan_an').optional(),
+  campus: Joi.string().valid('main', 'tan_an', 'trai_thuc_nghiem').optional(),
   parent_department_id: Joi.number().integer().positive().optional().allow(null),
   manager_id: Joi.number().integer().positive().optional().allow(null),
   description: Joi.string().allow('', null).optional(),

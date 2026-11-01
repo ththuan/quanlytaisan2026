@@ -48,7 +48,7 @@ Department.init(
       type: DataTypes.STRING(20),
       allowNull: false,
       defaultValue: 'main',
-      comment: 'Cơ sở: main = Trụ sở chính, tan_an = Cơ sở Tân An',
+      comment: 'Cơ sở: main = Trụ sở chính, tan_an = Cơ sở Tân An, trai_thuc_nghiem = Trại thực nghiệm',
     },
     organization_code: {
       type: DataTypes.STRING(50),
