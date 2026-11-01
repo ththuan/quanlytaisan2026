@@ -12,7 +12,7 @@
   margin-bottom: 24px !important;
 }
 
-.header-content {
+.el-main .header-content {
   display: flex;
   flex: 1;
   min-width: 0;
@@ -22,7 +22,7 @@
   flex-wrap: wrap;
 }
 
-.header-left {
+.el-main .header-left {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -50,7 +50,7 @@
   font-size: 14px;
 }
 
-.header-right {
+.el-main .header-right {
   display: flex;
   align-items: center;
   gap: 8px;
