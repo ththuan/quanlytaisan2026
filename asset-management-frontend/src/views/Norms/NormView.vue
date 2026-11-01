@@ -1,15 +1,29 @@
 <template>
   <div class="norm-page">
-    <div class="page-head">
-      <h2>Định mức &amp; Cảnh báo thiết bị</h2>
-      <el-button
-        v-if="activeTab === 'norms' && canEditNorms"
-        type="primary"
-        :icon="Plus"
-        @click="openCreate"
-      >
-        Thêm định mức
-      </el-button>
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Odometer />
+            </el-icon>
+            Định mức &amp; Cảnh báo thiết bị
+          </h1>
+          <p class="page-subtitle">
+            Quản lý định mức sử dụng và cảnh báo thiết bị
+          </p>
+        </div>
+        <div class="header-right">
+          <el-button
+            v-if="activeTab === 'norms' && canEditNorms"
+            type="primary"
+            :icon="Plus"
+            @click="openCreate"
+          >
+            Thêm định mức
+          </el-button>
+        </div>
+      </div>
     </div>
 
     <el-tabs

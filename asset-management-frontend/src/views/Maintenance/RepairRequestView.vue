@@ -1,11 +1,22 @@
 <template>
   <div class="repair-request-view">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>Sửa chữa / Bảo trì thiết bị</span>
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Tools />
+            </el-icon>
+            Sửa chữa / Bảo trì thiết bị
+          </h1>
+          <p class="page-subtitle">
+            Theo dõi yêu cầu sửa chữa và bảo trì thiết bị
+          </p>
         </div>
-      </template>
+      </div>
+    </div>
+
+    <el-card>
       <RepairList />
     </el-card>
   </div>

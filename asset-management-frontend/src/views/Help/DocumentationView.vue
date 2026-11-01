@@ -1,15 +1,22 @@
 <template>
   <div class="help-page">
-    <div class="help-page__intro">
-      <h1 class="help-page__title">
-        {{ $t('helpDocs.title') }}
-      </h1>
-      <p class="help-page__subtitle">
-        {{ $t('helpDocs.subtitle') }}
-      </p>
-      <p class="help-page__lead">
-        {{ $t('helpDocs.rolesLead') }}
-      </p>
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Document />
+            </el-icon>
+            {{ $t('helpDocs.title') }}
+          </h1>
+          <p class="page-subtitle">
+            {{ $t('helpDocs.subtitle') }}
+          </p>
+          <p class="help-page__lead">
+            {{ $t('helpDocs.rolesLead') }}
+          </p>
+        </div>
+      </div>
     </div>
 
     <el-tabs

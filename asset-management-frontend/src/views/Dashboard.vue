@@ -1,10 +1,18 @@
 <template>
   <div class="dashboard">
-    <div class="dashboard-header">
-      <div>
-        <h2 class="dashboard-title">
-          <GradientText text="Phần mềm Quản lý tài sản" />
-        </h2>
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Box />
+            </el-icon>
+            <GradientText text="Phần mềm Quản lý tài sản" />
+          </h1>
+          <p class="page-subtitle">
+            Tổng quan tài sản và hoạt động trong hệ thống
+          </p>
+        </div>
       </div>
     </div>
 

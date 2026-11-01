@@ -1,0 +1,267 @@
+/* Layout dùng chung cho toàn bộ các trang trong hệ thống.
+   Mục tiêu: thống nhất cỡ chữ, khoảng cách và cách hiển thị giữa các module. */
+
+/* .el-main đã có padding/background; bỏ padding lặp lại ở từng trang. */
+.el-main > * {
+  padding: 0 !important;
+  background: transparent !important;
+  min-height: 0 !important;
+}
+
+.page-header {
+  margin-bottom: 24px !important;
+}
+
+.header-content {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #1f2937;
+}
+
+.title-icon {
+  color: #3b82f6;
+  font-size: 32px;
+}
+
+.page-subtitle {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Card bao nội dung danh sách */
+.list-card {
+  border-radius: 16px;
+  border: none;
+}
+
+.list-card > .el-card__body {
+  padding: 24px;
+}
+
+/* Bộ lọc */
+.list-filter {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+.list-filter .filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.list-filter .filter-item {
+  flex: 1;
+  min-width: 150px;
+}
+
+.list-filter .filter-item.search-input {
+  flex: 2;
+  min-width: 220px;
+}
+
+/* Bảng dữ liệu */
+.list-table {
+  width: 100%;
+}
+
+.list-table .el-table__header th {
+  background: #f8fafc !important;
+  color: #374151 !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  padding: 12px 10px !important;
+}
+
+.list-table .el-table__row td {
+  padding: 10px 10px !important;
+  font-size: 14px;
+}
+
+.list-table .cell {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Phân trang */
+.list-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.list-pagination .el-pagination {
+  margin-left: auto;
+  --el-pagination-font-size: 14px;
+}
+
+.pagination-info {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.pagination-info strong {
+  color: #1f2937;
+}
+
+/* ── Chuẩn hóa toàn bộ trang ───────────────────────────────────────────── */
+
+/* Tiêu đề trang: mọi module dùng cùng một cỡ chữ */
+.page-header h1,
+.page-header h2,
+.page-head h2,
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 !important;
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  line-height: 1.2;
+  color: #1f2937 !important;
+}
+
+.page-header .sub,
+.page-head .sub,
+.subtitle,
+.page-subtitle {
+  margin: 4px 0 0 !important;
+  color: #6b7280 !important;
+  font-size: 14px !important;
+}
+
+/* Card và tiêu đề trong card */
+.el-main .el-card {
+  border-radius: 16px;
+  border: none;
+}
+
+.el-main .el-card > .el-card__body {
+  padding: 24px !important;
+}
+
+.el-main .el-card > .el-card__header {
+  padding: 18px 24px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.el-main .el-card > .el-card__header h3 {
+  margin: 0 !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: #1f2937 !important;
+}
+
+/* Bảng dữ liệu toàn hệ thống */
+.el-main .el-table .el-table__header th {
+  background: #f8fafc !important;
+  color: #374151 !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  padding: 12px 10px !important;
+}
+
+.el-main .el-table td.el-table__cell {
+  padding: 10px 10px !important;
+}
+
+.el-main .el-table .cell {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Vùng lọc */
+.el-main .filter-section {
+  padding: 20px !important;
+  margin-bottom: 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+/* Phân trang */
+.el-main .el-pagination {
+  --el-pagination-font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .page-header h1,
+  .page-header h2,
+  .page-head h2,
+  .page-title {
+    font-size: 20px !important;
+  }
+
+  .title-icon {
+    font-size: 24px;
+  }
+
+  .page-header .sub,
+  .page-head .sub,
+  .page-subtitle {
+    font-size: 13px !important;
+  }
+
+  .el-main .el-card > .el-card__body {
+    padding: 16px !important;
+  }
+
+  .list-card > .el-card__body {
+    padding: 16px !important;
+  }
+
+  .list-filter {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .el-main .filter-section {
+    padding: 16px !important;
+    margin-bottom: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header h1,
+  .page-header h2,
+  .page-head h2,
+  .page-title {
+    font-size: 17px !important;
+  }
+}

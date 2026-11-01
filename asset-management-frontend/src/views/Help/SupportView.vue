@@ -1,12 +1,19 @@
 <template>
   <div class="help-page">
-    <div class="help-page__intro">
-      <h1 class="help-page__title">
-        {{ $t('helpSupport.title') }}
-      </h1>
-      <p class="help-page__subtitle">
-        {{ $t('helpSupport.subtitle') }}
-      </p>
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Service />
+            </el-icon>
+            {{ $t('helpSupport.title') }}
+          </h1>
+          <p class="page-subtitle">
+            {{ $t('helpSupport.subtitle') }}
+          </p>
+        </div>
+      </div>
     </div>
 
     <el-row :gutter="20">

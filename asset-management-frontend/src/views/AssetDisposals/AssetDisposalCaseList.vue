@@ -1,20 +1,29 @@
 <template>
   <div class="page">
     <div class="page-header">
-      <div>
-        <h2>{{ $t('menu.assetDisposals') }}</h2>
-        <div class="sub">
-          {{ $t('assetDisposals.subtitle') }}
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Delete />
+            </el-icon>
+            {{ $t('menu.assetDisposals') }}
+          </h1>
+          <p class="page-subtitle">
+            {{ $t('assetDisposals.subtitle') }}
+          </p>
+        </div>
+        <div class="header-right">
+          <el-button
+            v-if="authStore.isAdmin"
+            type="danger"
+            :icon="Delete"
+            @click="destructionVisible = true"
+          >
+            {{ $t('assetDisposals.createCase') }}
+          </el-button>
         </div>
       </div>
-      <el-button
-        v-if="authStore.isAdmin"
-        type="danger"
-        :icon="Delete"
-        @click="destructionVisible = true"
-      >
-        {{ $t('assetDisposals.createCase') }}
-      </el-button>
     </div>
 
     <el-card>

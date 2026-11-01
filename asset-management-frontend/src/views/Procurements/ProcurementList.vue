@@ -1,10 +1,17 @@
 <template>
   <div class="page">
     <div class="page-header">
-      <div>
-        <h2>Tăng tài sản</h2>
-        <div class="sub">
-          Theo dõi tăng tài sản (mua sắm / cấp phát)
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <ShoppingCart />
+            </el-icon>
+            Tổng tài sản
+          </h1>
+          <p class="page-subtitle">
+            Theo dõi tổng tài sản (mua sắm / cấp phát)
+          </p>
         </div>
       </div>
     </div>

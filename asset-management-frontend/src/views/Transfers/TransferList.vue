@@ -1,48 +1,55 @@
 <template>
   <div class="transfer-list">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <h3>{{ $t('transfers.title') }}</h3>
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Sort />
+            </el-icon>
+            {{ $t('transfers.title') }}
+          </h1>
+          <p class="page-subtitle">
+            Quản lý điều chuyển tài sản giữa các đơn vị
+          </p>
+        </div>
+        <div class="header-right">
           <el-button
             v-if="!authStore.isDirector"
             type="primary"
             :icon="Plus"
+            size="default"
             @click="handleCreate"
           >
             {{ $t('transfers.createTransfer') }}
           </el-button>
         </div>
-      </template>
+      </div>
+    </div>
 
+    <el-card
+      class="list-card"
+      shadow="never"
+    >
       <!-- Filters -->
-      <div class="filter-section">
-        <el-row
-          :gutter="16"
-          class="filter-row"
-        >
-          <el-col
-            :xs="24"
-            :sm="10"
-            :md="7"
-          >
+      <div class="list-filter">
+        <div class="filter-row">
+          <div class="filter-item search-input">
             <el-input
               v-model="searchQuery"
               :placeholder="$t('transfers.enterAssetCode')"
               clearable
+              size="large"
               @clear="handleFilterImmediate"
               @keyup.enter="handleFilterImmediate"
             />
-          </el-col>
-          <el-col
-            :xs="12"
-            :sm="7"
-            :md="5"
-          >
+          </div>
+          <div class="filter-item">
             <el-select
               v-model="filterStatus"
               :placeholder="$t('transfers.filterByStatus')"
               clearable
+              size="large"
               @change="handleFilterImmediate"
             >
               <el-option
@@ -52,24 +59,16 @@
                 :value="s.value"
               />
             </el-select>
-          </el-col>
-          <el-col
-            :xs="12"
-            :sm="7"
-            :md="6"
-          >
+          </div>
+          <div class="filter-item">
             <DepartmentTreeSelect
               v-model="filterDepartment"
               :placeholder="$t('transfers.filterByDepartment')"
+              size="large"
               @change="handleFilterImmediate"
             />
-          </el-col>
-          <el-col
-            :xs="24"
-            :sm="24"
-            :md="6"
-            class="filter-actions"
-          >
+          </div>
+          <div class="filter-actions">
             <el-button
               type="primary"
               @click="handleFilterImmediate"
@@ -79,16 +78,17 @@
             <el-button @click="handleReset">
               {{ $t('common.refresh') }}
             </el-button>
-          </el-col>
-        </el-row>
+          </div>
+        </div>
       </div>
 
-      <div class="transfer-table-wrapper">
+      <div class="transfer-table-wrapper responsive-table">
         <el-table
           v-loading="transferStore.loading"
           :data="transferStore.transfers"
           border
           stripe
+          class="list-table"
           style="width: 100%"
         >
           <el-table-column
@@ -180,14 +180,21 @@
         </el-table>
       </div>
 
-      <div class="pagination">
+      <div class="list-pagination">
+        <div class="pagination-info">
+          Hiển thị <strong>{{ transferStore.transfers.length }}</strong> trong tổng số
+          <strong>{{ transferStore.pagination?.total || 0 }}</strong> phiếu điều chuyển
+        </div>
         <el-pagination
           v-if="transferStore.pagination"
           :current-page="transferStore.pagination.page"
           :page-size="transferStore.pagination.limit"
           :total="transferStore.pagination.total"
-          layout="total, prev, pager, next"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="sizes, prev, pager, next, jumper"
+          background
           @current-change="handlePageChange"
+          @size-change="handleSizeChange"
         />
       </div>
     </el-card>
@@ -221,7 +228,7 @@ import { useTransferStore } from '@/stores/transfer.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useNotificationStore } from '@/stores/notification.store';
 import { useDepartments } from '@/composables/useDepartments';
-import { Plus } from '@element-plus/icons-vue';
+import { Plus, Sort } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import TransferFormDialog from '@/components/Transfers/TransferFormDialog.vue';
 import TransferDetailDialog from '@/components/Transfers/TransferDetailDialog.vue';
@@ -289,6 +296,16 @@ const handleReset = () => {
 const handlePageChange = (page: number) => {
   transferStore.fetchTransfers({
     page,
+    search: searchQuery.value || undefined,
+    status: filterStatus.value || undefined,
+    to_department_id: filterDepartment.value ?? undefined,
+  });
+};
+
+const handleSizeChange = (limit: number) => {
+  transferStore.fetchTransfers({
+    page: 1,
+    limit,
     search: searchQuery.value || undefined,
     status: filterStatus.value || undefined,
     to_department_id: filterDepartment.value ?? undefined,
@@ -405,42 +422,28 @@ const formatDate = (date: string) => {
 
 <style scoped>
 .transfer-list {
-  padding: 20px;
+  padding: 24px;
+  background: #f5f7fa;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.card-header h3 {
-  margin: 0;
-}
-
-.filter-section {
-  margin-bottom: 20px;
-  position: relative;
-  z-index: 2;
-}
-
-.filter-section .el-select {
+.filter-item .el-select,
+.filter-item :deep(.el-select) {
   width: 100%;
-}
-
-.filter-row {
-  align-items: center;
 }
 
 .filter-actions {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+  flex: 0 0 auto;
 }
 
 @media (max-width: 768px) {
   .filter-actions {
     justify-content: flex-start;
+    width: 100%;
   }
 }
 
@@ -448,11 +451,5 @@ const formatDate = (date: string) => {
   width: 100%;
   position: relative;
   z-index: 1;
-}
-
-.pagination {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
 }
 </style>

@@ -2,15 +2,29 @@
   <div class="inventory-container">
     <!-- Header -->
     <div class="page-header">
-      <h2>Kiểm kê tài sản</h2>
-      <el-button
-        v-if="isAdmin"
-        type="primary"
-        @click="showCreateRoundDialog = true"
-      >
-        <el-icon><Plus /></el-icon>
-        Tạo đợt kiểm kê mới
-      </el-button>
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Box />
+            </el-icon>
+            Kiểm kê tài sản
+          </h1>
+          <p class="page-subtitle">
+            Quản lý các đợt kiểm kê và báo cáo kiểm kê tài sản
+          </p>
+        </div>
+        <div class="header-right">
+          <el-button
+            v-if="isAdmin"
+            type="primary"
+            :icon="Plus"
+            @click="showCreateRoundDialog = true"
+          >
+            Tạo đợt kiểm kê mới
+          </el-button>
+        </div>
+      </div>
     </div>
 
     <!-- Active Round Alert - Improved for Staff Users -->
@@ -175,6 +189,7 @@
             v-loading="loadingRounds"
             :data="rounds"
             stripe
+            class="list-table"
           >
             <el-table-column
               prop="round_year"
@@ -246,16 +261,22 @@
           </el-table>
         </div>
 
-        <el-pagination
-          v-model:current-page="roundsPage"
-          v-model:page-size="roundsLimit"
-          :total="roundsTotal"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next"
-          class="pagination"
-          @size-change="fetchRounds"
-          @current-change="fetchRounds"
-        />
+        <div class="list-pagination">
+          <div class="pagination-info">
+            Hiển thị <strong>{{ rounds.length }}</strong> trong tổng số
+            <strong>{{ roundsTotal }}</strong> đợt kiểm kê
+          </div>
+          <el-pagination
+            v-model:current-page="roundsPage"
+            v-model:page-size="roundsLimit"
+            :total="roundsTotal"
+            :page-sizes="[10, 20, 50, 100]"
+            layout="sizes, prev, pager, next, jumper"
+            background
+            @size-change="fetchRounds"
+            @current-change="fetchRounds"
+          />
+        </div>
       </el-tab-pane>
 
       <!-- Tab: Báo cáo kiểm kê -->
@@ -265,11 +286,12 @@
         lazy
       >
         <!-- Filters -->
-        <div class="filters">
+        <div class="list-filter filters">
           <el-select
             v-model="reportFilters.round_id"
             placeholder="Chọn đợt kiểm kê"
             clearable
+            size="large"
             @change="fetchReports"
           >
             <el-option
@@ -283,6 +305,7 @@
             v-model="reportFilters.status"
             placeholder="Trạng thái"
             clearable
+            size="large"
             @change="fetchReports"
           >
             <el-option
@@ -317,7 +340,7 @@
             v-loading="loadingReports" 
             :data="reports" 
             stripe
-            class="reports-table"
+            class="reports-table list-table"
           >
             <el-table-column
               prop="department.name"
@@ -450,16 +473,22 @@
           </el-table>
         </div>
 
-        <el-pagination
-          v-model:current-page="reportsPage"
-          v-model:page-size="reportsLimit"
-          :total="reportsTotal"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next"
-          class="pagination"
-          @size-change="fetchReports"
-          @current-change="fetchReports"
-        />
+        <div class="list-pagination">
+          <div class="pagination-info">
+            Hiển thị <strong>{{ reports.length }}</strong> trong tổng số
+            <strong>{{ reportsTotal }}</strong> báo cáo kiểm kê
+          </div>
+          <el-pagination
+            v-model:current-page="reportsPage"
+            v-model:page-size="reportsLimit"
+            :total="reportsTotal"
+            :page-sizes="[10, 20, 50, 100]"
+            layout="sizes, prev, pager, next, jumper"
+            background
+            @size-change="fetchReports"
+            @current-change="fetchReports"
+          />
+        </div>
       </el-tab-pane>
     </el-tabs>
 
@@ -1220,20 +1249,10 @@ onMounted(async () => {
 
 <style scoped>
 .inventory-container {
-  padding: 20px;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.page-header h2 {
-  margin: 0;
-  font-size: 24px;
-  color: #303133;
+  padding: 24px;
+  background: #f5f7fa;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .active-round-card {
@@ -1373,19 +1392,19 @@ onMounted(async () => {
 
 .inventory-tabs {
   background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .filters {
   display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .filters .el-select {
-  width: 200px;
+  width: 240px;
 }
 
 .progress-text {
@@ -1393,12 +1412,6 @@ onMounted(async () => {
   font-size: 12px;
   color: #909399;
   margin-top: 4px;
-}
-
-.pagination {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
 }
 
 .text-success {

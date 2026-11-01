@@ -2,51 +2,61 @@
   <div class="inventory-report-detail">
     <!-- Header -->
     <div class="page-header">
-      <div class="header-left">
-        <el-button
-          :icon="ArrowLeft"
-          @click="goBack"
-        >
-          Quay lại
-        </el-button>
-        <h2>Chi tiết báo cáo kiểm kê</h2>
-      </div>
-      <div class="header-right">
-        <el-button
-          v-if="report"
-          :loading="printingMinutes"
-          @click="printMinutes"
-        >
-          <el-icon><Document /></el-icon>
-          In biên bản
-        </el-button>
-        <el-button
-          v-if="report"
-          :loading="printingDiscrepancy"
-          @click="printDiscrepancyMinutes"
-        >
-          <el-icon><Warning /></el-icon>
-          In biên bản thừa/thiếu
-        </el-button>
-        <!-- Nút chỉnh sửa và gửi lại khi báo cáo bị từ chối -->
-        <el-button 
-          v-if="canResubmit"
-          type="primary" 
-          @click="goToEdit"
-        >
-          <el-icon><Edit /></el-icon>
-          Chỉnh sửa và gửi lại
-        </el-button>
-        <!-- Nút duyệt báo cáo cho admin/head -->
-        <el-button 
-          v-if="canApprove"
-          type="warning" 
-          :disabled="report?.status !== 'pending' && report?.status !== 'approved_by_head'"
-          @click="openApproveDialog"
-        >
-          <el-icon><Select /></el-icon>
-          Duyệt báo cáo
-        </el-button>
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Document />
+            </el-icon>
+            Chi tiết báo cáo kiểm kê
+          </h1>
+          <p class="page-subtitle">
+            {{ report?.department?.name || 'Báo cáo kiểm kê tài sản' }}
+          </p>
+        </div>
+        <div class="header-right">
+          <el-button
+            :icon="ArrowLeft"
+            @click="goBack"
+          >
+            Quay lại
+          </el-button>
+          <el-button
+            v-if="report"
+            :loading="printingMinutes"
+            @click="printMinutes"
+          >
+            <el-icon><Document /></el-icon>
+            In biên bản
+          </el-button>
+          <el-button
+            v-if="report"
+            :loading="printingDiscrepancy"
+            @click="printDiscrepancyMinutes"
+          >
+            <el-icon><Warning /></el-icon>
+            In biên bản thừa/thiếu
+          </el-button>
+          <!-- Nút chỉnh sửa và gửi lại khi báo cáo bị từ chối -->
+          <el-button 
+            v-if="canResubmit"
+            type="primary" 
+            @click="goToEdit"
+          >
+            <el-icon><Edit /></el-icon>
+            Chỉnh sửa và gửi lại
+          </el-button>
+          <!-- Nút duyệt báo cáo cho admin/head -->
+          <el-button 
+            v-if="canApprove"
+            type="warning" 
+            :disabled="report?.status !== 'pending' && report?.status !== 'approved_by_head'"
+            @click="openApproveDialog"
+          >
+            <el-icon><Select /></el-icon>
+            Duyệt báo cáo
+          </el-button>
+        </div>
       </div>
     </div>
 

@@ -1,38 +1,48 @@
 <template>
   <div class="department-list">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <h3>{{ $t('departments.title') }}</h3>
-          <div
-            v-if="authStore.isAdmin"
-            class="actions"
-          >
-            <el-button
-              :icon="Download"
-              @click="handleDownloadTemplate"
-            >
-              Tải mẫu Excel
-            </el-button>
-            <el-button
-              type="success"
-              :icon="Upload"
-              :loading="importing"
-              @click="triggerFileInput"
-            >
-              Import Excel
-            </el-button>
-            <el-button
-              type="primary"
-              :icon="Plus"
-              @click="handleCreate"
-            >
-              {{ $t('departments.addDepartment') }}
-            </el-button>
-          </div>
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <OfficeBuilding />
+            </el-icon>
+            {{ $t('departments.title') }}
+          </h1>
+          <p class="page-subtitle">
+            Quản lý phòng ban, khoa và đơn vị trong trường
+          </p>
         </div>
-      </template>
+        <div
+          v-if="authStore.isAdmin"
+          class="header-right actions"
+        >
+          <el-button
+            :icon="Download"
+            @click="handleDownloadTemplate"
+          >
+            Tải mẫu Excel
+          </el-button>
+          <el-button
+            type="success"
+            :icon="Upload"
+            :loading="importing"
+            @click="triggerFileInput"
+          >
+            Import Excel
+          </el-button>
+          <el-button
+            type="primary"
+            :icon="Plus"
+            @click="handleCreate"
+          >
+            {{ $t('departments.addDepartment') }}
+          </el-button>
+        </div>
+      </div>
+    </div>
 
+    <el-card>
       <input
         ref="fileInputRef"
         type="file"

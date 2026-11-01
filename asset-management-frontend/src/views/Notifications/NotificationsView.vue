@@ -1,29 +1,39 @@
 <template>
   <div class="notifications-page">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <h3>Hộp thư thông báo</h3>
-          <div style="display: flex; gap: 8px;">
-            <el-button
-              :icon="Refresh"
-              :loading="loading"
-              @click="refresh"
-            >
-              Làm mới
-            </el-button>
-            <el-button
-              v-if="store.notifications.length > 0"
-              type="primary"
-              plain
-              @click="markAllRead"
-            >
-              Đánh dấu tất cả đã đọc
-            </el-button>
-          </div>
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Bell />
+            </el-icon>
+            Hộp thư thông báo
+          </h1>
+          <p class="page-subtitle">
+            Các thông báo và cập nhật mới nhất từ hệ thống
+          </p>
         </div>
-      </template>
+        <div class="header-right">
+          <el-button
+            :icon="Refresh"
+            :loading="loading"
+            @click="refresh"
+          >
+            Làm mới
+          </el-button>
+          <el-button
+            v-if="store.notifications.length > 0"
+            type="primary"
+            plain
+            @click="markAllRead"
+          >
+            Đánh dấu tất cả đã đọc
+          </el-button>
+        </div>
+      </div>
+    </div>
 
+    <el-card>
       <el-empty
         v-if="!loading && store.notifications.length === 0"
         description="Không có thông báo nào đang chờ"

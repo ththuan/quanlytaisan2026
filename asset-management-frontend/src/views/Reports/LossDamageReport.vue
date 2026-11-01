@@ -1,23 +1,35 @@
 <template>
   <div class="loss-page">
-    <div class="page-head">
-      <h2>Tài sản mất / hư hỏng</h2>
-      <div>
-        <el-button
-          :icon="Printer"
-          @click="printReport"
-        >
-          In biên bản
-        </el-button>
-        <el-button
-          v-if="canExport"
-          type="primary"
-          :icon="Download"
-          :loading="exporting"
-          @click="exportExcel"
-        >
-          Xuất Excel
-        </el-button>
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Warning />
+            </el-icon>
+            Tài sản mất / hư hỏng
+          </h1>
+          <p class="page-subtitle">
+            Thống kê và xử lý tài sản mất, hư hỏng
+          </p>
+        </div>
+        <div class="header-right">
+          <el-button
+            :icon="Printer"
+            @click="printReport"
+          >
+            In biên bản
+          </el-button>
+          <el-button
+            v-if="canExport"
+            type="primary"
+            :icon="Download"
+            :loading="exporting"
+            @click="exportExcel"
+          >
+            Xuất Excel
+          </el-button>
+        </div>
       </div>
     </div>
 

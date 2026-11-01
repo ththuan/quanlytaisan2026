@@ -1,51 +1,66 @@
 <template>
   <div class="stock-page">
-    <el-card>
-      <template #header>
-        <div class="stock-header">
-          <div class="title">
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Box />
+            </el-icon>
             Kho vật tư
-          </div>
-          <div class="actions">
+          </h1>
+          <p class="page-subtitle">
+            Quản lý nhập xuất tồn vật tư trong kho
+          </p>
+        </div>
+        <div class="header-right">
+          <el-button
+            v-if="authStore.isAdmin"
+            type="primary"
+            @click="openReceipt"
+          >
+            Nhập kho
+          </el-button>
+          <el-button
+            v-if="authStore.isAdmin"
+            type="warning"
+            @click="openIssue"
+          >
+            Xuất kho
+          </el-button>
+          <el-button
+            type="info"
+            plain
+            @click="goHistory"
+          >
+            Lịch sử
+          </el-button>
+          <el-button
+            type="default"
+            :loading="loading"
+            @click="fetchItems"
+          >
+            Làm mới
+          </el-button>
+        </div>
+      </div>
+    </div>
+
+    <el-card>
+      <div class="list-filter">
+        <div class="filter-row">
+          <div class="filter-item search-input">
             <el-input
               v-model="search"
               placeholder="Tìm theo mã hoặc tên vật tư"
               clearable
-              style="width: 320px"
+              size="large"
               @keyup.enter="fetchItems"
               @clear="fetchItems"
             />
-            <el-button
-              v-if="authStore.isAdmin"
-              type="primary"
-              @click="openReceipt"
-            >
-              Nhập kho
-            </el-button>
-            <el-button
-              v-if="authStore.isAdmin"
-              type="warning"
-              @click="openIssue"
-            >
-              Xuất kho
-            </el-button>
-            <el-button
-              type="info"
-              plain
-              @click="goHistory"
-            >
-              Lịch sử
-            </el-button>
-            <el-button
-              type="default"
-              :loading="loading"
-              @click="fetchItems"
-            >
-              Làm mới
-            </el-button>
           </div>
         </div>
-      </template>
+      </div>
 
       <div class="responsive-table">
         <el-table
@@ -53,6 +68,7 @@
           :data="items"
           border
           stripe
+          class="list-table"
         >
           <el-table-column
             prop="code"

@@ -1,21 +1,28 @@
 <template>
   <div class="system-admin-page">
     <div class="page-header">
-      <div class="header-left">
-        <h1>Quản trị hệ thống</h1>
-        <p class="subtitle">
-          Quản lý Docker, Database, Backup và cấu hình hệ thống
-        </p>
-      </div>
-      <div class="header-right">
-        <el-button
-          type="primary"
-          :icon="Refresh"
-          :loading="loading"
-          @click="refreshAll"
-        >
-          Làm mới
-        </el-button>
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Setting />
+            </el-icon>
+            Quản trị hệ thống
+          </h1>
+          <p class="page-subtitle">
+            Quản lý Docker, Database, Backup và cấu hình hệ thống
+          </p>
+        </div>
+        <div class="header-right">
+          <el-button
+            type="primary"
+            :icon="Refresh"
+            :loading="loading"
+            @click="refreshAll"
+          >
+            Làm mới
+          </el-button>
+        </div>
       </div>
     </div>
 

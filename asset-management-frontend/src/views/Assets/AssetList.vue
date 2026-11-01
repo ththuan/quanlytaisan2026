@@ -1707,8 +1707,8 @@ const handleExportQRPDF = async () => {
   background: #f8fafc !important;
   color: #374151;
   font-weight: 600;
-  font-size: 13px;
-  padding: 12px 8px;
+  font-size: 14px;
+  padding: 12px 10px;
 }
 
 .asset-table :deep(.el-table__row) {
@@ -1720,7 +1720,7 @@ const handleExportQRPDF = async () => {
 }
 
 .asset-table :deep(.el-table__row td) {
-  padding: 10px 8px;
+  padding: 10px 10px;
 }
 
 .asset-table :deep(.cell) {
@@ -1736,7 +1736,7 @@ const handleExportQRPDF = async () => {
 
 .asset-code {
   font-family: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: #3b82f6;
 }
@@ -1748,7 +1748,7 @@ const handleExportQRPDF = async () => {
 .asset-name {
   font-weight: 600;
   color: #0f172a;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.4;
 }
 

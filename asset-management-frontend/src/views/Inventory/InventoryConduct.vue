@@ -2,42 +2,52 @@
   <div class="inventory-conduct">
     <!-- Header -->
     <div class="page-header">
-      <div class="header-left">
-        <el-button
-          :icon="ArrowLeft"
-          @click="goBack"
-        >
-          Quay lại
-        </el-button>
-        <h2>Thực hiện kiểm kê</h2>
-      </div>
-      <div class="header-right">
-        <el-button 
-          :loading="markingMissing" 
-          :disabled="!hasUnscannedAssets"
-          type="warning"
-          @click="markUnscannedAsMissing"
-        >
-          <el-icon><Warning /></el-icon>
-          Đánh dấu tài sản chưa quét là Thiếu
-        </el-button>
-        <el-button
-          :loading="saving"
-          :disabled="!hasChanges"
-          @click="saveAsDraft"
-        >
-          <el-icon><DocumentCopy /></el-icon>
-          Lưu nháp
-        </el-button>
-        <el-button
-          type="primary"
-          :loading="submitting"
-          :disabled="!canSubmit"
-          @click="submitReport"
-        >
-          <el-icon><Select /></el-icon>
-          Nộp báo cáo
-        </el-button>
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Edit />
+            </el-icon>
+            Thực hiện kiểm kê
+          </h1>
+          <p class="page-subtitle">
+            {{ round?.round_name || 'Kiểm kê tài sản của đơn vị' }}
+          </p>
+        </div>
+        <div class="header-right">
+          <el-button
+            :icon="ArrowLeft"
+            @click="goBack"
+          >
+            Quay lại
+          </el-button>
+          <el-button 
+            :loading="markingMissing" 
+            :disabled="!hasUnscannedAssets"
+            type="warning"
+            @click="markUnscannedAsMissing"
+          >
+            <el-icon><Warning /></el-icon>
+            Đánh dấu tài sản chưa quét là Thiếu
+          </el-button>
+          <el-button
+            :loading="saving"
+            :disabled="!hasChanges"
+            @click="saveAsDraft"
+          >
+            <el-icon><DocumentCopy /></el-icon>
+            Lưu nháp
+          </el-button>
+          <el-button
+            type="primary"
+            :loading="submitting"
+            :disabled="!canSubmit"
+            @click="submitReport"
+          >
+            <el-icon><Select /></el-icon>
+            Nộp báo cáo
+          </el-button>
+        </div>
       </div>
     </div>
 

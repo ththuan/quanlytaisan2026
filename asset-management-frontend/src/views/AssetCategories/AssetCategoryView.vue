@@ -1,28 +1,38 @@
 <template>
   <div class="category-page">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <h3>Quản lý danh mục tài sản</h3>
-          <div style="display: flex; gap: 8px;">
-            <el-button
-              :icon="Refresh"
-              :loading="loading"
-              @click="fetchCategories"
-            >
-              Làm mới
-            </el-button>
-            <el-button
-              type="primary"
-              :icon="Plus"
-              @click="openCreate"
-            >
-              Thêm danh mục
-            </el-button>
-          </div>
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Files />
+            </el-icon>
+            Quản lý danh mục tài sản
+          </h1>
+          <p class="page-subtitle">
+            Danh mục loại tài sản dùng để phân loại và báo cáo
+          </p>
         </div>
-      </template>
+        <div class="header-right">
+          <el-button
+            :icon="Refresh"
+            :loading="loading"
+            @click="fetchCategories"
+          >
+            Làm mới
+          </el-button>
+          <el-button
+            type="primary"
+            :icon="Plus"
+            @click="openCreate"
+          >
+            Thêm danh mục
+          </el-button>
+        </div>
+      </div>
+    </div>
 
+    <el-card>
       <!-- Search + Filter -->
       <el-row
         :gutter="12"

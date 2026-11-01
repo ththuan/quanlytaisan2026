@@ -1,37 +1,42 @@
 <template>
   <div class="inventory-round-detail">
     <div class="page-header">
-      <div>
-        <h2>Chi tiết đợt kiểm kê</h2>
-        <div
-          v-if="round"
-          class="sub"
-        >
-          {{ round.round_name }} ({{ round.round_year }})
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Calendar />
+            </el-icon>
+            Chi tiết đợt kiểm kê
+          </h1>
+          <p
+            v-if="round"
+            class="page-subtitle"
+          >
+            {{ round.round_name }} ({{ round.round_year }})
+          </p>
         </div>
-      </div>
-      <div class="actions">
-        <el-button 
-          v-if="round?.status === 'completed'" 
-          type="success" 
-          :icon="Download" 
-          :loading="exporting"
-          style="margin-right: 12px"
-          @click="exportReport"
-        >
-          Xuất báo cáo tổng hợp
-        </el-button>
-        <el-button
-          v-if="isAdmin && round?.status !== 'completed'"
-          type="warning"
-          style="margin-right: 12px"
-          @click="openExtendDialog"
-        >
-          Gia hạn (Bổ sung thời gian)
-        </el-button>
-        <el-button @click="goBack">
-          Quay lại
-        </el-button>
+        <div class="header-right">
+          <el-button
+            v-if="round?.status === 'completed'"
+            type="success"
+            :icon="Download"
+            :loading="exporting"
+            @click="exportReport"
+          >
+            Xuất báo cáo tổng hợp
+          </el-button>
+          <el-button
+            v-if="isAdmin && round?.status !== 'completed'"
+            type="warning"
+            @click="openExtendDialog"
+          >
+            Gia hạn (Bổ sung thời gian)
+          </el-button>
+          <el-button @click="goBack">
+            Quay lại
+          </el-button>
+        </div>
       </div>
     </div>
 
@@ -623,8 +628,8 @@ onMounted(() => {
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 12px;
+  align-items: center;
+  margin-bottom: 24px;
 }
 
 .sub {

@@ -1,9 +1,19 @@
 <template>
   <div class="audit-log-page">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <h3>{{ isAdminOrDirector ? 'Nhật ký hoạt động' : 'Lịch sử thao tác của đơn vị' }}</h3>
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Tickets />
+            </el-icon>
+            {{ isAdminOrDirector ? 'Nhật ký hoạt động' : 'Lịch sử thao tác của đơn vị' }}
+          </h1>
+          <p class="page-subtitle">
+            Theo dõi toàn bộ thao tác phát sinh trong hệ thống
+          </p>
+        </div>
+        <div class="header-right">
           <el-button
             :icon="Refresh"
             :loading="loading"
@@ -12,8 +22,10 @@
             Làm mới
           </el-button>
         </div>
-      </template>
+      </div>
+    </div>
 
+    <el-card>
       <!-- Filters -->
       <el-row
         :gutter="12"

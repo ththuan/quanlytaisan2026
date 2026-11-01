@@ -1,15 +1,28 @@
 <template>
   <div class="stock-page">
-    <el-card>
-      <template #header>
-        <div class="stock-header">
-          <div class="title">
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Clock />
+            </el-icon>
             Lịch sử kho
-          </div>
-          <div class="actions">
+          </h1>
+          <p class="page-subtitle">
+            Theo dõi các phiếu nhập xuất kho vật tư
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <el-card>
+      <div class="list-filter">
+        <div class="filter-row">
+          <div class="filter-item">
             <el-select
               v-model="type"
-              style="width: 140px"
+              size="large"
               @change="fetchHistory"
             >
               <el-option
@@ -25,6 +38,8 @@
                 value="out"
               />
             </el-select>
+          </div>
+          <div class="filter-item">
             <el-date-picker
               v-model="dateRange"
               type="daterange"
@@ -32,18 +47,24 @@
               range-separator="-"
               start-placeholder="Từ ngày"
               end-placeholder="Đến ngày"
-              style="width: 300px"
+              size="large"
+              style="width: 100%"
               @change="fetchHistory"
             />
+          </div>
+          <div class="filter-item search-input">
             <el-input
               v-model="search"
               placeholder="Tìm theo mã/tên vật tư, vận đơn, vị trí..."
               clearable
-              style="width: 320px"
+              size="large"
               @keyup.enter="fetchHistory"
               @clear="fetchHistory"
             />
+          </div>
+          <div class="filter-actions">
             <el-button
+              type="primary"
               :loading="loading"
               @click="fetchHistory"
             >
@@ -51,7 +72,7 @@
             </el-button>
           </div>
         </div>
-      </template>
+      </div>
 
       <div class="responsive-table">
         <el-table
@@ -59,6 +80,7 @@
           :data="rows"
           border
           stripe
+          class="list-table"
         >
           <el-table-column
             prop="date"

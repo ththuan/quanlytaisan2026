@@ -1,11 +1,22 @@
 <template>
   <div class="purchase-request-view">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>Đề nghị trang cấp / Mua sắm thiết bị</span>
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <ShoppingCart />
+            </el-icon>
+            Đề nghị trang cấp / Mua sắm thiết bị
+          </h1>
+          <p class="page-subtitle">
+            Quản lý đề nghị mua sắm và trang cấp thiết bị
+          </p>
         </div>
-      </template>
+      </div>
+    </div>
+
+    <el-card>
       <ProcurementList />
     </el-card>
   </div>

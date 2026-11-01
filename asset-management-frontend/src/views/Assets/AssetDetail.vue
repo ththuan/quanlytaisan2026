@@ -1,43 +1,49 @@
 <template>
   <div class="asset-detail-page">
     <div class="page-header">
-      <div class="header-left">
-        <el-button
-          :icon="ArrowLeft"
-          class="back-btn"
-          @click="$router.back()"
-        >
-          {{ $t('common.back') }}
-        </el-button>
-      </div>
-      <div class="header-center">
-        <h2 class="page-title">
-          {{ $t('assets.assetDetail') }}
-        </h2>
-      </div>
-      <div class="header-right">
-        <el-tooltip
-          v-if="canManageAssets"
-          content="Chỉ xóa khi nhập liệu sai, chưa qua quy trình nào"
-          placement="bottom"
-        >
-          <el-button 
-            type="danger" 
-            :icon="Delete" 
-            plain
-            @click="handleDelete"
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Box />
+            </el-icon>
+            {{ $t('assets.assetDetail') }}
+          </h1>
+          <p class="page-subtitle">
+            {{ assetStore.currentAsset?.name || '' }}
+          </p>
+        </div>
+        <div class="header-right">
+          <el-button
+            :icon="ArrowLeft"
+            class="back-btn"
+            @click="$router.back()"
           >
-            Xóa (lỗi nhập liệu)
+            {{ $t('common.back') }}
           </el-button>
-        </el-tooltip>
-        <el-button 
-          v-if="canManageAssets" 
-          type="primary" 
-          :icon="Edit" 
-          @click="handleEdit"
-        >
-          {{ $t('common.edit') }}
-        </el-button>
+          <el-tooltip
+            v-if="canManageAssets"
+            content="Chỉ xóa khi nhập liệu sai, chưa qua quy trình nào"
+            placement="bottom"
+          >
+            <el-button 
+              type="danger" 
+              :icon="Delete" 
+              plain
+              @click="handleDelete"
+            >
+              Xóa (lỗi nhập liệu)
+            </el-button>
+          </el-tooltip>
+          <el-button 
+            v-if="canManageAssets" 
+            type="primary" 
+            :icon="Edit" 
+            @click="handleEdit"
+          >
+            {{ $t('common.edit') }}
+          </el-button>
+        </div>
       </div>
     </div>
 
@@ -1081,10 +1087,6 @@ const downloadQRCode = () => {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 24px;
-  background: #fff;
-  padding: 16px 24px;
-  border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .header-left, .header-right {

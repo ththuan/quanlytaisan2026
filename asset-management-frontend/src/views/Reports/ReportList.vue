@@ -1,29 +1,39 @@
 <template>
   <div class="report-list">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <h3>{{ $t('reports.title') }}</h3>
-          <div class="card-header__actions">
-            <el-button
-              :icon="Download"
-              :disabled="reportStore.reports.length === 0"
-              @click="handleExport"
-            >
-              Xuất Excel
-            </el-button>
-            <el-button
-              v-if="authStore.isAdmin"
-              type="primary"
-              :icon="Plus"
-              @click="handleCreate"
-            >
-              {{ $t('reports.createReport') }}
-            </el-button>
-          </div>
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Document />
+            </el-icon>
+            {{ $t('reports.title') }}
+          </h1>
+          <p class="page-subtitle">
+            Báo cáo tình hình quản lý và sử dụng tài sản
+          </p>
         </div>
-      </template>
+        <div class="header-right">
+          <el-button
+            :icon="Download"
+            :disabled="reportStore.reports.length === 0"
+            @click="handleExport"
+          >
+            Xuất Excel
+          </el-button>
+          <el-button
+            v-if="authStore.isAdmin"
+            type="primary"
+            :icon="Plus"
+            @click="handleCreate"
+          >
+            {{ $t('reports.createReport') }}
+          </el-button>
+        </div>
+      </div>
+    </div>
 
+    <el-card>
       <!-- Filters -->
       <div class="filter-section">
         <el-row :gutter="16">

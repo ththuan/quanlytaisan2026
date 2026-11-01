@@ -1,30 +1,40 @@
 <template>
   <div class="user-list">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <h3>{{ $t('users.title') }}</h3>
-          <div
-            v-if="authStore.isAdmin"
-            style="display: flex; gap: 8px;"
-          >
-            <el-button
-              :icon="Upload"
-              @click="showImportDialog = true"
-            >
-              Import Excel
-            </el-button>
-            <el-button
-              type="primary"
-              :icon="Plus"
-              @click="handleCreate"
-            >
-              {{ $t('users.addUser') }}
-            </el-button>
-          </div>
+    <div class="page-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <User />
+            </el-icon>
+            {{ $t('users.title') }}
+          </h1>
+          <p class="page-subtitle">
+            Quản lý tài khoản và phân quyền người dùng
+          </p>
         </div>
-      </template>
+        <div
+          v-if="authStore.isAdmin"
+          class="header-right"
+        >
+          <el-button
+            :icon="Upload"
+            @click="showImportDialog = true"
+          >
+            Import Excel
+          </el-button>
+          <el-button
+            type="primary"
+            :icon="Plus"
+            @click="handleCreate"
+          >
+            {{ $t('users.addUser') }}
+          </el-button>
+        </div>
+      </div>
+    </div>
 
+    <el-card>
       <!-- Search & Filter -->
       <div class="filter-section">
         <el-row :gutter="16">
