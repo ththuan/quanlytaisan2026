@@ -4,6 +4,8 @@ import path from 'path';
 import envConfig from '../config/env';
 
 const logDir = envConfig.logFilePath;
+// PM2 cluster: mỗi worker ghi file riêng để tránh tranh chấp/ghi đè cùng file.
+const instanceSuffix = process.env.NODE_APP_INSTANCE ? `-${process.env.NODE_APP_INSTANCE}` : '';
 
 // Define log format
 const logFormat = winston.format.combine(
@@ -32,7 +34,7 @@ const logger = winston.createLogger({
   transports: [
     // Write all logs with level error to error.log
     new DailyRotateFile({
-      filename: path.join(logDir, 'error-%DATE%.log'),
+      filename: path.join(logDir, `error${instanceSuffix}-%DATE%.log`),
       datePattern: 'YYYY-MM-DD',
       level: 'error',
       maxSize: '20m',
@@ -40,7 +42,7 @@ const logger = winston.createLogger({
     }),
     // Write all logs to combined.log
     new DailyRotateFile({
-      filename: path.join(logDir, 'combined-%DATE%.log'),
+      filename: path.join(logDir, `combined${instanceSuffix}-%DATE%.log`),
       datePattern: 'YYYY-MM-DD',
       maxSize: '20m',
       maxFiles: '30d',

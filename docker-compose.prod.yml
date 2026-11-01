@@ -7,9 +7,20 @@ services:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
       POSTGRES_DB: ${DB_NAME:-asset_management}
-    command: postgres -c max_connections=200 -c shared_buffers=256MB -c effective_cache_size=768MB
+    # Tuned cho server 8 CPU / 8GB RAM.
+    command: >
+      postgres
+      -c max_connections=200
+      -c shared_buffers=1GB
+      -c effective_cache_size=3GB
+      -c work_mem=8MB
+      -c maintenance_work_mem=256MB
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c max_parallel_workers_per_gather=2
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    shm_size: 512mb
     networks:
       - asset-management-network
     healthcheck:
@@ -22,6 +33,7 @@ services:
     image: redis:7-alpine
     container_name: asset-management-redis
     restart: unless-stopped
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru --appendonly no
     volumes:
       - redis_data:/data
     networks:
@@ -58,18 +70,20 @@ services:
       ALLOW_PUBLIC_REGISTRATION: ${ALLOW_PUBLIC_REGISTRATION:-false}
       SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}
       PUBLIC_SCAN_RATE_LIMIT_WINDOW_MS: ${PUBLIC_SCAN_RATE_LIMIT_WINDOW_MS:-60000}
-      PUBLIC_SCAN_RATE_LIMIT_MAX_REQUESTS: ${PUBLIC_SCAN_RATE_LIMIT_MAX_REQUESTS:-60}
+      PUBLIC_SCAN_RATE_LIMIT_MAX_REQUESTS: ${PUBLIC_SCAN_RATE_LIMIT_MAX_REQUESTS:-120}
       LOG_LEVEL: ${LOG_LEVEL:-info}
-      DB_POOL_MAX: ${DB_POOL_MAX:-8}
+      LOG_REQUESTS: ${LOG_REQUESTS:-false}
+      # Tổng connection = PM2_INSTANCES × DB_POOL_MAX (4 × 15 = 60 < max_connections 200).
+      DB_POOL_MAX: ${DB_POOL_MAX:-15}
       DB_POOL_MIN: ${DB_POOL_MIN:-2}
       DB_POOL_IDLE: ${DB_POOL_IDLE:-30000}
       DB_POOL_ACQUIRE: ${DB_POOL_ACQUIRE:-30000}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      # Số worker cluster (PM2). Trống = toàn bộ CPU core. DB pool tổng = PM2_INSTANCES × DB_POOL_MAX.
-      PM2_INSTANCES: ${PM2_INSTANCES:-}
-      # Rate limiting (nâng tạm khi load-test từ 1 IP, vd =1000000)
+      # Số worker cluster (PM2). DB pool tổng = PM2_INSTANCES × DB_POOL_MAX.
+      PM2_INSTANCES: ${PM2_INSTANCES:-4}
+      # Rate limiting theo token người dùng (fallback IP nếu chưa đăng nhập).
       RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
-      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-500}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-1500}
       AUTH_RATE_LIMIT_WINDOW_MS: ${AUTH_RATE_LIMIT_WINDOW_MS:-900000}
       AUTH_RATE_LIMIT_MAX_REQUESTS: ${AUTH_RATE_LIMIT_MAX_REQUESTS:-10}
     depends_on:
@@ -83,7 +97,19 @@ services:
       - backend_backups:/app/backups
       - ./asset-management-backend/storage:/app/storage
       - ./asset-management-backend/logs:/app/logs
-    command: sh -c "npm run migrate && npm run start"
+    # Chạy PM2 cluster để dùng nhiều CPU core (Dockerfile CMD bị override trước đây).
+    command: sh -c "npm run migrate && node ./node_modules/pm2/bin/pm2-runtime start ecosystem.config.js --no-daemon"
+    stop_grace_period: 20s
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5000/api/health >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
 
   frontend:
     build:

@@ -3,13 +3,15 @@ import logger from '../utils/logger';
 import { AuditLog } from '../models';
 import crypto from 'crypto';
 import { getClientIp } from '../utils/clientIp';
+import envConfig from '../config/env';
 
 type AuthenticatedRequest = Request & { user?: { id: number }; requestId?: string };
 
+const shouldLogRequests =
+  process.env.LOG_REQUESTS === 'true' || envConfig.nodeEnv !== 'production';
+
 // Logging middleware for HTTP requests with correlation ID
 export const requestLogger = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
-  const start = Date.now();
-
   // Prefer existing request ID from headers, otherwise generate a new one
   const headerRequestId =
     (req.headers['x-request-id'] as string | undefined) ||
@@ -20,6 +22,15 @@ export const requestLogger = (req: AuthenticatedRequest, res: Response, next: Ne
   req.requestId = requestId;
   // Also expose in response headers so frontend / logs can correlate
   res.setHeader('x-request-id', requestId);
+
+  // Production mặc định tắt log từng request để giảm I/O khi đông người.
+  // Bật lại bằng LOG_REQUESTS=true khi cần debug.
+  if (!shouldLogRequests) {
+    next();
+    return;
+  }
+
+  const start = Date.now();
 
   // Log when response is finished
   res.on('finish', () => {

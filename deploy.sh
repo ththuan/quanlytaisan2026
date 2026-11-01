@@ -41,6 +41,9 @@ log "Rebuilding backend + frontend..."
 # container_name/port và để nginx được tạo lại đúng cấu hình prod (proxy frontend:80).
 docker rm -f asset-management-nginx >/dev/null 2>&1 || true
 
+# Áp dụng cấu hình tuning mới cho PostgreSQL/Redis (nếu thay đổi), trước khi dựng backend.
+docker compose -f "$COMPOSE_FILE" up -d postgres redis
+
 # Tạo lại luôn nginx để đồng bộ cấu hình/port theo prod (tránh trường hợp nginx
 # còn là container cũ cấu hình dev → trỏ sai cổng frontend → 502).
 docker compose -f "$COMPOSE_FILE" up -d --build --force-recreate backend frontend nginx

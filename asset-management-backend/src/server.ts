@@ -38,12 +38,15 @@ const startServer = async () => {
     await testConnection();
     await connectRedis();
     initRateLimitStore();
-    // Luôn khôi phục tài khoản admin mặc định (admin / Admin@123) mỗi lần khởi động.
-    try {
-      await ensureDefaultAdminAccount();
-      logger.info('Default admin account check completed');
-    } catch (error) {
-      logger.error('Failed to ensure default admin account:', error);
+    // Chỉ worker đầu tiên kiểm tra/tạo admin mặc định, tránh 4 worker ghi đè nhau.
+    const instanceId = process.env.NODE_APP_INSTANCE;
+    if (instanceId === undefined || instanceId === '' || instanceId === '0') {
+      try {
+        await ensureDefaultAdminAccount();
+        logger.info('Default admin account check completed');
+      } catch (error) {
+        logger.error('Failed to ensure default admin account:', error);
+      }
     }
     // Import app sau khi Redis đã sẵn sàng để rate limiter dùng Redis store chia sẻ.
     const { default: app } = await import('./app');
@@ -52,6 +55,9 @@ const startServer = async () => {
       logger.info(`Environment: ${envConfig.nodeEnv}`);
       logger.info(`API Documentation: http://${HOST}:${PORT}/api/docs`);
     });
+    // Giữ kết nối lâu hơn nginx upstream keepalive (65s) để tránh 502 khi tái sử dụng connection.
+    server.keepAliveTimeout = 65000;
+    server.headersTimeout = 66000;
     startScheduler();
   } catch (error) {
     logger.error('Failed to start server:', error);

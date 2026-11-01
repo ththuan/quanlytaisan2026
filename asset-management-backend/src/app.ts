@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+import crypto from 'crypto';
 import path from 'path';
 import envConfig from './config/env';
 import logger from './utils/logger';
@@ -142,11 +143,34 @@ app.use(express.urlencoded({ extended: true, limit: bodyLimit }));
 // Request logging
 app.use(requestLogger);
 
+/**
+ * Rate limit key:
+ * - Đã đăng nhập: băm Authorization token → mỗi phiên có hạn mức riêng
+ *   (tránh 500 user sau NAT/Cloudflare bị tính chung một IP).
+ * - Chưa đăng nhập: dùng IP.
+ */
+const rateLimitKey = (req: any): string => {
+  const auth = req.headers?.authorization;
+  if (typeof auth === 'string' && auth.startsWith('Bearer ')) {
+    return `token:${crypto.createHash('sha256').update(auth).digest('hex').slice(0, 40)}`;
+  }
+  return req.ip || 'unknown';
+};
+
+/** Login/register: giới hạn theo từng username + IP để không chặn chéo người dùng. */
+const authRateLimitKey = (req: any): string => {
+  const body = req.body || {};
+  const username = String(body.username || body.email || '').trim().toLowerCase();
+  return `${username || 'anon'}|${req.ip || 'unknown'}`;
+};
+
 // Rate limiting for auth endpoints (more lenient)
 const authLimiter = rateLimit({
   store: createRateLimitStore('auth'),
   windowMs: parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-  max: parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS || '10'), // 10 login attempts per 15 minutes (IP-based; per-account lockout is also active)
+  max: parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS || '10'), // 10 login attempts per 15 minutes per username+IP (per-account lockout is also active)
+  keyGenerator: authRateLimitKey,
+  passOnStoreError: true,
   message: {
     success: false,
     message: 'Quá nhiều lần thử đăng nhập. Vui lòng đợi 15 phút rồi thử lại.',
@@ -160,10 +184,12 @@ const authLimiter = rateLimit({
 const limiter = rateLimit({
   store: createRateLimitStore('general'),
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000'), // 1 minute window
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '500'), // 500 requests per minute
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '1500'), // 1500 requests/minute per token (or IP if anonymous)
+  keyGenerator: rateLimitKey,
+  passOnStoreError: true,
   message: {
     success: false,
-    message: 'Quá nhiều yêu cầu từ IP này. Vui lòng thử lại sau.',
+    message: 'Quá nhiều yêu cầu. Vui lòng thử lại sau.',
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -184,10 +210,11 @@ app.use('/api', limiter);
 const publicScanLimiter = rateLimit({
   store: createRateLimitStore('public-scan'),
   windowMs: parseInt(process.env.PUBLIC_SCAN_RATE_LIMIT_WINDOW_MS || '60000'), // 1 phút
-  max: parseInt(process.env.PUBLIC_SCAN_RATE_LIMIT_MAX_REQUESTS || '60'), // 60 lượt/phút/IP
+  max: parseInt(process.env.PUBLIC_SCAN_RATE_LIMIT_MAX_REQUESTS || '120'), // 120 lượt/phút/IP
   message: 'Quá nhiều lượt tra cứu. Vui lòng thử lại sau ít phút.',
   standardHeaders: true,
   legacyHeaders: false,
+  passOnStoreError: true,
 });
 app.use(['/scan', '/api/public'], publicScanLimiter);
 

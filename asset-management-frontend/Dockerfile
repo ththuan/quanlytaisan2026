@@ -36,17 +36,12 @@ COPY . .
 # Build application
 RUN npm run build
 
-# Stage 3: Production Serve
-FROM node:20-alpine AS production
+# Stage 3: Production Serve (nginx đa worker, phục vụ static nhanh hơn Node)
+FROM nginx:1.27-alpine AS production
 
-# Serve static files with a small Node server
-RUN npm i -g serve@14
-
-WORKDIR /app
-
-# Copy built files from builder
-COPY --from=builder /app/dist ./dist
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 EXPOSE 80
 
-CMD ["serve", "-s", "dist", "-l", "80"]
+CMD ["nginx", "-g", "daemon off;"]

@@ -105,12 +105,17 @@ const assets = await Asset.findAll();
 
 ### 2.3 Connection Pooling
 ```env
-# Database connection pool
+# Database connection pool (mỗi worker PM2)
 DB_POOL_MIN=2
-DB_POOL_MAX=10
+DB_POOL_MAX=15
 DB_POOL_ACQUIRE_TIMEOUT=30000
-DB_POOL_IDLE_TIMEOUT=10000
+DB_POOL_IDLE_TIMEOUT=30000
+
+# PM2 cluster: tổng connection = PM2_INSTANCES × DB_POOL_MAX
+PM2_INSTANCES=4
 ```
+
+Với server 8 CPU / 8GB RAM: chạy 4 worker PM2, pool 15/worker → tối đa 60 connection (PostgreSQL `max_connections=200`).
 
 ## 3. API Response Optimization
 
@@ -269,9 +274,13 @@ Sử dụng Apache Bench hoặc k6:
 # Apache Bench
 ab -n 1000 -c 10 http://localhost:5000/api/assets
 
-# k6
-k6 run load-test.js
+# k6 - kịch bản 500 user đồng thời có sẵn trong repo
+BASE_URL=https://quanlytaisanctec.dpdns.org \
+USERNAME=admin PASSWORD='mat-khau-admin' \
+k6 run scripts/k6-load-test.js
 ```
+
+Theo dõi trong lúc test: `docker stats`, `pg_stat_activity`, tỷ lệ 429/5xx và p95.
 
 ### 8.2 Stress Testing
 ```bash
@@ -329,13 +338,16 @@ CACHE_MAX_SIZE=1000
 
 # Database Pool
 DB_POOL_MIN=2
-DB_POOL_MAX=10
+DB_POOL_MAX=15
 DB_POOL_ACQUIRE_TIMEOUT=30000
-DB_POOL_IDLE_TIMEOUT=10000
+DB_POOL_IDLE_TIMEOUT=30000
 
-# Rate Limiting
-RATE_LIMIT_WINDOW=600000  # 10 minutes
-RATE_LIMIT_MAX=100        # 100 requests per window
+# PM2 cluster
+PM2_INSTANCES=4
+
+# Rate Limiting (key theo token người dùng, fallback IP)
+RATE_LIMIT_WINDOW_MS=60000
+RATE_LIMIT_MAX_REQUESTS=1500
 
 # Compression
 COMPRESSION_ENABLED=true
