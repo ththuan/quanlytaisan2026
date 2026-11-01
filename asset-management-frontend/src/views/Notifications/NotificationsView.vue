@@ -5,7 +5,13 @@
         <div class="card-header">
           <h3>Hộp thư thông báo</h3>
           <div style="display: flex; gap: 8px;">
-            <el-button :icon="Refresh" :loading="loading" @click="refresh">Làm mới</el-button>
+            <el-button
+              :icon="Refresh"
+              :loading="loading"
+              @click="refresh"
+            >
+              Làm mới
+            </el-button>
             <el-button
               v-if="store.notifications.length > 0"
               type="primary"
@@ -18,21 +24,36 @@
         </div>
       </template>
 
-      <el-empty v-if="!loading && store.notifications.length === 0" description="Không có thông báo nào đang chờ" />
+      <el-empty
+        v-if="!loading && store.notifications.length === 0"
+        description="Không có thông báo nào đang chờ"
+      />
 
-      <div v-else class="notification-list">
+      <div
+        v-else
+        class="notification-list"
+      >
         <div
           v-for="n in store.notifications"
           :key="n.id"
           class="notification-item"
           @click="handleClick(n)"
         >
-          <div class="notif-icon" :class="typeColor(n.type)">
-            <el-icon :size="22"><component :is="typeIcon(n.type)" /></el-icon>
+          <div
+            class="notif-icon"
+            :class="typeColor(n.type)"
+          >
+            <el-icon :size="22">
+              <component :is="typeIcon(n.type)" />
+            </el-icon>
           </div>
           <div class="notif-body">
-            <div class="notif-title">{{ n.title }}</div>
-            <div class="notif-message">{{ n.message }}</div>
+            <div class="notif-title">
+              {{ n.title }}
+            </div>
+            <div class="notif-message">
+              {{ n.message }}
+            </div>
             <div class="notif-meta">
               <span v-if="n.asset">
                 <el-icon><Box /></el-icon> {{ n.asset.asset_code }} — {{ n.asset.name }}
@@ -42,7 +63,12 @@
             </div>
           </div>
           <div class="notif-actions">
-            <el-tag size="small" :type="typeTagColor(n.type)">{{ typeLabel(n.type) }}</el-tag>
+            <el-tag
+              size="small"
+              :type="typeTagColor(n.type)"
+            >
+              {{ typeLabel(n.type) }}
+            </el-tag>
             <el-button
               size="small"
               text
@@ -55,7 +81,11 @@
         </div>
       </div>
 
-      <div v-if="loading" v-loading="true" style="min-height: 120px;" />
+      <div
+        v-if="loading"
+        v-loading="true"
+        style="min-height: 120px;"
+      />
     </el-card>
   </div>
 </template>

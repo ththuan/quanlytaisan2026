@@ -299,7 +299,7 @@ class SystemAdminService {
       const backupDir = './backups';
       if (!fs.existsSync(backupDir)) return [];
 
-      const files = fs.readdirSync(backupDir).filter((f) => /^backup_[\w\-]+\.sql$/.test(f));
+      const files = fs.readdirSync(backupDir).filter((f) => /^backup_[\w-]+\.sql$/.test(f));
       return files
         .map((name) => {
           const filePath = `${backupDir}/${name}`;
@@ -320,7 +320,7 @@ class SystemAdminService {
 
   /** Trả về đường dẫn tuyệt đối của file backup nếu tên hợp lệ và file tồn tại, ngược lại null. */
   getBackupPath(filename: string): string | null {
-    if (!filename || !/^backup_[\w\-]+\.sql$/.test(filename)) return null;
+    if (!filename || !/^backup_[\w-]+\.sql$/.test(filename)) return null;
     const filePath = path.resolve('./backups', filename);
     if (!fs.existsSync(filePath)) return null;
     return filePath;
@@ -333,7 +333,7 @@ class SystemAdminService {
       if (!fs.existsSync(backupDir)) return 0;
 
       const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000;
-      const files = fs.readdirSync(backupDir).filter((f) => /^backup_[\w\-]+\.sql$/.test(f));
+      const files = fs.readdirSync(backupDir).filter((f) => /^backup_[\w-]+\.sql$/.test(f));
       let deleted = 0;
       for (const name of files) {
         const filePath = path.join(backupDir, name);
@@ -442,7 +442,7 @@ class SystemAdminService {
 
   async restoreBackup(filename: string): Promise<{ success: boolean; message: string }> {
     // Strict validation to prevent path traversal
-    if (!filename || !/^backup_[\w\-]+\.sql$/.test(filename)) {
+    if (!filename || !/^backup_[\w-]+\.sql$/.test(filename)) {
       return { success: false, message: 'Tên file backup không hợp lệ' };
     }
     try {

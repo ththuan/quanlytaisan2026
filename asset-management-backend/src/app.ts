@@ -26,22 +26,22 @@ app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
-        defaultSrc: ["'self'"],
+        defaultSrc: ['\'self\''],
         // Scan page & Element Plus dùng inline style → cho phép style inline
-        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        styleSrc: ['\'self\'', '\'unsafe-inline\'', 'https://fonts.googleapis.com'],
         // Ảnh: từ self, data URI (QR base64), storage
-        imgSrc: ["'self'", 'data:', 'blob:'],
+        imgSrc: ['\'self\'', 'data:', 'blob:'],
         // Font Google
-        fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+        fontSrc: ['\'self\'', 'https://fonts.gstatic.com', 'data:'],
         // Script: CHỈ từ self (chặn XSS inline script)
-        scriptSrc: ["'self'"],
+        scriptSrc: ['\'self\''],
         // API calls same-origin
-        connectSrc: ["'self'"],
+        connectSrc: ['\'self\''],
         // Không cho phép frame nhúng ngoài
-        frameSrc: ["'self'"],
-        objectSrc: ["'none'"],
-        baseUri: ["'self'"],
-        formAction: ["'self'"],
+        frameSrc: ['\'self\''],
+        objectSrc: ['\'none\''],
+        baseUri: ['\'self\''],
+        formAction: ['\'self\''],
       },
     },
     crossOriginResourcePolicy: { policy: 'same-origin' },

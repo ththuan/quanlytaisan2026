@@ -5,15 +5,33 @@
         <div class="card-header">
           <h3>Quản lý danh mục tài sản</h3>
           <div style="display: flex; gap: 8px;">
-            <el-button :icon="Refresh" :loading="loading" @click="fetchCategories">Làm mới</el-button>
-            <el-button type="primary" :icon="Plus" @click="openCreate">Thêm danh mục</el-button>
+            <el-button
+              :icon="Refresh"
+              :loading="loading"
+              @click="fetchCategories"
+            >
+              Làm mới
+            </el-button>
+            <el-button
+              type="primary"
+              :icon="Plus"
+              @click="openCreate"
+            >
+              Thêm danh mục
+            </el-button>
           </div>
         </div>
       </template>
 
       <!-- Search + Filter -->
-      <el-row :gutter="12" class="filter-row">
-        <el-col :xs="24" :sm="10">
+      <el-row
+        :gutter="12"
+        class="filter-row"
+      >
+        <el-col
+          :xs="24"
+          :sm="10"
+        >
           <el-input
             v-model="search"
             placeholder="Tìm theo tên hoặc mã danh mục..."
@@ -23,14 +41,37 @@
             @clear="onSearch"
           />
         </el-col>
-        <el-col :xs="24" :sm="6">
-          <el-select v-model="filterActive" placeholder="Trạng thái" clearable @change="fetchCategories">
-            <el-option label="Đang dùng" :value="true" />
-            <el-option label="Không dùng" :value="false" />
+        <el-col
+          :xs="24"
+          :sm="6"
+        >
+          <el-select
+            v-model="filterActive"
+            placeholder="Trạng thái"
+            clearable
+            @change="fetchCategories"
+          >
+            <el-option
+              label="Đang dùng"
+              :value="true"
+            />
+            <el-option
+              label="Không dùng"
+              :value="false"
+            />
           </el-select>
         </el-col>
-        <el-col :xs="24" :sm="8" style="display: flex; align-items: center; gap: 8px;">
-          <el-switch v-model="treeMode" active-text="Dạng cây" inactive-text="Dạng bảng" @change="fetchCategories" />
+        <el-col
+          :xs="24"
+          :sm="8"
+          style="display: flex; align-items: center; gap: 8px;"
+        >
+          <el-switch
+            v-model="treeMode"
+            active-text="Dạng cây"
+            inactive-text="Dạng bảng"
+            @change="fetchCategories"
+          />
         </el-col>
       </el-row>
 
@@ -46,9 +87,18 @@
         <template #default="{ data }">
           <div class="tree-node">
             <span class="tree-label">
-              <el-tag size="small" type="info" style="margin-right: 6px; font-family: 'Inter', sans-serif;">{{ data.code }}</el-tag>
+              <el-tag
+                size="small"
+                type="info"
+                style="margin-right: 6px; font-family: 'Inter', sans-serif;"
+              >{{ data.code }}</el-tag>
               {{ data.name }}
-              <el-tag v-if="!data.is_active" size="small" type="danger" style="margin-left: 6px;">Không dùng</el-tag>
+              <el-tag
+                v-if="!data.is_active"
+                size="small"
+                type="danger"
+                style="margin-left: 6px;"
+              >Không dùng</el-tag>
             </span>
             <span class="tree-meta">
               <span v-if="data.unit">{{ data.unit }}</span>
@@ -56,8 +106,19 @@
               <span v-if="data.useful_life_years"> · {{ data.useful_life_years }} năm</span>
             </span>
             <span class="tree-actions">
-              <el-button size="small" text :icon="Edit" @click.stop="openEdit(data)" />
-              <el-button size="small" text type="danger" :icon="Delete" @click.stop="handleDelete(data)" />
+              <el-button
+                size="small"
+                text
+                :icon="Edit"
+                @click.stop="openEdit(data)"
+              />
+              <el-button
+                size="small"
+                text
+                type="danger"
+                :icon="Delete"
+                @click.stop="handleDelete(data)"
+              />
             </span>
           </div>
         </template>
@@ -72,30 +133,84 @@
         border
         style="margin-top: 12px;"
       >
-        <el-table-column prop="code" label="Mã" width="130" />
-        <el-table-column prop="name" label="Tên danh mục" min-width="220" />
-        <el-table-column prop="category_group" label="Nhóm" width="120" />
-        <el-table-column prop="unit" label="Đơn vị" width="90" />
-        <el-table-column label="Khấu hao" width="110">
+        <el-table-column
+          prop="code"
+          label="Mã"
+          width="130"
+        />
+        <el-table-column
+          prop="name"
+          label="Tên danh mục"
+          min-width="220"
+        />
+        <el-table-column
+          prop="category_group"
+          label="Nhóm"
+          width="120"
+        />
+        <el-table-column
+          prop="unit"
+          label="Đơn vị"
+          width="90"
+        />
+        <el-table-column
+          label="Khấu hao"
+          width="110"
+        >
           <template #default="{ row }">
-            <el-tag v-if="row.is_depreciable" type="success" size="small">
+            <el-tag
+              v-if="row.is_depreciable"
+              type="success"
+              size="small"
+            >
               {{ row.depreciation_rate }}%/năm
             </el-tag>
-            <el-tag v-else type="info" size="small">Không KH</el-tag>
+            <el-tag
+              v-else
+              type="info"
+              size="small"
+            >
+              Không KH
+            </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="Năm SD" prop="useful_life_years" width="80" />
-        <el-table-column label="Trạng thái" width="110">
+        <el-table-column
+          label="Năm SD"
+          prop="useful_life_years"
+          width="80"
+        />
+        <el-table-column
+          label="Trạng thái"
+          width="110"
+        >
           <template #default="{ row }">
-            <el-tag :type="row.is_active ? 'success' : 'danger'" size="small">
+            <el-tag
+              :type="row.is_active ? 'success' : 'danger'"
+              size="small"
+            >
               {{ row.is_active ? 'Đang dùng' : 'Không dùng' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="Thao tác" width="110" fixed="right">
+        <el-table-column
+          label="Thao tác"
+          width="110"
+          fixed="right"
+        >
           <template #default="{ row }">
-            <el-button size="small" text :icon="Edit" @click="openEdit(row)" />
-            <el-button size="small" text type="danger" :icon="Delete" @click="handleDelete(row)" />
+            <el-button
+              size="small"
+              text
+              :icon="Edit"
+              @click="openEdit(row)"
+            />
+            <el-button
+              size="small"
+              text
+              type="danger"
+              :icon="Delete"
+              @click="handleDelete(row)"
+            />
           </template>
         </el-table-column>
       </el-table>
@@ -108,52 +223,118 @@
       width="600px"
       @close="resetForm"
     >
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="140px">
-        <el-form-item label="Mã danh mục" prop="code">
-          <el-input v-model="form.code" placeholder="VD: MMTB.01" />
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-width="140px"
+      >
+        <el-form-item
+          label="Mã danh mục"
+          prop="code"
+        >
+          <el-input
+            v-model="form.code"
+            placeholder="VD: MMTB.01"
+          />
         </el-form-item>
-        <el-form-item label="Tên danh mục" prop="name">
-          <el-input v-model="form.name" placeholder="Tên danh mục tài sản" />
+        <el-form-item
+          label="Tên danh mục"
+          prop="name"
+        >
+          <el-input
+            v-model="form.name"
+            placeholder="Tên danh mục tài sản"
+          />
         </el-form-item>
         <el-form-item label="Mã cha">
-          <el-input v-model="form.parent_code" placeholder="Bỏ trống nếu là danh mục gốc" />
+          <el-input
+            v-model="form.parent_code"
+            placeholder="Bỏ trống nếu là danh mục gốc"
+          />
         </el-form-item>
         <el-form-item label="Nhóm danh mục">
-          <el-input v-model="form.category_group" placeholder="VD: Máy móc thiết bị" />
+          <el-input
+            v-model="form.category_group"
+            placeholder="VD: Máy móc thiết bị"
+          />
         </el-form-item>
         <el-form-item label="Kiểm kê theo">
-          <el-select v-model="form.tracking_type" style="width: 100%;">
-            <el-option value="individual" label="Đơn lẻ (có mã QR riêng)" />
-            <el-option value="batch" label="Theo nhóm (công cụ dụng cụ, không cần QR từng cái)" />
+          <el-select
+            v-model="form.tracking_type"
+            style="width: 100%;"
+          >
+            <el-option
+              value="individual"
+              label="Đơn lẻ (có mã QR riêng)"
+            />
+            <el-option
+              value="batch"
+              label="Theo nhóm (công cụ dụng cụ, không cần QR từng cái)"
+            />
           </el-select>
         </el-form-item>
-        <el-form-item label="Đơn vị tính" prop="unit">
-          <el-input v-model="form.unit" placeholder="Cái, Bộ, Chiếc..." />
+        <el-form-item
+          label="Đơn vị tính"
+          prop="unit"
+        >
+          <el-input
+            v-model="form.unit"
+            placeholder="Cái, Bộ, Chiếc..."
+          />
         </el-form-item>
         <el-form-item label="Có khấu hao">
           <el-switch v-model="form.is_depreciable" />
         </el-form-item>
         <template v-if="form.is_depreciable">
-          <el-form-item label="Tỷ lệ KH (%)" prop="depreciation_rate">
-            <el-input-number v-model="form.depreciation_rate" :min="0" :max="100" :step="0.5" :precision="2" />
+          <el-form-item
+            label="Tỷ lệ KH (%)"
+            prop="depreciation_rate"
+          >
+            <el-input-number
+              v-model="form.depreciation_rate"
+              :min="0"
+              :max="100"
+              :step="0.5"
+              :precision="2"
+            />
           </el-form-item>
           <el-form-item label="Năm sử dụng">
-            <el-input-number v-model="form.useful_life_years" :min="1" :max="100" />
+            <el-input-number
+              v-model="form.useful_life_years"
+              :min="1"
+              :max="100"
+            />
           </el-form-item>
         </template>
         <el-form-item label="Mô tả">
-          <el-input v-model="form.description" type="textarea" :rows="2" />
+          <el-input
+            v-model="form.description"
+            type="textarea"
+            :rows="2"
+          />
         </el-form-item>
         <el-form-item label="Hoạt động">
           <el-switch v-model="form.is_active" />
         </el-form-item>
         <el-form-item label="Thứ tự">
-          <el-input-number v-model="form.sort_order" :min="0" />
+          <el-input-number
+            v-model="form.sort_order"
+            :min="0"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">Hủy</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">Lưu</el-button>
+        <el-button @click="dialogVisible = false">
+          Hủy
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="saving"
+          @click="handleSave"
+        >
+          Lưu
+        </el-button>
       </template>
     </el-dialog>
   </div>

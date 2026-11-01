@@ -16,7 +16,11 @@
     <!-- Filters -->
     <div class="filter-section">
       <el-row :gutter="16">
-        <el-col :xs="24" :sm="12" :md="6">
+        <el-col
+          :xs="24"
+          :sm="12"
+          :md="6"
+        >
           <el-select
             v-model="filterStatus"
             :placeholder="$t('maintenance.filterByStatus')"
@@ -31,14 +35,22 @@
             />
           </el-select>
         </el-col>
-        <el-col :xs="24" :sm="12" :md="6">
+        <el-col
+          :xs="24"
+          :sm="12"
+          :md="6"
+        >
           <DepartmentTreeSelect
             v-model="filterDepartment"
             :placeholder="$t('maintenance.filterByDepartment')"
             @change="handleFilter"
           />
         </el-col>
-        <el-col :xs="24" :sm="12" :md="6">
+        <el-col
+          :xs="24"
+          :sm="12"
+          :md="6"
+        >
           <el-button
             type="primary"
             @click="handleFilter"

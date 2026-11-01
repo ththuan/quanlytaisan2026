@@ -209,12 +209,12 @@
                   plain
                   @click="confirmDelete(scope.row.id)"
                 >
-                Xóa
-              </el-button>
+                  Xóa
+                </el-button>
+              </template>
             </template>
-          </template>
-        </el-table-column>
-      </el-table>
+          </el-table-column>
+        </el-table>
       </div>
 
       <div class="pager">

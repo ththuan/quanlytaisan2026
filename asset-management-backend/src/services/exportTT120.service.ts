@@ -553,7 +553,7 @@ export async function export04d(year: number): Promise<Buffer> {
 
   ws.spliceRows(1, 0,
     ['TRƯỜNG CAO ĐẲNG KINH TẾ - KỸ THUẬT CẦN THƠ'],
-    [`Mẫu số 04d-CK/TSC – CÔNG KHAI TÌNH HÌNH KHAI THÁC NGUỒN LỰC TSC (TT120/2025/TT-BTC)`],
+    ['Mẫu số 04d-CK/TSC – CÔNG KHAI TÌNH HÌNH KHAI THÁC NGUỒN LỰC TSC (TT120/2025/TT-BTC)'],
     [],
     [`NĂM ${year}`],
     [],

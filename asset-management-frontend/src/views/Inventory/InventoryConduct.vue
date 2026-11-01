@@ -1442,6 +1442,16 @@ const isBatchAsset = (asset: any): boolean => {
   return categoriesMap.value.get(asset.category_id)?.tracking_type === 'batch';
 };
 
+const createBatchInput = () => ({
+  actual_quantity: 0,
+  condition: 'good',
+  notes: '',
+  image_urls: [] as string[],
+  discrepancy_reason: '',
+  responsibility: '',
+  compensation_amount: 0,
+});
+
 const batchGroups = computed(() => {
   const groups = new Map<number, {
     category_id: number; category_name: string; category_code: string;
@@ -1454,9 +1464,6 @@ const batchGroups = computed(() => {
     if (!catId) continue;
     const cat = categoriesMap.value.get(catId);
     if (!groups.has(catId)) {
-      if (!batchInputs.value[catId]) {
-        batchInputs.value[catId] = { actual_quantity: 0, condition: 'good', notes: '', image_urls: [], discrepancy_reason: '', responsibility: '', compensation_amount: 0 };
-      }
       groups.set(catId, {
         category_id: catId,
         category_name: cat?.name || asset.category || 'Không rõ',
@@ -1474,13 +1481,26 @@ const batchGroups = computed(() => {
 
   for (const group of groups.values()) {
     group.confirmed = group.assets.length > 0 && group.assets.every(a => !!a.inventory_detail);
-    if (group.confirmed && batchInputs.value[group.category_id]?.actual_quantity === 0) {
-      batchInputs.value[group.category_id].actual_quantity =
-        group.assets.reduce((s, a) => s + (a.inventory_detail?.actual_quantity ?? 0), 0);
-    }
   }
   return Array.from(groups.values());
 });
+
+watch(
+  batchGroups,
+  (groups) => {
+    for (const group of groups) {
+      const input = batchInputs.value[group.category_id]
+        || (batchInputs.value[group.category_id] = createBatchInput());
+      if (group.confirmed && input.actual_quantity === 0) {
+        input.actual_quantity = group.assets.reduce(
+          (s, a) => s + (a.inventory_detail?.actual_quantity ?? 0),
+          0
+        );
+      }
+    }
+  },
+  { immediate: true, flush: 'sync' }
+);
 
 const batchUnconfirmedCount = computed(() => batchGroups.value.filter(g => !g.confirmed).length);
 
@@ -1541,7 +1561,7 @@ const loadCategories = async () => {
     for (const cat of res.data) {
       map.set(cat.id, cat);
       if (cat.tracking_type === 'batch' && !batchInputs.value[cat.id]) {
-        batchInputs.value[cat.id] = { actual_quantity: 0, condition: 'good', notes: '', image_urls: [], discrepancy_reason: '', responsibility: '', compensation_amount: 0 };
+        batchInputs.value[cat.id] = createBatchInput();
       }
     }
     categoriesMap.value = map;

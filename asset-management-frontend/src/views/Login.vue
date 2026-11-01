@@ -1,8 +1,17 @@
 <template>
   <div class="login-container">
-    <canvas ref="canvasRef" id="particle-canvas" />
-    <div class="login-orb login-orb--one" aria-hidden="true" />
-    <div class="login-orb login-orb--two" aria-hidden="true" />
+    <canvas
+      id="particle-canvas"
+      ref="canvasRef"
+    />
+    <div
+      class="login-orb login-orb--one"
+      aria-hidden="true"
+    />
+    <div
+      class="login-orb login-orb--two"
+      aria-hidden="true"
+    />
 
     <div class="login-center">
       <div
@@ -21,50 +30,74 @@
           <p class="sub-welcome">
             <GradientText text="Phần mềm Quản lý Tài sản" />
           </p>
-          <p class="school-name">Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ</p>
+          <p class="school-name">
+            Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ
+          </p>
         </div>
 
-        <form id="login-form" novalidate @submit.prevent="handleSubmit">
+        <form
+          id="login-form"
+          novalidate
+          @submit.prevent="handleSubmit"
+        >
           <div class="form-group">
-            <label class="form-label" for="f-username"><span class="required">*</span> Tên đăng nhập</label>
+            <label
+              class="form-label"
+              for="f-username"
+            ><span class="required">*</span> Tên đăng nhập</label>
             <div class="input-wrap">
               <span class="material-symbols-rounded input-icon">person</span>
               <input
+                id="f-username"
                 ref="usernameRef"
                 v-model="loginForm.username"
                 class="input-field"
                 type="text"
-                id="f-username"
                 placeholder="Nhập tên đăng nhập"
                 autocomplete="username"
                 autofocus
               >
             </div>
-            <p class="field-hint">Vui lòng nhập tên đăng nhập</p>
+            <p class="field-hint">
+              Vui lòng nhập tên đăng nhập
+            </p>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="f-password"><span class="required">*</span> Mật khẩu</label>
+            <label
+              class="form-label"
+              for="f-password"
+            ><span class="required">*</span> Mật khẩu</label>
             <div class="input-wrap">
               <span class="material-symbols-rounded input-icon">lock</span>
               <input
+                id="f-password"
                 ref="passwordRef"
                 v-model="loginForm.password"
                 class="input-field pw-field"
                 :type="showPassword ? 'text' : 'password'"
-                id="f-password"
                 placeholder="••••••••"
                 autocomplete="current-password"
                 @keyup.enter="handleSubmit"
               >
-              <button type="button" class="toggle-pw" @click="showPassword = !showPassword" title="Hiện/ẩn mật khẩu">
+              <button
+                type="button"
+                class="toggle-pw"
+                title="Hiện/ẩn mật khẩu"
+                @click="showPassword = !showPassword"
+              >
                 <span class="material-symbols-rounded">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
               </button>
             </div>
-            <p class="field-hint">Vui lòng nhập mật khẩu</p>
+            <p class="field-hint">
+              Vui lòng nhập mật khẩu
+            </p>
           </div>
 
-          <div v-if="totpRequired" class="form-group otp-group">
+          <div
+            v-if="totpRequired"
+            class="form-group otp-group"
+          >
             <label class="form-label"><span class="required">*</span> Mã xác thực 2 lớp</label>
             <InputOTP
               ref="totpRef"
@@ -73,34 +106,60 @@
               aria-label="Mã xác thực 2 lớp"
               @complete="handleSubmit"
             />
-            <p class="field-hint">Mã gồm 6 chữ số từ Google Authenticator (hoặc ứng dụng TOTP tương tự)</p>
+            <p class="field-hint">
+              Mã gồm 6 chữ số từ Google Authenticator (hoặc ứng dụng TOTP tương tự)
+            </p>
           </div>
 
           <div class="form-row">
             <label class="remember-wrap">
-              <input type="checkbox" v-model="rememberMe" id="remember-me">
+              <input
+                id="remember-me"
+                v-model="rememberMe"
+                type="checkbox"
+              >
               <span>Ghi nhớ phiên đăng nhập</span>
             </label>
-            <button type="button" class="forgot-link" @click="toggleForgotPassword">
+            <button
+              type="button"
+              class="forgot-link"
+              @click="toggleForgotPassword"
+            >
               <span class="material-symbols-rounded">help_outline</span>
               Quên mật khẩu?
             </button>
           </div>
 
           <AutoHeight :open="showForgotPassword">
-            <div id="admin-help" class="admin-help" role="status">
+            <div
+              id="admin-help"
+              class="admin-help"
+              role="status"
+            >
               <strong>Quên mật khẩu?</strong><br>
               Vui lòng liên hệ Quản trị viên hệ thống để được cấp lại mật khẩu.
             </div>
           </AutoHeight>
 
-          <div v-if="errorMessage" class="login-error" role="alert">
+          <div
+            v-if="errorMessage"
+            class="login-error"
+            role="alert"
+          >
             <span class="material-symbols-rounded">error</span>
             <span>{{ errorMessage }}</span>
           </div>
 
-          <button v-ripple type="submit" class="btn-login" :disabled="loading">
-            <span v-if="loading" class="spinner" />
+          <button
+            v-ripple
+            type="submit"
+            class="btn-login"
+            :disabled="loading"
+          >
+            <span
+              v-if="loading"
+              class="spinner"
+            />
             <span id="btn-login-text">{{ loading ? 'Đang xử lý...' : (totpRequired ? 'Xác nhận mã' : 'Đăng nhập ngay') }}</span>
           </button>
         </form>

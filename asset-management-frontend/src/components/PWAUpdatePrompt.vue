@@ -7,14 +7,29 @@
         class="pwa-update-prompt"
       >
         <div class="pwa-update-content">
-          <el-icon class="pwa-update-icon" :size="24"><Download /></el-icon>
+          <el-icon
+            class="pwa-update-icon"
+            :size="24"
+          >
+            <Download />
+          </el-icon>
           <div class="pwa-update-text">
             <strong>Phiên bản mới có sẵn!</strong>
             <span>Nhấn "Cập nhật" để tải phiên bản mới nhất</span>
           </div>
           <div class="pwa-update-actions">
-            <el-button size="small" @click="dismissUpdate">Để sau</el-button>
-            <el-button size="small" type="primary" :loading="updating" @click="applyUpdate">
+            <el-button
+              size="small"
+              @click="dismissUpdate"
+            >
+              Để sau
+            </el-button>
+            <el-button
+              size="small"
+              type="primary"
+              :loading="updating"
+              @click="applyUpdate"
+            >
               {{ updating ? 'Đang cập nhật...' : 'Cập nhật' }}
             </el-button>
           </div>
@@ -28,7 +43,9 @@
         v-if="showOfflineReady"
         class="pwa-offline-toast"
       >
-        <el-icon :size="20"><CircleCheckFilled /></el-icon>
+        <el-icon :size="20">
+          <CircleCheckFilled />
+        </el-icon>
         <span>Ứng dụng đã sẵn sàng sử dụng ngoại tuyến!</span>
       </div>
     </transition>
@@ -40,14 +57,30 @@
         class="pwa-install-prompt"
       >
         <div class="pwa-install-content">
-          <el-icon class="pwa-install-icon" :size="24"><Iphone /></el-icon>
+          <el-icon
+            class="pwa-install-icon"
+            :size="24"
+          >
+            <Iphone />
+          </el-icon>
           <div class="pwa-install-text">
             <strong>Cài đặt ứng dụng</strong>
             <span>Thêm vào màn hình chính để truy cập nhanh</span>
           </div>
           <div class="pwa-install-actions">
-            <el-button size="small" @click="dismissInstall">Để sau</el-button>
-            <el-button size="small" type="primary" @click="installApp">Cài đặt</el-button>
+            <el-button
+              size="small"
+              @click="dismissInstall"
+            >
+              Để sau
+            </el-button>
+            <el-button
+              size="small"
+              type="primary"
+              @click="installApp"
+            >
+              Cài đặt
+            </el-button>
           </div>
         </div>
       </div>

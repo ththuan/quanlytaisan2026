@@ -14,7 +14,11 @@ export interface JWTPayload {
 }
 
 export const generateAccessToken = (payload: JWTPayload): string => {
-  const { iat: _iat, exp: _exp, jti: _jti, token_type: _type, ...claims } = payload as any;
+  const claims = { ...(payload as any) };
+  delete claims.iat;
+  delete claims.exp;
+  delete claims.jti;
+  delete claims.token_type;
   return jwt.sign({ ...claims, token_type: 'access' }, jwtConfig.secret, {
     expiresIn: jwtConfig.accessExpiration as any,
     issuer: jwtConfig.issuer,
@@ -23,7 +27,11 @@ export const generateAccessToken = (payload: JWTPayload): string => {
 };
 
 export const generateRefreshToken = (payload: JWTPayload): string => {
-  const { iat: _iat, exp: _exp, jti: _jti, token_type: _type, ...claims } = payload as any;
+  const claims = { ...(payload as any) };
+  delete claims.iat;
+  delete claims.exp;
+  delete claims.jti;
+  delete claims.token_type;
   return jwt.sign({ ...claims, token_type: 'refresh' }, jwtConfig.secret, {
     expiresIn: jwtConfig.refreshExpiration as any,
     issuer: jwtConfig.issuer,

@@ -1566,7 +1566,7 @@ class MaintenanceService {
 
     let newStatus: MaintenanceStatus;
     let approvalLevel: number;
-    const approverRole: 'admin' = 'admin';
+    const approverRole = 'admin' as const;
     const updateData: any = {};
 
     if (maintenance.status === 'repair_completed') {

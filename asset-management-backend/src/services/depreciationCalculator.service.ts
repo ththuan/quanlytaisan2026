@@ -213,8 +213,8 @@ class DepreciationCalculatorService {
                 } : undefined,
                 calculationMethod,
                 calculationNotes: overToolsLimit
-                    ? `Công cụ dụng cụ: năm hiện tại > năm SD — GTCL = 0 (phân bổ 100% năm đầu)`
-                    : `Công cụ dụng cụ: năm đưa vào SD vẫn nguyên giá`,
+                    ? 'Công cụ dụng cụ: năm hiện tại > năm SD — GTCL = 0 (phân bổ 100% năm đầu)'
+                    : 'Công cụ dụng cụ: năm đưa vào SD vẫn nguyên giá',
             };
         }
 

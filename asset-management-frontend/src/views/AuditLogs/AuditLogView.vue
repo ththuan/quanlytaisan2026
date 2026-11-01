@@ -4,41 +4,126 @@
       <template #header>
         <div class="card-header">
           <h3>{{ isAdminOrDirector ? 'Nhật ký hoạt động' : 'Lịch sử thao tác của đơn vị' }}</h3>
-          <el-button :icon="Refresh" :loading="loading" @click="fetchLogs">Làm mới</el-button>
+          <el-button
+            :icon="Refresh"
+            :loading="loading"
+            @click="fetchLogs"
+          >
+            Làm mới
+          </el-button>
         </div>
       </template>
 
       <!-- Filters -->
-      <el-row :gutter="12" class="filter-row">
-        <el-col :xs="24" :sm="6">
-          <el-select v-model="filters.action" placeholder="Loại hành động" clearable @change="onFilter">
-            <el-option label="Tạo mới" value="create" />
-            <el-option label="Cập nhật" value="update" />
-            <el-option label="Xóa" value="delete" />
-            <el-option label="Duyệt" value="approve" />
-            <el-option label="Đăng nhập" value="login" />
-            <el-option label="Đăng xuất" value="logout" />
+      <el-row
+        :gutter="12"
+        class="filter-row"
+      >
+        <el-col
+          :xs="24"
+          :sm="6"
+        >
+          <el-select
+            v-model="filters.action"
+            placeholder="Loại hành động"
+            clearable
+            @change="onFilter"
+          >
+            <el-option
+              label="Tạo mới"
+              value="create"
+            />
+            <el-option
+              label="Cập nhật"
+              value="update"
+            />
+            <el-option
+              label="Xóa"
+              value="delete"
+            />
+            <el-option
+              label="Duyệt"
+              value="approve"
+            />
+            <el-option
+              label="Đăng nhập"
+              value="login"
+            />
+            <el-option
+              label="Đăng xuất"
+              value="logout"
+            />
           </el-select>
         </el-col>
-        <el-col :xs="24" :sm="6">
-          <el-select v-model="filters.table_name" placeholder="Đối tượng" clearable @change="onFilter">
-            <el-option label="Tài sản" value="assets" />
-            <el-option label="Người dùng" value="users" />
-            <el-option label="Phòng ban" value="departments" />
-            <el-option label="Điều chuyển" value="asset_transfers" />
-            <el-option label="Bảo trì" value="maintenance_requests" />
-            <el-option label="Thanh lý" value="asset_disposal_cases" />
-            <el-option label="Kiểm kê" value="inventory_rounds" />
-            <el-option label="Mua sắm" value="procurements" />
+        <el-col
+          :xs="24"
+          :sm="6"
+        >
+          <el-select
+            v-model="filters.table_name"
+            placeholder="Đối tượng"
+            clearable
+            @change="onFilter"
+          >
+            <el-option
+              label="Tài sản"
+              value="assets"
+            />
+            <el-option
+              label="Người dùng"
+              value="users"
+            />
+            <el-option
+              label="Phòng ban"
+              value="departments"
+            />
+            <el-option
+              label="Điều chuyển"
+              value="asset_transfers"
+            />
+            <el-option
+              label="Bảo trì"
+              value="maintenance_requests"
+            />
+            <el-option
+              label="Thanh lý"
+              value="asset_disposal_cases"
+            />
+            <el-option
+              label="Kiểm kê"
+              value="inventory_rounds"
+            />
+            <el-option
+              label="Mua sắm"
+              value="procurements"
+            />
           </el-select>
         </el-col>
-        <el-col :xs="24" :sm="6">
-          <el-select v-model="filters.range" placeholder="Thời gian" clearable @change="onFilter">
-            <el-option label="30 ngày gần đây" value="last30days" />
-            <el-option label="Năm hiện tại" value="currentYear" />
+        <el-col
+          :xs="24"
+          :sm="6"
+        >
+          <el-select
+            v-model="filters.range"
+            placeholder="Thời gian"
+            clearable
+            @change="onFilter"
+          >
+            <el-option
+              label="30 ngày gần đây"
+              value="last30days"
+            />
+            <el-option
+              label="Năm hiện tại"
+              value="currentYear"
+            />
           </el-select>
         </el-col>
-        <el-col v-if="isAdminOrDirector" :xs="24" :sm="6">
+        <el-col
+          v-if="isAdminOrDirector"
+          :xs="24"
+          :sm="6"
+        >
           <el-input
             v-model="filters.user_id"
             placeholder="ID người dùng"
@@ -50,40 +135,96 @@
       </el-row>
 
       <!-- Table -->
-      <div class="responsive-table" style="margin-top: 16px">
-        <el-table v-loading="loading" :data="logs" stripe border style="width: 100%">
-          <el-table-column type="index" width="55" label="#" />
-          <el-table-column label="Thời gian" width="170">
+      <div
+        class="responsive-table"
+        style="margin-top: 16px"
+      >
+        <el-table
+          v-loading="loading"
+          :data="logs"
+          stripe
+          border
+          style="width: 100%"
+        >
+          <el-table-column
+            type="index"
+            width="55"
+            label="#"
+          />
+          <el-table-column
+            label="Thời gian"
+            width="170"
+          >
             <template #default="{ row }">
               {{ formatDate(row.created_at) }}
             </template>
           </el-table-column>
-          <el-table-column label="Người thực hiện" min-width="160">
+          <el-table-column
+            label="Người thực hiện"
+            min-width="160"
+          >
             <template #default="{ row }">
               <div>{{ row.user?.fullname || row.user?.username || `User #${row.user_id}` }}</div>
-              <el-tag size="small" type="info">{{ roleText(row.user?.role) }}</el-tag>
+              <el-tag
+                size="small"
+                type="info"
+              >
+                {{ roleText(row.user?.role) }}
+              </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="Hành động" width="110">
+          <el-table-column
+            label="Hành động"
+            width="110"
+          >
             <template #default="{ row }">
-              <el-tag :type="actionTagType(row.action)" size="small">{{ actionText(row.action) }}</el-tag>
+              <el-tag
+                :type="actionTagType(row.action)"
+                size="small"
+              >
+                {{ actionText(row.action) }}
+              </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="table_name" label="Đối tượng" width="160">
+          <el-table-column
+            prop="table_name"
+            label="Đối tượng"
+            width="160"
+          >
             <template #default="{ row }">
               {{ tableLabel(row.table_name) }}
             </template>
           </el-table-column>
-          <el-table-column prop="record_id" label="ID bản ghi" width="100" />
-          <el-table-column label="Mô tả" min-width="200">
+          <el-table-column
+            prop="record_id"
+            label="ID bản ghi"
+            width="100"
+          />
+          <el-table-column
+            label="Mô tả"
+            min-width="200"
+          >
             <template #default="{ row }">
               <span class="log-description">{{ row.description || row.new_value || '—' }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="ip_address" label="IP" width="130" />
-          <el-table-column label="Chi tiết" width="80" fixed="right">
+          <el-table-column
+            prop="ip_address"
+            label="IP"
+            width="130"
+          />
+          <el-table-column
+            label="Chi tiết"
+            width="80"
+            fixed="right"
+          >
             <template #default="{ row }">
-              <el-button size="small" text :icon="View" @click="showDetail(row)" />
+              <el-button
+                size="small"
+                text
+                :icon="View"
+                @click="showDetail(row)"
+              />
             </template>
           </el-table-column>
         </el-table>
@@ -104,24 +245,50 @@
     </el-card>
 
     <!-- Detail Dialog -->
-    <el-dialog v-model="detailVisible" title="Chi tiết nhật ký" width="600px">
-      <el-descriptions v-if="selectedLog" :column="1" border>
-        <el-descriptions-item label="Thời gian">{{ formatDate(selectedLog.created_at) }}</el-descriptions-item>
-        <el-descriptions-item label="Người dùng">{{ selectedLog.user?.fullname || selectedLog.user?.username || `#${selectedLog.user_id}` }}</el-descriptions-item>
-        <el-descriptions-item label="Hành động"><el-tag :type="actionTagType(selectedLog.action)">{{ selectedLog.action }}</el-tag></el-descriptions-item>
-        <el-descriptions-item label="Đối tượng">{{ tableLabel(selectedLog.table_name) }} #{{ selectedLog.record_id }}</el-descriptions-item>
-        <el-descriptions-item label="Mô tả">{{ selectedLog.description || '—' }}</el-descriptions-item>
+    <el-dialog
+      v-model="detailVisible"
+      title="Chi tiết nhật ký"
+      width="600px"
+    >
+      <el-descriptions
+        v-if="selectedLog"
+        :column="1"
+        border
+      >
+        <el-descriptions-item label="Thời gian">
+          {{ formatDate(selectedLog.created_at) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="Người dùng">
+          {{ selectedLog.user?.fullname || selectedLog.user?.username || `#${selectedLog.user_id}` }}
+        </el-descriptions-item>
+        <el-descriptions-item label="Hành động">
+          <el-tag :type="actionTagType(selectedLog.action)">
+            {{ selectedLog.action }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="Đối tượng">
+          {{ tableLabel(selectedLog.table_name) }} #{{ selectedLog.record_id }}
+        </el-descriptions-item>
+        <el-descriptions-item label="Mô tả">
+          {{ selectedLog.description || '—' }}
+        </el-descriptions-item>
         <el-descriptions-item label="Giá trị cũ">
           <pre class="json-box">{{ formatJson(selectedLog.old_value) }}</pre>
         </el-descriptions-item>
         <el-descriptions-item label="Giá trị mới">
           <pre class="json-box">{{ formatJson(selectedLog.new_value) }}</pre>
         </el-descriptions-item>
-        <el-descriptions-item label="IP">{{ selectedLog.ip_address || '—' }}</el-descriptions-item>
-        <el-descriptions-item label="User Agent">{{ selectedLog.user_agent || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="IP">
+          {{ selectedLog.ip_address || '—' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="User Agent">
+          {{ selectedLog.user_agent || '—' }}
+        </el-descriptions-item>
       </el-descriptions>
       <template #footer>
-        <el-button @click="detailVisible = false">Đóng</el-button>
+        <el-button @click="detailVisible = false">
+          Đóng
+        </el-button>
       </template>
     </el-dialog>
   </div>

@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { export04a, export04b, export04c, export04d, exportKeKhai } from '../services/exportTT120.service';
 import { AuthRequest } from '../middleware/auth.middleware';
 

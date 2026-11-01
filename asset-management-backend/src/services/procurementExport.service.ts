@@ -1,7 +1,6 @@
-﻿import ExcelJS from 'exceljs';
+import ExcelJS from 'exceljs';
 import { Op, QueryTypes } from 'sequelize';
 import sequelize from '../config/database';
-import { Procurement, ProcurementItem, Department, User } from '../models';
 import { ConflictError } from '../utils/errorHandler';
 
 const formatDate = (d: any): string => {
@@ -76,7 +75,7 @@ const buildWhereProc = (query: ProcurementExportQuery): any => {
     where.purchase_date = { [Op.between]: [start, end] };
   } else if (query.year) {
     const year = parseInt(String(query.year), 10);
-    if (!year || year < 1990 || year > 2100) throw new ConflictError('NÄƒm khÃ´ng há»£p lá»‡');
+    if (!year || year < 1990 || year > 2100) throw new ConflictError('Năm không hợp lệ');
     const start = new Date(year, 0, 1);
     const end = new Date(year, 11, 31, 23, 59, 59);
     where.purchase_date = { [Op.between]: [start, end] };
@@ -192,15 +191,15 @@ export const exportProcurementsToExcel = async (query: ProcurementExportQuery): 
     row.height = 26;
   };
 
-  // â”€â”€ Sheet 1: Tá»•ng há»£p theo loáº¡i tÃ i sáº£n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Sheet 1: Tổng hợp theo loại tài sản ──────────────────────────────────
   const sheet1 = workbook.addWorksheet('Tong hop theo loai');
   sheet1.columns = [
-    { header: 'MÃ£ loáº¡i', key: 'category_code', width: 16 },
-    { header: 'Loáº¡i tÃ i sáº£n', key: 'category', width: 36 },
-    { header: 'TÃªn tÃ i sáº£n', key: 'name', width: 32 },
-    { header: 'ÄÆ¡n vá»‹', key: 'unit', width: 12 },
-    { header: 'Tá»•ng SL', key: 'total_quantity', width: 12 },
-    { header: 'Tá»•ng tiá»n', key: 'total_amount', width: 18 },
+    { header: 'Mã loại', key: 'category_code', width: 16 },
+    { header: 'Loại tài sản', key: 'category', width: 36 },
+    { header: 'Tên tài sản', key: 'name', width: 32 },
+    { header: 'Đơn vị', key: 'unit', width: 12 },
+    { header: 'Tổng SL', key: 'total_quantity', width: 12 },
+    { header: 'Tổng tiền', key: 'total_amount', width: 18 },
   ];
   styleHeaderRow(sheet1.getRow(1));
 
@@ -253,7 +252,7 @@ export const exportProcurementsToExcel = async (query: ProcurementExportQuery): 
 
   const totalRow = sheet1.addRow({
     category_code: '',
-    category: 'Tá»”NG Cá»˜NG',
+    category: 'TỔNG CỘNG',
     name: '',
     unit: '',
     total_quantity: totalQty,
@@ -264,16 +263,16 @@ export const exportProcurementsToExcel = async (query: ProcurementExportQuery): 
   applyMoneyFormat(totalRow.getCell('total_amount'));
   sheet1.views = [{ state: 'frozen', ySplit: 1 }];
 
-  // â”€â”€ Sheet 2: Tá»•ng há»£p theo Ä‘Æ¡n vá»‹ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Sheet 2: Tổng hợp theo đơn vị ────────────────────────────────────────
   const sheet2 = workbook.addWorksheet('Tong hop theo don vi');
   sheet2.columns = [
-    { header: 'ÄÆ¡n vá»‹ nháº­n', key: 'department_name', width: 30 },
-    { header: 'MÃ£ loáº¡i', key: 'category_code', width: 16 },
-    { header: 'Loáº¡i tÃ i sáº£n', key: 'category', width: 36 },
-    { header: 'TÃªn tÃ i sáº£n', key: 'asset_name', width: 32 },
-    { header: 'ÄVT', key: 'unit', width: 10 },
-    { header: 'Tá»•ng SL', key: 'total_quantity', width: 12 },
-    { header: 'Tá»•ng tiá»n', key: 'total_amount', width: 18 },
+    { header: 'Đơn vị nhận', key: 'department_name', width: 30 },
+    { header: 'Mã loại', key: 'category_code', width: 16 },
+    { header: 'Loại tài sản', key: 'category', width: 36 },
+    { header: 'Tên tài sản', key: 'asset_name', width: 32 },
+    { header: 'ĐVT', key: 'unit', width: 10 },
+    { header: 'Tổng SL', key: 'total_quantity', width: 12 },
+    { header: 'Tổng tiền', key: 'total_amount', width: 18 },
   ];
   styleHeaderRow(sheet2.getRow(1));
 
@@ -281,7 +280,7 @@ export const exportProcurementsToExcel = async (query: ProcurementExportQuery): 
   type DeptKey = string;
   const deptMap = new Map<DeptKey, Map<string, { category_code: string; category: string; name: string; unit: string; qty: number; amt: number }>>();
   for (const r of assetRows) {
-    const dept = r.department_name || 'KhÃ´ng xÃ¡c Ä‘á»‹nh';
+    const dept = r.department_name || 'Không xác định';
     const key = `${r.category_code || ''}|${r.category || ''}|${r.name || ''}|${r.unit || ''}`;
     if (!deptMap.has(dept)) deptMap.set(dept, new Map());
     const inner = deptMap.get(dept)!;
@@ -324,7 +323,7 @@ export const exportProcurementsToExcel = async (query: ProcurementExportQuery): 
     }
     // Subtotal per department
     const subRow = sheet2.addRow({
-      department_name: `  Tá»•ng: ${deptName}`,
+      department_name: `  Tổng: ${deptName}`,
       category_code: '', category: '', asset_name: '', unit: '',
       total_quantity: deptQty,
       total_amount: deptAmt,
@@ -336,39 +335,39 @@ export const exportProcurementsToExcel = async (query: ProcurementExportQuery): 
   }
   sheet2.views = [{ state: 'frozen', ySplit: 1 }];
 
-  // â”€â”€ Sheet 3: Chi tiáº¿t tÄƒng tÃ i sáº£n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Sheet 3: Chi tiết tăng tài sản ───────────────────────────────────────
   const sheet3 = workbook.addWorksheet('Chi tiet tang tai san');
   sheet3.columns = [
-    { header: 'MÃ£ phiáº¿u', key: 'code', width: 18 },
-    { header: 'NgÃ y mua', key: 'purchase_date', width: 14 },
-    { header: 'ÄÆ¡n vá»‹ nháº­n', key: 'department', width: 28 },
-    { header: 'Ná»™i dung', key: 'title', width: 30 },
-    { header: 'NhÃ  cung cáº¥p', key: 'supplier_name', width: 26 },
-    { header: 'Sá»‘ HÄ', key: 'contract_no', width: 16 },
-    { header: 'Sá»‘ hÃ³a Ä‘Æ¡n', key: 'invoice_no', width: 16 },
-    { header: 'MÃ£ tÃ i sáº£n', key: 'asset_code', width: 18 },
-    { header: 'TÃªn tÃ i sáº£n', key: 'item_name', width: 32 },
-    { header: 'Loáº¡i tÃ i sáº£n', key: 'category', width: 30 },
-    { header: 'MÃ£ loáº¡i', key: 'category_code', width: 14 },
-    { header: 'ÄVT', key: 'unit', width: 10 },
-    { header: 'ÄÆ¡n giÃ¡', key: 'purchase_price', width: 16 },
+    { header: 'Mã phiếu', key: 'code', width: 18 },
+    { header: 'Ngày mua', key: 'purchase_date', width: 14 },
+    { header: 'Đơn vị nhận', key: 'department', width: 28 },
+    { header: 'Nội dung', key: 'title', width: 30 },
+    { header: 'Nhà cung cấp', key: 'supplier_name', width: 26 },
+    { header: 'Số HĐ', key: 'contract_no', width: 16 },
+    { header: 'Số hóa đơn', key: 'invoice_no', width: 16 },
+    { header: 'Mã tài sản', key: 'asset_code', width: 18 },
+    { header: 'Tên tài sản', key: 'item_name', width: 32 },
+    { header: 'Loại tài sản', key: 'category', width: 30 },
+    { header: 'Mã loại', key: 'category_code', width: 14 },
+    { header: 'ĐVT', key: 'unit', width: 10 },
+    { header: 'Đơn giá', key: 'purchase_price', width: 16 },
     { header: 'Serial', key: 'serial_number', width: 18 },
-    { header: 'Vá»‹ trÃ­ sá»­ dá»¥ng', key: 'location', width: 24 },
-    { header: 'TÃ¬nh tráº¡ng', key: 'asset_condition', width: 16 },
-    { header: 'Tráº¡ng thÃ¡i phiáº¿u', key: 'status', width: 16 },
+    { header: 'Vị trí sử dụng', key: 'location', width: 24 },
+    { header: 'Tình trạng', key: 'asset_condition', width: 16 },
+    { header: 'Trạng thái phiếu', key: 'status', width: 16 },
   ];
   styleHeaderRow(sheet3.getRow(1));
 
   const statusLabel = (s: string) => {
-    if (s === 'fulfilled') return 'ÄÃ£ hoÃ n táº¥t';
-    if (s === 'draft') return 'Äá» nghá»‹';
-    if (s === 'cancelled') return 'ÄÃ£ há»§y';
+    if (s === 'fulfilled') return 'Đã hoàn tất';
+    if (s === 'draft') return 'Đề nghị';
+    if (s === 'cancelled') return 'Đã hủy';
     return s || '';
   };
   const conditionLabel = (c: string) => {
-    if (c === 'good') return 'Tá»‘t';
-    if (c === 'fair') return 'BÃ¬nh thÆ°á»ng';
-    if (c === 'poor') return 'KÃ©m';
+    if (c === 'good') return 'Tốt';
+    if (c === 'fair') return 'Bình thường';
+    if (c === 'poor') return 'Kém';
     return c || '';
   };
 

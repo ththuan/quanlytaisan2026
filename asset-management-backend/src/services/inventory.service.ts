@@ -960,16 +960,13 @@ class InventoryService {
     reportId: number,
     approvedBy?: number,
     transaction?: any,
-    repairApprovedAssetIds?: number[]  // undefined = approve ALL repairs; [] = reject all; [ids] = only those IDs
+    _repairApprovedAssetIds?: number[]
   ): Promise<void> {
     const details = await InventoryReportDetail.findAll({
       where: { inventory_report_id: reportId },
       transaction,
       include: [{ model: InventoryReport, as: 'inventory_report', attributes: ['id', 'department_id', 'created_by'] }],
     });
-
-    // undefined = admin did not make an explicit selection → approve all repair suggestions
-    const approveAllRepairs = false;
 
     // KHÔNG tự tạo hồ sơ thanh lý khi duyệt kiểm kê.
     // Tài sản chỉ chuyển sang trạng thái "chờ xử lý" (pending_disposal);

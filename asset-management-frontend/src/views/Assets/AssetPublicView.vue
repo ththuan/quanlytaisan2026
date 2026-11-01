@@ -9,21 +9,34 @@
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="scan-state">
+    <div
+      v-if="loading"
+      class="scan-state"
+    >
       <div class="spinner" />
       <p>Đang tra cứu tài sản...</p>
     </div>
 
     <!-- Error / Not found -->
-    <div v-else-if="error" class="scan-state error-state">
-      <div class="state-icon">❌</div>
+    <div
+      v-else-if="error"
+      class="scan-state error-state"
+    >
+      <div class="state-icon">
+        ❌
+      </div>
       <h2>Không tìm thấy</h2>
       <p>{{ error }}</p>
-      <p class="scan-code">Mã tra cứu: <strong>{{ code }}</strong></p>
+      <p class="scan-code">
+        Mã tra cứu: <strong>{{ code }}</strong>
+      </p>
     </div>
 
     <!-- Asset info -->
-    <div v-else-if="asset" class="asset-card">
+    <div
+      v-else-if="asset"
+      class="asset-card"
+    >
       <!-- Asset image -->
       <div class="asset-image-wrap">
         <img
@@ -31,8 +44,11 @@
           :src="asset.image_url"
           :alt="asset.name"
           class="asset-image"
-        />
-        <div v-else class="asset-image-placeholder">
+        >
+        <div
+          v-else
+          class="asset-image-placeholder"
+        >
           <span>📦</span>
         </div>
       </div>
@@ -40,13 +56,18 @@
       <!-- Status badge -->
       <div class="status-row">
         <span :class="['status-badge', statusClass]">{{ asset.status_label || asset.status }}</span>
-        <span v-if="asset.condition" :class="['condition-badge', conditionClass]">
+        <span
+          v-if="asset.condition"
+          :class="['condition-badge', conditionClass]"
+        >
           {{ asset.condition_label || asset.condition }}
         </span>
       </div>
 
       <!-- Main info -->
-      <h1 class="asset-name">{{ asset.name }}</h1>
+      <h1 class="asset-name">
+        {{ asset.name }}
+      </h1>
       <p class="asset-code">
         {{ asset.asset_code }}
         <button
@@ -65,41 +86,67 @@
 
       <!-- Details -->
       <div class="info-list">
-        <div v-if="asset.assetCategory?.name" class="info-row">
+        <div
+          v-if="asset.assetCategory?.name"
+          class="info-row"
+        >
           <span class="info-label">Loại tài sản</span>
           <span class="info-value">{{ asset.assetCategory.name }}</span>
         </div>
-        <div v-if="asset.current_department?.name" class="info-row">
+        <div
+          v-if="asset.current_department?.name"
+          class="info-row"
+        >
           <span class="info-label">Phòng ban</span>
           <span class="info-value">{{ asset.current_department.name }}</span>
         </div>
-        <div v-if="asset.location" class="info-row">
+        <div
+          v-if="asset.location"
+          class="info-row"
+        >
           <span class="info-label">Vị trí</span>
           <span class="info-value">{{ asset.location }}</span>
         </div>
-        <div v-if="asset.year_in_use" class="info-row">
+        <div
+          v-if="asset.year_in_use"
+          class="info-row"
+        >
           <span class="info-label">Năm sử dụng</span>
           <span class="info-value">{{ asset.year_in_use }}</span>
         </div>
-        <div v-if="asset.quantity" class="info-row">
+        <div
+          v-if="asset.quantity"
+          class="info-row"
+        >
           <span class="info-label">Số lượng</span>
           <span class="info-value">{{ asset.quantity }}{{ asset.unit ? ` ${asset.unit}` : '' }}</span>
         </div>
-        <div v-if="asset.serial_number" class="info-row">
+        <div
+          v-if="asset.serial_number"
+          class="info-row"
+        >
           <span class="info-label">Số sê-ri</span>
           <span class="info-value">{{ asset.serial_number }}</span>
         </div>
-        <div v-if="asset.warranty_date" class="info-row">
+        <div
+          v-if="asset.warranty_date"
+          class="info-row"
+        >
           <span class="info-label">Bảo hành đến</span>
           <span class="info-value">{{ formatDate(asset.warranty_date) }}</span>
         </div>
-        <div v-if="asset.description" class="info-row description-row">
+        <div
+          v-if="asset.description"
+          class="info-row description-row"
+        >
           <span class="info-label">Mô tả</span>
           <span class="info-value">{{ asset.description }}</span>
         </div>
       </div>
 
-      <p class="scan-note">Thông tin tra cứu qua mã QR – chỉ hiển thị dữ liệu cơ bản</p>
+      <p class="scan-note">
+        Thông tin tra cứu qua mã QR – chỉ hiển thị dữ liệu cơ bản
+      </p>
     </div>
   </div>
 </template>
