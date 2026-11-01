@@ -56,4 +56,4 @@ COPY --from=builder /app/ecosystem.config.js ./
 EXPOSE 5000
 
 # Chạy nhiều worker (cluster) qua PM2 để tận dụng toàn bộ CPU core
-CMD ["node", "./node_modules/pm2/bin/pm2-runtime", "start", "ecosystem.config.js", "--no-daemon"]
+CMD ["node", "./node_modules/pm2/bin/pm2-runtime", "start", "ecosystem.config.js"]
