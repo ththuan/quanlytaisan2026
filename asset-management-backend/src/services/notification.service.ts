@@ -79,24 +79,33 @@ async function getUserIdsByRoles(
 
 /**
  * Người duyệt cấp 1 báo cáo kiểm kê: trưởng đơn vị của chính đơn vị báo cáo
- * và trưởng đơn vị cha (nếu có) — đồng bộ với quy tắc trong inventory.service.
+ * và trưởng của toàn bộ đơn vị cha/ông/kỵ phía trên — đồng bộ với quy tắc
+ * duyệt theo cây trong inventory.service.
  */
 async function getInventoryLevel1ApproverIds(
   reportDepartmentId: number | null | undefined
 ): Promise<number[]> {
   if (!reportDepartmentId) return [];
-  const ownHeadIds = await getUserIdsByDepartmentRoles(reportDepartmentId, ['department_head']);
 
-  // Đơn vị cha
-  const dept = await Department.findByPk(reportDepartmentId, {
-    attributes: ['id', 'parent_department_id'],
-  });
-  const parentId = (dept as any)?.parent_department_id as number | null | undefined;
-  const parentHeadIds = parentId
-    ? await getUserIdsByDepartmentRoles(parentId, ['department_head'])
-    : [];
+  const approverIds = new Set<number>();
+  const visited = new Set<number>();
+  let currentId: number | null | undefined = Number(reportDepartmentId);
 
-  return [...ownHeadIds, ...parentHeadIds];
+  // Đi ngược lên cây đơn vị, tối đa 50 cấp để tránh dữ liệu vòng lặp.
+  for (let depth = 0; currentId && depth < 50; depth += 1) {
+    if (visited.has(currentId)) break;
+    visited.add(currentId);
+
+    const headIds = await getUserIdsByDepartmentRoles(currentId, ['department_head']);
+    headIds.forEach((id) => approverIds.add(id));
+
+    const dept = await Department.findByPk(currentId, {
+      attributes: ['id', 'parent_department_id'],
+    });
+    currentId = (dept as any)?.parent_department_id as number | null | undefined;
+  }
+
+  return [...approverIds];
 }
 
 export default {

@@ -173,6 +173,112 @@ const assertRoundOpenForEditing = (round: any): void => {
   }
 };
 
+const INVENTORY_ASSET_STATUSES = [
+  'active',
+  'inactive',
+  'damaged',
+  'pending_disposal',
+  'pending_repair',
+] as const;
+
+interface RoundUnitState {
+  root: any;
+  requiredDeptIds: number[];
+  allCompleted: boolean;
+  allSubmitted: boolean;
+  hasAnyReport: boolean;
+}
+
+/**
+ * Tính trạng thái hoàn tất của từng đơn vị gốc dựa trên toàn bộ cây đơn vị con/cháu.
+ * Một đơn vị gốc hoàn tất khi mọi đơn vị có tài sản trong cây đều có báo cáo
+ * ở trạng thái completed (đã được duyệt cấp 1 và admin duyệt cuối).
+ */
+const computeRoundUnitStates = (
+  departments: any[],
+  reports: any[],
+  assetDeptIds: Set<number>
+): RoundUnitState[] => {
+  const roots: any[] = [];
+  const childrenByParent = new Map<number, number[]>();
+  for (const dept of departments) {
+    if (dept.parent_department_id == null) {
+      roots.push(dept);
+    } else {
+      const parentId = Number(dept.parent_department_id);
+      const children = childrenByParent.get(parentId) || [];
+      children.push(Number(dept.id));
+      childrenByParent.set(parentId, children);
+    }
+  }
+
+  const subtreeIds = (rootId: number): number[] => {
+    const result: number[] = [];
+    const seen = new Set<number>();
+    const stack = [rootId];
+    while (stack.length > 0) {
+      const id = stack.pop() as number;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      result.push(id);
+      for (const childId of childrenByParent.get(id) || []) {
+        stack.push(childId);
+      }
+    }
+    return result;
+  };
+
+  const reportsByDept = new Map<number, any[]>();
+  for (const report of reports) {
+    const deptId = Number(report.department_id);
+    const items = reportsByDept.get(deptId) || [];
+    items.push(report);
+    reportsByDept.set(deptId, items);
+  }
+
+  const submittedStatuses = ['pending', 'approved_by_head', 'approved_by_admin', 'completed'];
+
+  return roots.map((root) => {
+    const subtree = subtreeIds(Number(root.id));
+    const requiredDeptIds = subtree.filter((deptId) => assetDeptIds.has(deptId));
+    const allCompleted = requiredDeptIds.length === 0
+      ? true
+      : requiredDeptIds.every((deptId) => {
+        const deptReports = reportsByDept.get(deptId) || [];
+        return deptReports.length > 0 && deptReports.every((report) => report.status === 'completed');
+      });
+    const allSubmitted = requiredDeptIds.length === 0
+      ? true
+      : requiredDeptIds.every((deptId) => {
+        const deptReports = reportsByDept.get(deptId) || [];
+        return deptReports.length > 0
+          && deptReports.every((report) => submittedStatuses.includes(report.status));
+      });
+    const hasAnyReport = subtree.some((deptId) => (reportsByDept.get(deptId) || []).length > 0);
+
+    return { root, requiredDeptIds, allCompleted, allSubmitted, hasAnyReport };
+  });
+};
+
+/** Tập đơn vị đang có tài sản thuộc phạm vi kiểm kê (để xác định đơn vị bắt buộc có báo cáo). */
+const getDepartmentIdsWithAssets = async (): Promise<Set<number>> => {
+  const rows: any[] = await sequelize.query(
+    `SELECT DISTINCT current_department_id
+     FROM assets
+     WHERE current_department_id IS NOT NULL
+       AND status IN (:statuses)`,
+    {
+      replacements: { statuses: INVENTORY_ASSET_STATUSES },
+      type: QueryTypes.SELECT,
+    }
+  );
+  return new Set(
+    rows
+      .map((row) => Number(row.current_department_id))
+      .filter((deptId) => Number.isFinite(deptId))
+  );
+};
+
 /** Map một detail (model) về đúng shape API trả về cho frontend. */
 const toDetailResponse = (detail: any) => {
   const detailData = detail.toJSON ? detail.toJSON() : detail;
@@ -185,6 +291,24 @@ const toDetailResponse = (detail: any) => {
 };
 
 class InventoryService {
+  /** Toàn bộ đơn vị trong cây (chính nó + con/cháu/chắt...). */
+  async getSubtreeDepartmentIds(rootId: number): Promise<number[]> {
+    const rows: any[] = await sequelize.query(
+      `WITH RECURSIVE dept AS (
+         SELECT id FROM departments WHERE id = :rootId
+         UNION ALL
+         SELECT d.id
+         FROM departments d
+         JOIN dept ON d.parent_department_id = dept.id
+       )
+       SELECT id FROM dept`,
+      { replacements: { rootId }, type: QueryTypes.SELECT }
+    );
+    return rows
+      .map((row) => Number(row.id))
+      .filter((id) => Number.isFinite(id));
+  }
+
   async createInventoryRound(data: CreateInventoryRoundInput, createdBy: number): Promise<InventoryRound> {
     const activeRound = await InventoryRound.findOne({
       where: { status: { [Op.in]: ['in_progress', 'awaiting_approval'] } },
@@ -245,7 +369,7 @@ class InventoryService {
     // Ensure accurate round statistics
     await this.updateRoundStatistics(id);
 
-    const [round, departments] = await Promise.all([
+    const [round, departments, assetDeptIds] = await Promise.all([
       InventoryRound.findByPk(id, {
         include: [
           { model: User, as: 'creator', attributes: ['id', 'fullname'] },
@@ -262,70 +386,25 @@ class InventoryService {
       Department.findAll({
         attributes: ['id', 'name', 'parent_department_id'],
       }),
+      getDepartmentIdsWithAssets(),
     ]);
 
     if (!round) {
       throw new NotFoundError('Inventory round not found');
     }
 
-    const parentDepts: any[] = [];
-    const childrenByParent = new Map<number, number[]>();
-    for (const dept of departments as any[]) {
-      if (dept.parent_department_id == null) {
-        parentDepts.push(dept);
-      } else {
-        const parentId = Number(dept.parent_department_id);
-        const children = childrenByParent.get(parentId) || [];
-        children.push(Number(dept.id));
-        childrenByParent.set(parentId, children);
-      }
-    }
-
     const reports = (round as any).reports || [];
-    const reportsByDept = new Map<number, any[]>();
-    for (const report of reports) {
-      const deptId = Number(report.department_id);
-      const items = reportsByDept.get(deptId) || [];
-      items.push(report);
-      reportsByDept.set(deptId, items);
-    }
+    const states = computeRoundUnitStates(departments as any[], reports, assetDeptIds);
 
-    const unitReportsOf = (parentId: number) => {
-      const deptIds = [parentId, ...(childrenByParent.get(parentId) || [])];
-      return deptIds.flatMap((deptId) => reportsByDept.get(deptId) || []);
-    };
-
-    const completedDepts: number[] = [];
-    const inProgressDepts: number[] = []; // Has some draft or pending reports
-    const submittedStatuses = ['pending', 'approved_by_head', 'approved_by_admin', 'completed'];
-    const not_submitted_departments: any[] = [];
-
-    for (const parent of parentDepts) {
-      const parentId = Number(parent.id);
-      const unitReports = unitReportsOf(parentId);
-
-      if (unitReports.length > 0) {
-        const allDone = unitReports.every((r: any) => ['approved_by_head', 'completed'].includes(r.status));
-        if (allDone) {
-          completedDepts.push(parentId);
-        } else {
-          inProgressDepts.push(parentId);
-        }
-      }
-
-      const allSubmitted = unitReports.length > 0
-        && unitReports.every((r: any) => submittedStatuses.includes(r.status));
-      if (!allSubmitted) {
-        not_submitted_departments.push(parent);
-      }
-    }
-
-    const unsubmitted_departments = parentDepts.filter(
-      (dept: any) => !completedDepts.includes(Number(dept.id)) && !inProgressDepts.includes(Number(dept.id))
-    );
-    const incomplete_departments = parentDepts.filter(
-      (dept: any) => inProgressDepts.includes(Number(dept.id))
-    );
+    const unsubmitted_departments = states
+      .filter((state) => !state.allCompleted && !state.hasAnyReport)
+      .map((state) => state.root);
+    const incomplete_departments = states
+      .filter((state) => !state.allCompleted && state.hasAnyReport)
+      .map((state) => state.root);
+    const not_submitted_departments = states
+      .filter((state) => !state.allSubmitted)
+      .map((state) => state.root);
 
     return {
       ...round.toJSON(),
@@ -347,7 +426,7 @@ class InventoryService {
   }
 
   async updateRoundStatistics(roundId: number): Promise<void> {
-    const [reports, departments] = await Promise.all([
+    const [reports, departments, assetDeptIds] = await Promise.all([
       InventoryReport.findAll({
         where: { inventory_round_id: roundId },
         attributes: ['department_id', 'status'],
@@ -357,43 +436,11 @@ class InventoryService {
         attributes: ['id', 'parent_department_id'],
         raw: true,
       }),
+      getDepartmentIdsWithAssets(),
     ]);
 
-    const parentIds: number[] = [];
-    const childrenByParent = new Map<number, number[]>();
-    for (const dept of departments as any[]) {
-      if (dept.parent_department_id == null) {
-        parentIds.push(Number(dept.id));
-      } else {
-        const parentId = Number(dept.parent_department_id);
-        const children = childrenByParent.get(parentId) || [];
-        children.push(Number(dept.id));
-        childrenByParent.set(parentId, children);
-      }
-    }
-
-    const reportsByDept = new Map<number, any[]>();
-    for (const report of reports as any[]) {
-      const deptId = Number(report.department_id);
-      const items = reportsByDept.get(deptId) || [];
-      items.push(report);
-      reportsByDept.set(deptId, items);
-    }
-
-    // Count completed parent units: a parent unit is done when all its submitted
-    // child dept reports are at approved_by_head or completed.
-    let completedDepts = 0;
-    for (const parentId of parentIds) {
-      const deptIds = [parentId, ...(childrenByParent.get(parentId) || [])];
-      const unitReports = deptIds.flatMap((deptId) => reportsByDept.get(deptId) || []);
-      if (
-        unitReports.length > 0 &&
-        unitReports.every((r: any) => ['approved_by_head', 'completed'].includes(r.status))
-      ) {
-        completedDepts++;
-      }
-    }
-
+    const states = computeRoundUnitStates(departments as any[], reports as any[], assetDeptIds);
+    const completedDepts = states.filter((state) => state.allCompleted).length;
     const pending = (reports as any[]).filter((r) => ['pending', 'draft'].includes(r.status)).length;
     const rejected = (reports as any[]).filter((r) => ['rejected_by_head', 'rejected_by_admin'].includes(r.status)).length;
 
@@ -413,8 +460,9 @@ class InventoryService {
       throw new NotFoundError('Inventory round not found');
     }
 
-    // Chỉ hoàn tất khi TẤT CẢ đơn vị đã ký nộp báo cáo (kể cả báo cáo nháp/bị từ chối đều chặn).
-    const [reports, departments] = await Promise.all([
+    // Chỉ hoàn tất khi mọi đơn vị có tài sản trong từng cây đơn vị
+    // đều đã có báo cáo được duyệt cấp 1 và admin duyệt cuối (completed).
+    const [reports, departments, assetDeptIds] = await Promise.all([
       InventoryReport.findAll({
         where: { inventory_round_id: roundId },
         attributes: ['department_id', 'status'],
@@ -424,47 +472,17 @@ class InventoryService {
         attributes: ['id', 'name', 'parent_department_id'],
         raw: true,
       }),
+      getDepartmentIdsWithAssets(),
     ]);
-    const submittedStatuses = ['pending', 'approved_by_head', 'approved_by_admin', 'completed'];
 
-    const parentDepts: any[] = [];
-    const childrenByParent = new Map<number, number[]>();
-    for (const dept of departments as any[]) {
-      if (dept.parent_department_id == null) {
-        parentDepts.push(dept);
-      } else {
-        const parentId = Number(dept.parent_department_id);
-        const children = childrenByParent.get(parentId) || [];
-        children.push(Number(dept.id));
-        childrenByParent.set(parentId, children);
-      }
-    }
+    const states = computeRoundUnitStates(departments as any[], reports as any[], assetDeptIds);
+    const notCompleted = states.filter((state) => !state.allCompleted);
 
-    const reportsByDept = new Map<number, any[]>();
-    for (const report of reports as any[]) {
-      const deptId = Number(report.department_id);
-      const items = reportsByDept.get(deptId) || [];
-      items.push(report);
-      reportsByDept.set(deptId, items);
-    }
-
-    const notSubmitted: any[] = [];
-    for (const parent of parentDepts) {
-      const parentId = Number(parent.id);
-      const deptIds = [parentId, ...(childrenByParent.get(parentId) || [])];
-      const unitReports = deptIds.flatMap((deptId) => reportsByDept.get(deptId) || []);
-      const allSubmitted = unitReports.length > 0
-        && unitReports.every((r: any) => submittedStatuses.includes(r.status));
-      if (!allSubmitted) {
-        notSubmitted.push(parent);
-      }
-    }
-
-    if (notSubmitted.length > 0) {
-      const names = notSubmitted.slice(0, 5).map((d: any) => d.name).join(', ');
+    if (notCompleted.length > 0) {
+      const names = notCompleted.slice(0, 5).map((state: any) => state.root.name).join(', ');
       throw new ValidationError(
-        `Không thể hoàn tất: còn ${notSubmitted.length} đơn vị chưa nộp báo cáo (${names}${notSubmitted.length > 5 ? '...' : ''}). `
-        + 'Hãy gia hạn thời gian để các đơn vị hoàn tất nộp báo cáo.',
+        `Không thể hoàn tất: còn ${notCompleted.length} đơn vị chưa hoàn tất kiểm kê (${names}${notCompleted.length > 5 ? '...' : ''}). `
+        + 'Mọi đơn vị có tài sản (kể cả đơn vị cha) phải có báo cáo được duyệt đầy đủ.',
       );
     }
 
@@ -638,14 +656,10 @@ class InventoryService {
     if (role === 'admin' || role === 'director') {
       // all
     } else if (role === 'department_head') {
-      // Department head sees own dept + all child departments under them
-      const childDepts = await Department.findAll({
-        where: { parent_department_id: departmentId },
-        attributes: ['id'],
-      });
-      const childIds = childDepts.map((d: any) => d.id);
-      where.department_id = childIds.length > 0
-        ? { [Op.in]: [departmentId, ...childIds] }
+      // Trưởng đơn vị thấy báo cáo của đơn vị mình và toàn bộ đơn vị con/cháu.
+      const subtreeIds = await this.getSubtreeDepartmentIds(departmentId);
+      where.department_id = subtreeIds.length > 0
+        ? { [Op.in]: subtreeIds }
         : departmentId;
     } else {
       // Nhân viên: dùng chung báo cáo của đơn vị hiện tại (nhiều nhân viên
@@ -1192,13 +1206,13 @@ class InventoryService {
         throw new ForbiddenError('Tài khoản trưởng đơn vị chưa được gán đơn vị.');
       }
 
-      const isOwnDept = report.department_id === approverDepartmentId;
+      const reportDeptId = Number(report.department_id);
+      const isOwnDept = reportDeptId === Number(approverDepartmentId);
       if (!isOwnDept) {
-        const reportDept = await Department.findByPk(report.department_id, {
-          attributes: ['id', 'parent_department_id'],
-        });
-        const isParentHead = reportDept && (reportDept as any).parent_department_id === approverDepartmentId;
-        if (!isParentHead) {
+        // Trưởng đơn vị cấp trên (cha/ông/kỵ...) được duyệt báo cáo của toàn bộ
+        // đơn vị con cháu trong cây của mình.
+        const subtreeIds = await this.getSubtreeDepartmentIds(Number(approverDepartmentId));
+        if (!subtreeIds.includes(reportDeptId)) {
           throw new ForbiddenError('Bạn không có quyền duyệt báo cáo của đơn vị này');
         }
       }
@@ -1550,15 +1564,8 @@ class InventoryService {
     }
 
     if (role === 'department_head') {
-      // Show pending reports for own dept + all child depts
-      const deptIds: number[] = departmentId ? [departmentId] : [];
-      if (departmentId) {
-        const childDepts = await Department.findAll({
-          where: { parent_department_id: departmentId },
-          attributes: ['id'],
-        });
-        childDepts.forEach((d: any) => deptIds.push(d.id));
-      }
+      // Báo cáo chờ duyệt của đơn vị mình và toàn bộ đơn vị con/cháu.
+      const deptIds = departmentId ? await this.getSubtreeDepartmentIds(departmentId) : [];
       where = {
         department_id: deptIds.length > 1 ? { [Op.in]: deptIds } : (deptIds[0] ?? departmentId),
         status: 'pending',

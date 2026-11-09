@@ -7,7 +7,6 @@ import { Response, NextFunction } from 'express';
 import InventoryService from '../services/inventory.service';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { ForbiddenError, ValidationError } from '../utils/errorHandler';
-import Department from '../models/Department';
 import { assertSignature, recordSignature } from '../services/signature.service';
 import { savePublicFile } from '../utils/fileStorage';
 
@@ -193,11 +192,9 @@ export const getInventoryReportById = async (req: AuthRequest, res: Response, ne
     if (user.role !== 'admin' && user.role !== 'director') {
       if (user.role === 'department_head') {
         if (Number(report.department_id) !== Number(user.department_id)) {
-          // Allow parent-dept head to view child-dept reports
-          const reportDept = await Department.findByPk(report.department_id, {
-            attributes: ['id', 'parent_department_id'],
-          });
-          if (!reportDept || Number((reportDept as any).parent_department_id) !== Number(user.department_id)) {
+          // Trưởng đơn vị xem được báo cáo của toàn bộ đơn vị con/cháu trong cây.
+          const subtreeIds = await InventoryService.getSubtreeDepartmentIds(Number(user.department_id));
+          if (!subtreeIds.includes(Number(report.department_id))) {
             throw new ForbiddenError('Bạn chỉ được xem báo cáo kiểm kê của phòng ban mình và các đơn vị con');
           }
         }
