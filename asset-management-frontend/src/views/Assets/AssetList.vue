@@ -545,8 +545,9 @@
       </div>
     </el-card>
 
-    <!-- Asset Form Dialog -->
+    <!-- Asset Form Dialog (chỉ admin được sửa tài sản) -->
     <AssetFormDialog
+      v-if="canManageAssets"
       v-model:visible="formDialogVisible"
       :asset="currentAsset"
       @success="handleFormSuccess"

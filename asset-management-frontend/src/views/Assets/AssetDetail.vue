@@ -671,6 +671,7 @@
 
     <!-- Edit Dialog -->
     <AssetFormDialog
+      v-if="canManageAssets"
       v-model:visible="showEditDialog"
       :asset="assetStore.currentAsset"
       @saved="handleSaved"
