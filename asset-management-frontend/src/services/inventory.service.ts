@@ -206,7 +206,9 @@ class InventoryService {
   async getAssetsForInventory(params?: {
     department_id?: number;
     round_id?: number;
+    report_id?: number;
     limit?: number;
+    page?: number;
     include_total?: boolean;
   }): Promise<any[]> {
     const payload: any = await api.get('/inventory/assets', { params });
@@ -270,8 +272,22 @@ class InventoryService {
     reportId: number,
     items: AddInventoryDetailInput[]
   ): Promise<InventoryReportDetail[]> {
-    const payload: any = await api.post(`/inventory/reports/${reportId}/details/bulk`, { items });
-    return unwrapData<InventoryReportDetail[]>(payload) || [];
+    // Chia lô để đơn vị có hàng nghìn tài sản vẫn lưu được (backend giới hạn 5000/lần).
+    const chunkSize = 1000;
+    const allDetails: InventoryReportDetail[] = [];
+    for (let i = 0; i < items.length; i += chunkSize) {
+      const chunk = items.slice(i, i + chunkSize);
+      const payload: any = await api.post(`/inventory/reports/${reportId}/details/bulk`, { items: chunk });
+      const details = unwrapData<InventoryReportDetail[]>(payload) || [];
+      allDetails.push(...details);
+    }
+    return allDetails;
+  }
+
+  async resetBatchGroup(reportId: number, categoryId: number): Promise<number> {
+    const payload: any = await api.delete(`/inventory/reports/${reportId}/details/group/${categoryId}`);
+    const data = unwrapData<any>(payload);
+    return Number(data?.deleted || 0);
   }
 
   async saveCheck(reportId: number, assetId: number, data: Omit<AddInventoryDetailInput, 'asset_id'>): Promise<InventoryReportDetail> {

@@ -1466,6 +1466,14 @@ const isBatchAsset = (asset: any): boolean => {
   return categoriesMap.value.get(asset.category_id)?.tracking_type === 'batch';
 };
 
+// Giữ nguyên tình trạng hiện tại của tài sản khi quét QR (không tự reset về "Tốt").
+const getAssetConditionForInventory = (asset: any): string => {
+  if (asset?.status === 'pending_disposal') return 'damaged';
+  if (asset?.condition === 'poor') return 'damaged';
+  if (asset?.condition === 'fair') return 'usable';
+  return 'good';
+};
+
 const createBatchInput = () => ({
   actual_quantity: 0,
   condition: 'good',
@@ -1534,37 +1542,56 @@ const confirmBatchGroup = async (group: { category_id: number; category_name: st
     ElMessage.warning('Vui lòng nhập số lượng thực tế (được phép là 0)');
     return;
   }
+  if (!report.value) return;
+
   batchSaving.value = group.category_id;
   try {
-    let remaining = Math.round(input.actual_quantity);
-    let firstAsset = true;
-    for (const asset of group.assets) {
-      const bookQty = asset.quantity || 1;
-      const isMatched = remaining > 0;
-      const actualQty = isMatched ? Math.min(bookQty, remaining) : 0;
-      if (isMatched) remaining -= actualQty;
-      const checkData = {
-        actual_quantity: actualQty,
-        check_status: isMatched ? 'matched' : 'missing',
-        asset_condition: input.condition,
-        notes: (input.notes ? input.notes + ' — ' : '') + 'Kiểm theo nhóm',
-        suggest_repair: false,
-        suggest_disposal: input.condition === 'damaged' || input.condition === 'needs_repair',
-        // Ảnh nhóm chỉ gắn vào dòng đầu tiên để tránh lặp lại trên mọi tài sản
-        image_urls: firstAsset ? (input.image_urls || []) : [],
-        discrepancy_reason: input.discrepancy_reason || null,
-        responsibility: input.responsibility || null,
-        compensation_amount: input.compensation_amount || 0,
-      };
-      firstAsset = false;
-      await inventoryService.saveCheck(report.value!.id, asset.id, checkData);
-      asset.inventory_detail = { ...checkData };
+    const totalActual = Math.max(0, Math.round(Number(input.actual_quantity) || 0));
+    let remaining = totalActual;
+
+    const allocations = group.assets.map((asset) => {
+      const bookQty = Number(asset.quantity) || 1;
+      const actualQty = Math.max(0, Math.min(bookQty, remaining));
+      remaining -= actualQty;
+      return { asset, bookQty, actualQty };
+    });
+
+    // Phần kiểm thực tế vượt sổ sách được ghi nhận vào dòng đầu tiên
+    // để báo cáo thể hiện đúng số thừa thay vì bỏ qua.
+    if (remaining > 0 && allocations.length > 0) {
+      allocations[0].actualQty += remaining;
     }
-    const missing = group.book_quantity - Math.round(input.actual_quantity);
+
+    const items = allocations.map(({ asset, bookQty, actualQty }, index) => ({
+      asset_id: asset.id,
+      actual_quantity: actualQty,
+      check_status: actualQty === 0 ? 'missing' : actualQty > bookQty ? 'surplus' : 'matched',
+      asset_condition: input.condition,
+      notes: (input.notes ? input.notes + ' — ' : '') + 'Kiểm theo nhóm',
+      scan_method: 'batch' as const,
+      suggest_repair: false,
+      suggest_disposal: input.condition === 'damaged' || input.condition === 'needs_repair',
+      // Ảnh nhóm chỉ gắn vào dòng đầu tiên để tránh lặp lại trên mọi tài sản
+      image_urls: index === 0 ? (input.image_urls || []) : [],
+      discrepancy_reason: input.discrepancy_reason || null,
+      responsibility: input.responsibility || null,
+      compensation_amount: input.compensation_amount || 0,
+    }));
+
+    const details = await inventoryService.addDetailsBulk(report.value.id, items);
+    const detailByAsset = new Map(details.map((detail: any) => [Number(detail.asset_id), detail]));
+    for (const asset of group.assets) {
+      const detail = detailByAsset.get(Number(asset.id));
+      if (detail) asset.inventory_detail = detail;
+    }
+
+    const difference = totalActual - group.book_quantity;
     ElMessage.success(
-      missing > 0
-        ? `Nhóm “${group.category_name}”: ${input.actual_quantity}/${group.book_quantity} — thiếu ${missing} ${group.unit}`
-        : `Nhóm “${group.category_name}”: đủ ${input.actual_quantity}/${group.book_quantity}`
+      difference > 0
+        ? `Nhóm “${group.category_name}”: ${totalActual}/${group.book_quantity} — thừa ${difference} ${group.unit}`
+        : difference < 0
+          ? `Nhóm “${group.category_name}”: ${totalActual}/${group.book_quantity} — thiếu ${Math.abs(difference)} ${group.unit}`
+          : `Nhóm “${group.category_name}”: đủ ${totalActual}/${group.book_quantity}`
     );
   } catch (err: any) {
     ElMessage.error(err?.response?.data?.message || 'Lỗi khi xác nhận nhóm');
@@ -1573,9 +1600,33 @@ const confirmBatchGroup = async (group: { category_id: number; category_name: st
   }
 };
 
-const resetBatchGroup = (group: { category_id: number; assets: any[] }) => {
-  for (const asset of group.assets) asset.inventory_detail = null;
-  batchInputs.value[group.category_id].actual_quantity = 0;
+const resetBatchGroup = async (group: { category_id: number; category_name?: string; assets: any[] }) => {
+  if (!report.value) return;
+  try {
+    await ElMessageBox.confirm(
+      `Xóa toàn bộ kết quả kiểm kê của nhóm “${group.category_name || group.category_id}” để làm lại?`,
+      'Xác nhận làm lại nhóm',
+      {
+        confirmButtonText: 'Xóa và làm lại',
+        cancelButtonText: 'Hủy',
+        type: 'warning',
+      }
+    );
+  } catch {
+    return;
+  }
+
+  try {
+    batchSaving.value = group.category_id;
+    await inventoryService.resetBatchGroup(report.value.id, group.category_id);
+    for (const asset of group.assets) asset.inventory_detail = null;
+    batchInputs.value[group.category_id] = createBatchInput();
+    ElMessage.success('Đã xóa kết quả nhóm, bạn có thể kiểm kê lại');
+  } catch (err: any) {
+    ElMessage.error(err?.response?.data?.message || 'Không thể xóa kết quả nhóm');
+  } finally {
+    batchSaving.value = null;
+  }
 };
 
 const loadCategories = async () => {
@@ -1803,6 +1854,13 @@ const fetchData = async () => {
       }
     }
 
+    const editableStatuses = ['draft', 'rejected_by_head', 'rejected_by_admin'];
+    if (report.value && !editableStatuses.includes((report.value as any).status)) {
+      ElMessage.warning('Báo cáo kiểm kê của đơn vị đã được nộp hoặc đã duyệt, không thể chỉnh sửa.');
+      router.push(`/inventory/reports/${(report.value as any).id}`);
+      return;
+    }
+
     // Fetch assets for inventory - only if we have both round and report
     if (round.value && report.value) {
       // Validate round.id before fetching assets
@@ -1820,14 +1878,27 @@ const fetchData = async () => {
       }
       
       try {
-        // Load tất cả tài sản cho kiểm kê (không giới hạn số lượng)
-        const assetsData = await inventoryService.getAssetsForInventory({
-          department_id: authStore.user.department_id,
-          round_id: round.value.id,
-          limit: 10000, // Load tất cả tài sản (giới hạn tối đa 10000)
-          include_total: false, // Bỏ COUNT(*) toàn bộ để giảm tải server
-        });
-        
+        // Tải theo lô để đơn vị có hơn 10.000 tài sản vẫn lấy đủ dữ liệu.
+        const pageSize = 2000;
+        const assetsData: any[] = [];
+        let page = 1;
+        while (page <= 100) {
+          const chunk = await inventoryService.getAssetsForInventory({
+            department_id: authStore.user.department_id,
+            round_id: round.value.id,
+            report_id: report.value?.id,
+            limit: pageSize,
+            page,
+            include_total: false, // Bỏ COUNT(*) toàn bộ để giảm tải server
+          });
+          assetsData.push(...chunk);
+          if (chunk.length < pageSize) break;
+          page += 1;
+        }
+        if (page > 100) {
+          ElMessage.warning('Đơn vị có quá nhiều tài sản, chỉ tải được 200.000 tài sản đầu tiên.');
+        }
+
         // Merge with existing inventory details
         if (report.value.details && Array.isArray(report.value.details)) {
           const detailsMap = new Map(report.value.details.map((d: any) => [d.asset_id, d]));
@@ -2201,7 +2272,7 @@ const handleScanCode = async () => {
         const autoSaveData = {
           asset_id: foundAsset.id,
           actual_quantity: bookQuantity, // Phải = số lượng sổ sách (chứng minh tài sản còn tồn tại)
-          asset_condition: 'good', // Mặc định: Tốt - Còn sử dụng được và đang sử dụng
+          asset_condition: getAssetConditionForInventory(foundAsset), // Giữ tình trạng hiện tại
           check_status: 'matched', // Chắc chắn khớp với sổ sách (đã quét QR = tài sản còn tồn tại)
           scan_method: 'qr_scan' as const, // Phương thức: quét mã QR
           notes: 'Đã quét QR code - Tài sản còn tồn tại tại đơn vị. Số lượng và kết quả kiểm kê không thể chỉnh sửa.',
@@ -2416,6 +2487,7 @@ const markUnscannedAsMissing = () => {
   // Tìm các tài sản chưa quét (có thể quét QR nhưng chưa có inventory_detail)
   const unscannedAssets = assets.value.filter(asset => {
     if (!canScanAsset(asset)) return false; // Bỏ qua tài sản không cần quét QR
+    if (isBatchAsset(asset)) return false; // Nhóm công cụ dụng cụ kiểm kê riêng
     return !asset.inventory_detail; // Chưa có kết quả kiểm kê
   });
 
@@ -2501,10 +2573,29 @@ const submitReport = async () => {
     return;
   }
 
+  const unconfirmedBatchGroups = batchGroups.value.filter((group) => !group.confirmed);
+  if (unconfirmedBatchGroups.length > 0) {
+    ElMessage.warning(
+      `Còn ${unconfirmedBatchGroups.length} nhóm công cụ dụng cụ chưa xác nhận. Vui lòng kiểm kê các nhóm này trước khi nộp.`
+    );
+    return;
+  }
+
+  const unconfirmedAreaAssets = assets.value.filter(
+    (asset) => !canScanAsset(asset) && !isBatchAsset(asset) && !asset.inventory_detail
+  );
+  if (unconfirmedAreaAssets.length > 0) {
+    ElMessage.warning(
+      `Còn ${unconfirmedAreaAssets.length} tài sản diện tích chưa xác nhận. Vui lòng kiểm kê thủ công trước khi nộp.`
+    );
+    return;
+  }
+
   try {
     // Tự động đánh dấu tài sản có QR chưa quét là "Thiếu" trước khi nộp
     const unscannedAssets = assets.value.filter(asset => {
       if (!canScanAsset(asset)) return false; // Bỏ qua tài sản không cần quét QR
+      if (isBatchAsset(asset)) return false; // Nhóm công cụ dụng cụ kiểm kê riêng
       return !asset.inventory_detail; // Chưa có kết quả kiểm kê
     });
 

@@ -883,12 +883,12 @@ const canApprove = computed(() => {
   const user = authStore.user;
   if (!user || !report.value) return false;
   
-  // Department head can approve pending reports
+  // Trưởng đơn vị không được tự duyệt báo cáo do chính mình lập
   if (user.role === 'department_head' && report.value.status === 'pending') {
-    return true;
+    return Number(report.value.created_by) !== Number(user.id);
   }
-  // Admin can approve approved_by_head reports
-  if (user.role === 'admin' && report.value.status === 'approved_by_head') {
+  // Admin duyệt bước cuối; được duyệt thẳng báo cáo trưởng đơn vị tự lập
+  if (user.role === 'admin' && ['pending', 'approved_by_head'].includes(report.value.status)) {
     return true;
   }
   return false;
@@ -898,11 +898,12 @@ const canResubmit = computed(() => {
   const user = authStore.user;
   if (!user || !report.value) return false;
   
-  // Chỉ người tạo báo cáo mới có thể gửi lại khi bị từ chối
-  const isCreator = report.value.created_by === user.id;
   const isRejected = report.value.status === 'rejected_by_head' || report.value.status === 'rejected_by_admin';
-  
-  return isCreator && isRejected;
+  const isManager = ['admin', 'director'].includes(user.role);
+  const isSameDepartment = ['staff', 'department_head'].includes(user.role)
+    && Number(user.department_id) === Number(report.value.department_id);
+
+  return isRejected && (isManager || isSameDepartment);
 });
 
 const filteredDetails = computed(() => {
