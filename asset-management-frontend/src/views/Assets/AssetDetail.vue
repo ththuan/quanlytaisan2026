@@ -773,7 +773,7 @@ const handleCameraImageSelected = async (e: Event) => {
 };
 
 // Computed properties
-const canManageAssets = computed(() => authStore.isAdmin || authStore.user?.role === 'department_head');
+const canManageAssets = computed(() => authStore.isAdmin);
 
 // Kiểm tra xem tài sản có phải là nhà cửa công trình không
 const isBuildingAsset = computed(() => {

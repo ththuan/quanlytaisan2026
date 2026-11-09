@@ -810,7 +810,7 @@ const router = useRouter();
 const route = useRoute();
 const assetStore = useAssetStore();
 const authStore = useAuthStore();
-const canManageAssets = computed(() => authStore.isAdmin || authStore.user?.role === 'department_head');
+const canManageAssets = computed(() => authStore.isAdmin);
 const canFilterAllDepartments = computed(() => authStore.isAdmin || authStore.isDirector);
 const { t } = useI18n();
 
