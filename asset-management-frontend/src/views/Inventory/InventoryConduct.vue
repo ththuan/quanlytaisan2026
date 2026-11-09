@@ -2923,17 +2923,9 @@ const startCameraWithIndex = async (index: number) => {
       cameraId || { facingMode: 'environment' },
       {
         fps: 20,
-        // Chỉ giải mã vùng trong khung ngắm (khớp .scan-frame) để tránh quét nhầm
-        // QR của tài sản khác ở nền; vẫn giữ độ phân giải cao để bắt QR nhỏ.
-        qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-          const frameSize = window.innerWidth >= 768 ? 300 : window.innerWidth <= 480 ? 200 : 250;
-          const size = Math.max(
-            120,
-            Math.min(frameSize, Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.85))
-          );
-          return { width: size, height: size };
-        },
-        // Không thử ảnh lật để giảm một nửa công việc giải mã
+        // Quay lại quét toàn khung hình để đảm bảo nhận diện QR ổn định
+        // (qrbox trước đó làm camera không detect khi vùng crop lệch khung hiển thị).
+        // Khung ngắm trên màn hình chỉ là hướng dẫn trực quan.
         disableFlip: true,
         // Yêu cầu camera độ phân giải cao hơn để giải mã QR nhỏ/dày tốt hơn
         videoConstraints: {
