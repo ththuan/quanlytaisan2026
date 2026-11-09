@@ -222,6 +222,40 @@ export const addInventoryDetail = async (req: AuthRequest, res: Response, next: 
 };
 
 /**
+ * Thêm nhiều chi tiết kiểm kê trong một request (đánh dấu thiếu hàng loạt, nộp báo cáo)
+ * POST /api/inventory/reports/:id/details/bulk
+ */
+export const addInventoryDetailsBulk = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user!;
+    const reportId = parseInt(req.params.id);
+    const items = req.body?.items;
+
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new ValidationError('Danh sách tài sản kiểm kê rỗng');
+    }
+    if (items.length > 5000) {
+      throw new ValidationError('Mỗi lần chỉ được thêm tối đa 5000 tài sản');
+    }
+
+    const report = await InventoryService.getInventoryReportMeta(reportId);
+    if (!report) throw new ForbiddenError('Báo cáo không tồn tại');
+    if (user.role !== 'admin' && user.role !== 'director' && (report as any).created_by !== user.id) {
+      throw new ForbiddenError('Bạn không có quyền thêm chi tiết vào báo cáo này');
+    }
+
+    const details = await InventoryService.addInventoryDetailsBulk(reportId, items);
+    res.status(201).json({
+      success: true,
+      message: 'Inventory details added successfully',
+      data: details,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Cập nhật chi tiết kiểm kê
  */
 export const updateInventoryDetail = async (req: AuthRequest, res: Response, next: NextFunction) => {

@@ -406,7 +406,7 @@
       <div class="responsive-table">
         <el-table
           v-loading="loading"
-          :data="filteredAssets"
+          :data="pagedAssets"
           stripe
           @row-click="handleRowClick"
         >
@@ -415,6 +415,7 @@
             label="STT"
             width="60"
             align="center"
+            :index="assetIndexMethod"
           />
           <el-table-column
             prop="asset_code"
@@ -576,6 +577,16 @@
             </template>
           </el-table-column>
         </el-table>
+        <div class="inv-table-pagination">
+          <el-pagination
+            v-model:current-page="assetPage"
+            v-model:page-size="assetPageSize"
+            :total="filteredAssets.length"
+            :page-sizes="[50, 100, 200, 500]"
+            layout="total, sizes, prev, pager, next"
+            background
+          />
+        </div>
       </div>
     </el-card>
 
@@ -1309,6 +1320,9 @@ const hasChanges = ref(false);
 
 const searchText = ref('');
 const filterStatus = ref('');
+// Phân trang phía client để không render hàng nghìn dòng cùng lúc
+const assetPage = ref(1);
+const assetPageSize = ref(100);
 
 // ─── Batch tracking ──────────────────────────────────────────────────────────
 const categoriesMap = ref<Map<number, any>>(new Map());
@@ -1609,6 +1623,17 @@ const filteredAssets = computed(() => {
   return result;
 });
 
+const pagedAssets = computed(() => {
+  const start = (assetPage.value - 1) * assetPageSize.value;
+  return filteredAssets.value.slice(start, start + assetPageSize.value);
+});
+
+const assetIndexMethod = (index: number) => (assetPage.value - 1) * assetPageSize.value + index + 1;
+
+watch([searchText, filterStatus, assetPageSize], () => {
+  assetPage.value = 1;
+});
+
 // Methods
 const goBack = () => {
   router.push('/inventory');
@@ -1800,6 +1825,7 @@ const fetchData = async () => {
           department_id: authStore.user.department_id,
           round_id: round.value.id,
           limit: 10000, // Load tất cả tài sản (giới hạn tối đa 10000)
+          include_total: false, // Bỏ COUNT(*) toàn bộ để giảm tải server
         });
         
         // Merge with existing inventory details
@@ -2359,31 +2385,35 @@ const confirmMarkMissing = async () => {
   let errorCount = 0;
 
   try {
-    for (const asset of bulkMissingAssets.value) {
-      try {
-        const data = {
-          asset_id: asset.id,
-          actual_quantity: 0,
-          asset_condition: 'damaged', // Hư hỏng nặng (tài sản mất)
-          check_status: 'missing',
-          notes: 'Tài sản chưa được quét QR - đánh dấu là thiếu',
-          discrepancy_reason: reason,
-          responsibility,
-        };
+    const items = bulkMissingAssets.value.map((asset) => ({
+      asset_id: asset.id,
+      actual_quantity: 0,
+      asset_condition: 'damaged', // Hư hỏng nặng (tài sản mất)
+      check_status: 'missing',
+      notes: 'Tài sản chưa được quét QR - đánh dấu là thiếu',
+      discrepancy_reason: reason,
+      responsibility,
+    }));
 
-        const detail = await inventoryService.addDetail(report.value.id, data);
+    try {
+      const details = await inventoryService.addDetailsBulk(report.value.id, items);
+      const detailByAsset = new Map(details.map((detail: any) => [Number(detail.asset_id), detail]));
 
-        // Update local state
+      for (const asset of bulkMissingAssets.value) {
+        const detail = detailByAsset.get(Number(asset.id));
+        if (!detail) {
+          errorCount++;
+          continue;
+        }
         const index = assets.value.findIndex(a => a.id === asset.id);
         if (index !== -1) {
           assets.value[index].inventory_detail = detail;
         }
-
         successCount++;
-      } catch (error: any) {
-        console.error(`Error marking asset ${asset.id} as missing:`, error);
-        errorCount++;
       }
+    } catch (error: any) {
+      console.error('Error marking assets as missing in bulk:', error);
+      errorCount = bulkMissingAssets.value.length;
     }
 
     hasChanges.value = true;
@@ -2438,32 +2468,36 @@ const submitReport = async () => {
         return;
       }
 
-      // Tự động đánh dấu các tài sản chưa quét là "Thiếu"
+      // Tự động đánh dấu các tài sản chưa quét là "Thiếu" — gửi 1 request bulk
       submitting.value = true;
       let markedCount = 0;
-      
-      for (const asset of unscannedAssets) {
-        try {
-          const data = {
-            asset_id: asset.id,
-            actual_quantity: 0,
-            asset_condition: 'damaged',
-            check_status: 'missing',
-            notes: 'Tài sản có mã QR nhưng không quét được - coi như mất',
-          };
-          
-          const detailResult = await inventoryService.addDetail(report.value.id, data);
-          
-          // Update local state directly from addDetail response
+
+      try {
+        const items = unscannedAssets.map((asset) => ({
+          asset_id: asset.id,
+          actual_quantity: 0,
+          asset_condition: 'damaged',
+          check_status: 'missing',
+          notes: 'Tài sản có mã QR nhưng không quét được - coi như mất',
+        }));
+
+        const details = await inventoryService.addDetailsBulk(report.value.id, items);
+        const detailByAsset = new Map(details.map((detail: any) => [Number(detail.asset_id), detail]));
+
+        for (const asset of unscannedAssets) {
+          const detailResult = detailByAsset.get(Number(asset.id));
+          if (!detailResult) continue;
           const index = assets.value.findIndex(a => a.id === asset.id);
-          if (index !== -1 && detailResult) {
+          if (index !== -1) {
             assets.value[index].inventory_detail = detailResult;
           }
-          
           markedCount++;
-        } catch (error: any) {
-          console.error(`Error marking asset ${asset.id} as missing:`, error);
         }
+      } catch (error: any) {
+        console.error('Error marking unscanned assets as missing in bulk:', error);
+        ElMessage.error(error.response?.data?.message || 'Không thể đánh dấu tài sản chưa quét là "Thiếu"');
+        submitting.value = false;
+        return;
       }
 
       if (markedCount > 0) {
@@ -3765,4 +3799,5 @@ onUnmounted(() => {
 .inv-photo-remove { position: absolute; top: 0; right: 0; min-width: 22px; height: 22px; padding: 0; color: #fff; background: rgba(0,0,0,0.55); border-radius: 0 0 0 8px; }
 .inv-photo-add { display: inline-flex; align-items: center; justify-content: center; padding: 8px 14px; border: 1px dashed #c0c4cc; border-radius: 8px; cursor: pointer; color: #409eff; font-size: 13px; }
 .inv-photo-add input { display: none; }
+.inv-table-pagination { display: flex; justify-content: flex-end; padding: 12px 4px 0; }
 </style>

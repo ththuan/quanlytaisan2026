@@ -5,7 +5,7 @@
  * Tầng 2: Admin tổng hợp và duyệt
  */
 
-import { Op } from 'sequelize';
+import { Op, QueryTypes } from 'sequelize';
 import sequelize from '../config/database';
 import {
   InventoryRound,
@@ -15,7 +15,6 @@ import {
   User,
   Department,
   AuditLog,
-  MaintenanceRequest,
 } from '../models';
 import notificationService from './notification.service';
 import { NotFoundError, ForbiddenError, ValidationError } from '../utils/errorHandler';
@@ -65,6 +64,90 @@ export interface CreateInventoryRoundInput {
   start_date: Date;
   end_date: Date;
 }
+
+export interface InventoryDetailInput {
+  assigned_quantity?: number;
+  actual_quantity: number;
+  actual_value?: number;
+  asset_condition?: string;
+  check_status?: string;
+  condition?: 'good' | 'fair' | 'poor';
+  suggest_disposal?: boolean;
+  suggest_repair?: boolean;
+  disposal_reason?: string;
+  notes?: string;
+  scan_method?: 'qr_scan' | 'manual_confirm' | 'area_manual' | 'batch';
+  manual_reason?: string;
+  image_urls?: string[];
+  discrepancy_reason?: string;
+  responsibility?: string;
+  compensation_amount?: number;
+}
+
+const NON_SCANNABLE_UNITS = ['m2', 'm²', 'ha', 'km2', 'km²', 'cm2', 'cm²'];
+
+/**
+ * Xây dựng thuộc tính InventoryReportDetail từ asset + dữ liệu form.
+ * Dùng chung cho thêm lẻ và thêm hàng loạt để đảm bảo cùng quy tắc nghiệp vụ.
+ */
+const buildDetailAttributes = (asset: any, data: InventoryDetailInput) => {
+  const isAreaAsset = asset.unit && NON_SCANNABLE_UNITS.includes(String(asset.unit).toLowerCase().trim());
+
+  let assignedQuantity = data.assigned_quantity;
+  if (assignedQuantity === undefined || assignedQuantity === null) {
+    assignedQuantity = isAreaAsset ? asset.quantity || 1 : 1;
+  }
+
+  const discrepancy = data.actual_quantity - assignedQuantity;
+  const conditionValue = data.condition || data.asset_condition || 'good';
+  const condition = mapAssetConditionToCondition(conditionValue);
+  const originalAssetCondition = data.asset_condition || conditionValue;
+  const isPendingDisposal = asset.status === 'pending_disposal';
+
+  // NGUYÊN TẮC: Không thể vừa sửa chữa vừa thanh lý
+  let suggestDisposal = false;
+  let suggestRepair = false;
+
+  if (data.suggest_disposal === true || isPendingDisposal) {
+    suggestDisposal = true;
+    suggestRepair = false;
+  } else if (data.suggest_repair === true || originalAssetCondition === 'needs_repair') {
+    suggestRepair = true;
+    suggestDisposal = false;
+  } else if (originalAssetCondition === 'damaged') {
+    suggestDisposal = true;
+    suggestRepair = false;
+  }
+
+  return {
+    assigned_quantity: assignedQuantity,
+    actual_quantity: data.actual_quantity,
+    quantity_discrepancy: discrepancy,
+    condition: isPendingDisposal && !data.condition ? 'poor' : condition,
+    original_asset_condition: isPendingDisposal && !data.asset_condition ? 'damaged' : originalAssetCondition,
+    suggest_disposal: suggestDisposal,
+    suggest_repair: suggestRepair,
+    disposal_reason: data.disposal_reason || (isPendingDisposal ? 'Chi phí sửa chữa vượt quá giá trị tài sản' : undefined),
+    notes: data.notes,
+    scan_method: data.scan_method,
+    manual_reason: data.manual_reason,
+    image_urls: Array.isArray(data.image_urls) ? data.image_urls : [],
+    discrepancy_reason: data.discrepancy_reason ?? null,
+    responsibility: data.responsibility ?? null,
+    compensation_amount: data.compensation_amount ?? null,
+  };
+};
+
+/** Map một detail (model) về đúng shape API trả về cho frontend. */
+const toDetailResponse = (detail: any) => {
+  const detailData = detail.toJSON ? detail.toJSON() : detail;
+  return {
+    ...detailData,
+    asset_condition: detailData.original_asset_condition || mapConditionToAssetCondition(detailData.condition),
+    check_status: 'matched',
+    actual_value: null,
+  };
+};
 
 class InventoryService {
   async createInventoryRound(data: CreateInventoryRoundInput, createdBy: number): Promise<InventoryRound> {
@@ -117,81 +200,87 @@ class InventoryService {
     // Ensure accurate round statistics
     await this.updateRoundStatistics(id);
 
-    const round = await InventoryRound.findByPk(id, {
-      include: [
-        { model: User, as: 'creator', attributes: ['id', 'fullname'] },
-        {
-          model: InventoryReport,
-          as: 'reports',
-          include: [
-            { model: Department, as: 'department', attributes: ['id', 'name'] },
-            { model: User, as: 'creator', attributes: ['id', 'fullname'] },
-          ],
-        },
-      ],
-    });
+    const [round, departments] = await Promise.all([
+      InventoryRound.findByPk(id, {
+        include: [
+          { model: User, as: 'creator', attributes: ['id', 'fullname'] },
+          {
+            model: InventoryReport,
+            as: 'reports',
+            include: [
+              { model: Department, as: 'department', attributes: ['id', 'name'] },
+              { model: User, as: 'creator', attributes: ['id', 'fullname'] },
+            ],
+          },
+        ],
+      }),
+      Department.findAll({
+        attributes: ['id', 'name', 'parent_department_id'],
+      }),
+    ]);
 
     if (!round) {
       throw new NotFoundError('Inventory round not found');
     }
 
-    // Determine unsubmitted / uncompleted root departments
-    const parentDepts = await Department.findAll({
-      where: { parent_department_id: null },
-      attributes: ['id', 'name'],
-    });
-
-    const reports = (round as any).reports || [];
-    const completedDepts = [];
-    const inProgressDepts = []; // Has some draft or pending reports
-
-    for (const parent of parentDepts) {
-      const parentId = (parent as any).id;
-      const children = await Department.findAll({
-        where: { parent_department_id: parentId },
-        attributes: ['id'],
-      });
-      const allDeptIds = [parentId, ...children.map((c: any) => c.id)];
-      const unitReports = reports.filter((r: any) => allDeptIds.includes(r.department_id));
-      
-      if (unitReports.length === 0) {
-        // No reports at all
-        continue;
-      }
-
-      // Check if all are completed or approved_by_head
-      const allDone = unitReports.every((r: any) => ['approved_by_head', 'completed'].includes(r.status));
-      if (allDone) {
-        completedDepts.push(parentId);
+    const parentDepts: any[] = [];
+    const childrenByParent = new Map<number, number[]>();
+    for (const dept of departments as any[]) {
+      if (dept.parent_department_id == null) {
+        parentDepts.push(dept);
       } else {
-        inProgressDepts.push(parentId);
+        const parentId = Number(dept.parent_department_id);
+        const children = childrenByParent.get(parentId) || [];
+        children.push(Number(dept.id));
+        childrenByParent.set(parentId, children);
       }
     }
 
-    const unsubmitted_departments = parentDepts.filter(
-      (dept: any) => !completedDepts.includes(dept.id) && !inProgressDepts.includes(dept.id)
-    );
-    const incomplete_departments = parentDepts.filter(
-      (dept: any) => inProgressDepts.includes(dept.id)
-    );
+    const reports = (round as any).reports || [];
+    const reportsByDept = new Map<number, any[]>();
+    for (const report of reports) {
+      const deptId = Number(report.department_id);
+      const items = reportsByDept.get(deptId) || [];
+      items.push(report);
+      reportsByDept.set(deptId, items);
+    }
 
-    // Đơn vị chưa nộp (chưa có báo cáo hoặc báo cáo còn nháp/bị từ chối).
+    const unitReportsOf = (parentId: number) => {
+      const deptIds = [parentId, ...(childrenByParent.get(parentId) || [])];
+      return deptIds.flatMap((deptId) => reportsByDept.get(deptId) || []);
+    };
+
+    const completedDepts: number[] = [];
+    const inProgressDepts: number[] = []; // Has some draft or pending reports
     const submittedStatuses = ['pending', 'approved_by_head', 'approved_by_admin', 'completed'];
     const not_submitted_departments: any[] = [];
+
     for (const parent of parentDepts) {
-      const parentId = (parent as any).id;
-      const children = await Department.findAll({
-        where: { parent_department_id: parentId },
-        attributes: ['id'],
-      });
-      const allDeptIds = [parentId, ...children.map((c: any) => c.id)];
-      const unitReports = reports.filter((r: any) => allDeptIds.includes(r.department_id));
+      const parentId = Number(parent.id);
+      const unitReports = unitReportsOf(parentId);
+
+      if (unitReports.length > 0) {
+        const allDone = unitReports.every((r: any) => ['approved_by_head', 'completed'].includes(r.status));
+        if (allDone) {
+          completedDepts.push(parentId);
+        } else {
+          inProgressDepts.push(parentId);
+        }
+      }
+
       const allSubmitted = unitReports.length > 0
         && unitReports.every((r: any) => submittedStatuses.includes(r.status));
       if (!allSubmitted) {
         not_submitted_departments.push(parent);
       }
     }
+
+    const unsubmitted_departments = parentDepts.filter(
+      (dept: any) => !completedDepts.includes(Number(dept.id)) && !inProgressDepts.includes(Number(dept.id))
+    );
+    const incomplete_departments = parentDepts.filter(
+      (dept: any) => inProgressDepts.includes(Number(dept.id))
+    );
 
     return {
       ...round.toJSON(),
@@ -213,26 +302,45 @@ class InventoryService {
   }
 
   async updateRoundStatistics(roundId: number): Promise<void> {
-    const reports = await InventoryReport.findAll({
-      where: { inventory_round_id: roundId },
-    });
+    const [reports, departments] = await Promise.all([
+      InventoryReport.findAll({
+        where: { inventory_round_id: roundId },
+        attributes: ['department_id', 'status'],
+        raw: true,
+      }),
+      Department.findAll({
+        attributes: ['id', 'parent_department_id'],
+        raw: true,
+      }),
+    ]);
+
+    const parentIds: number[] = [];
+    const childrenByParent = new Map<number, number[]>();
+    for (const dept of departments as any[]) {
+      if (dept.parent_department_id == null) {
+        parentIds.push(Number(dept.id));
+      } else {
+        const parentId = Number(dept.parent_department_id);
+        const children = childrenByParent.get(parentId) || [];
+        children.push(Number(dept.id));
+        childrenByParent.set(parentId, children);
+      }
+    }
+
+    const reportsByDept = new Map<number, any[]>();
+    for (const report of reports as any[]) {
+      const deptId = Number(report.department_id);
+      const items = reportsByDept.get(deptId) || [];
+      items.push(report);
+      reportsByDept.set(deptId, items);
+    }
 
     // Count completed parent units: a parent unit is done when all its submitted
     // child dept reports are at approved_by_head or completed.
-    const parentDepts = await Department.findAll({
-      where: { parent_department_id: null },
-      attributes: ['id'],
-    });
-
     let completedDepts = 0;
-    for (const parent of parentDepts) {
-      const parentId = (parent as any).id;
-      const children = await Department.findAll({
-        where: { parent_department_id: parentId },
-        attributes: ['id'],
-      });
-      const allDeptIds = [parentId, ...children.map((c: any) => c.id)];
-      const unitReports = reports.filter((r: any) => allDeptIds.includes(r.department_id));
+    for (const parentId of parentIds) {
+      const deptIds = [parentId, ...(childrenByParent.get(parentId) || [])];
+      const unitReports = deptIds.flatMap((deptId) => reportsByDept.get(deptId) || []);
       if (
         unitReports.length > 0 &&
         unitReports.every((r: any) => ['approved_by_head', 'completed'].includes(r.status))
@@ -241,8 +349,8 @@ class InventoryService {
       }
     }
 
-    const pending = reports.filter((r) => ['pending', 'draft'].includes(r.status)).length;
-    const rejected = reports.filter((r) => ['rejected_by_head', 'rejected_by_admin'].includes(r.status)).length;
+    const pending = (reports as any[]).filter((r) => ['pending', 'draft'].includes(r.status)).length;
+    const rejected = (reports as any[]).filter((r) => ['rejected_by_head', 'rejected_by_admin'].includes(r.status)).length;
 
     await InventoryRound.update(
       {
@@ -261,25 +369,45 @@ class InventoryService {
     }
 
     // Chỉ hoàn tất khi TẤT CẢ đơn vị đã ký nộp báo cáo (kể cả báo cáo nháp/bị từ chối đều chặn).
-    const reports = await InventoryReport.findAll({
-      where: { inventory_round_id: roundId },
-      attributes: ['department_id', 'status'],
-    });
-    const parentDepts = await Department.findAll({
-      where: { parent_department_id: null },
-      attributes: ['id', 'name'],
-    });
+    const [reports, departments] = await Promise.all([
+      InventoryReport.findAll({
+        where: { inventory_round_id: roundId },
+        attributes: ['department_id', 'status'],
+        raw: true,
+      }),
+      Department.findAll({
+        attributes: ['id', 'name', 'parent_department_id'],
+        raw: true,
+      }),
+    ]);
     const submittedStatuses = ['pending', 'approved_by_head', 'approved_by_admin', 'completed'];
+
+    const parentDepts: any[] = [];
+    const childrenByParent = new Map<number, number[]>();
+    for (const dept of departments as any[]) {
+      if (dept.parent_department_id == null) {
+        parentDepts.push(dept);
+      } else {
+        const parentId = Number(dept.parent_department_id);
+        const children = childrenByParent.get(parentId) || [];
+        children.push(Number(dept.id));
+        childrenByParent.set(parentId, children);
+      }
+    }
+
+    const reportsByDept = new Map<number, any[]>();
+    for (const report of reports as any[]) {
+      const deptId = Number(report.department_id);
+      const items = reportsByDept.get(deptId) || [];
+      items.push(report);
+      reportsByDept.set(deptId, items);
+    }
 
     const notSubmitted: any[] = [];
     for (const parent of parentDepts) {
-      const parentId = (parent as any).id;
-      const children = await Department.findAll({
-        where: { parent_department_id: parentId },
-        attributes: ['id'],
-      });
-      const allDeptIds = [parentId, ...children.map((c: any) => c.id)];
-      const unitReports = reports.filter((r: any) => allDeptIds.includes(r.department_id));
+      const parentId = Number(parent.id);
+      const deptIds = [parentId, ...(childrenByParent.get(parentId) || [])];
+      const unitReports = deptIds.flatMap((deptId) => reportsByDept.get(deptId) || []);
       const allSubmitted = unitReports.length > 0
         && unitReports.every((r: any) => submittedStatuses.includes(r.status));
       if (!allSubmitted) {
@@ -355,6 +483,13 @@ class InventoryService {
     });
 
     return this.getInventoryReportById(report.id);
+  }
+
+  /** Lấy metadata nhẹ (không kèm details) để kiểm tra quyền trước khi ghi. */
+  async getInventoryReportMeta(id: number): Promise<InventoryReport | null> {
+    return InventoryReport.findByPk(id, {
+      attributes: ['id', 'created_by', 'department_id', 'status'],
+    });
   }
 
   async getInventoryReportById(id: number): Promise<InventoryReport> {
@@ -473,60 +608,59 @@ class InventoryService {
         { model: InventoryRound, as: 'inventory_round', attributes: ['id', 'round_name', 'round_year'] },
         { model: Department, as: 'department', attributes: ['id', 'name'] },
         { model: User, as: 'creator', attributes: ['id', 'fullname'] },
-        {
-          model: InventoryReportDetail,
-          as: 'details',
-          include: [
-            {
-              model: Asset,
-              as: 'asset',
-              attributes: ['id', 'asset_code', 'name', 'purchase_price', 'current_value'],
-            },
-          ],
-        },
       ],
     });
 
+    // Thống kê theo lô bằng 1 query aggregate thay vì load toàn bộ details/assets
+    // cho từng báo cáo (trước đây rất nặng khi mỗi đơn vị có hàng nghìn tài sản).
+    const reportIds = rows.map((report: any) => Number(report.id));
+    let statsRows: any[] = [];
+    if (reportIds.length > 0) {
+      statsRows = await sequelize.query(
+        `SELECT d.inventory_report_id AS report_id,
+                COUNT(*)::int AS total_assets,
+                SUM(CASE
+                      WHEN d.quantity_discrepancy > 0
+                        OR (d.quantity_discrepancy = 0
+                            AND NOT COALESCE(d.suggest_repair, false)
+                            AND NOT (COALESCE(d.condition = 'poor', false) OR COALESCE(d.suggest_disposal, false)))
+                      THEN 1 ELSE 0 END)::int AS matched_assets,
+                SUM(CASE WHEN d.quantity_discrepancy < 0 THEN 1 ELSE 0 END)::int AS missing_assets,
+                SUM(CASE
+                      WHEN d.quantity_discrepancy = 0 AND COALESCE(d.suggest_repair, false)
+                      THEN 1 ELSE 0 END)::int AS needs_repair_assets,
+                SUM(CASE
+                      WHEN d.quantity_discrepancy = 0
+                        AND NOT COALESCE(d.suggest_repair, false)
+                        AND (COALESCE(d.condition = 'poor', false) OR COALESCE(d.suggest_disposal, false))
+                      THEN 1 ELSE 0 END)::int AS damaged_assets,
+                COALESCE(SUM(a.purchase_price * COALESCE(d.actual_quantity, 0)), 0) AS total_original_value,
+                COALESCE(SUM(a.current_value * COALESCE(d.actual_quantity, 0)), 0) AS total_current_value
+         FROM inventory_report_details d
+         JOIN assets a ON a.id = d.asset_id
+         WHERE d.inventory_report_id IN (:reportIds)
+         GROUP BY d.inventory_report_id`,
+        { replacements: { reportIds }, type: QueryTypes.SELECT }
+      );
+    }
+
+    const statsByReport = new Map<number, any>(
+      statsRows.map((row: any) => [Number(row.report_id), row])
+    );
+
     const reportsWithStats = rows.map((report: any) => {
       const reportData = report.toJSON();
-      const details = reportData.details || [];
-
-      let matched_assets = 0;
-      let missing_assets = 0;
-      let damaged_assets = 0;
-      let needs_repair_assets = 0;
-      let total_original_value = 0;
-      let total_current_value = 0;
-
-      details.forEach((detail: any) => {
-        if (detail.quantity_discrepancy < 0) {
-          missing_assets++;
-        } else if (detail.quantity_discrepancy > 0) {
-          matched_assets++;
-        } else if (detail.suggest_repair) {
-          needs_repair_assets++;
-        } else if (detail.condition === 'poor' || detail.suggest_disposal) {
-          damaged_assets++;
-        } else {
-          matched_assets++;
-        }
-
-        if (detail.asset) {
-          const actualQty = detail.actual_quantity || 0;
-          total_original_value += (detail.asset.purchase_price || 0) * actualQty;
-          total_current_value += (detail.asset.current_value || 0) * actualQty;
-        }
-      });
+      const stats = statsByReport.get(Number(report.id)) || {};
 
       return {
         ...reportData,
-        total_assets: details.length,
-        matched_assets,
-        missing_assets,
-        damaged_assets,
-        needs_repair_assets,
-        total_original_value,
-        total_current_value,
+        total_assets: Number(stats.total_assets || 0),
+        matched_assets: Number(stats.matched_assets || 0),
+        missing_assets: Number(stats.missing_assets || 0),
+        damaged_assets: Number(stats.damaged_assets || 0),
+        needs_repair_assets: Number(stats.needs_repair_assets || 0),
+        total_original_value: Number(stats.total_original_value || 0),
+        total_current_value: Number(stats.total_current_value || 0),
         details: undefined,
       };
     });
@@ -537,24 +671,7 @@ class InventoryService {
   async addInventoryDetail(
     reportId: number,
     assetId: number,
-    data: {
-      assigned_quantity?: number;
-      actual_quantity: number;
-      actual_value?: number;
-      asset_condition?: string;
-      check_status?: string;
-      condition?: 'good' | 'fair' | 'poor';
-      suggest_disposal?: boolean;
-      suggest_repair?: boolean;
-      disposal_reason?: string;
-      notes?: string;
-      scan_method?: 'qr_scan' | 'manual_confirm' | 'area_manual' | 'batch';
-      manual_reason?: string;
-      image_urls?: string[];
-      discrepancy_reason?: string;
-      responsibility?: string;
-      compensation_amount?: number;
-    }
+    data: InventoryDetailInput
   ): Promise<InventoryReportDetail> {
     const report = await InventoryReport.findByPk(reportId);
     if (!report) {
@@ -582,71 +699,101 @@ class InventoryService {
       throw new ValidationError('Tài sản này đã được kiểm kê trong đợt này rồi');
     }
 
-    const nonScannableUnits = ['m2', 'm²', 'ha', 'km2', 'km²', 'cm2', 'cm²'];
-    const isAreaAsset = asset.unit && nonScannableUnits.includes(asset.unit.toLowerCase().trim());
-
-    let assignedQuantity = data.assigned_quantity;
-    if (assignedQuantity === undefined || assignedQuantity === null) {
-      assignedQuantity = isAreaAsset ? (asset.quantity || 1) : 1;
-    }
-
-    const discrepancy = data.actual_quantity - assignedQuantity;
-
-    const conditionValue = data.condition || data.asset_condition || 'good';
-    const condition = mapAssetConditionToCondition(conditionValue);
-    const originalAssetCondition = data.asset_condition || conditionValue;
-
-    const isPendingDisposal = (asset as any).status === 'pending_disposal';
-    
-    // NGUYÊN TẮC: Không thể vừa sửa chữa vừa thanh lý
-    // - needs_repair: Tài sản CÒN SỬA ĐƯỢC → suggest_repair = true, suggest_disposal = false
-    // - damaged: Tài sản HỎNG NẶNG, SỬA KHÔNG ĐƯỢC → suggest_disposal = true, suggest_repair = false
-    let suggestDisposal = false;
-    let suggestRepair = false;
-    
-    if (data.suggest_disposal === true || isPendingDisposal) {
-      // Đã xác định thanh lý → KHÔNG thể sửa chữa
-      suggestDisposal = true;
-      suggestRepair = false;
-    } else if (data.suggest_repair === true || originalAssetCondition === 'needs_repair') {
-      // Đã xác định sửa chữa → KHÔNG thể thanh lý
-      suggestRepair = true;
-      suggestDisposal = false;
-    } else if (originalAssetCondition === 'damaged') {
-      // Hỏng nặng → thanh lý
-      suggestDisposal = true;
-      suggestRepair = false;
-    }
-
     const detail = await InventoryReportDetail.create({
       inventory_report_id: reportId,
       asset_id: assetId,
-      assigned_quantity: assignedQuantity,
-      actual_quantity: data.actual_quantity,
-      quantity_discrepancy: discrepancy,
-      condition: isPendingDisposal && !data.condition ? 'poor' : condition,
-      original_asset_condition: isPendingDisposal && !data.asset_condition ? 'damaged' : originalAssetCondition,
-      suggest_disposal: suggestDisposal,
-      suggest_repair: suggestRepair,
-      disposal_reason: data.disposal_reason || (isPendingDisposal ? 'Chi phí sửa chữa vượt quá giá trị tài sản' : undefined),
-      notes: data.notes,
-      scan_method: data.scan_method,
-      manual_reason: data.manual_reason,
-      image_urls: Array.isArray(data.image_urls) ? data.image_urls : [],
-      discrepancy_reason: data.discrepancy_reason ?? null,
-      responsibility: data.responsibility ?? null,
-      compensation_amount: data.compensation_amount ?? null,
+      ...buildDetailAttributes(asset, data),
     });
 
     await this.updateReportSummary(reportId);
 
-    const detailData = detail.toJSON();
-    return {
-      ...detailData,
-      asset_condition: detailData.original_asset_condition || mapConditionToAssetCondition(detailData.condition),
-      check_status: 'matched',
-      actual_value: null,
-    } as any;
+    return toDetailResponse(detail);
+  }
+
+  /**
+   * Thêm nhiều kết quả kiểm kê trong một lần (dùng khi đánh dấu hàng loạt
+   * tài sản chưa quét là "Thiếu" hoặc nộp báo cáo). Tránh N request × nhiều query.
+   */
+  async addInventoryDetailsBulk(
+    reportId: number,
+    items: Array<InventoryDetailInput & { asset_id: number }>
+  ): Promise<any[]> {
+    const report = await InventoryReport.findByPk(reportId);
+    if (!report) {
+      throw new NotFoundError('Inventory report not found');
+    }
+    if (report.status !== 'draft' && report.status !== 'rejected_by_head' && report.status !== 'rejected_by_admin') {
+      throw new ValidationError('Can only add details to draft reports or rejected reports that need resubmission');
+    }
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new ValidationError('Danh sách tài sản kiểm kê rỗng');
+    }
+
+    const assetIds = [
+      ...new Set(
+        items
+          .map((item) => Number(item.asset_id))
+          .filter((assetId) => Number.isFinite(assetId))
+      ),
+    ];
+
+    const [assets, existingDetails] = await Promise.all([
+      Asset.findAll({
+        where: {
+          id: { [Op.in]: assetIds },
+          current_department_id: report.department_id,
+        },
+      }),
+      InventoryReportDetail.findAll({
+        where: {
+          inventory_report_id: reportId,
+          asset_id: { [Op.in]: assetIds },
+        },
+      }),
+    ]);
+
+    const assetById = new Map<number, any>(assets.map((asset: any) => [Number(asset.id), asset]));
+    const existingByAsset = new Map<number, any>(
+      existingDetails.map((detail: any) => [Number(detail.asset_id), detail])
+    );
+
+    const seen = new Set<number>();
+    const rowsToCreate: any[] = [];
+    for (const item of items) {
+      const assetId = Number(item.asset_id);
+      if (!Number.isFinite(assetId) || seen.has(assetId)) continue;
+      seen.add(assetId);
+
+      const asset = assetById.get(assetId);
+      if (!asset || existingByAsset.has(assetId)) continue;
+
+      rowsToCreate.push({
+        inventory_report_id: reportId,
+        asset_id: assetId,
+        ...buildDetailAttributes(asset, item),
+      });
+    }
+
+    const created: InventoryReportDetail[] = [];
+    const tx = await sequelize.transaction();
+    try {
+      for (let i = 0; i < rowsToCreate.length; i += 500) {
+        const chunk = await InventoryReportDetail.bulkCreate(rowsToCreate.slice(i, i + 500), {
+          transaction: tx,
+          validate: true,
+        });
+        created.push(...chunk);
+      }
+      if (created.length > 0) {
+        await this.updateReportSummary(reportId, tx);
+      }
+      await tx.commit();
+    } catch (error) {
+      await tx.rollback();
+      throw error;
+    }
+
+    return [...existingDetails, ...created].map((detail) => toDetailResponse(detail));
   }
 
   async updateInventoryDetail(
@@ -742,25 +889,26 @@ class InventoryService {
     return this.getInventoryReportById(reportId);
   }
 
-  async updateReportSummary(reportId: number): Promise<void> {
-    const details = await InventoryReportDetail.findAll({
-      where: { inventory_report_id: reportId },
-      include: [{ model: InventoryReport, as: 'inventory_report', attributes: ['id', 'department_id'] }],
-    });
-
-    const totalAssigned = details.reduce((sum, d) => sum + d.assigned_quantity, 0);
-    const totalActual = details.reduce((sum, d) => sum + d.actual_quantity, 0);
-    const totalDiscrepancy = details.reduce((sum, d) => sum + Math.abs(d.quantity_discrepancy), 0);
-    const totalDisposal = details.filter((d) => d.suggest_disposal).length;
+  async updateReportSummary(reportId: number, transaction?: any): Promise<void> {
+    const rows: any[] = await sequelize.query(
+      `SELECT COALESCE(SUM(assigned_quantity), 0) AS total_assigned,
+              COALESCE(SUM(actual_quantity), 0) AS total_actual,
+              COALESCE(SUM(ABS(quantity_discrepancy)), 0) AS total_discrepancy,
+              COALESCE(SUM(CASE WHEN suggest_disposal THEN 1 ELSE 0 END), 0) AS total_disposal
+       FROM inventory_report_details
+       WHERE inventory_report_id = :reportId`,
+      { replacements: { reportId }, type: QueryTypes.SELECT, transaction }
+    );
+    const summary = rows[0] || {};
 
     await InventoryReport.update(
       {
-        total_assigned_quantity: totalAssigned,
-        total_actual_quantity: totalActual,
-        total_discrepancy: totalDiscrepancy,
-        total_disposal_suggestions: totalDisposal,
+        total_assigned_quantity: Number(summary.total_assigned || 0),
+        total_actual_quantity: Number(summary.total_actual || 0),
+        total_discrepancy: Number(summary.total_discrepancy || 0),
+        total_disposal_suggestions: Number(summary.total_disposal || 0),
       },
-      { where: { id: reportId } }
+      { where: { id: reportId }, transaction }
     );
   }
 
@@ -972,9 +1120,26 @@ class InventoryService {
     // Tài sản chỉ chuyển sang trạng thái "chờ xử lý" (pending_disposal);
     // admin sẽ chủ động lập hồ sơ riêng cho "bán thanh lý" hoặc "tiêu hủy".
 
-    for (const detail of details) {
+    const detailRows = details as any[];
+    const inventoryDate = new Date();
+
+    // Load trước toàn bộ asset trong 1 query thay vì findByPk cho từng detail.
+    const assetIds = [
+      ...new Set(
+        detailRows
+          .map((detail) => Number(detail.asset_id))
+          .filter((assetId) => Number.isFinite(assetId))
+      ),
+    ];
+    const assets = assetIds.length > 0
+      ? await Asset.findAll({ where: { id: { [Op.in]: assetIds } }, transaction })
+      : [];
+    const assetById = new Map<number, any>(assets.map((asset: any) => [Number(asset.id), asset]));
+
+    const entries: Array<{ detail: any; asset: any; updateData: any }> = [];
+    for (const detail of detailRows) {
       const updateData: any = {
-        last_inventory_date: new Date(),
+        last_inventory_date: inventoryDate,
         condition: detail.condition,
       };
 
@@ -996,46 +1161,9 @@ class InventoryService {
         // Giữ lại current_department_id để đơn vị vẫn thấy tài sản của mình.
         // Không tự tạo hồ sơ thanh lý — admin sẽ lập hồ sơ riêng (bán thanh lý / tiêu hủy).
       } else if (detail.suggest_repair) {
-        const approvedForRepair = false;
-        if (approvedForRepair) {
-          updateData.status = 'pending_repair';
-          updateData.asset_condition = 'needs_repair';
-
-          // Tự động tạo đề nghị sửa chữa để đơn vị/kỹ thuật xử lý tiếp
-          if (approvedBy) {
-            const deptId = (detail as any).inventory_report?.department_id ?? null;
-            const reportCreatedBy = (detail as any).inventory_report?.created_by ?? approvedBy;
-            // Kiểm tra xem đã có đề nghị sửa chữa từ cùng kiểm kê này chưa (tránh tạo trùng)
-            const existingRepair = await MaintenanceRequest.findOne({
-              where: {
-                asset_id: (detail as any).asset_id,
-                source_inventory_report_id: reportId,
-                status: { [Op.notIn]: ['rejected_by_head', 'rejected_by_admin', 'rejected_by_director', 'completed'] },
-              },
-              transaction,
-            });
-            if (!existingRepair) {
-              await MaintenanceRequest.create(
-                {
-                  request_type: 'repair',
-                  asset_id: (detail as any).asset_id,
-                  department_id: deptId,
-                  description: detail.disposal_reason || detail.notes || 'Tài sản cần sửa chữa (phát hiện qua kiểm kê định kỳ)',
-                  urgency: 'normal',
-                  status: 'pending',
-                  requested_by: reportCreatedBy,
-                  source_inventory_report_id: reportId,
-                } as any,
-                { transaction }
-              );
-            }
-          }
-        } else {
-          updateData.status = 'pending_disposal';
-          updateData.asset_condition = 'damaged';
-          // Giữ lại current_department_id để đơn vị vẫn thấy tài sản của mình.
-          // Không tự tạo hồ sơ thanh lý — admin sẽ lập hồ sơ riêng (bán thanh lý / tiêu hủy).
-        }
+        // Chưa tự động duyệt sửa chữa: chuyển sang chờ xử lý thanh lý.
+        updateData.status = 'pending_disposal';
+        updateData.asset_condition = 'damaged';
       } else if (detail.condition === 'poor' || detail.original_asset_condition === 'damaged') {
         updateData.status = 'damaged';
         updateData.asset_condition = 'damaged';
@@ -1050,52 +1178,87 @@ class InventoryService {
         updateData.asset_condition = 'needs_repair';
       }
 
-      const asset = await Asset.findByPk((detail as any).asset_id, { transaction });
+      const asset = assetById.get(Number(detail.asset_id));
       if (!asset) continue;
 
-      const oldValue = {
-        status: (asset as any).status,
-        current_department_id: (asset as any).current_department_id,
-      };
+      entries.push({ detail, asset, updateData });
+    }
 
+    // Gộp các asset có cùng updateData thành 1 UPDATE ... WHERE id IN (...)
+    // thay vì N lệnh UPDATE riêng lẻ.
+    const groups = new Map<string, { updateData: any; ids: number[]; entries: typeof entries }>();
+    for (const entry of entries) {
+      const key = JSON.stringify(entry.updateData);
+      let group = groups.get(key);
+      if (!group) {
+        group = { updateData: entry.updateData, ids: [], entries: [] };
+        groups.set(key, group);
+      }
+      group.ids.push(Number(entry.asset.id));
+      group.entries.push(entry);
+    }
+
+    for (const group of groups.values()) {
       try {
-        await asset.update(updateData, { transaction });
+        await Asset.update(group.updateData, {
+          where: { id: { [Op.in]: group.ids } },
+          transaction,
+        });
       } catch (error: any) {
-        if (error.message?.includes('enum_assets_status') && updateData.status === 'pending_repair') {
-          updateData.status = 'inactive';
-          await asset.update(updateData, { transaction });
+        if (error.message?.includes('enum_assets_status') && group.updateData.status === 'pending_repair') {
+          group.updateData = { ...group.updateData, status: 'inactive' };
+          await Asset.update(group.updateData, {
+            where: { id: { [Op.in]: group.ids } },
+            transaction,
+          });
         } else {
           throw error;
         }
       }
+    }
 
-      if (approvedBy && detail.suggest_disposal) {
-        await AuditLog.create(
-          {
-            user_id: approvedBy,
-            action: 'approve',
-            table_name: 'assets',
-            record_id: (asset as any).id,
-            old_value: oldValue,
-            new_value: { status: (asset as any).status, current_department_id: (asset as any).current_department_id },
-          } as any,
-          { transaction }
-        );
+    if (approvedBy) {
+      const auditRows: any[] = [];
+      for (const entry of entries) {
+        if (!entry.detail.suggest_disposal) continue;
+        const group = groups.get(JSON.stringify(entry.updateData));
+        auditRows.push({
+          user_id: approvedBy,
+          action: 'approve',
+          table_name: 'assets',
+          record_id: Number(entry.asset.id),
+          old_value: {
+            status: entry.asset.status,
+            current_department_id: entry.asset.current_department_id,
+          },
+          new_value: {
+            status: group?.updateData?.status ?? entry.updateData.status,
+            current_department_id: entry.asset.current_department_id,
+          },
+        });
+      }
+
+      for (let i = 0; i < auditRows.length; i += 1000) {
+        await AuditLog.bulkCreate(auditRows.slice(i, i + 1000), { transaction });
       }
     }
   }
 
   async getAssetsForInventory(departmentId: number, query: any) {
-    const requestedLimit = query.limit ? parseInt(query.limit) : 10000;
-    const { page, limit } = getPaginationParams({ ...query, limit: requestedLimit });
-    const offset = getOffset(page, limit);
+    // Không dùng getPaginationParams vì hàm đó chặn limit tối đa 1000 —
+    // kiểm kê cần tải đủ tài sản của đơn vị (tối đa 10.000/lần).
+    const page = Math.max(1, parseInt(query.page) || 1);
+    const parsedLimit = query.limit ? parseInt(query.limit) : 10000;
+    const limit = Math.min(10000, Math.max(1, Number.isFinite(parsedLimit) ? parsedLimit : 10000));
+    const offset = (page - 1) * limit;
+    const includeTotal = String(query.include_total ?? 'true').toLowerCase() !== 'false';
 
     const where: any = {
       current_department_id: departmentId,
       status: { [Op.in]: ['active', 'inactive', 'damaged', 'pending_disposal', 'pending_repair'] },
     };
 
-    const { count, rows } = await Asset.findAndCountAll({
+    const queryOptions: any = {
       where,
       limit,
       offset,
@@ -1115,7 +1278,19 @@ class InventoryService {
         'location',
         'description',
       ],
-    });
+    };
+
+    let rows: any[];
+    let count: number;
+    if (includeTotal) {
+      const result = await Asset.findAndCountAll(queryOptions);
+      rows = result.rows;
+      count = result.count;
+    } else {
+      // Frontend kiểm kê chỉ cần danh sách, bỏ COUNT(*) để tránh quét toàn bảng.
+      rows = await Asset.findAll(queryOptions);
+      count = offset + rows.length;
+    }
 
     const mappedRows = rows.map((asset: any) => {
       const assetData = asset.toJSON();

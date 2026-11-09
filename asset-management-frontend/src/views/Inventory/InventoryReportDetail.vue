@@ -308,7 +308,7 @@
 
         <div class="responsive-table">
           <el-table
-            :data="filteredDetails"
+            :data="pagedDetails"
             stripe
           >
             <el-table-column
@@ -316,6 +316,7 @@
               label="STT"
               width="60"
               align="center"
+              :index="detailIndexMethod"
             />
             <el-table-column
               prop="asset.asset_code"
@@ -464,6 +465,16 @@
               </template>
             </el-table-column>
           </el-table>
+          <div class="detail-table-pagination">
+            <el-pagination
+              v-model:current-page="detailPage"
+              v-model:page-size="detailPageSize"
+              :total="filteredDetails.length"
+              :page-sizes="[50, 100, 200, 500]"
+              layout="total, sizes, prev, pager, next"
+              background
+            />
+          </div>
         </div>
       </el-card>
     </div>
@@ -859,6 +870,8 @@ const approving = ref(false);
 const report = ref<InventoryReport | null>(null);
 const searchText = ref('');
 const filterStatus = ref('');
+const detailPage = ref(1);
+const detailPageSize = ref(100);
 const showApproveDialog = ref(false);
 const approveData = ref({
   approved: true,
@@ -911,6 +924,17 @@ const filteredDetails = computed(() => {
   }
 
   return result;
+});
+
+const pagedDetails = computed(() => {
+  const start = (detailPage.value - 1) * detailPageSize.value;
+  return filteredDetails.value.slice(start, start + detailPageSize.value);
+});
+
+const detailIndexMethod = (index: number) => (detailPage.value - 1) * detailPageSize.value + index + 1;
+
+watch([searchText, filterStatus, detailPageSize], () => {
+  detailPage.value = 1;
 });
 
 const fetchReport = async () => {
@@ -1463,5 +1487,11 @@ onMounted(() => {
   .stat-box .stat-number {
     font-size: 24px;
   }
+}
+
+.detail-table-pagination {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 4px 0;
 }
 </style>

@@ -128,6 +128,12 @@ export interface AddInventoryDetailInput {
   scan_method?: 'qr_scan' | 'manual_confirm' | 'area_manual' | 'batch';
   manual_reason?: string;
   image_urls?: string[];
+  suggest_disposal?: boolean;
+  suggest_repair?: boolean;
+  disposal_reason?: string;
+  discrepancy_reason?: string | null;
+  responsibility?: string | null;
+  compensation_amount?: number | null;
 }
 
 // Axios interceptor in api.ts returns response.data already.
@@ -197,7 +203,12 @@ class InventoryService {
 
   // ==================== INVENTORY REPORTS ====================
 
-  async getAssetsForInventory(params?: { department_id?: number; round_id?: number; limit?: number }): Promise<any[]> {
+  async getAssetsForInventory(params?: {
+    department_id?: number;
+    round_id?: number;
+    limit?: number;
+    include_total?: boolean;
+  }): Promise<any[]> {
     const payload: any = await api.get('/inventory/assets', { params });
     const data = unwrapData<any>(payload);
 
@@ -251,6 +262,14 @@ class InventoryService {
   async addDetail(reportId: number, data: AddInventoryDetailInput): Promise<InventoryReportDetail> {
     const payload: any = await api.post(`/inventory/reports/${reportId}/details`, data);
     return unwrapData<InventoryReportDetail>(payload);
+  }
+
+  async addDetailsBulk(
+    reportId: number,
+    items: AddInventoryDetailInput[]
+  ): Promise<InventoryReportDetail[]> {
+    const payload: any = await api.post(`/inventory/reports/${reportId}/details/bulk`, { items });
+    return unwrapData<InventoryReportDetail[]>(payload) || [];
   }
 
   async saveCheck(reportId: number, assetId: number, data: Omit<AddInventoryDetailInput, 'asset_id'>): Promise<InventoryReportDetail> {

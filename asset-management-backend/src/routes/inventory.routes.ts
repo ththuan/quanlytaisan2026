@@ -69,6 +69,9 @@ router.post('/reports', inventoryController.createInventoryReport);
 // Thêm chi tiết kiểm kê vào báo cáo
 router.post('/reports/:id/details', inventoryController.addInventoryDetail);
 
+// Thêm nhiều chi tiết kiểm kê trong một request (hàng loạt)
+router.post('/reports/:id/details/bulk', inventoryController.addInventoryDetailsBulk);
+
 // Cập nhật chi tiết kiểm kê
 router.patch('/reports/:id/details/:detailId', inventoryController.updateInventoryDetail);
 

@@ -3,11 +3,15 @@ import { getRedis } from '../config/redis';
 
 /**
  * Cache ngắn hạn cho các API đọc nhiều (dashboard/thống kê).
- * - Chỉ cache GET đã xác thực.
+ * - Mặc định chỉ cache GET đã xác thực.
+ * - `allowAnonymous: true` dùng cho dữ liệu tham chiếu công khai (danh mục...).
  * - Key theo phạm vi dữ liệu (role admin/director hoặc phòng ban) + URL,
  *   không theo user id để tận dụng cache cho nhiều người cùng phạm vi.
  */
-export const cacheResponse = (ttlSeconds: number) => {
+export const cacheResponse = (
+  ttlSeconds: number,
+  options: { allowAnonymous?: boolean } = {}
+) => {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const redis = getRedis();
     if (!redis || req.method !== 'GET') {
@@ -16,14 +20,16 @@ export const cacheResponse = (ttlSeconds: number) => {
     }
 
     const user = (req as any).user;
-    if (!user) {
+    if (!user && !options.allowAnonymous) {
       next();
       return;
     }
 
-    const scope = ['admin', 'director'].includes(user.role)
-      ? `role:${user.role}`
-      : `dept:${user.department_id || 'none'}`;
+    const scope = !user
+      ? 'public'
+      : ['admin', 'director'].includes(user.role)
+        ? `role:${user.role}`
+        : `dept:${user.department_id || 'none'}`;
     const key = `httpcache:${scope}:${req.originalUrl}`;
 
     try {
@@ -48,4 +54,32 @@ export const cacheResponse = (ttlSeconds: number) => {
 
     next();
   };
+};
+
+/**
+ * Xóa các cache key Redis chứa chuỗi chỉ định (dùng khi dữ liệu nền thay đổi).
+ * Dùng SCAN thay vì KEYS để không chặn Redis khi có nhiều key.
+ */
+export const invalidateRedisCache = async (match: string): Promise<void> => {
+  const redis = getRedis();
+  if (!redis) return;
+
+  try {
+    let cursor = '0';
+    do {
+      const [nextCursor, keys] = await redis.scan(
+        cursor,
+        'MATCH',
+        `httpcache:*${match}*`,
+        'COUNT',
+        200
+      );
+      cursor = nextCursor;
+      if (keys.length > 0) {
+        await redis.del(...keys);
+      }
+    } while (cursor !== '0');
+  } catch {
+    // Redis lỗi → bỏ qua, dữ liệu vẫn được phục vụ bình thường.
+  }
 };

@@ -6,6 +6,7 @@ import { validateRequest } from '../middleware/validation';
 import { createDepartmentSchema, updateDepartmentSchema } from '../utils/validators';
 import multer from 'multer';
 import { invalidateCache } from '../middleware/caching';
+import { cacheResponse } from '../middleware/redisCache';
 
 // Cấu hình multer để xử lý file upload
 const storage = multer.memoryStorage();
@@ -36,8 +37,8 @@ const router = Router();
 router.use(authenticateToken);
 
 // Public routes (authenticated users can view)
-router.get('/', departmentsController.getAllDepartments);
-router.get('/tree', departmentsController.getDepartmentTree);
+router.get('/', cacheResponse(120), departmentsController.getAllDepartments);
+router.get('/tree', cacheResponse(120), departmentsController.getDepartmentTree);
 router.get('/:id', departmentsController.getDepartmentById);
 
 // Admin/Manager only routes

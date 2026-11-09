@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { invalidateRedisCache } from './redisCache';
 
 // Simple in-memory cache
 interface CacheEntry {
@@ -100,6 +101,17 @@ export const invalidateCache = (pattern: string) => {
         cache.clearKeyContains('/users');
       } else if (pattern === 'assets') {
         cache.clearKeyContains('/assets');
+      } else if (pattern === 'categories') {
+        cache.clearKeyContains('/asset-categories');
+      }
+
+      // Xóa cache Redis tương ứng (departments/categories/dashboard...).
+      if (pattern === 'departments') {
+        void invalidateRedisCache('/departments');
+      } else if (pattern === 'categories') {
+        void invalidateRedisCache('/asset-categories');
+      } else if (pattern.endsWith(':*')) {
+        void invalidateRedisCache('');
       }
     };
     const originalJson = res.json.bind(res);
