@@ -2,11 +2,13 @@ import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import ElementPlus from 'element-plus';
 import 'element-plus/dist/index.css';
+import 'element-plus/theme-chalk/dark/css-vars.css';
 import './styles/responsive.scss';
 import './styles/page-layout.scss';
 import './styles/motion.scss';
 import './styles/dialog-optimization.scss';
 import './styles/dialog-close-fix.scss';
+import './styles/theme.scss';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import App from './App.vue';
 import router from './router';
@@ -16,6 +18,9 @@ import { initPWA } from '@/pwa';
 import { initUpdateCheck } from '@/update-check';
 import { installAnimateDirectives } from '@/directives/animate';
 import { initEffectsMode, watchPerformance } from '@/utils/effects';
+import { applyTheme, getInitialTheme } from '@/utils/theme';
+
+applyTheme(getInitialTheme());
 
 import { use } from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';

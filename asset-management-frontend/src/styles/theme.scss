@@ -1,0 +1,162 @@
+/* Giao diện tối — bổ sung cho bảng màu dark của Element Plus. */
+
+html.dark {
+  --app-bg: #0b1220;
+  --app-surface: #111827;
+  --app-surface-soft: #0f172a;
+  --app-border: #1f2937;
+  --app-text: #e5e7eb;
+  --app-text-muted: #94a3b8;
+
+  color-scheme: dark;
+
+  body {
+    background: var(--app-bg);
+    color: var(--app-text);
+  }
+
+  .main-layout,
+  .el-main {
+    background-color: var(--app-bg) !important;
+  }
+
+  .el-header {
+    background-color: rgba(15, 23, 42, 0.97) !important;
+    border-bottom-color: var(--app-border) !important;
+  }
+
+  .app-footer {
+    background-color: var(--app-bg) !important;
+    border-top-color: var(--app-border) !important;
+    color: var(--app-text-muted) !important;
+  }
+
+  .page-title,
+  .page-header h1,
+  .page-header h2,
+  .app-title-main {
+    color: var(--app-text) !important;
+  }
+
+  .page-subtitle,
+  .app-title-sub {
+    color: var(--app-text-muted) !important;
+  }
+
+  .sidebar-toggle,
+  .effects-toggle,
+  .theme-toggle {
+    background: var(--el-fill-color-light) !important;
+    color: var(--el-text-color-primary) !important;
+  }
+
+  .sidebar-toggle:hover,
+  .effects-toggle:hover,
+  .theme-toggle:hover {
+    background: var(--el-fill-color) !important;
+  }
+
+  .el-card {
+    --el-card-bg-color: var(--app-surface);
+    border-color: var(--app-border) !important;
+  }
+
+  .stat-card,
+  .chart-card,
+  .filter-card,
+  .list-filter,
+  .filter-section,
+  .info-list,
+  .summary-card,
+  .detail-card {
+    background: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+  }
+
+  .stat-card .el-card__body {
+    background: transparent;
+  }
+
+  .stat-value,
+  .card-title,
+  .stat-label,
+  .info-value,
+  .info-label,
+  .tree-label,
+  .tree-meta {
+    color: var(--app-text) !important;
+  }
+
+  .stat-label,
+  .info-label,
+  .tree-meta,
+  .text-muted,
+  .hint,
+  .scan-note {
+    color: var(--app-text-muted) !important;
+  }
+
+  .el-table {
+    --el-table-bg-color: var(--app-surface);
+    --el-table-tr-bg-color: var(--app-surface);
+    --el-table-header-bg-color: #172033;
+    --el-table-row-hover-bg-color: #1e293b;
+    --el-table-border-color: var(--app-border);
+  }
+
+  .el-table th.el-table__cell {
+    background-color: #172033 !important;
+    color: var(--app-text) !important;
+  }
+
+  .el-table td.el-table__cell {
+    border-bottom-color: var(--app-border) !important;
+  }
+
+  .el-dialog,
+  .el-drawer,
+  .el-message-box {
+    background: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+  }
+
+  .el-dialog__title,
+  .el-message-box__title {
+    color: var(--app-text) !important;
+  }
+
+  .el-pagination {
+    --el-pagination-bg-color: var(--app-surface);
+    --el-pagination-button-color: var(--app-text);
+  }
+
+  /* Trang đăng nhập */
+  .login-container .form-card,
+  .login-container .login-header {
+    background: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+  }
+
+  .login-container .form-card {
+    color: var(--app-text);
+  }
+
+  .login-container .form-label,
+  .login-container .school-name,
+  .login-container .remember-me,
+  .login-container .help-link {
+    color: var(--app-text) !important;
+  }
+
+  .login-container .input-field {
+    background: var(--app-bg) !important;
+    border-color: var(--app-border) !important;
+    color: var(--app-text) !important;
+  }
+
+  .login-container .field-hint,
+  .login-container .login-footer,
+  .login-container .school-name {
+    color: var(--app-text-muted) !important;
+  }
+}
