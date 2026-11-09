@@ -145,7 +145,7 @@
       </div>
 
       <p class="scan-note">
-        Thông tin tra cứu qua mã QR – chỉ hiển thị dữ liệu cơ bản
+        Copyright © 2026 Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ.
       </p>
     </div>
   </div>

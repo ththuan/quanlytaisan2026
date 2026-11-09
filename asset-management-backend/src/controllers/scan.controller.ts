@@ -28,51 +28,63 @@ function renderPage(title: string, bodyContent: string): string {
 <html lang="vi">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>${escapeHtml(title)}</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f1f5f9;color:#1e293b;min-height:100vh}
-.header{background:#1e3a5f;color:#fff;padding:14px 20px;display:flex;align-items:center;gap:10px}
-.header-icon{font-size:22px}
-.header-title{font-size:16px;font-weight:600}
-.header-sub{font-size:11px;opacity:.75;margin-top:2px}
-.content{max-width:480px;margin:0 auto;padding:16px}
-.card{background:#fff;border-radius:14px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:12px}
-.asset-name{font-size:20px;font-weight:700;color:#1e293b;line-height:1.3;margin-bottom:4px}
-.asset-code{font-size:13px;color:#64748b;font-family:monospace;letter-spacing:.5px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
-.info-list{display:flex;flex-direction:column;gap:0}
-.info-row{display:flex;border-bottom:1px solid #f1f5f9;padding:10px 0}
-.info-row:last-child{border-bottom:none}
-.info-label{flex:0 0 120px;font-size:12px;color:#64748b;padding-right:8px;padding-top:1px}
-.info-value{flex:1;font-size:13px;color:#1e293b;font-weight:500;word-break:break-word}
-.asset-img{width:100%;max-height:220px;object-fit:cover;border-radius:10px;margin-bottom:12px;display:block}
-.disposal-banner{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:13px;line-height:1.5}
-.disposal-banner b{display:block;font-size:14px;margin-bottom:2px}
-.copy-btn{border:1px solid #cbd5e1;background:#f8fafc;color:#475569;border-radius:8px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer}
-.copy-btn:active{transform:scale(.97)}
-.open-app{display:inline-block;margin-top:14px;color:#2563eb;font-size:13px;font-weight:600;text-decoration:none}
-.error-card{text-align:center;padding:40px 20px}
-.error-icon{font-size:48px;margin-bottom:12px}
-.error-title{font-size:18px;font-weight:700;color:#ef4444;margin-bottom:6px}
-.error-msg{font-size:13px;color:#64748b}
-.footer{text-align:center;font-size:11px;color:#94a3b8;padding:16px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#eef4fb;color:#0f172a;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;-webkit-text-size-adjust:100%}
+.header{background:linear-gradient(135deg,#0f2f57 0%,#1d5f9e 55%,#2f7fbf 100%);color:#fff;padding:20px 20px 24px;position:relative;overflow:hidden}
+.header::after{content:"";position:absolute;width:180px;height:180px;border-radius:50%;right:-60px;top:-90px;background:rgba(255,255,255,.08)}
+.header-inner{max-width:480px;margin:0 auto;display:flex;align-items:center;gap:12px;position:relative;z-index:1}
+.header-logo{width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.header-title{font-size:17px;font-weight:700;letter-spacing:.2px}
+.header-sub{font-size:11.5px;opacity:.82;margin-top:3px;line-height:1.4}
+.content{width:100%;max-width:480px;margin:0 auto;padding:16px;flex:1 0 auto}
+.card{background:#fff;border-radius:18px;padding:20px;box-shadow:0 8px 24px rgba(15,47,87,.08);border:1px solid rgba(15,23,42,.05);margin-bottom:14px}
+.asset-name{font-size:21px;font-weight:800;color:#0f172a;line-height:1.3;margin-bottom:5px}
+.asset-code{font-size:13px;color:#64748b;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:12px;font-weight:700}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.asset-img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:14px;margin-bottom:14px;display:block;background:#f1f5f9}
+.asset-img-placeholder{width:100%;aspect-ratio:16/9;border-radius:14px;margin-bottom:14px;background:linear-gradient(135deg,#e8f1fb,#dbeafe);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#7c9cbf;font-size:44px}
+.asset-img-placeholder small{font-size:11.5px;font-weight:600;color:#94a3b8}
+.info-list{display:flex;flex-direction:column;gap:8px}
+.info-row{display:flex;align-items:flex-start;gap:10px;padding:11px 12px;background:#f8fafc;border:1px solid #eef2f7;border-radius:12px}
+.info-label{flex:0 0 116px;display:flex;align-items:center;gap:5px;font-size:12.5px;color:#64748b;font-weight:600}
+.info-icon{font-size:14px;line-height:1}
+.info-value{flex:1;font-size:13.5px;color:#0f172a;font-weight:600;word-break:break-word;line-height:1.45}
+.disposal-banner{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:13px;line-height:1.5}
+.disposal-banner b{display:flex;align-items:center;gap:6px;font-size:14px;margin-bottom:3px}
+.copy-btn{border:1px solid #cbd5e1;background:#f8fafc;color:#475569;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:transform .15s ease,background .15s ease}
+.copy-btn:active{transform:scale(.96);background:#eef2f7}
+.open-app{display:inline-flex;align-items:center;gap:6px;margin-top:16px;color:#1d5f9e;background:#eff6ff;border:1px solid #dbeafe;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700;text-decoration:none}
+.open-app:active{background:#dbeafe}
+.error-card{text-align:center;padding:44px 22px}
+.error-icon{font-size:50px;margin-bottom:14px}
+.error-title{font-size:19px;font-weight:800;color:#ef4444;margin-bottom:7px}
+.error-msg{font-size:13.5px;color:#64748b;line-height:1.6}
+.footer{width:100%;flex-shrink:0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));display:flex;justify-content:center}
+.footer-inner{width:100%;max-width:480px;text-align:center;font-size:11.5px;line-height:1.6;color:#94a3b8}
+.footer-inner strong{color:#64748b;font-weight:700}
 </style>
 </head>
 <body>
 <div class="header">
-  <span class="header-icon">🏢</span>
-  <div>
-    <div class="header-title">Quản Lý Tài Sản</div>
-    <div class="header-sub">Tra cứu thông tin qua mã QR</div>
+  <div class="header-inner">
+    <div class="header-logo">🏢</div>
+    <div>
+      <div class="header-title">Tra cứu tài sản</div>
+      <div class="header-sub">Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ</div>
+    </div>
   </div>
 </div>
 <div class="content">
 ${bodyContent}
 </div>
-<div class="footer">Thông tin tra cứu qua mã QR – chỉ hiển thị dữ liệu cơ bản</div>
+<footer class="footer">
+  <div class="footer-inner">Copyright &copy; 2026 <strong>Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ.</strong></div>
+</footer>
 <script src="/scan/assets/scan.js" defer></script>
 </body>
 </html>`;
@@ -187,19 +199,27 @@ export const scanAssetPage = async (req: Request, res: Response): Promise<void> 
     if (d.year_in_use) rows.push(['Năm sử dụng', escapeHtml(d.year_in_use)]);
     if (d.quantity) rows.push(['Số lượng', `${escapeHtml(d.quantity)}${d.unit ? ' ' + escapeHtml(d.unit) : ''}`]);
 
+    const rowIcons: Record<string, string> = {
+      'Loại tài sản': '🗂️',
+      'Phòng ban': '🏢',
+      'Vị trí': '📍',
+      'Năm sử dụng': '📅',
+      'Số lượng': '🔢',
+    };
+
     const infoRows = rows.map(([label, value]) => `
       <div class="info-row">
-        <span class="info-label">${escapeHtml(label)}</span>
+        <span class="info-label"><span class="info-icon">${rowIcons[label] || '•'}</span>${escapeHtml(label)}</span>
         <span class="info-value">${value}</span>
       </div>`).join('');
 
     const conditionBadge = conditionLabel
-      ? `<span class="badge" style="background:#f0f9ff;color:#0369a1">${escapeHtml(conditionLabel)}</span>`
+      ? `<span class="badge" style="background:#f0f9ff;color:#0369a1"><span class="badge-dot"></span>${escapeHtml(conditionLabel)}</span>`
       : '';
 
     const imageHtml = d.image_url
       ? `<img class="asset-img" src="${escapeHtml(d.image_url)}" alt="${escapeHtml(d.name)}" loading="lazy" />`
-      : '';
+      : '<div class="asset-img-placeholder"><span>📦</span><small>Chưa có ảnh tài sản</small></div>';
 
     const openAppUrl = `${envConfig.frontendUrl.replace(/\/$/, '')}/assets/${d.id}`;
 
@@ -213,7 +233,7 @@ export const scanAssetPage = async (req: Request, res: Response): Promise<void> 
           <button class="copy-btn" type="button" data-copy="${escapeHtml(d.asset_code)}">Sao chép mã</button>
         </div>
         <div class="badges">
-          <span class="badge" style="background:${statusColor}20;color:${statusColor}">${escapeHtml(statusLabel)}</span>
+          <span class="badge" style="background:${statusColor}20;color:${statusColor}"><span class="badge-dot"></span>${escapeHtml(statusLabel)}</span>
           ${conditionBadge}
         </div>
         <a class="open-app" href="${escapeHtml(openAppUrl)}">Mở trong hệ thống →</a>
