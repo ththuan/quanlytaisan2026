@@ -682,7 +682,7 @@
         type="info"
         :closable="false"
         style="margin-bottom:12px;"
-        description="Tài sản dạng công cụ dụng cụ được kiểm kê theo nhóm. Chỉ cần đếm tổng số lượng rồi nhấn Xác nhận — không cần quét QR từng món."
+        description="Chỉ các tài sản KHÔNG có mã QR thuộc danh mục công cụ dụng cụ mới được kiểm kê theo nhóm. Tài sản có mã QR vẫn phải quét riêng."
       />
       <el-table
         :data="batchGroups"
@@ -972,7 +972,7 @@
           style="margin-bottom: 20px"
         >
           <template #title>
-            <strong>⚠️ Xác nhận thủ công — Mã QR không quét được</strong>
+            <strong>⚠️ Xác nhận thủ công — Tài sản không có QR hoặc không quét được</strong>
           </template>
           <p style="margin: 8px 0 0 0; color: #606266;">
             Hành động này được ghi lại để kiểm tra. Vui lòng chọn lý do bên dưới.
@@ -1177,7 +1177,7 @@
           <!-- Lý do không quét được QR: chỉ hiện khi xác nhận thủ công mới -->
           <el-form-item
             v-if="isManualConfirm && !selectedAsset?.inventory_detail"
-            label="Lý do không quét QR"
+            label="Lý do kiểm kê thủ công"
             required
           >
             <el-select
@@ -1354,10 +1354,10 @@ const selectedAsset = ref<any>(null);
 const isFromScan = ref(false); // Track if dialog opened from QR scan
 const isManualConfirm = ref(false); // QR not scannable → manual confirmation with audit trail
 const manualReasonOptions = [
+  { value: 'no_qr', label: 'Tài sản chưa có mã QR' },
   { value: 'qr_faded', label: 'Mã QR bị mờ / rách / hỏng' },
   { value: 'inaccessible', label: 'Tài sản ở vị trí khó tiếp cận' },
   { value: 'scanner_error', label: 'Thiết bị quét lỗi / hết pin' },
-  { value: 'other', label: 'Lý do khác' },
 ];
 const checkForm = ref({
   actual_quantity: 1,
@@ -1427,19 +1427,17 @@ const canSubmit = computed(() => {
 // Kiểm tra có tài sản chưa quét (có thể quét QR nhưng chưa được quét)
 const hasUnscannedAssets = computed(() => {
   return assets.value.some(asset => {
-    // Chỉ tính tài sản có thể quét QR
-    if (!canScanAsset(asset)) return false;
-    // Bỏ qua tài sản kiểm theo nhóm (batch)
+    // Chỉ tính tài sản có QR thực sự có thể quét
+    if (!isQrScannableAsset(asset)) return false;
     if (isBatchAsset(asset)) return false;
-    // Chưa có inventory_detail hoặc chưa được đánh dấu
     return !asset.inventory_detail;
   });
 });
 
-// Số lượng tài sản chưa quét QR
+// Số lượng tài sản có QR chưa quét
 const unscannedCount = computed(() => {
   return assets.value.filter(asset => {
-    if (!canScanAsset(asset)) return false;
+    if (!isQrScannableAsset(asset)) return false;
     if (isBatchAsset(asset)) return false; // batch handled separately
     return !asset.inventory_detail;
   }).length;
@@ -1461,10 +1459,20 @@ const hasScannableAssets = computed(() => {
 });
 
 // ─── Batch computed / methods ─────────────────────────────────────────────────
+const hasQRCode = (asset: any): boolean => {
+  if (!asset) return false;
+  if (asset.has_qr !== undefined && asset.has_qr !== null) return Boolean(asset.has_qr);
+  return Boolean(asset.qr_code);
+};
+
 const isBatchAsset = (asset: any): boolean => {
   if (!asset?.category_id) return false;
-  return categoriesMap.value.get(asset.category_id)?.tracking_type === 'batch';
+  // Chỉ gom nhóm tài sản KHÔNG có QR. Tài sản có QR (kể cả thuộc danh mục
+  // công cụ dụng cụ) vẫn phải quét riêng để tránh lợi dụng kiểm kê tay.
+  return categoriesMap.value.get(asset.category_id)?.tracking_type === 'batch' && !hasQRCode(asset);
 };
+
+const isQrScannableAsset = (asset: any): boolean => canScanAsset(asset) && hasQRCode(asset);
 
 // Giữ nguyên tình trạng hiện tại của tài sản khi quét QR (không tự reset về "Tốt").
 const getAssetConditionForInventory = (asset: any): string => {
@@ -1946,7 +1954,13 @@ const handleRowClick = (row: any) => {
     openCheckDialog(row, false);
     return;
   }
-  
+
+  // Tài sản không có mã QR: kiểm kê thủ công (bắt buộc chọn lý do)
+  if (!hasQRCode(row)) {
+    openCheckDialog(row, false, true);
+    return;
+  }
+
   // Tài sản có QR: chỉ cho phép mở dialog nếu đã quét QR (để chỉnh sửa tình trạng)
   if (row.inventory_detail) {
     // Đã quét QR rồi → cho phép chỉnh sửa tình trạng
@@ -2010,6 +2024,9 @@ const openCheckDialog = (row: any, fromScan: boolean = false, manualConfirm: boo
       responsibility: '',
       compensation_amount: 0,
     };
+    if (manualConfirm && !hasQRCode(row)) {
+      checkForm.value.manual_reason = 'no_qr';
+    }
   }
   showCheckDialog.value = true;
 };
@@ -2380,7 +2397,7 @@ const saveCheck = async () => {
 
   // Validate manual confirm: require a reason
   if (isManualConfirm.value && !selectedAsset.value.inventory_detail && !checkForm.value.manual_reason) {
-    ElMessage.error('Vui lòng chọn lý do không quét được mã QR');
+    ElMessage.error('Vui lòng chọn lý do kiểm kê thủ công');
     return;
   }
 
@@ -2484,9 +2501,9 @@ const markUnscannedAsMissing = () => {
     return;
   }
 
-  // Tìm các tài sản chưa quét (có thể quét QR nhưng chưa có inventory_detail)
+  // Tìm các tài sản có QR nhưng chưa quét
   const unscannedAssets = assets.value.filter(asset => {
-    if (!canScanAsset(asset)) return false; // Bỏ qua tài sản không cần quét QR
+    if (!isQrScannableAsset(asset)) return false; // Bỏ qua tài sản không có QR/không cần quét
     if (isBatchAsset(asset)) return false; // Nhóm công cụ dụng cụ kiểm kê riêng
     return !asset.inventory_detail; // Chưa có kết quả kiểm kê
   });
@@ -2591,10 +2608,20 @@ const submitReport = async () => {
     return;
   }
 
+  const unconfirmedNoQrAssets = assets.value.filter(
+    (asset) => canScanAsset(asset) && !hasQRCode(asset) && !isBatchAsset(asset) && !asset.inventory_detail
+  );
+  if (unconfirmedNoQrAssets.length > 0) {
+    ElMessage.warning(
+      `Còn ${unconfirmedNoQrAssets.length} tài sản chưa có mã QR chưa kiểm kê thủ công. Vui lòng xác nhận trước khi nộp.`
+    );
+    return;
+  }
+
   try {
     // Tự động đánh dấu tài sản có QR chưa quét là "Thiếu" trước khi nộp
     const unscannedAssets = assets.value.filter(asset => {
-      if (!canScanAsset(asset)) return false; // Bỏ qua tài sản không cần quét QR
+      if (!isQrScannableAsset(asset)) return false; // Chỉ tài sản có QR thực sự
       if (isBatchAsset(asset)) return false; // Nhóm công cụ dụng cụ kiểm kê riêng
       return !asset.inventory_detail; // Chưa có kết quả kiểm kê
     });

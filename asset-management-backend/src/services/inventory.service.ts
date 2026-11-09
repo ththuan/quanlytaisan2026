@@ -1530,6 +1530,7 @@ class InventoryService {
         'status',
         'location',
         'description',
+        [sequelize.literal('(qr_code IS NOT NULL AND qr_code <> \'\')'), 'has_qr'],
       ],
     };
 
@@ -1616,7 +1617,7 @@ class InventoryService {
     }
 
     const scannableStatuses = ['active', 'inactive', 'damaged', 'pending_disposal', 'pending_repair'];
-    const assetAttributes = [
+    const assetAttributes: any[] = [
       'id',
       'asset_code',
       'name',
@@ -1631,6 +1632,7 @@ class InventoryService {
       'location',
       'description',
       'current_department_id',
+      [sequelize.literal('(qr_code IS NOT NULL AND qr_code <> \'\')'), 'has_qr'],
     ];
 
     const asset = await Asset.findOne({
