@@ -192,14 +192,6 @@
             </div>
             <div class="header-right">
               <el-button
-                :icon="isDark ? Sunny : Moon"
-                circle
-                size="small"
-                class="theme-toggle"
-                :title="isDark ? 'Chuyển giao diện sáng' : 'Chuyển giao diện tối'"
-                @click="handleToggleTheme"
-              />
-              <el-button
                 :icon="MagicStick"
                 circle
                 size="small"
@@ -277,11 +269,10 @@
 import { computed, nextTick, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
-import { House, HomeFilled, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, Warning, MagicStick, Moon, Sunny } from '@element-plus/icons-vue';
+import { House, HomeFilled, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, Warning, MagicStick } from '@element-plus/icons-vue';
 import NotificationBell from '@/components/Notifications/NotificationBell.vue';
 import ScrollProgress from '@/components/animate/ScrollProgress.vue';
 import { toggleEffectsMode, useEffectsLite } from '@/utils/effects';
-import { toggleTheme, type ThemeMode } from '@/utils/theme';
 import TotpSetupDialog from '@/components/Auth/TotpSetupDialog.vue';
 import ChangePasswordDialog from '@/components/Auth/ChangePasswordDialog.vue';
 import { FEATURES } from '@/constants/features';
@@ -290,13 +281,6 @@ import { FEATURES } from '@/constants/features';
 const router = useRouter();
 const authStore = useAuthStore();
 const effectsLite = useEffectsLite();
-const themeMode = ref<ThemeMode>(
-  document.documentElement.classList.contains('dark') ? 'dark' : 'light'
-);
-const isDark = computed(() => themeMode.value === 'dark');
-const handleToggleTheme = () => {
-  themeMode.value = toggleTheme(themeMode.value);
-};
 const showTotpDialog = ref(false);
 const showChangePasswordDialog = ref(false);
 const isStaffOrHead = computed(() => {
@@ -683,7 +667,6 @@ const toggleSidebar = () => {
   color: #0f172a;
 }
 
-.theme-toggle,
 .effects-toggle {
   border: none;
   background: #f1f5f9;
@@ -703,7 +686,6 @@ const toggleSidebar = () => {
 }
 
 @media (max-width: 768px) {
-  .theme-toggle,
   .effects-toggle {
     width: 36px;
     height: 36px;
