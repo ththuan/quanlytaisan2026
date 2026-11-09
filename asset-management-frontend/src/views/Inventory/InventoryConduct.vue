@@ -3934,7 +3934,17 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
-.scan-frame { position: relative; width: 250px; height: 250px; }
+.scan-frame {
+  position: relative;
+  width: 250px;
+  height: 250px;
+  border-radius: 18px;
+  /* Làm tối toàn bộ vùng ngoài khung, chỉ giữ vùng QR sáng rõ */
+  box-shadow:
+    0 0 0 9999px rgba(2, 6, 23, 0.58),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  z-index: 1;
+}
 
 .scan-corner { position: absolute; width: 30px; height: 30px; border-color: #409eff; border-style: solid; }
 .scan-corner.tl { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
@@ -3955,7 +3965,15 @@ onUnmounted(() => {
   100% { top: calc(100% - 10px); opacity: 0; }
 }
 
-.scan-hint { color: rgba(255,255,255,0.7); font-size: 14px; margin-top: 24px; text-align: center; }
+.scan-hint {
+  position: relative;
+  z-index: 2;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
+  margin-top: 24px;
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
 
 .scan-processing-overlay {
   position: absolute; inset: 0; background: rgba(0,0,0,0.6);
