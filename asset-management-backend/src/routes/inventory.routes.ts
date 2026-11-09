@@ -72,6 +72,9 @@ router.post('/reports/:id/details', inventoryController.addInventoryDetail);
 // Thêm nhiều chi tiết kiểm kê trong một request (hàng loạt)
 router.post('/reports/:id/details/bulk', inventoryController.addInventoryDetailsBulk);
 
+// Xóa kết quả kiểm kê của cả nhóm công cụ dụng cụ để làm lại
+router.delete('/reports/:id/details/group/:categoryId', inventoryController.resetBatchGroupDetails);
+
 // Cập nhật chi tiết kiểm kê
 router.patch('/reports/:id/details/:detailId', inventoryController.updateInventoryDetail);
 

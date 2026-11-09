@@ -103,19 +103,19 @@ InventoryReport.init(
       comment: 'Phòng ban',
     },
     total_assigned_quantity: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.DOUBLE,
       allowNull: false,
       defaultValue: 0,
       comment: 'Tổng số tài sản được cấp',
     },
     total_actual_quantity: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.DOUBLE,
       allowNull: false,
       defaultValue: 0,
       comment: 'Tổng số kiểm kê thực tế',
     },
     total_discrepancy: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.DOUBLE,
       allowNull: false,
       defaultValue: 0,
       comment: 'Tổng chênh lệch',

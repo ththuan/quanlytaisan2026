@@ -11,6 +11,29 @@ import Department from '../models/Department';
 import { assertSignature, recordSignature } from '../services/signature.service';
 import { savePublicFile } from '../utils/fileStorage';
 
+type InventoryUser = NonNullable<AuthRequest['user']>;
+
+/** Admin/director hoặc cán bộ/trưởng đơn vị thuộc đúng đơn vị của báo cáo. */
+const canEditInventoryReport = (
+  report: { department_id?: number | null } | null,
+  user: InventoryUser
+): boolean => {
+  if (!report) return false;
+  if (user.role === 'admin' || user.role === 'director') return true;
+  if (!['staff', 'department_head'].includes(user.role)) return false;
+  return Number(user.department_id) === Number(report.department_id);
+};
+
+const assertCanEditInventoryReport = (
+  report: { department_id?: number | null } | null,
+  user: InventoryUser
+): void => {
+  if (!report) throw new ForbiddenError('Báo cáo không tồn tại');
+  if (!canEditInventoryReport(report, user)) {
+    throw new ForbiddenError('Bạn không có quyền thao tác trên báo cáo kiểm kê của đơn vị này');
+  }
+};
+
 // ==================== INVENTORY ROUND (Đợt Kiểm Kê) ====================
 
 /**
@@ -166,22 +189,20 @@ export const getInventoryReportById = async (req: AuthRequest, res: Response, ne
     // Phân quyền xem chi tiết báo cáo:
     // - Admin & Giám hiệu (director): xem tất cả
     // - Trưởng đơn vị cha: xem báo cáo của phòng ban mình và các đơn vị con
-    // - Cán bộ: chỉ xem báo cáo do mình tạo
+    // - Cán bộ: xem báo cáo của đơn vị mình (báo cáo dùng chung theo đơn vị)
     if (user.role !== 'admin' && user.role !== 'director') {
       if (user.role === 'department_head') {
-        if (report.department_id !== user.department_id) {
+        if (Number(report.department_id) !== Number(user.department_id)) {
           // Allow parent-dept head to view child-dept reports
           const reportDept = await Department.findByPk(report.department_id, {
             attributes: ['id', 'parent_department_id'],
           });
-          if (!reportDept || (reportDept as any).parent_department_id !== user.department_id) {
+          if (!reportDept || Number((reportDept as any).parent_department_id) !== Number(user.department_id)) {
             throw new ForbiddenError('Bạn chỉ được xem báo cáo kiểm kê của phòng ban mình và các đơn vị con');
           }
         }
-      } else {
-        if (report.created_by !== user.id) {
-          throw new ForbiddenError('Bạn không có quyền xem báo cáo kiểm kê này');
-        }
+      } else if (Number(report.department_id) !== Number(user.department_id)) {
+        throw new ForbiddenError('Bạn không có quyền xem báo cáo kiểm kê này');
       }
     }
 
@@ -203,12 +224,8 @@ export const addInventoryDetail = async (req: AuthRequest, res: Response, next: 
     const reportId = parseInt(req.params.id);
     const { asset_id, ...detailData } = req.body;
 
-    // Check ownership - only report creator or admin/director
-    const report = await InventoryService.getInventoryReportById(reportId);
-    if (!report) throw new ForbiddenError('Báo cáo không tồn tại');
-    if (user.role !== 'admin' && user.role !== 'director' && (report as any).created_by !== user.id) {
-      throw new ForbiddenError('Bạn không có quyền thêm chi tiết vào báo cáo này');
-    }
+    const report = await InventoryService.getInventoryReportMeta(reportId);
+    assertCanEditInventoryReport(report, user);
 
     const detail = await InventoryService.addInventoryDetail(reportId, asset_id, detailData);
     res.status(201).json({
@@ -239,16 +256,41 @@ export const addInventoryDetailsBulk = async (req: AuthRequest, res: Response, n
     }
 
     const report = await InventoryService.getInventoryReportMeta(reportId);
-    if (!report) throw new ForbiddenError('Báo cáo không tồn tại');
-    if (user.role !== 'admin' && user.role !== 'director' && (report as any).created_by !== user.id) {
-      throw new ForbiddenError('Bạn không có quyền thêm chi tiết vào báo cáo này');
-    }
+    assertCanEditInventoryReport(report, user);
 
     const details = await InventoryService.addInventoryDetailsBulk(reportId, items);
     res.status(201).json({
       success: true,
       message: 'Inventory details added successfully',
       data: details,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Xóa kết quả kiểm kê của một nhóm công cụ dụng cụ (để làm lại).
+ * DELETE /api/inventory/reports/:id/details/group/:categoryId
+ */
+export const resetBatchGroupDetails = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user!;
+    const reportId = parseInt(req.params.id);
+    const categoryId = parseInt(req.params.categoryId);
+
+    if (!Number.isFinite(categoryId)) {
+      throw new ValidationError('Mã danh mục không hợp lệ');
+    }
+
+    const report = await InventoryService.getInventoryReportMeta(reportId);
+    assertCanEditInventoryReport(report, user);
+
+    const deleted = await InventoryService.resetBatchGroupDetails(reportId, categoryId);
+    res.json({
+      success: true,
+      message: `Đã xóa ${deleted} kết quả kiểm kê của nhóm`,
+      data: { deleted },
     });
   } catch (error) {
     next(error);
@@ -264,12 +306,8 @@ export const updateInventoryDetail = async (req: AuthRequest, res: Response, nex
     const detailId = parseInt(req.params.detailId);
     const reportId = parseInt(req.params.id);
 
-    // Check ownership
-    const report = await InventoryService.getInventoryReportById(reportId);
-    if (!report) throw new ForbiddenError('Báo cáo không tồn tại');
-    if (user.role !== 'admin' && user.role !== 'director' && (report as any).created_by !== user.id) {
-      throw new ForbiddenError('Bạn không có quyền cập nhật chi tiết báo cáo này');
-    }
+    const report = await InventoryService.getInventoryReportMeta(reportId);
+    assertCanEditInventoryReport(report, user);
 
     const detail = await InventoryService.updateInventoryDetail(detailId, reportId, req.body);
     res.json({
@@ -290,12 +328,8 @@ export const submitInventoryReport = async (req: AuthRequest, res: Response, nex
     const user = req.user!;
     const reportId = parseInt(req.params.id);
 
-    // Check ownership
-    const report = await InventoryService.getInventoryReportById(reportId);
-    if (!report) throw new ForbiddenError('Báo cáo không tồn tại');
-    if (user.role !== 'admin' && user.role !== 'director' && (report as any).created_by !== user.id) {
-      throw new ForbiddenError('Bạn không có quyền nộp báo cáo này');
-    }
+    const report = await InventoryService.getInventoryReportMeta(reportId);
+    assertCanEditInventoryReport(report, user);
 
     // Bắt buộc chữ ký sống của người nộp
     const signatureImage = assertSignature(req.body?.signature);
@@ -408,8 +442,7 @@ export const getPendingReportsCount = async (req: AuthRequest, res: Response, ne
   try {
     const result = await InventoryService.getPendingReportsByRole(
       req.user!.role,
-      req.user!.department_id,
-      req.user!.id
+      req.user!.department_id
     );
     res.json({
       success: true,
@@ -487,11 +520,8 @@ export const updateReportImages = async (req: AuthRequest, res: Response, next: 
     const user = req.user!;
     const reportId = parseInt(req.params.id);
 
-    const report = await InventoryService.getInventoryReportById(reportId);
-    if (!report) throw new ForbiddenError('Báo cáo không tồn tại');
-    if (user.role !== 'admin' && user.role !== 'director' && (report as any).created_by !== user.id) {
-      throw new ForbiddenError('Bạn không có quyền cập nhật ảnh báo cáo này');
-    }
+    const report = await InventoryService.getInventoryReportMeta(reportId);
+    assertCanEditInventoryReport(report, user);
 
     const result = await InventoryService.updateReportImages(reportId, req.body?.image_urls);
     res.json({ success: true, data: result });

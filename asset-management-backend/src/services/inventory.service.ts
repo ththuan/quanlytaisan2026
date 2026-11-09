@@ -98,7 +98,14 @@ const buildDetailAttributes = (asset: any, data: InventoryDetailInput) => {
     assignedQuantity = isAreaAsset ? asset.quantity || 1 : 1;
   }
 
-  const discrepancy = data.actual_quantity - assignedQuantity;
+  // "Thiếu" luôn tương ứng số lượng thực tế = 0, tránh trường hợp người dùng
+  // chọn Thiếu nhưng giữ nguyên số lượng sổ sách khiến hệ thống coi là khớp.
+  const requestedQuantity = Number(data.actual_quantity);
+  const actualQuantity = data.check_status === 'missing'
+    ? 0
+    : (Number.isFinite(requestedQuantity) ? requestedQuantity : 0);
+
+  const discrepancy = actualQuantity - assignedQuantity;
   const conditionValue = data.condition || data.asset_condition || 'good';
   const condition = mapAssetConditionToCondition(conditionValue);
   const originalAssetCondition = data.asset_condition || conditionValue;
@@ -121,7 +128,7 @@ const buildDetailAttributes = (asset: any, data: InventoryDetailInput) => {
 
   return {
     assigned_quantity: assignedQuantity,
-    actual_quantity: data.actual_quantity,
+    actual_quantity: actualQuantity,
     quantity_discrepancy: discrepancy,
     condition: isPendingDisposal && !data.condition ? 'poor' : condition,
     original_asset_condition: isPendingDisposal && !data.asset_condition ? 'damaged' : originalAssetCondition,
@@ -138,19 +145,57 @@ const buildDetailAttributes = (asset: any, data: InventoryDetailInput) => {
   };
 };
 
+/** Suy ra kết quả kiểm kê từ dữ liệu thực tế (dùng chung cho API trả về). */
+const deriveDetailCheckStatus = (detail: any): string => {
+  const discrepancy = Number(detail?.quantity_discrepancy ?? 0);
+  if (discrepancy < 0) return 'missing';
+  if (discrepancy > 0) return 'surplus';
+  if (detail?.suggest_repair) return 'needs_repair';
+  if (detail?.condition === 'poor' || detail?.suggest_disposal) return 'damaged';
+  return 'matched';
+};
+
+/** Chặn thao tác khi đợt kiểm kê đã hoàn tất hoặc quá hạn. */
+const assertRoundOpenForEditing = (round: any): void => {
+  if (!round) return;
+  if (round.status === 'completed') {
+    throw new ValidationError('Đợt kiểm kê đã hoàn tất, không thể chỉnh sửa.');
+  }
+  if (round.end_date) {
+    const endDate = new Date(round.end_date);
+    // Cho phép thao tác hết ngày kết thúc (end_date thường chỉ lưu ngày).
+    endDate.setHours(23, 59, 59, 999);
+    if (endDate.getTime() < Date.now()) {
+      throw new ValidationError(
+        `Đợt kiểm kê đã hết hạn vào ${new Date(round.end_date).toLocaleDateString('vi-VN')}. Vui lòng liên hệ admin để gia hạn.`
+      );
+    }
+  }
+};
+
 /** Map một detail (model) về đúng shape API trả về cho frontend. */
 const toDetailResponse = (detail: any) => {
   const detailData = detail.toJSON ? detail.toJSON() : detail;
   return {
     ...detailData,
     asset_condition: detailData.original_asset_condition || mapConditionToAssetCondition(detailData.condition),
-    check_status: 'matched',
+    check_status: deriveDetailCheckStatus(detailData),
     actual_value: null,
   };
 };
 
 class InventoryService {
   async createInventoryRound(data: CreateInventoryRoundInput, createdBy: number): Promise<InventoryRound> {
+    const activeRound = await InventoryRound.findOne({
+      where: { status: { [Op.in]: ['in_progress', 'awaiting_approval'] } },
+      attributes: ['id', 'round_name', 'round_year'],
+    });
+    if (activeRound) {
+      throw new ConflictError(
+        `Đang có đợt kiểm kê "${(activeRound as any).round_name}" (${(activeRound as any).round_year}) chưa hoàn tất. Vui lòng hoàn tất đợt hiện tại trước khi tạo đợt mới.`
+      );
+    }
+
     // Only count root (parent) departments — child reports roll up to parent unit
     const totalDepartments = await Department.count({ where: { parent_department_id: null } });
 
@@ -464,25 +509,46 @@ class InventoryService {
   }
 
   async createInventoryReport(roundId: number, userId: number, departmentId: number): Promise<InventoryReport> {
-    const round = await InventoryRound.findByPk(roundId);
-    if (!round) {
-      throw new NotFoundError('Inventory round not found');
+    const tx = await sequelize.transaction();
+    let reportId: number;
+    try {
+      // Khóa đợt kiểm kê để tránh 2 nhân viên cùng tạo 2 báo cáo cho một đơn vị.
+      const round = await InventoryRound.findByPk(roundId, { transaction: tx, lock: true });
+      if (!round) {
+        throw new NotFoundError('Inventory round not found');
+      }
+      if (round.status !== 'in_progress') {
+        throw new ValidationError('Inventory round is not active');
+      }
+      assertRoundOpenForEditing(round);
+
+      // Mỗi đơn vị chỉ có 1 báo cáo trong 1 đợt kiểm kê.
+      const existing = await InventoryReport.findOne({
+        where: { inventory_round_id: roundId, department_id: departmentId },
+        order: [['created_at', 'DESC']],
+        transaction: tx,
+      });
+      if (existing) {
+        await tx.commit();
+        return this.getInventoryReportById(existing.id);
+      }
+
+      const reportCode = `INV-${round.round_year}-${departmentId}-${userId}-${Date.now()}`;
+      const report = await InventoryReport.create({
+        report_code: reportCode,
+        inventory_round_id: roundId,
+        created_by: userId,
+        department_id: departmentId,
+        status: 'draft',
+      }, { transaction: tx });
+      reportId = report.id;
+      await tx.commit();
+    } catch (error) {
+      await tx.rollback();
+      throw error;
     }
-    if (round.status !== 'in_progress') {
-      throw new ValidationError('Inventory round is not active');
-    }
 
-    const reportCode = `INV-${round.round_year}-${departmentId}-${userId}-${Date.now()}`;
-
-    const report = await InventoryReport.create({
-      report_code: reportCode,
-      inventory_round_id: roundId,
-      created_by: userId,
-      department_id: departmentId,
-      status: 'draft',
-    });
-
-    return this.getInventoryReportById(report.id);
+    return this.getInventoryReportById(reportId);
   }
 
   /** Lấy metadata nhẹ (không kèm details) để kiểm tra quyền trước khi ghi. */
@@ -546,16 +612,7 @@ class InventoryService {
           book_quantity: detail.assigned_quantity || 0,
           quantity_difference: detail.quantity_discrepancy || 0,
           asset_condition: detail.original_asset_condition || mapConditionToAssetCondition(detail.condition),
-          check_status:
-            detail.quantity_discrepancy < 0
-              ? 'missing'
-              : detail.quantity_discrepancy > 0
-                ? 'surplus'
-                : detail.suggest_repair
-                  ? 'needs_repair'
-                  : detail.condition === 'poor' || detail.suggest_disposal
-                    ? 'damaged'
-                    : 'matched',
+          check_status: deriveDetailCheckStatus(detail),
           actual_value: null,
         };
       });
@@ -591,11 +648,12 @@ class InventoryService {
         ? { [Op.in]: [departmentId, ...childIds] }
         : departmentId;
     } else {
-      // Nhân viên: chỉ báo cáo do mình tạo VÀ thuộc đơn vị hiện tại
-      // (tránh thấy lại báo cáo của đơn vị cũ sau khi được chuyển phòng).
-      where.created_by = userId;
+      // Nhân viên: dùng chung báo cáo của đơn vị hiện tại (nhiều nhân viên
+      // cùng tham gia kiểm kê), không tạo mỗi người một báo cáo riêng.
       if (departmentId) {
         where.department_id = departmentId;
+      } else {
+        where.created_by = userId;
       }
     }
 
@@ -673,13 +731,16 @@ class InventoryService {
     assetId: number,
     data: InventoryDetailInput
   ): Promise<InventoryReportDetail> {
-    const report = await InventoryReport.findByPk(reportId);
+    const report = await InventoryReport.findByPk(reportId, {
+      include: [{ model: InventoryRound, as: 'inventory_round', attributes: ['id', 'end_date', 'status'] }],
+    });
     if (!report) {
       throw new NotFoundError('Inventory report not found');
     }
     if (report.status !== 'draft' && report.status !== 'rejected_by_head' && report.status !== 'rejected_by_admin') {
       throw new ValidationError('Can only add details to draft reports or rejected reports that need resubmission');
     }
+    assertRoundOpenForEditing((report as any).inventory_round);
 
     const asset = await Asset.findByPk(assetId);
     if (!asset) {
@@ -698,13 +759,31 @@ class InventoryService {
       );
     }
 
-    // Chặn kiểm kê trùng: mỗi tài sản chỉ có 1 kết quả trong một đợt
+    // Chặn kiểm kê trùng trong cùng đợt, kể cả khi tài sản đã bị điều chuyển
+    // sang đơn vị khác và đơn vị mới quét lại.
     const existingDetail = await InventoryReportDetail.findOne({
-      where: { inventory_report_id: reportId, asset_id: assetId },
-      attributes: ['id'],
+      where: { asset_id: assetId },
+      include: [{
+        model: InventoryReport,
+        as: 'inventory_report',
+        attributes: ['id', 'department_id'],
+        where: { inventory_round_id: report.inventory_round_id },
+        required: true,
+      }],
     });
     if (existingDetail) {
-      throw new ValidationError('Tài sản này đã được kiểm kê trong đợt này rồi');
+      if (Number(existingDetail.inventory_report_id) === Number(reportId)) {
+        throw new ValidationError('Tài sản này đã được kiểm kê trong đợt này rồi');
+      }
+      const otherDepartmentId = (existingDetail as any).inventory_report?.department_id;
+      const otherDepartment = otherDepartmentId
+        ? await Department.findByPk(otherDepartmentId, { attributes: ['id', 'name'] })
+        : null;
+      const otherDepartmentName = (otherDepartment as any)?.name || 'đơn vị khác';
+      throw new ConflictError(
+        `Tài sản "${asset.name}" (mã ${asset.asset_code}) đã được kiểm kê ở đơn vị "${otherDepartmentName}" trong đợt này. ` +
+        'Không thể kiểm kê trùng. Vui lòng liên hệ đơn vị đó hoặc admin để xử lý.'
+      );
     }
 
     const detail = await InventoryReportDetail.create({
@@ -726,13 +805,16 @@ class InventoryService {
     reportId: number,
     items: Array<InventoryDetailInput & { asset_id: number }>
   ): Promise<any[]> {
-    const report = await InventoryReport.findByPk(reportId);
+    const report = await InventoryReport.findByPk(reportId, {
+      include: [{ model: InventoryRound, as: 'inventory_round', attributes: ['id', 'end_date', 'status'] }],
+    });
     if (!report) {
       throw new NotFoundError('Inventory report not found');
     }
     if (report.status !== 'draft' && report.status !== 'rejected_by_head' && report.status !== 'rejected_by_admin') {
       throw new ValidationError('Can only add details to draft reports or rejected reports that need resubmission');
     }
+    assertRoundOpenForEditing((report as any).inventory_round);
     if (!Array.isArray(items) || items.length === 0) {
       throw new ValidationError('Danh sách tài sản kiểm kê rỗng');
     }
@@ -745,7 +827,7 @@ class InventoryService {
       ),
     ];
 
-    const [assets, existingDetails] = await Promise.all([
+    const [assets, roundDetails] = await Promise.all([
       Asset.findAll({
         where: {
           id: { [Op.in]: assetIds },
@@ -753,17 +835,29 @@ class InventoryService {
         },
       }),
       InventoryReportDetail.findAll({
-        where: {
-          inventory_report_id: reportId,
-          asset_id: { [Op.in]: assetIds },
-        },
+        where: { asset_id: { [Op.in]: assetIds } },
+        include: [{
+          model: InventoryReport,
+          as: 'inventory_report',
+          attributes: ['id', 'department_id'],
+          where: { inventory_round_id: report.inventory_round_id },
+          required: true,
+        }],
       }),
     ]);
 
     const assetById = new Map<number, any>(assets.map((asset: any) => [Number(asset.id), asset]));
-    const existingByAsset = new Map<number, any>(
-      existingDetails.map((detail: any) => [Number(detail.asset_id), detail])
-    );
+    const existingByAsset = new Map<number, any>();
+    const checkedElsewhere = new Set<number>();
+    for (const detail of roundDetails as any[]) {
+      const detailAssetId = Number(detail.asset_id);
+      if (Number(detail.inventory_report_id) === Number(reportId)) {
+        existingByAsset.set(detailAssetId, detail);
+      } else {
+        checkedElsewhere.add(detailAssetId);
+      }
+    }
+    const existingDetails = [...existingByAsset.values()];
 
     const seen = new Set<number>();
     const rowsToCreate: any[] = [];
@@ -773,7 +867,7 @@ class InventoryService {
       seen.add(assetId);
 
       const asset = assetById.get(assetId);
-      if (!asset || existingByAsset.has(assetId)) continue;
+      if (!asset || existingByAsset.has(assetId) || checkedElsewhere.has(assetId)) continue;
 
       rowsToCreate.push({
         inventory_report_id: reportId,
@@ -833,10 +927,13 @@ class InventoryService {
       throw new NotFoundError('Detail not found');
     }
 
-    const report = await InventoryReport.findByPk(detail.inventory_report_id);
+    const report = await InventoryReport.findByPk(detail.inventory_report_id, {
+      include: [{ model: InventoryRound, as: 'inventory_round', attributes: ['id', 'end_date', 'status'] }],
+    });
     if (report && report.status !== 'draft' && report.status !== 'rejected_by_head' && report.status !== 'rejected_by_admin') {
       throw new ValidationError('Can only update details of draft reports or rejected reports that need resubmission');
     }
+    assertRoundOpenForEditing((report as any)?.inventory_round);
 
     const updateData: any = { ...data };
     if (data.asset_condition && !data.condition) {
@@ -853,8 +950,11 @@ class InventoryService {
     delete updateData.check_status;
     delete updateData.actual_value;
 
-    if (data.actual_quantity !== undefined) {
-      updateData.quantity_discrepancy = data.actual_quantity - detail.assigned_quantity;
+    if (data.check_status === 'missing') {
+      updateData.actual_quantity = 0;
+      updateData.quantity_discrepancy = -Number(detail.assigned_quantity);
+    } else if (data.actual_quantity !== undefined) {
+      updateData.quantity_discrepancy = Number(data.actual_quantity) - Number(detail.assigned_quantity);
     }
     
     // NGUYÊN TẮC: Không thể vừa sửa chữa vừa thanh lý
@@ -876,25 +976,60 @@ class InventoryService {
 
     await detail.reload();
 
-    const detailData = detail.toJSON();
-    return {
-      ...detailData,
-      asset_condition: detailData.original_asset_condition || mapConditionToAssetCondition(detailData.condition),
-      check_status: 'matched',
-      actual_value: null,
-    } as any;
+    return toDetailResponse(detail) as any;
   }
 
   async updateReportImages(reportId: number, imageUrls: string[]): Promise<InventoryReport> {
-    const report = await InventoryReport.findByPk(reportId);
+    const report = await InventoryReport.findByPk(reportId, {
+      include: [{ model: InventoryRound, as: 'inventory_round', attributes: ['id', 'end_date', 'status'] }],
+    });
     if (!report) {
       throw new NotFoundError('Inventory report not found');
     }
     if (report.status !== 'draft' && report.status !== 'rejected_by_head' && report.status !== 'rejected_by_admin') {
       throw new ValidationError('Chỉ cập nhật ảnh khi báo cáo đang nháp hoặc bị từ chối');
     }
+    assertRoundOpenForEditing((report as any).inventory_round);
     await report.update({ image_urls: Array.isArray(imageUrls) ? imageUrls : [] });
     return this.getInventoryReportById(reportId);
+  }
+
+  /** Xóa kết quả kiểm kê của cả nhóm công cụ dụng cụ để làm lại. */
+  async resetBatchGroupDetails(reportId: number, categoryId: number): Promise<number> {
+    const report = await InventoryReport.findByPk(reportId, {
+      include: [{ model: InventoryRound, as: 'inventory_round', attributes: ['id', 'end_date', 'status'] }],
+    });
+    if (!report) {
+      throw new NotFoundError('Inventory report not found');
+    }
+    if (report.status !== 'draft' && report.status !== 'rejected_by_head' && report.status !== 'rejected_by_admin') {
+      throw new ValidationError('Chỉ xóa kết quả nhóm khi báo cáo đang nháp hoặc bị từ chối');
+    }
+    assertRoundOpenForEditing((report as any).inventory_round);
+
+    const assets = await Asset.findAll({
+      where: { category_id: categoryId, current_department_id: report.department_id },
+      attributes: ['id'],
+      raw: true,
+    });
+    const assetIds = (assets as any[]).map((asset) => Number(asset.id));
+    if (assetIds.length === 0) return 0;
+
+    const tx = await sequelize.transaction();
+    try {
+      const deleted = await InventoryReportDetail.destroy({
+        where: { inventory_report_id: reportId, asset_id: { [Op.in]: assetIds } },
+        transaction: tx,
+      });
+      if (deleted > 0) {
+        await this.updateReportSummary(reportId, tx);
+      }
+      await tx.commit();
+      return deleted;
+    } catch (error) {
+      await tx.rollback();
+      throw error;
+    }
   }
 
   async updateReportSummary(reportId: number, transaction?: any): Promise<void> {
@@ -921,22 +1056,85 @@ class InventoryService {
   }
 
   async submitInventoryReport(reportId: number, userId: number): Promise<InventoryReport> {
-    const report = await InventoryReport.findByPk(reportId);
+    const report = await InventoryReport.findByPk(reportId, {
+      include: [{ model: InventoryRound, as: 'inventory_round', attributes: ['id', 'end_date', 'status'] }],
+    });
     if (!report) {
       throw new NotFoundError('Inventory report not found');
-    }
-    if (report.created_by !== userId) {
-      throw new ForbiddenError('You can only submit your own report');
     }
 
     if (report.status !== 'draft' && report.status !== 'rejected_by_head' && report.status !== 'rejected_by_admin') {
       throw new ValidationError('Can only submit draft reports or resubmit rejected reports');
     }
+    assertRoundOpenForEditing((report as any).inventory_round);
 
     // Bắt buộc có ít nhất 1 ảnh tổng thể đơn vị trước khi nộp
     const reportImages = Array.isArray(report.image_urls) ? report.image_urls : [];
     if (reportImages.length === 0) {
       throw new ValidationError('Cần chụp ít nhất 1 ảnh tổng thể đơn vị trước khi nộp báo cáo kiểm kê');
+    }
+
+    // Bắt buộc mọi tài sản còn thuộc đơn vị phải có kết quả kiểm kê.
+    const inventoryStatuses = ['active', 'inactive', 'damaged', 'pending_disposal', 'pending_repair'];
+    const countRows: any[] = await sequelize.query(
+      `SELECT COUNT(*)::int AS missing_count
+       FROM assets a
+       LEFT JOIN inventory_report_details d
+         ON d.asset_id = a.id AND d.inventory_report_id = :reportId
+       WHERE a.current_department_id = :departmentId
+         AND a.status IN (:inventoryStatuses)
+         AND d.id IS NULL
+         AND NOT EXISTS (
+           SELECT 1
+           FROM inventory_report_details d2
+           JOIN inventory_reports r2 ON r2.id = d2.inventory_report_id
+           WHERE d2.asset_id = a.id
+             AND r2.inventory_round_id = :roundId
+         )`,
+      {
+        replacements: {
+          reportId,
+          departmentId: report.department_id,
+          inventoryStatuses,
+          roundId: report.inventory_round_id,
+        },
+        type: QueryTypes.SELECT,
+      }
+    );
+    const missingCount = Number(countRows[0]?.missing_count || 0);
+    if (missingCount > 0) {
+      const sampleRows: any[] = await sequelize.query(
+        `SELECT a.asset_code, a.name
+         FROM assets a
+         LEFT JOIN inventory_report_details d
+           ON d.asset_id = a.id AND d.inventory_report_id = :reportId
+         WHERE a.current_department_id = :departmentId
+           AND a.status IN (:inventoryStatuses)
+           AND d.id IS NULL
+           AND NOT EXISTS (
+             SELECT 1
+             FROM inventory_report_details d2
+             JOIN inventory_reports r2 ON r2.id = d2.inventory_report_id
+             WHERE d2.asset_id = a.id
+               AND r2.inventory_round_id = :roundId
+           )
+         ORDER BY a.asset_code ASC
+         LIMIT 5`,
+        {
+          replacements: {
+            reportId,
+            departmentId: report.department_id,
+            inventoryStatuses,
+            roundId: report.inventory_round_id,
+          },
+          type: QueryTypes.SELECT,
+        }
+      );
+      const sample = sampleRows.map((row: any) => `${row.asset_code} - ${row.name}`).join('; ');
+      throw new ValidationError(
+        `Còn ${missingCount} tài sản chưa có kết quả kiểm kê${sample ? ` (VD: ${sample})` : ''}. `
+        + 'Vui lòng kiểm kê hoặc đánh dấu thiếu trước khi nộp báo cáo.'
+      );
     }
 
     // Không chặn nộp vì thiếu giải trình từng tài sản: khi nộp, giao diện sẽ cảnh báo
@@ -1005,6 +1203,12 @@ class InventoryService {
         }
       }
 
+      if (Number(report.created_by) === Number(approverId)) {
+        throw new ForbiddenError(
+          'Bạn không thể tự duyệt báo cáo do chính mình lập. Vui lòng để admin duyệt hoặc chuyển cho trưởng đơn vị cấp trên.'
+        );
+      }
+
       if (decision === 'approved') {
         await report.update({
           status: 'approved_by_head',
@@ -1024,7 +1228,9 @@ class InventoryService {
         });
       }
     } else if (approverRole === 'admin') {
-      if (report.status !== 'approved_by_head') {
+      // Admin duyệt bước cuối; đồng thời được duyệt thẳng báo cáo do trưởng
+      // đơn vị tự lập (trường hợp không còn cấp duyệt phù hợp).
+      if (!['pending', 'approved_by_head'].includes(report.status)) {
         throw new ValidationError('Report is not waiting for admin approval');
       }
 
@@ -1189,6 +1395,13 @@ class InventoryService {
       const asset = assetById.get(Number(detail.asset_id));
       if (!asset) continue;
 
+      // Bỏ qua tài sản đã được điều chuyển sang đơn vị khác trong lúc kiểm kê:
+      // không cập nhật trạng thái theo kết quả của đơn vị cũ.
+      const reportDepartmentId = Number(detail.inventory_report?.department_id);
+      if (reportDepartmentId && Number(asset.current_department_id) !== reportDepartmentId) {
+        continue;
+      }
+
       entries.push({ detail, asset, updateData });
     }
 
@@ -1266,6 +1479,23 @@ class InventoryService {
       status: { [Op.in]: ['active', 'inactive', 'damaged', 'pending_disposal', 'pending_repair'] },
     };
 
+    // Ẩn tài sản đã được kiểm kê ở báo cáo khác trong cùng đợt
+    // (trường hợp tài sản được điều chuyển giữa lúc kiểm kê).
+    const roundId = parseInt(String(query.round_id || ''), 10);
+    if (Number.isFinite(roundId)) {
+      const reportId = parseInt(String(query.report_id || ''), 10);
+      const excludeCurrentReport = Number.isFinite(reportId)
+        ? ` AND d.inventory_report_id <> ${reportId}`
+        : '';
+      where.id = {
+        [Op.notIn]: sequelize.literal(
+          '(SELECT d.asset_id FROM inventory_report_details d '
+          + 'JOIN inventory_reports r ON r.id = d.inventory_report_id '
+          + `WHERE r.inventory_round_id = ${roundId}${excludeCurrentReport})`
+        ),
+      };
+    }
+
     const queryOptions: any = {
       where,
       limit,
@@ -1276,6 +1506,7 @@ class InventoryService {
         'asset_code',
         'name',
         'category',
+        'category_id',
         'category_code',
         'unit',
         'quantity',
@@ -1311,7 +1542,7 @@ class InventoryService {
     return buildPaginationResult(mappedRows, count, page, limit);
   }
 
-  async getPendingReportsByRole(role: string, departmentId?: number, userId?: number) {
+  async getPendingReportsByRole(role: string, departmentId?: number) {
     let where: any = {};
 
     if ((role === 'department_head' || role === 'staff') && !departmentId) {
@@ -1333,9 +1564,8 @@ class InventoryService {
         status: 'pending',
       };
     } else if (role === 'staff') {
-      // Staff chỉ thấy báo cáo do chính mình tạo trong đơn vị của mình.
+      // Nhân viên dùng chung báo cáo của đơn vị.
       where = {
-        created_by: userId ?? -1,
         department_id: departmentId,
       };
     } else if (role === 'admin') {
