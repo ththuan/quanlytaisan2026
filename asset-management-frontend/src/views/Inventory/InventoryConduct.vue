@@ -682,7 +682,7 @@
         type="info"
         :closable="false"
         style="margin-bottom:12px;"
-        description="Chỉ các tài sản KHÔNG có mã QR thuộc danh mục công cụ dụng cụ mới được kiểm kê theo nhóm. Tài sản có mã QR vẫn phải quét riêng."
+        description="Chỉ các tài sản KHÔNG có mã QR thuộc danh mục công cụ dụng cụ mới được kiểm kê theo nhóm. Tài sản có mã QR vẫn phải quét riêng. Bắt buộc chụp ít nhất 1 ảnh nhóm."
       />
       <el-table
         :data="batchGroups"
@@ -792,8 +792,8 @@
           </template>
         </el-table-column>
         <el-table-column
-          label="Ảnh nhóm"
-          width="150"
+          label="Ảnh nhóm (bắt buộc)"
+          width="170"
           align="center"
         >
           <template #default="{ row }">
@@ -975,7 +975,7 @@
             <strong>⚠️ Xác nhận thủ công — Tài sản không có QR hoặc không quét được</strong>
           </template>
           <p style="margin: 8px 0 0 0; color: #606266;">
-            Hành động này được ghi lại để kiểm tra. Vui lòng chọn lý do bên dưới.
+            Hành động này được ghi lại để kiểm tra. Vui lòng chọn lý do và chụp ít nhất 1 ảnh hiện trạng.
             Số lượng sẽ tự động khớp với sổ sách. Chỉ cần xác nhận tình trạng tài sản.
           </p>
         </el-alert>
@@ -1138,7 +1138,10 @@
               />
             </el-form-item>
           </template>
-          <el-form-item label="Ảnh hiện trạng (không bắt buộc)">
+          <el-form-item
+            :label="photoRequired ? 'Ảnh hiện trạng (bắt buộc)' : 'Ảnh hiện trạng (không bắt buộc)'"
+            :required="photoRequired"
+          >
             <div class="inv-photo-block">
               <div class="inv-photo-list">
                 <div
@@ -1474,6 +1477,14 @@ const isBatchAsset = (asset: any): boolean => {
 
 const isQrScannableAsset = (asset: any): boolean => canScanAsset(asset) && hasQRCode(asset);
 
+// Kiểm kê thủ công bắt buộc ảnh, trừ tài sản nhà/đất tính theo m².
+const photoRequired = computed(() => {
+  const asset = selectedAsset.value;
+  if (!asset || !canScanAsset(asset)) return false;
+  if (isManualConfirm.value && !asset.inventory_detail) return true;
+  return ['manual_confirm', 'batch'].includes(String(asset.inventory_detail?.scan_method || ''));
+});
+
 // Giữ nguyên tình trạng hiện tại của tài sản khi quét QR (không tự reset về "Tốt").
 const getAssetConditionForInventory = (asset: any): string => {
   if (asset?.status === 'pending_disposal') return 'damaged';
@@ -1552,6 +1563,11 @@ const confirmBatchGroup = async (group: { category_id: number; category_name: st
   }
   if (!report.value) return;
 
+  if (!Array.isArray(input.image_urls) || input.image_urls.length === 0) {
+    ElMessage.warning('Kiểm kê theo nhóm bắt buộc phải chụp ít nhất 1 ảnh nhóm');
+    return;
+  }
+
   batchSaving.value = group.category_id;
   try {
     const totalActual = Math.max(0, Math.round(Number(input.actual_quantity) || 0));
@@ -1570,7 +1586,7 @@ const confirmBatchGroup = async (group: { category_id: number; category_name: st
       allocations[0].actualQty += remaining;
     }
 
-    const items = allocations.map(({ asset, bookQty, actualQty }, index) => ({
+    const items = allocations.map(({ asset, bookQty, actualQty }) => ({
       asset_id: asset.id,
       actual_quantity: actualQty,
       check_status: actualQty === 0 ? 'missing' : actualQty > bookQty ? 'surplus' : 'matched',
@@ -1579,8 +1595,8 @@ const confirmBatchGroup = async (group: { category_id: number; category_name: st
       scan_method: 'batch' as const,
       suggest_repair: false,
       suggest_disposal: input.condition === 'damaged' || input.condition === 'needs_repair',
-      // Ảnh nhóm chỉ gắn vào dòng đầu tiên để tránh lặp lại trên mọi tài sản
-      image_urls: index === 0 ? (input.image_urls || []) : [],
+      // Gắn ảnh nhóm cho mọi dòng để mỗi kết quả kiểm kê đều có ảnh chứng minh.
+      image_urls: input.image_urls || [],
       discrepancy_reason: input.discrepancy_reason || null,
       responsibility: input.responsibility || null,
       compensation_amount: input.compensation_amount || 0,
@@ -2395,9 +2411,34 @@ const saveCheck = async () => {
   const isAreaAsset = !canScanAsset(selectedAsset.value);
   const isScannedAsset = !isAreaAsset && selectedAsset.value.inventory_detail;
 
+  // Giữ nguyên phương thức kiểm kê cũ khi chỉnh sửa lại kết quả.
+  const existingScanMethod = selectedAsset.value.inventory_detail?.scan_method;
+  let scanMethod: string;
+  if (existingScanMethod) {
+    scanMethod = existingScanMethod;
+  } else if (isManualConfirm.value) {
+    scanMethod = 'manual_confirm';
+  } else if (isFromScan.value) {
+    scanMethod = 'qr_scan';
+  } else if (isAreaAsset) {
+    scanMethod = 'area_manual';
+  } else {
+    scanMethod = 'qr_scan';
+  }
+
   // Validate manual confirm: require a reason
   if (isManualConfirm.value && !selectedAsset.value.inventory_detail && !checkForm.value.manual_reason) {
     ElMessage.error('Vui lòng chọn lý do kiểm kê thủ công');
+    return;
+  }
+
+  // Kiểm kê thủ công/nhóm bắt buộc ảnh, trừ tài sản nhà, đất tính theo m².
+  if (
+    !isAreaAsset
+    && ['manual_confirm', 'batch'].includes(scanMethod)
+    && (!Array.isArray(checkForm.value.image_urls) || checkForm.value.image_urls.length === 0)
+  ) {
+    ElMessage.error('Kiểm kê thủ công bắt buộc phải chụp ít nhất 1 ảnh hiện trạng');
     return;
   }
 
@@ -2405,18 +2446,6 @@ const saveCheck = async () => {
   try {
     // Với tài sản đã quét QR: chỉ cho phép cập nhật tình trạng, giữ nguyên số lượng và kết quả
     const isPendingDisposal = selectedAsset.value.status === 'pending_disposal';
-
-    // Determine scan_method for audit trail
-    let scanMethod: string;
-    if (isManualConfirm.value) {
-      scanMethod = 'manual_confirm';
-    } else if (isFromScan.value) {
-      scanMethod = 'qr_scan';
-    } else if (isAreaAsset) {
-      scanMethod = 'area_manual';
-    } else {
-      scanMethod = 'qr_scan'; // editing an already-scanned asset
-    }
 
     const data: any = {
       asset_id: selectedAsset.value.id,

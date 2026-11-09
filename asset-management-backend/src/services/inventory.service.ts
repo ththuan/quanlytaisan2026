@@ -86,6 +86,26 @@ export interface InventoryDetailInput {
 
 const NON_SCANNABLE_UNITS = ['m2', 'm²', 'ha', 'km2', 'km²', 'cm2', 'cm²'];
 
+const isAreaUnitAsset = (asset: any): boolean => {
+  if (!asset?.unit) return false;
+  return NON_SCANNABLE_UNITS.includes(String(asset.unit).toLowerCase().trim());
+};
+
+/**
+ * Kiểm kê thủ công / theo nhóm bắt buộc có ảnh hiện trạng.
+ * Ngoại lệ: tài sản nhà, đất kiểm kê theo m² (hoặc đơn vị diện tích).
+ */
+const assertManualInventoryEvidence = (asset: any, data: InventoryDetailInput): void => {
+  if (isAreaUnitAsset(asset)) return;
+  if (!['manual_confirm', 'batch'].includes(String(data.scan_method || ''))) return;
+  if (Array.isArray(data.image_urls) && data.image_urls.length > 0) return;
+
+  throw new ValidationError(
+    `Tài sản "${asset?.name || ''}" (mã ${asset?.asset_code || ''}) kiểm kê thủ công bắt buộc phải có ít nhất 1 ảnh hiện trạng. `
+    + 'Chỉ tài sản nhà, đất kiểm kê theo m² mới được miễn ảnh.'
+  );
+};
+
 /**
  * Xây dựng thuộc tính InventoryReportDetail từ asset + dữ liệu form.
  * Dùng chung cho thêm lẻ và thêm hàng loạt để đảm bảo cùng quy tắc nghiệp vụ.
@@ -773,6 +793,8 @@ class InventoryService {
       );
     }
 
+    assertManualInventoryEvidence(asset, data);
+
     // Chặn kiểm kê trùng trong cùng đợt, kể cả khi tài sản đã bị điều chuyển
     // sang đơn vị khác và đơn vị mới quét lại.
     const existingDetail = await InventoryReportDetail.findOne({
@@ -883,6 +905,8 @@ class InventoryService {
       const asset = assetById.get(assetId);
       if (!asset || existingByAsset.has(assetId) || checkedElsewhere.has(assetId)) continue;
 
+      assertManualInventoryEvidence(asset, item);
+
       rowsToCreate.push({
         inventory_report_id: reportId,
         asset_id: assetId,
@@ -948,6 +972,18 @@ class InventoryService {
       throw new ValidationError('Can only update details of draft reports or rejected reports that need resubmission');
     }
     assertRoundOpenForEditing((report as any)?.inventory_round);
+
+    const effectiveScanMethod = data.scan_method || detail.scan_method;
+    const effectiveImages = data.image_urls !== undefined ? data.image_urls : detail.image_urls;
+    if (
+      ['manual_confirm', 'batch'].includes(String(effectiveScanMethod || ''))
+      && (!Array.isArray(effectiveImages) || effectiveImages.length === 0)
+    ) {
+      throw new ValidationError(
+        'Kiểm kê thủ công bắt buộc phải có ít nhất 1 ảnh hiện trạng. '
+        + 'Chỉ tài sản nhà, đất kiểm kê theo m² mới được miễn ảnh.'
+      );
+    }
 
     const updateData: any = { ...data };
     if (data.asset_condition && !data.condition) {
