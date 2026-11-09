@@ -17,7 +17,7 @@ import {
   AuditLog,
 } from '../models';
 import notificationService from './notification.service';
-import { NotFoundError, ForbiddenError, ValidationError } from '../utils/errorHandler';
+import { NotFoundError, ForbiddenError, ValidationError, ConflictError } from '../utils/errorHandler';
 import { getPaginationParams, buildPaginationResult, getOffset } from '../utils/pagination';
 
 /**
@@ -687,7 +687,15 @@ class InventoryService {
     }
 
     if (Number((asset as any).current_department_id) !== Number((report as any).department_id)) {
-      throw new ForbiddenError('Tài sản không thuộc đơn vị của báo cáo kiểm kê này.');
+      const ownerDepartmentId = (asset as any).current_department_id;
+      const ownerDepartment = ownerDepartmentId
+        ? await Department.findByPk(ownerDepartmentId, { attributes: ['id', 'name'] })
+        : null;
+      const ownerDepartmentName = (ownerDepartment as any)?.name || 'chưa xác định';
+      throw new ForbiddenError(
+        `Tài sản "${asset.name}" (mã ${asset.asset_code}) đang thuộc đơn vị "${ownerDepartmentName}", không thuộc đơn vị của báo cáo kiểm kê. ` +
+        'Vui lòng thực hiện điều chuyển tài sản trên hệ thống (nếu đơn vị hiện tại đã tiếp nhận) hoặc đưa tài sản trở về đúng đơn vị trước khi kiểm kê.'
+      );
     }
 
     // Chặn kiểm kê trùng: mỗi tài sản chỉ có 1 kết quả trong một đợt
@@ -1350,9 +1358,7 @@ class InventoryService {
     return { count, reports };
   }
 
-  async findAssetByCode(assetCodeOrQR: string, departmentId: number) {
-    let asset;
-
+  async findAssetByCode(assetCodeOrQR: string, departmentId?: number) {
     // Hỗ trợ format URL: https://domain/scan/ASSET_CODE
     const trimmed = assetCodeOrQR.trim();
     let resolvedCode = trimmed;
@@ -1364,70 +1370,76 @@ class InventoryService {
         : urlParts[urlParts.length - 1];
     }
 
+    let assetCode = resolvedCode;
     try {
       const qrData = JSON.parse(resolvedCode);
-      if (qrData.asset_code) {
-        asset = await Asset.findOne({
-          where: {
-            asset_code: qrData.asset_code,
-            current_department_id: departmentId,
-            status: { [Op.in]: ['active', 'inactive', 'damaged', 'pending_disposal', 'pending_repair'] },
-          },
-          attributes: [
-            'id',
-            'asset_code',
-            'name',
-            'category',
-            'category_code',
-            'unit',
-            'quantity',
-            'purchase_price',
-            'current_value',
-            'condition',
-            'status',
-            'location',
-            'description',
-            'qr_code',
-            'qr_code_image',
-          ],
-        });
-      }
+      if (qrData?.asset_code) assetCode = String(qrData.asset_code);
     } catch {
-      asset = await Asset.findOne({
-        where: {
-          asset_code: resolvedCode,
-          current_department_id: departmentId,
-          status: { [Op.in]: ['active', 'inactive', 'damaged', 'pending_disposal', 'pending_repair'] },
-        },
-        attributes: [
-          'id',
-          'asset_code',
-          'name',
-          'category',
-          'category_code',
-          'unit',
-          'quantity',
-          'purchase_price',
-          'current_value',
-          'condition',
-          'status',
-          'location',
-          'description',
-          'qr_code',
-          'qr_code_image',
-        ],
-      });
+      // Không phải JSON → dùng nguyên mã đã quét
     }
 
-    if (!asset) {
-      throw new NotFoundError('Không tìm thấy tài sản với mã này trong phòng ban của bạn');
+    const scannableStatuses = ['active', 'inactive', 'damaged', 'pending_disposal', 'pending_repair'];
+    const assetAttributes = [
+      'id',
+      'asset_code',
+      'name',
+      'category',
+      'category_code',
+      'unit',
+      'quantity',
+      'purchase_price',
+      'current_value',
+      'condition',
+      'status',
+      'location',
+      'description',
+      'current_department_id',
+    ];
+
+    const asset = await Asset.findOne({
+      where: {
+        asset_code: assetCode,
+        ...(departmentId ? { current_department_id: departmentId } : {}),
+        status: { [Op.in]: scannableStatuses },
+      },
+      attributes: assetAttributes,
+    });
+
+    if (asset) {
+      const assetData = asset.toJSON();
+      return {
+        ...assetData,
+        original_value: (assetData as any).purchase_price || null,
+      };
     }
 
-    const assetData = asset.toJSON();
-    return {
-      ...assetData,
-      original_value: (assetData as any).purchase_price || null,
-    };
+    // Không tìm thấy trong đơn vị đang kiểm kê → kiểm tra tài sản có tồn tại
+    // ở đơn vị/trạng thái khác để báo chính xác cho người dùng.
+    const existingAsset = await Asset.findOne({
+      where: { asset_code: assetCode },
+      attributes: ['id', 'asset_code', 'name', 'current_department_id', 'status'],
+    });
+
+    if (existingAsset) {
+      const ownerDepartmentId = (existingAsset as any).current_department_id;
+      if (departmentId && Number(ownerDepartmentId) === Number(departmentId)) {
+        throw new ValidationError(
+          `Tài sản "${existingAsset.name}" (mã ${existingAsset.asset_code}) đang ở trạng thái "${existingAsset.status}" nên không thể kiểm kê.`
+        );
+      }
+
+      const ownerDepartment = ownerDepartmentId
+        ? await Department.findByPk(ownerDepartmentId, { attributes: ['id', 'name'] })
+        : null;
+      const ownerDepartmentName = (ownerDepartment as any)?.name || 'chưa xác định';
+
+      throw new ConflictError(
+        `Tài sản "${existingAsset.name}" (mã ${existingAsset.asset_code}) đang thuộc đơn vị "${ownerDepartmentName}", không thuộc đơn vị đang kiểm kê. ` +
+        'Vui lòng thực hiện điều chuyển tài sản trên hệ thống (nếu đơn vị hiện tại đã tiếp nhận) hoặc đưa tài sản trở về đúng đơn vị trước khi kiểm kê.'
+      );
+    }
+
+    throw new NotFoundError(`Không tìm thấy tài sản với mã "${resolvedCode}" trong hệ thống`);
   }
 }
 

@@ -426,8 +426,20 @@ export const getPendingReportsCount = async (req: AuthRequest, res: Response, ne
 export const findAssetByCode = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { code } = req.params;
-    const departmentId = req.user!.department_id!;
-    
+    const user = req.user!;
+
+    // Admin/director được phép chỉ định đơn vị của báo cáo kiểm kê;
+    // người dùng thường luôn bị giới hạn ở đơn vị của mình.
+    const requestedDepartmentId = req.query.department_id
+      ? parseInt(String(req.query.department_id), 10)
+      : undefined;
+    const canOverrideDepartment = ['admin', 'director'].includes(user.role);
+    const departmentId = canOverrideDepartment
+      && requestedDepartmentId !== undefined
+      && Number.isFinite(requestedDepartmentId)
+      ? requestedDepartmentId
+      : (user.department_id ?? undefined);
+
     const asset = await InventoryService.findAssetByCode(code, departmentId);
     res.json({
       success: true,

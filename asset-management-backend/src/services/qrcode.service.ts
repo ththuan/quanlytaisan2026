@@ -6,7 +6,7 @@
 
 import QRCode from 'qrcode';
 import { Op } from 'sequelize';
-import { Asset } from '../models';
+import { Asset, Department } from '../models';
 import envConfig from '../config/env';
 import { generateQrToken } from '../utils/qrSigning';
 
@@ -242,6 +242,14 @@ class QRCodeService {
       
       const asset = await Asset.findOne({
         where: { [Op.or]: whereClause },
+        include: [
+          {
+            model: Department,
+            as: 'current_department',
+            attributes: ['id', 'name'],
+            required: false,
+          },
+        ],
       });
 
       return asset;

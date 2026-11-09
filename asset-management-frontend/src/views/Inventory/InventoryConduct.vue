@@ -2043,6 +2043,21 @@ const removeBatchImage = (categoryId: number, url: string) => {
   target.image_urls = target.image_urls.filter((u) => u !== url);
 };
 
+const showAssetDepartmentWarning = async (message: string) => {
+  try {
+    await ElMessageBox.alert(
+      message,
+      'Tài sản không thuộc đơn vị kiểm kê',
+      {
+        confirmButtonText: 'Đã hiểu',
+        type: 'warning',
+      }
+    );
+  } catch {
+    // Người dùng đóng hộp thoại — không làm gì thêm.
+  }
+};
+
 const handleScanCode = async () => {
   if (!scannedCode.value.trim()) {
     ElMessage.warning('Vui lòng nhập hoặc quét mã tài sản');
@@ -2098,9 +2113,26 @@ const handleScanCode = async () => {
       }
       // Clean up the code (remove URL encoding, query params)
       codeToLookup = decodeURIComponent(codeToLookup).split('?')[0].trim();
-      assetData = await inventoryService.findAssetByCode(codeToLookup);
+      assetData = await inventoryService.findAssetByCode(codeToLookup, report.value?.department_id);
     }
-    
+
+    // Cảnh báo khi tài sản đang thuộc đơn vị khác (di chuyển vật lý nhưng chưa điều chuyển trên hệ thống)
+    const assetDepartmentId = Number(assetData?.current_department_id);
+    const reportDepartmentId = Number(report.value?.department_id);
+    if (
+      Number.isFinite(assetDepartmentId) && assetDepartmentId > 0
+      && Number.isFinite(reportDepartmentId) && reportDepartmentId > 0
+      && assetDepartmentId !== reportDepartmentId
+    ) {
+      const ownerDepartmentName = assetData?.current_department?.name || 'đơn vị khác';
+      await showAssetDepartmentWarning(
+        `Tài sản "${assetData.name}" (mã ${assetData.asset_code}) đang thuộc đơn vị "${ownerDepartmentName}", không thuộc đơn vị đang kiểm kê.\n\n`
+        + 'Vui lòng thực hiện điều chuyển tài sản trên hệ thống (nếu đơn vị hiện tại đã tiếp nhận) hoặc đưa tài sản trở về đúng đơn vị trước khi kiểm kê.'
+      );
+      scannedCode.value = '';
+      return;
+    }
+
     // Kiểm tra xem tài sản có cần quét QR không
     if (!canScanAsset(assetData)) {
       const unit = assetData.unit || 'm2';
@@ -2115,13 +2147,15 @@ const handleScanCode = async () => {
     
     // Tìm tài sản trong danh sách assets hiện tại
     let foundAsset = assets.value.find(a => a.id === assetData.id);
-    
+    let addedToAssets = false;
+
     if (!foundAsset) {
       foundAsset = {
         ...assetData,
         inventory_detail: null,
       };
       assets.value.push(foundAsset);
+      addedToAssets = true;
     }
 
     // Check if this asset has already been scanned
@@ -2212,7 +2246,22 @@ const handleScanCode = async () => {
         }
       } catch (error: any) {
         console.error('Error auto-saving scan result:', error);
-        // Nếu lỗi, mở dialog để người dùng nhập thủ công
+        const status = error.response?.status;
+        if (status === 403 || status === 409) {
+          await showAssetDepartmentWarning(
+            error.response?.data?.message
+            || 'Tài sản không thuộc đơn vị đang kiểm kê. Vui lòng điều chuyển hoặc trả tài sản về đúng đơn vị.'
+          );
+          if (addedToAssets) {
+            const index = assets.value.findIndex(a => a.id === foundAsset.id);
+            if (index !== -1 && !assets.value[index].inventory_detail) {
+              assets.value.splice(index, 1);
+            }
+          }
+          scannedCode.value = '';
+          return;
+        }
+        // Nếu lỗi khác, mở dialog để người dùng nhập thủ công
         openCheckDialog(foundAsset, true);
       }
     } else {
@@ -2228,12 +2277,20 @@ const handleScanCode = async () => {
     }
     
   } catch (error: any) {
-    ElMessage.error({
-      message: error.response?.data?.message || 'Không tìm thấy tài sản với mã này',
-      duration: 2000,
-      showClose: true,
-      offset: 60
-    });
+    const status = error.response?.status;
+    if (status === 403 || status === 409) {
+      await showAssetDepartmentWarning(
+        error.response?.data?.message
+        || 'Tài sản không thuộc đơn vị đang kiểm kê. Vui lòng điều chuyển hoặc trả tài sản về đúng đơn vị.'
+      );
+    } else {
+      ElMessage.error({
+        message: error.response?.data?.message || 'Không tìm thấy tài sản với mã này',
+        duration: 2000,
+        showClose: true,
+        offset: 60
+      });
+    }
     scannedCode.value = '';
     if (!showCameraDialog.value) {
       await nextTick();

@@ -7,6 +7,7 @@ import depreciationCalculatorService from '../services/depreciationCalculator.se
 import exportService from '../services/export.service';
 import qrcodeService from '../services/qrcode.service';
 import assetDisposalService from '../services/assetDisposal.service';
+import Department from '../models/Department';
 import { AuthRequest } from '../middleware/auth.middleware';
 import normService from '../services/norm.service';
 import { campusLabel } from '../constants/campuses';
@@ -593,9 +594,23 @@ export const decodeQRCode = async (req: AuthRequest, res: Response, _next: NextF
     const user = req.user!;
     if (user.role !== 'admin') {
       if (!user.department_id || asset.current_department_id !== user.department_id) {
-        res.status(403).json({
+        const ownerDepartment = asset.current_department_id
+          ? await Department.findByPk(asset.current_department_id, { attributes: ['id', 'name'] })
+          : null;
+        const ownerDepartmentName = (ownerDepartment as any)?.name || 'chưa xác định';
+        res.status(409).json({
           success: false,
-          message: 'Bạn không có quyền truy cập tài sản này',
+          code: 'ASSET_WRONG_DEPARTMENT',
+          message:
+            `Tài sản "${asset.name}" (mã ${asset.asset_code}) đang thuộc đơn vị "${ownerDepartmentName}", không thuộc đơn vị đang kiểm kê. ` +
+            'Vui lòng thực hiện điều chuyển tài sản trên hệ thống (nếu đơn vị hiện tại đã tiếp nhận) hoặc đưa tài sản trở về đúng đơn vị trước khi kiểm kê.',
+          data: {
+            asset_id: asset.id,
+            asset_code: asset.asset_code,
+            asset_name: asset.name,
+            department_id: asset.current_department_id,
+            department_name: ownerDepartmentName,
+          },
         });
         return;
       }

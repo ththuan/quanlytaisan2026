@@ -218,8 +218,10 @@ class InventoryService {
     return [];
   }
 
-  async findAssetByCode(code: string): Promise<any> {
-    const payload: any = await api.get(`/inventory/assets/by-code/${encodeURIComponent(code)}`);
+  async findAssetByCode(code: string, departmentId?: number): Promise<any> {
+    const payload: any = await api.get(`/inventory/assets/by-code/${encodeURIComponent(code)}`, {
+      params: departmentId ? { department_id: departmentId } : undefined,
+    });
     return unwrapData<any>(payload);
   }
 
