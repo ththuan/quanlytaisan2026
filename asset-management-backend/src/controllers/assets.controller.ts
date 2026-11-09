@@ -13,13 +13,15 @@ import normService from '../services/norm.service';
 import { campusLabel } from '../constants/campuses';
 import { imageExtension } from '../constants/imageMime';
 
-// Helper: check if a non-admin/director user can access an asset's data
-async function checkAssetDeptAccess(assetId: number, user: { role: string; department_id?: number | null }): Promise<boolean> {
-  if (user.role === 'admin' || user.role === 'director') return true;
-  if (!user.department_id) return false;
+// Helper: dữ liệu xem chi tiết/lịch sử tài sản được phép cho mọi người dùng
+// đã đăng nhập (chỉ đọc). Việc sửa/xóa vẫn giới hạn theo vai trò và đơn vị.
+async function checkAssetDeptAccess(
+  assetId: number,
+  user: { role: string; department_id?: number | null } | undefined
+): Promise<boolean> {
+  if (!user) return false;
   const asset = await assetService.getAssetById(assetId);
-  if (!asset) return false;
-  return (asset as any).current_department_id === user.department_id;
+  return Boolean(asset);
 }
 
 export const getAllAssets = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -64,7 +66,6 @@ export const getAllAssets = async (req: AuthRequest, res: Response, next: NextFu
 
 export const getAssetById = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const user = req.user!;
     const asset = await assetService.getAssetById(parseInt(req.params.id));
 
     if (!asset) {
@@ -75,17 +76,7 @@ export const getAssetById = async (req: AuthRequest, res: Response, next: NextFu
       return;
     }
 
-    // Phân quyền: admin và giám hiệu xem toàn bộ; cán bộ/trưởng đơn vị chỉ xem phòng ban mình
-    if (user.role !== 'admin' && user.role !== 'director') {
-      if (!user.department_id || asset.current_department_id !== user.department_id) {
-        res.status(403).json({
-          success: false,
-          message: 'Bạn không có quyền truy cập tài sản này',
-        });
-        return;
-      }
-    }
-
+    // Mọi người dùng đã đăng nhập đều được xem chi tiết tài sản (chỉ đọc).
     res.status(200).json({
       success: true,
       data: asset,

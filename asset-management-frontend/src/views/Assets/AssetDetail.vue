@@ -1093,7 +1093,12 @@ const downloadQRCode = () => {
   flex: 1;
 }
 
-.header-right {
+.page-header .header-right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
   text-align: right;
 }
 
