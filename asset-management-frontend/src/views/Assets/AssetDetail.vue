@@ -692,6 +692,7 @@ import { assetService } from '@/services/asset.service';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import moment from 'moment';
 import { formatI18nOrRaw } from '@/utils/assetDisplay';
+import { saveBlob } from '@/utils/download';
 
 const route = useRoute();
 const { t, te } = useI18n();
@@ -1053,19 +1054,19 @@ const downloadQRCode = () => {
 
     const img = new Image();
     img.src = qrCodeImage.value;
-    img.onload = () => {
+    img.onload = async () => {
       ctx.drawImage(img, padding, padding, qrSize, qrSize);
       ctx.fillStyle = '#000000';
       lines.forEach((line, idx) => {
         ctx.font = idx === 0 ? 'bold 14px Arial, sans-serif' : '13px Arial, sans-serif';
         ctx.fillText(line, padding, qrSize + padding + (idx + 1) * lineHeight);
       });
-      const link = document.createElement('a');
-      link.href = canvas.toDataURL('image/png');
-      link.download = `QR_${asset?.asset_code || 'asset'}_${Date.now()}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) {
+        ElMessage.error('Không thể tải QR code');
+        return;
+      }
+      await saveBlob(blob, `QR_${asset?.asset_code || 'asset'}_${Date.now()}.png`);
       ElMessage.success('Đã tải QR code');
     };
     img.onerror = () => ElMessage.error('Không thể tải QR code');

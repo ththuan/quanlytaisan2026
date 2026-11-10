@@ -1,47 +1,51 @@
 import { ref } from 'vue';
+import { registerSW } from 'virtual:pwa-register';
 
 export interface PWAUpdateState {
   needRefresh: ReturnType<typeof ref<boolean>>;
-  updateServiceWorker: (() => Promise<void>) | undefined;
+  updateServiceWorker: ((reloadPage?: boolean) => Promise<void>) | undefined;
   offlineReady: ReturnType<typeof ref<boolean>>;
 }
 
 let pwaState: PWAUpdateState | null = null;
 
 /**
- * PWA / Service Worker ĐÃ BỊ TẮT.
- *
- * Nguyên nhân: trước đây app dùng service worker (vite-plugin-pwa) để cache
- * app shell (index.html + JS). Hệ quả là sau khi deploy, trình duyệt vẫn phục
- * vụ bản cũ từ cache SW — kể cả khi Ctrl+Shift+R. Vì đây là app nội bộ, không
- * cần offline, nên ta chủ động GỠ service worker và xóa toàn bộ cache để mọi
- * máy nhanh chóng nhận bản mới.
+ * Đăng ký service worker để PWA có thể cài như ứng dụng thật và mở được
+ * app shell khi mất mạng. Bản mới sẽ hiện thông báo cập nhật (không tự ý
+ * chạy bản cũ nếu người dùng chưa xác nhận).
  */
 export function initPWA(): PWAUpdateState {
   if (pwaState) return pwaState;
 
+  const needRefresh = ref(false);
+  const offlineReady = ref(false);
+  let updateServiceWorker: ((reloadPage?: boolean) => Promise<void>) | undefined;
+
   try {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .getRegistrations()
-        .then((regs) => regs.forEach((r) => r.unregister().catch(() => undefined)))
-        .catch(() => undefined);
-    }
-    if ('caches' in window) {
-      caches
-        .keys()
-        .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
-        .catch(() => undefined);
-    }
-  } catch {
-    // ignore
+    updateServiceWorker = registerSW({
+      immediate: true,
+      onNeedRefresh() {
+        needRefresh.value = true;
+      },
+      onOfflineReady() {
+        offlineReady.value = true;
+      },
+      onRegisteredSW(_swUrl, registration) {
+        if (!registration) return;
+        // Kiểm tra bản mới định kỳ; vẫn cần người dùng bấm Cập nhật.
+        window.setInterval(() => {
+          registration.update().catch(() => undefined);
+        }, 60 * 60 * 1000);
+      },
+      onRegisterError(error) {
+        console.warn('[PWA] Service worker registration failed:', error);
+      },
+    });
+  } catch (error) {
+    console.warn('[PWA] Service worker unavailable:', error);
   }
 
-  pwaState = {
-    needRefresh: ref(false),
-    updateServiceWorker: undefined,
-    offlineReady: ref(false),
-  };
+  pwaState = { needRefresh, offlineReady, updateServiceWorker };
   return pwaState;
 }
 

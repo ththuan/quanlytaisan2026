@@ -1,4 +1,5 @@
 import api from './api';
+import { saveBlob } from '@/utils/download';
 
 export interface User {
   id: number;
@@ -72,14 +73,7 @@ class UserService {
     const blob = new Blob([data as unknown as BlobPart], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'mau_import_nguoi_dung.xlsx';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    await saveBlob(blob, 'mau_import_nguoi_dung.xlsx');
   }
 
   async validateUsersFile(file: File): Promise<{ success: boolean; message: string; data: UserImportResult }> {

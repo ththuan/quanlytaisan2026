@@ -4,6 +4,7 @@
  */
 
 import api from './api';
+import { saveBlob } from '@/utils/download';
 
 export interface ExportQueryParams {
   search?: string;
@@ -41,18 +42,9 @@ export const exportAssets = async (params?: ExportQueryParams): Promise<void> =>
   const blob = new Blob([data as unknown as BlobPart], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
-  const url_obj = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url_obj;
-  
-  // Generate filename with current date
+
   const date = new Date().toISOString().split('T')[0];
-  link.download = `Danh_sach_tai_san_${date}.xlsx`;
-  
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  window.URL.revokeObjectURL(url_obj);
+  await saveBlob(blob, `Danh_sach_tai_san_${date}.xlsx`);
 };
 
 export default {

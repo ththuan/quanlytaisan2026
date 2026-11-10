@@ -53,7 +53,7 @@
     <!-- Install prompt (before PWA is installed) -->
     <transition name="pwa-slide-up">
       <div
-        v-if="showInstallPrompt && deferredPrompt"
+        v-if="showInstallPrompt && (deferredPrompt || iosInstall)"
         class="pwa-install-prompt"
       >
         <div class="pwa-install-content">
@@ -65,7 +65,10 @@
           </el-icon>
           <div class="pwa-install-text">
             <strong>Cài đặt ứng dụng</strong>
-            <span>Thêm vào màn hình chính để truy cập nhanh</span>
+            <span v-if="iosInstall">
+              Nhấn nút Chia sẻ của Safari → “Thêm vào Màn hình chính”
+            </span>
+            <span v-else>Thêm vào màn hình chính để truy cập nhanh</span>
           </div>
           <div class="pwa-install-actions">
             <el-button
@@ -79,7 +82,7 @@
               type="primary"
               @click="installApp"
             >
-              Cài đặt
+              {{ iosInstall ? 'Đã hiểu' : 'Cài đặt' }}
             </el-button>
           </div>
         </div>
@@ -98,6 +101,7 @@ const showOfflineReady = ref(false);
 const showInstallPrompt = ref(false);
 const updating = ref(false);
 const deferredPrompt = ref<any>(null);
+const iosInstall = ref(false);
 let unwatchUpdate: ReturnType<typeof setInterval> | null = null;
 
 const state = getPWAState();
@@ -119,8 +123,19 @@ onMounted(() => {
 
   window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
 
-  if (window.matchMedia('(display-mode: standalone)').matches) {
+  const standalone = window.matchMedia('(display-mode: standalone)').matches
+    || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  if (standalone) {
     showInstallPrompt.value = false;
+  } else if (isIOS) {
+    const dismissed = localStorage.getItem('pwa-install-dismissed');
+    if (!dismissed || Date.now() - parseInt(dismissed) > 1000 * 60 * 60 * 24 * 7) {
+      iosInstall.value = true;
+      showInstallPrompt.value = true;
+    }
   }
 });
 
@@ -157,6 +172,10 @@ function dismissInstall() {
 }
 
 async function installApp() {
+  if (iosInstall.value) {
+    dismissInstall();
+    return;
+  }
   if (!deferredPrompt.value) return;
   deferredPrompt.value.prompt();
   const { outcome } = await deferredPrompt.value.userChoice;

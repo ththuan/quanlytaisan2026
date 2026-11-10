@@ -538,6 +538,7 @@ import { useDepartments } from '@/composables/useDepartments';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 import { assetService } from '@/services/asset.service';
 import { useAssetConditionOptions } from '@/composables/useAssetConditions';
+import { saveBlob } from '@/utils/download';
 
 const props = defineProps<{
   visible: boolean;
@@ -1147,12 +1148,12 @@ const downloadQRCode = async () => {
       ctx.fillText(line, padding, qrSize + padding + (idx + 1) * lineHeight);
     });
 
-    const link = document.createElement('a');
-    link.href = canvas.toDataURL('image/png');
-    link.download = `QR_${formData.asset_code || 'asset'}_${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+    if (!blob) {
+      ElMessage.error('Không thể tải QR code');
+      return;
+    }
+    await saveBlob(blob, `QR_${formData.asset_code || 'asset'}_${Date.now()}.png`);
     ElMessage.success('Đã tải QR code');
   } catch (error) {
     ElMessage.error('Không thể tải QR code');

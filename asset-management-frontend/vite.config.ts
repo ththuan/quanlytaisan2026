@@ -51,11 +51,18 @@ export default defineConfig(({ mode }) => {
     plugins: [
       vue(),
       VitePWA({
-        // TẮT service worker: trước đây PWA cache app shell khiến deploy xong
-        // trình duyệt vẫn chạy bản cũ. selfDestroying sẽ gỡ SW cũ + xóa cache.
-        selfDestroying: true,
-        registerType: 'autoUpdate',
-        includeAssets: ['logo-truong.ico', 'logo-truong.jpg'],
+        // Dùng service worker để cài như app thật (Android/Chrome yêu cầu SW).
+        // registerType 'prompt' + PWAUpdatePrompt để tránh chạy bản cũ sau deploy.
+        registerType: 'prompt',
+        injectRegister: null,
+        includeAssets: [
+          'logo-truong.ico',
+          'logo-truong.jpg',
+          'icon-192.png',
+          'icon-512.png',
+          'icon-maskable-512.png',
+          'apple-touch-icon.png',
+        ],
         manifest: {
           name: 'Quản lý tài sản - CTEC',
           short_name: 'QLTS CTEC',
@@ -63,27 +70,34 @@ export default defineConfig(({ mode }) => {
           theme_color: '#409eff',
           background_color: '#f0f2f5',
           display: 'standalone',
-          orientation: 'portrait-primary',
+          orientation: 'any',
           scope: '/',
           start_url: '/',
           lang: 'vi',
           icons: [
             {
-              src: '/logo-truong.jpg',
+              src: '/icon-192.png',
               sizes: '192x192',
-              type: 'image/jpeg',
-              purpose: 'any maskable',
+              type: 'image/png',
+              purpose: 'any',
             },
             {
-              src: '/logo-truong.jpg',
+              src: '/icon-512.png',
               sizes: '512x512',
-              type: 'image/jpeg',
-              purpose: 'any maskable',
+              type: 'image/png',
+              purpose: 'any',
+            },
+            {
+              src: '/icon-maskable-512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable',
             },
           ],
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,jpg,png,svg,woff,woff2,ttf,eot}'],
+          cleanupOutdatedCaches: true,
           // SPA fallback khi offline
           navigateFallback: '/index.html',
           navigateFallbackDenylist: [/^\/api\//, /^\/scan\//, /^\/storage\//],

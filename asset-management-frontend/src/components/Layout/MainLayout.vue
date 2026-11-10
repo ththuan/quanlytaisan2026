@@ -249,6 +249,14 @@
           </div>
         </el-header>
 
+        <div
+          v-if="isOffline"
+          class="offline-banner"
+          role="status"
+        >
+          Không có kết nối mạng — một số dữ liệu có thể chưa cập nhật.
+        </div>
+
         <el-main>
           <!-- Không dùng transition out-in: mỗi lần chuyển menu phải chờ
                trang cũ leave rồi trang mới enter, gây cảm giác chậm. -->
@@ -368,6 +376,10 @@ const TABLET_BREAKPOINT = 1367;
 const isMobile = ref(false);
 const isTablet = ref(false);
 const isHidden = ref(false);
+const isOffline = ref(typeof navigator !== 'undefined' ? !navigator.onLine : false);
+
+const handleOnline = () => { isOffline.value = false; };
+const handleOffline = () => { isOffline.value = true; };
 
 // Overlay mode: sidebar là drawer trên mobile + tablet (iPad)
 const isOverlay = computed(() => isMobile.value || isTablet.value);
@@ -447,6 +459,8 @@ onMounted(() => {
   updateIsMobile();
   startMobileTableCards();
   window.addEventListener('resize', updateIsMobile);
+  window.addEventListener('online', handleOnline);
+  window.addEventListener('offline', handleOffline);
 
   const hiddenState = localStorage.getItem('sidebarHidden');
   if (hiddenState !== null && !isOverlay.value) {
@@ -472,6 +486,8 @@ watch([isHidden, isOverlay], () => nextTick(updateMenuHighlight));
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateIsMobile);
+  window.removeEventListener('online', handleOnline);
+  window.removeEventListener('offline', handleOffline);
   stopMobileTableCards();
   cancelAnimationFrame(highlightFrame);
 });
@@ -945,6 +961,16 @@ const toggleSidebar = () => {
 
 .has-mobile-tabbar .el-main {
   padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+.offline-banner {
+  padding: 6px 12px;
+  background: #fef3c7;
+  color: #92400e;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  border-bottom: 1px solid #fde68a;
 }
 
 .mobile-app-title {

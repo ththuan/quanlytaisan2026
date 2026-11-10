@@ -1,3 +1,5 @@
+import { saveBlob } from '@/utils/download';
+
 type CellValue = string | number | boolean | Date | null | undefined;
 
 export interface ExcelSheet {
@@ -22,15 +24,7 @@ async function downloadWorkbook(filename: string, sheets: ExcelSheet[]): Promise
   const blob = new Blob([buffer as BlobPart], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.rel = 'noopener';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+  await saveBlob(blob, filename);
 }
 
 /** Xuất danh sách object thành một sheet Excel (header lấy từ object đầu tiên). */

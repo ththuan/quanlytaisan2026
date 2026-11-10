@@ -4,6 +4,7 @@
  */
 
 import api from './api';
+import { saveBlob } from '@/utils/download';
 
 export interface ImportResult {
   success?: boolean;
@@ -37,14 +38,7 @@ export const downloadTemplate = async (): Promise<void> => {
   const blob = new Blob([data as unknown as BlobPart], { 
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
   });
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'mau_import_tai_san.xlsx';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  window.URL.revokeObjectURL(url);
+  await saveBlob(blob, 'mau_import_tai_san.xlsx');
 };
 
 /**
