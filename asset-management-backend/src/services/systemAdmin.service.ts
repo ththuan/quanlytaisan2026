@@ -378,23 +378,34 @@ class SystemAdminService {
         'assets',
       ];
 
-      // Một transaction: gỡ FK users → departments, rồi truncate mọi bảng nghiệp vụ + departments (PostgreSQL tự sắp thứ tự FK)
+      // Không dùng TRUNCATE ... departments CASCADE vì PostgreSQL sẽ truncate
+      // luôn bảng users (users có FK department_id) → mất toàn bộ tài khoản admin.
       await sequelize.transaction(async (t) => {
+        // Gỡ tham chiếu đơn vị khỏi users và cây đơn vị trước khi xóa departments.
         await sequelize.query('UPDATE users SET department_id = NULL', { transaction: t });
+        await sequelize.query('UPDATE departments SET parent_department_id = NULL', { transaction: t });
+
+        // Chỉ truncate các bảng nghiệp vụ; CASCADE xử lý các bảng phụ thuộc.
         await sequelize.query(
-          `TRUNCATE TABLE ${tables.join(', ')}, departments RESTART IDENTITY CASCADE`,
+          `TRUNCATE TABLE ${tables.join(', ')} RESTART IDENTITY CASCADE`,
+          { transaction: t }
+        );
+
+        // Xóa departments bằng DELETE để không lan sang users.
+        await sequelize.query('DELETE FROM departments', { transaction: t });
+        await sequelize.query(
+          'SELECT setval(pg_get_serial_sequence(\'departments\', \'id\'), 1, false)',
           { transaction: t }
         );
       });
 
+      // Giữ nguyên users (bao gồm admin). Chỉ tạo admin mặc định nếu chưa có.
       await ensureDefaultAdminAccount();
-      logger.info(
-        `Business data reset OK; admin reset to ${SYSTEM_ADMIN_USERNAME} / fixed password`
-      );
+      logger.info('Business data reset OK; users and admin accounts were preserved.');
 
       return {
         success: true,
-        message: `Dữ liệu nghiệp vụ và phòng ban đã xóa. Tài khoản ${SYSTEM_ADMIN_USERNAME} đã đặt lại mật khẩu (theo ADMIN_PASSWORD trong .env) và tắt 2FA. Users khác và asset_categories giữ nguyên.`,
+        message: 'Dữ liệu nghiệp vụ và phòng ban đã xóa. Tài khoản người dùng (bao gồm admin) được giữ nguyên; nếu chưa có admin hệ thống sẽ được tạo mới.',
       };
     } catch (error) {
       logger.error('Reset business data failed:', error);
@@ -429,7 +440,7 @@ class SystemAdminService {
       await ensureDefaultAdminAccount();
       return {
         success: true,
-        message: `Seed data đã được thêm. Tài khoản ${SYSTEM_ADMIN_USERNAME} đã đặt lại mật khẩu (theo ADMIN_PASSWORD trong .env).`,
+        message: `Seed data đã được thêm. Tài khoản ${SYSTEM_ADMIN_USERNAME} hiện có được giữ nguyên (chỉ tạo mới nếu chưa tồn tại).`,
       };
     } catch (error) {
       logger.error('Seeding failed:', error);
