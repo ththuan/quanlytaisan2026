@@ -211,6 +211,7 @@ const DEFAULT_JOB_TITLES = [
   'Trưởng bộ môn',
   'Giảng viên',
   'Giáo viên',
+  'Chuyên viên',
   'Kế toán trưởng',
   'Kế toán',
   'Thủ quỹ',
@@ -218,21 +219,10 @@ const DEFAULT_JOB_TITLES = [
   'Nhân viên',
 ];
 
-const fetchJobTitleSuggestions = async () => {
-  const set = new Set<string>(DEFAULT_JOB_TITLES);
-  try {
-    const res: any = await api.get('/norms');
-    const norms = res?.data || res?.data?.data || [];
-    if (Array.isArray(norms)) {
-      norms.forEach((n: any) => {
-        const title = String(n?.position_group || '').trim();
-        if (title) set.add(title);
-      });
-    }
-  } catch {
-    // Nếu chưa tải được định mức thì vẫn dùng danh sách gợi ý mặc định.
-  }
-  jobTitleSuggestions.value = Array.from(set);
+const fetchJobTitleSuggestions = () => {
+  // Không lấy position_group từ định mức vì đó là tên nhóm định mức
+  // (dài, có "tương đương", "ký hợp đồng"...), không phải chức danh người dùng.
+  jobTitleSuggestions.value = [...DEFAULT_JOB_TITLES];
 };
 
 const dialogVisible = computed({
