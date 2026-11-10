@@ -274,6 +274,26 @@ html.pwa-standalone body {
 html.pwa-standalone .el-header {
   height: calc(56px + env(safe-area-inset-top, 0px)) !important;
   padding-top: env(safe-area-inset-top, 0px) !important;
+  background-color: #ffffff !important;
+}
+
+#pwa-statusbar-cap {
+  display: none;
+}
+
+html.pwa-standalone #pwa-statusbar-cap {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: max(env(safe-area-inset-top, 0px), 12px);
+  background-color: #ffffff;
+  -webkit-background-clip: text;
+  background-clip: text;
+  z-index: 2147483647;
+  pointer-events: none;
 }
 
 

@@ -411,6 +411,7 @@ export default {
       inactive: 'Không sử dụng',
       damaged: 'Hỏng',
       lost: 'Mất',
+      missing: 'Thiếu',
       disposed: 'Đã thanh lý',
       pending_repair: 'Đang đề nghị sửa chữa',
       pending_disposal: 'Đang đề nghị thanh lý',

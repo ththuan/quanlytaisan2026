@@ -525,6 +525,52 @@
         </el-table>
       </div>
 
+      <!-- Danh sách thẻ gọn cho mobile/tablet/PWA -->
+      <div class="asset-mobile-list">
+        <div
+          v-for="asset in assetStore.assets"
+          :key="asset.id"
+          class="asset-mobile-card"
+          role="button"
+          tabindex="0"
+          @click="handleRowClick(asset)"
+          @keydown.enter="handleRowClick(asset)"
+        >
+          <div class="asset-mobile-card__head">
+            <span class="asset-mobile-card__name">{{ asset.name }}</span>
+            <el-tag
+              :type="getStatusType(asset.status)"
+              effect="dark"
+              size="small"
+              class="asset-mobile-card__status"
+            >
+              {{ getStatusText(asset.status) }}
+            </el-tag>
+          </div>
+          <div class="asset-mobile-card__meta">
+            <span class="asset-mobile-card__code">{{ asset.category_code || '-' }}</span>
+            <span
+              v-if="asset.current_department"
+              class="asset-mobile-card__dept"
+            >{{ asset.current_department.name }}</span>
+          </div>
+          <div class="asset-mobile-card__foot">
+            <span class="asset-mobile-card__user">
+              <el-icon><User /></el-icon>
+              {{ asset.assigned_user ? (asset.assigned_user.fullname || asset.assigned_user.username) : 'Dùng chung' }}
+            </span>
+            <span class="asset-mobile-card__price">
+              {{ formatCurrencyDisplay(asset.purchase_price) }}<template v-if="asset.purchase_price"> đ</template>
+            </span>
+          </div>
+        </div>
+        <el-empty
+          v-if="!assetStore.loading && assetStore.assets.length === 0"
+          description="Không có tài sản"
+          :image-size="80"
+        />
+      </div>
+
       <!-- Pagination -->
       <div class="pagination-section">
         <div class="pagination-info">
@@ -797,7 +843,7 @@ import { useI18n } from 'vue-i18n';
 import { useAssetStore } from '@/stores/asset.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useDepartments } from '@/composables/useDepartments';
-import { Plus, Search, Delete, Box, CircleCheck, Refresh, Upload, Download, CircleClose, QuestionFilled, DeleteFilled, Printer, Warning } from '@element-plus/icons-vue';
+import { Plus, Search, Delete, Box, CircleCheck, Refresh, Upload, Download, CircleClose, QuestionFilled, DeleteFilled, Printer, Warning, User } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import AssetFormDialog from '@/components/Assets/AssetFormDialog.vue';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
@@ -1765,6 +1811,108 @@ const handleExportQRPDF = async () => {
   font-family: inherit;
 }
 
+/* Danh sách thẻ gọn cho mobile/tablet/PWA */
+.asset-mobile-list {
+  display: none;
+}
+
+.asset-mobile-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.asset-mobile-card:active {
+  background: #f8fafc;
+}
+
+.asset-mobile-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.asset-mobile-card__name {
+  flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.asset-mobile-card__status {
+  flex-shrink: 0;
+}
+
+.asset-mobile-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.asset-mobile-card__code {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.asset-mobile-card__dept {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.asset-mobile-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #475569;
+  font-size: 12.5px;
+}
+
+.asset-mobile-card__user {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.asset-mobile-card__user .el-icon {
+  flex-shrink: 0;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.asset-mobile-card__price {
+  flex-shrink: 0;
+  color: #0f172a;
+  font-weight: 700;
+}
+
 /* Pagination Section */
 .pagination-section {
   margin-top: 20px;
@@ -1927,6 +2075,37 @@ const handleExportQRPDF = async () => {
 @media (max-width: 480px) {
   .header-right .el-button {
     flex: 1 1 100%;
+  }
+}
+</style>
+
+<style>
+@media (max-width: 1367px) {
+  html.pwa-standalone .asset-list-page .asset-mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  html.pwa-standalone .asset-list-page .responsive-table {
+    display: none;
+  }
+
+  html.pwa-standalone .asset-list-page .asset-mobile-list > .el-empty {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1367px) {
+  html.pwa-standalone .asset-list-page .asset-mobile-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) and (max-width: 1367px) {
+  html.pwa-standalone .asset-list-page .asset-mobile-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 </style>
