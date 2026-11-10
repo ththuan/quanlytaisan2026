@@ -47,93 +47,95 @@
             Tìm
           </el-button>
         </div>
-        <el-table
-          v-loading="loadingNorms"
-          :data="norms"
-          stripe
-        >
-          <el-table-column
-            prop="equipment_name"
-            label="Máy móc, thiết bị"
-            min-width="220"
-          />
-          <el-table-column
-            label="Phạm vi"
-            width="130"
+        <div class="responsive-table">
+          <el-table
+            v-loading="loadingNorms"
+            :data="norms"
+            stripe
           >
-            <template #default="{ row }">
-              {{ scopeLabel(row.scope) }}
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="position_group"
-            label="Nhóm chức danh"
-            min-width="180"
-          />
-          <el-table-column
-            prop="unit"
-            label="ĐVT"
-            width="70"
-            align="center"
-          />
-          <el-table-column
-            label="SL tối đa"
-            width="100"
-            align="center"
-          >
-            <template #default="{ row }">
-              {{ row.max_quantity ?? '-' }}
-            </template>
-          </el-table-column>
-          <el-table-column
-            label="Giá tối đa (triệu)"
-            width="140"
-            align="right"
-          >
-            <template #default="{ row }">
-              {{ row.max_price != null ? formatNumber(row.max_price) : '-' }}
-            </template>
-          </el-table-column>
-          <el-table-column
-            label="Hiệu lực"
-            width="100"
-            align="center"
-          >
-            <template #default="{ row }">
-              <el-tag
-                :type="row.is_active ? 'success' : 'info'"
-                size="small"
-              >
-                {{ row.is_active ? 'Đang áp dụng' : 'Tắt' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column
-            v-if="canEditNorms"
-            label="Thao tác"
-            width="140"
-            align="center"
-          >
-            <template #default="{ row }">
-              <el-button
-                text
-                type="primary"
-                size="small"
-                @click="openEdit(row)"
-              >
-                Sửa
-              </el-button>
-              <el-button
-                text
-                type="danger"
-                size="small"
-                @click="removeNorm(row)"
-              >
-                Xóa
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+            <el-table-column
+              prop="equipment_name"
+              label="Máy móc, thiết bị"
+              min-width="220"
+            />
+            <el-table-column
+              label="Phạm vi"
+              width="130"
+            >
+              <template #default="{ row }">
+                {{ scopeLabel(row.scope) }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="position_group"
+              label="Nhóm chức danh"
+              min-width="180"
+            />
+            <el-table-column
+              prop="unit"
+              label="ĐVT"
+              width="70"
+              align="center"
+            />
+            <el-table-column
+              label="SL tối đa"
+              width="100"
+              align="center"
+            >
+              <template #default="{ row }">
+                {{ row.max_quantity ?? '-' }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Giá tối đa (triệu)"
+              width="140"
+              align="right"
+            >
+              <template #default="{ row }">
+                {{ row.max_price != null ? formatNumber(row.max_price) : '-' }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Hiệu lực"
+              width="100"
+              align="center"
+            >
+              <template #default="{ row }">
+                <el-tag
+                  :type="row.is_active ? 'success' : 'info'"
+                  size="small"
+                >
+                  {{ row.is_active ? 'Đang áp dụng' : 'Tắt' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column
+              v-if="canEditNorms"
+              label="Thao tác"
+              width="140"
+              align="center"
+            >
+              <template #default="{ row }">
+                <el-button
+                  text
+                  type="primary"
+                  size="small"
+                  @click="openEdit(row)"
+                >
+                  Sửa
+                </el-button>
+                <el-button
+                  text
+                  type="danger"
+                  size="small"
+                  @click="removeNorm(row)"
+                >
+                  Xóa
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
       </el-tab-pane>
 
       <el-tab-pane
@@ -154,86 +156,88 @@
             Làm mới
           </el-button>
         </div>
-        <el-table
-          v-loading="loadingWarnings"
-          :data="warnings"
-          stripe
-        >
-          <el-table-column
-            label="Thời gian"
-            width="170"
+        <div class="responsive-table">
+          <el-table
+            v-loading="loadingWarnings"
+            :data="warnings"
+            stripe
           >
-            <template #default="{ row }">
-              {{ formatDateTime(row.created_at) }}
-            </template>
-          </el-table-column>
-          <el-table-column
-            label="Đơn vị"
-            min-width="180"
-          >
-            <template #default="{ row }">
-              {{ row.department?.name || '-' }}
-            </template>
-          </el-table-column>
-          <el-table-column
-            label="Tài sản"
-            min-width="220"
-          >
-            <template #default="{ row }">
-              <span v-if="row.asset_code">{{ row.asset_code }} — </span>{{ row.asset_name || '-' }}
-            </template>
-          </el-table-column>
-          <el-table-column
-            label="Loại"
-            width="110"
-            align="center"
-          >
-            <template #default="{ row }">
-              <el-tag
-                :type="row.warning_type === 'price' ? 'warning' : 'danger'"
-                size="small"
-              >
-                {{ row.warning_type === 'price' ? 'Vượt giá' : 'Vượt số lượng' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="message"
-            label="Nội dung"
-            min-width="320"
-          />
-          <el-table-column
-            label="Trạng thái"
-            width="130"
-            align="center"
-          >
-            <template #default="{ row }">
-              <el-tag
-                :type="row.acknowledged ? 'success' : 'warning'"
-                size="small"
-              >
-                {{ row.acknowledged ? 'Đã ghi nhận' : 'Chưa xử lý' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column
-            label="Thao tác"
-            width="120"
-            align="center"
-          >
-            <template #default="{ row }">
-              <el-button
-                v-if="!row.acknowledged"
-                text
-                type="primary"
-                size="small"
-                @click="ackWarning(row)"
-              >
-                Đã ghi nhận
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+            <el-table-column
+              label="Thời gian"
+              width="170"
+            >
+              <template #default="{ row }">
+                {{ formatDateTime(row.created_at) }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Đơn vị"
+              min-width="180"
+            >
+              <template #default="{ row }">
+                {{ row.department?.name || '-' }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Tài sản"
+              min-width="220"
+            >
+              <template #default="{ row }">
+                <span v-if="row.asset_code">{{ row.asset_code }} — </span>{{ row.asset_name || '-' }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Loại"
+              width="110"
+              align="center"
+            >
+              <template #default="{ row }">
+                <el-tag
+                  :type="row.warning_type === 'price' ? 'warning' : 'danger'"
+                  size="small"
+                >
+                  {{ row.warning_type === 'price' ? 'Vượt giá' : 'Vượt số lượng' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="message"
+              label="Nội dung"
+              min-width="320"
+            />
+            <el-table-column
+              label="Trạng thái"
+              width="130"
+              align="center"
+            >
+              <template #default="{ row }">
+                <el-tag
+                  :type="row.acknowledged ? 'success' : 'warning'"
+                  size="small"
+                >
+                  {{ row.acknowledged ? 'Đã ghi nhận' : 'Chưa xử lý' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Thao tác"
+              width="120"
+              align="center"
+            >
+              <template #default="{ row }">
+                <el-button
+                  v-if="!row.acknowledged"
+                  text
+                  type="primary"
+                  size="small"
+                  @click="ackWarning(row)"
+                >
+                  Đã ghi nhận
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
       </el-tab-pane>
     </el-tabs>
 

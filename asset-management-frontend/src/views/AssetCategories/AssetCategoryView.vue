@@ -135,95 +135,97 @@
       </el-tree>
 
       <!-- Table view -->
-      <el-table
-        v-if="!treeMode"
-        v-loading="loading"
-        :data="filteredCategories"
-        stripe
-        border
-        style="margin-top: 12px;"
-      >
-        <el-table-column
-          prop="code"
-          label="Mã"
-          width="130"
-        />
-        <el-table-column
-          prop="name"
-          label="Tên danh mục"
-          min-width="220"
-        />
-        <el-table-column
-          prop="category_group"
-          label="Nhóm"
-          width="120"
-        />
-        <el-table-column
-          prop="unit"
-          label="Đơn vị"
-          width="90"
-        />
-        <el-table-column
-          label="Khấu hao"
-          width="110"
+      <div class="responsive-table">
+        <el-table
+          v-if="!treeMode"
+          v-loading="loading"
+          :data="filteredCategories"
+          stripe
+          border
+          style="margin-top: 12px;"
         >
-          <template #default="{ row }">
-            <el-tag
-              v-if="row.is_depreciable"
-              type="success"
-              size="small"
-            >
-              {{ row.depreciation_rate }}%/năm
-            </el-tag>
-            <el-tag
-              v-else
-              type="info"
-              size="small"
-            >
-              Không KH
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="Năm SD"
-          prop="useful_life_years"
-          width="80"
-        />
-        <el-table-column
-          label="Trạng thái"
-          width="110"
-        >
-          <template #default="{ row }">
-            <el-tag
-              :type="row.is_active ? 'success' : 'danger'"
-              size="small"
-            >
-              {{ row.is_active ? 'Đang dùng' : 'Không dùng' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="Thao tác"
-          width="110"
-          fixed="right"
-        >
-          <template #default="{ row }">
-            <el-button
-              size="small"
-              text
-              :icon="Edit"
-              @click="openEdit(row)"
-            />
-            <el-button
-              size="small"
-              text
-              type="danger"
-              :icon="Delete"
-              @click="handleDelete(row)"
-            />
-          </template>
-        </el-table-column>
-      </el-table>
+          <el-table-column
+            prop="code"
+            label="Mã"
+            width="130"
+          />
+          <el-table-column
+            prop="name"
+            label="Tên danh mục"
+            min-width="220"
+          />
+          <el-table-column
+            prop="category_group"
+            label="Nhóm"
+            width="120"
+          />
+          <el-table-column
+            prop="unit"
+            label="Đơn vị"
+            width="90"
+          />
+          <el-table-column
+            label="Khấu hao"
+            width="110"
+          >
+            <template #default="{ row }">
+              <el-tag
+                v-if="row.is_depreciable"
+                type="success"
+                size="small"
+              >
+                {{ row.depreciation_rate }}%/năm
+              </el-tag>
+              <el-tag
+                v-else
+                type="info"
+                size="small"
+              >
+                Không KH
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Năm SD"
+            prop="useful_life_years"
+            width="80"
+          />
+          <el-table-column
+            label="Trạng thái"
+            width="110"
+          >
+            <template #default="{ row }">
+              <el-tag
+                :type="row.is_active ? 'success' : 'danger'"
+                size="small"
+              >
+                {{ row.is_active ? 'Đang dùng' : 'Không dùng' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Thao tác"
+            width="110"
+            fixed="right"
+          >
+            <template #default="{ row }">
+              <el-button
+                size="small"
+                text
+                :icon="Edit"
+                @click="openEdit(row)"
+              />
+              <el-button
+                size="small"
+                text
+                type="danger"
+                :icon="Delete"
+                @click="handleDelete(row)"
+              />
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
     </el-card>
 
     <!-- Create / Edit Dialog -->

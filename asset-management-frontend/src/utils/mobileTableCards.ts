@@ -18,7 +18,7 @@ const clearMobileCards = () => {
 
 const cellText = (cell: HTMLElement) => (cell.textContent || '').replace(/\s+/g, ' ').trim();
 const cellHasVisual = (cell: HTMLElement) => Boolean(
-  cell.querySelector('img, svg, .el-icon, .el-tag, .el-switch, .el-avatar, .el-rate, .el-progress, .el-button, button, a')
+  cell.querySelector('img, svg, .el-icon, .el-tag, .el-switch, .el-avatar, .el-rate, .el-progress, .el-button, button, a, input, textarea, select, .el-input, .el-input-number, .el-select, .el-date-editor, .el-radio, .el-checkbox')
 );
 const isIndexLabel = (label: string) => /^(#|stt\.?|số tt|tt\.?|no\.?)$/i.test(label);
 const isActionLabel = (label: string) => /(thao tác|chi tiết|hành động|action)/i.test(label);

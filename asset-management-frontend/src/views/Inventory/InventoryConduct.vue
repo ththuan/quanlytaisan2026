@@ -710,205 +710,207 @@
         style="margin-bottom:12px;"
         description="Chỉ các tài sản KHÔNG có mã QR thuộc danh mục công cụ dụng cụ mới được kiểm kê theo nhóm. Tài sản có mã QR vẫn phải quét riêng. Bắt buộc chụp ít nhất 1 ảnh nhóm."
       />
-      <el-table
-        :data="batchGroups"
-        border
-        stripe
-      >
-        <el-table-column
-          prop="category_code"
-          label="Mã loại"
-          width="110"
-        />
-        <el-table-column
-          prop="category_name"
-          label="Tên danh mục"
-          min-width="200"
-        />
-        <el-table-column
-          prop="unit"
-          label="ĐVT"
-          width="70"
-          align="center"
-        />
-        <el-table-column
-          label="SL sổ sách"
-          prop="book_quantity"
-          width="105"
-          align="center"
-        />
-        <el-table-column
-          label="SL thực tế"
-          width="140"
-          align="center"
+      <div class="responsive-table">
+        <el-table
+          :data="batchGroups"
+          border
+          stripe
         >
-          <template #default="{ row }">
-            <el-input-number
-              v-model="batchInputs[row.category_id].actual_quantity"
-              :min="0"
-              :max="row.book_quantity + 50"
-              size="small"
-              style="width:108px;"
-              :disabled="row.confirmed"
-            />
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="Tình trạng"
-          width="158"
-        >
-          <template #default="{ row }">
-            <el-select
-              v-model="batchInputs[row.category_id].condition"
-              size="small"
-              :disabled="row.confirmed"
-            >
-              <el-option
-                value="good"
-                label="Đang dùng tốt"
-              />
-              <el-option
-                value="usable"
-                label="Còn dùng được"
-              />
-              <el-option
-                value="damaged"
-                label="Hỏng - đề nghị thanh lý"
-              />
-            </el-select>
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="Ghi chú"
-          min-width="130"
-        >
-          <template #default="{ row }">
-            <el-input
-              v-model="batchInputs[row.category_id].notes"
-              size="small"
-              :disabled="row.confirmed"
-              placeholder="Ghi chú..."
-            />
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="Xử lý thừa/thiếu"
-          width="230"
-        >
-          <template #default="{ row }">
-            <template v-if="batchInputs[row.category_id].actual_quantity !== row.book_quantity">
-              <el-input
-                v-model="batchInputs[row.category_id].discrepancy_reason"
+          <el-table-column
+            prop="category_code"
+            label="Mã loại"
+            width="110"
+          />
+          <el-table-column
+            prop="category_name"
+            label="Tên danh mục"
+            min-width="200"
+          />
+          <el-table-column
+            prop="unit"
+            label="ĐVT"
+            width="70"
+            align="center"
+          />
+          <el-table-column
+            label="SL sổ sách"
+            prop="book_quantity"
+            width="105"
+            align="center"
+          />
+          <el-table-column
+            label="SL thực tế"
+            width="140"
+            align="center"
+          >
+            <template #default="{ row }">
+              <el-input-number
+                v-model="batchInputs[row.category_id].actual_quantity"
+                :min="0"
+                :max="row.book_quantity + 50"
                 size="small"
-                placeholder="Nguyên nhân (không bắt buộc)"
-                :disabled="row.confirmed"
-              />
-              <el-input
-                v-model="batchInputs[row.category_id].responsibility"
-                size="small"
-                placeholder="Trách nhiệm (không bắt buộc)"
-                style="margin-top: 4px"
+                style="width:108px;"
                 :disabled="row.confirmed"
               />
             </template>
-            <span
-              v-else
-              style="color: #909399; font-size: 12px;"
-            >Không chênh lệch</span>
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="Ảnh nhóm (bắt buộc)"
-          width="170"
-          align="center"
-        >
-          <template #default="{ row }">
-            <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center;align-items:center;">
-              <div
-                v-for="url in batchInputs[row.category_id].image_urls"
-                :key="url"
-                style="position:relative;"
+          </el-table-column>
+          <el-table-column
+            label="Tình trạng"
+            width="158"
+          >
+            <template #default="{ row }">
+              <el-select
+                v-model="batchInputs[row.category_id].condition"
+                size="small"
+                :disabled="row.confirmed"
               >
-                <el-image
-                  :src="url"
-                  fit="cover"
-                  :preview-src-list="batchInputs[row.category_id].image_urls"
-                  preview-teleported
-                  style="width:34px;height:34px;border-radius:4px;"
+                <el-option
+                  value="good"
+                  label="Đang dùng tốt"
                 />
-                <button
+                <el-option
+                  value="usable"
+                  label="Còn dùng được"
+                />
+                <el-option
+                  value="damaged"
+                  label="Hỏng - đề nghị thanh lý"
+                />
+              </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Ghi chú"
+            min-width="130"
+          >
+            <template #default="{ row }">
+              <el-input
+                v-model="batchInputs[row.category_id].notes"
+                size="small"
+                :disabled="row.confirmed"
+                placeholder="Ghi chú..."
+              />
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Xử lý thừa/thiếu"
+            width="230"
+          >
+            <template #default="{ row }">
+              <template v-if="batchInputs[row.category_id].actual_quantity !== row.book_quantity">
+                <el-input
+                  v-model="batchInputs[row.category_id].discrepancy_reason"
+                  size="small"
+                  placeholder="Nguyên nhân (không bắt buộc)"
+                  :disabled="row.confirmed"
+                />
+                <el-input
+                  v-model="batchInputs[row.category_id].responsibility"
+                  size="small"
+                  placeholder="Trách nhiệm (không bắt buộc)"
+                  style="margin-top: 4px"
+                  :disabled="row.confirmed"
+                />
+              </template>
+              <span
+                v-else
+                style="color: #909399; font-size: 12px;"
+              >Không chênh lệch</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Ảnh nhóm (bắt buộc)"
+            width="170"
+            align="center"
+          >
+            <template #default="{ row }">
+              <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center;align-items:center;">
+                <div
+                  v-for="url in batchInputs[row.category_id].image_urls"
+                  :key="url"
+                  style="position:relative;"
+                >
+                  <el-image
+                    :src="url"
+                    fit="cover"
+                    :preview-src-list="batchInputs[row.category_id].image_urls"
+                    preview-teleported
+                    style="width:34px;height:34px;border-radius:4px;"
+                  />
+                  <button
+                    v-if="!row.confirmed"
+                    type="button"
+                    class="inv-photo-remove"
+                    style="border:none;cursor:pointer;"
+                    @click="removeBatchImage(row.category_id, url)"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <label
                   v-if="!row.confirmed"
-                  type="button"
-                  class="inv-photo-remove"
-                  style="border:none;cursor:pointer;"
-                  @click="removeBatchImage(row.category_id, url)"
+                  class="inv-photo-add"
+                  style="padding:4px 8px;"
                 >
-                  ✕
-                </button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    @change="(e) => onBatchImagesSelected(row.category_id, e)"
+                  >
+                  <span style="font-size:14px;">+</span>
+                </label>
               </div>
-              <label
-                v-if="!row.confirmed"
-                class="inv-photo-add"
-                style="padding:4px 8px;"
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Kết quả"
+            width="110"
+            align="center"
+          >
+            <template #default="{ row }">
+              <el-tag
+                v-if="row.confirmed"
+                type="success"
+                size="small"
               >
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  @change="(e) => onBatchImagesSelected(row.category_id, e)"
-                >
-                <span style="font-size:14px;">+</span>
-              </label>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="Kết quả"
-          width="110"
-          align="center"
-        >
-          <template #default="{ row }">
-            <el-tag
-              v-if="row.confirmed"
-              type="success"
-              size="small"
-            >
-              Đã xác nhận
-            </el-tag>
-            <el-tag
-              v-else
-              type="info"
-              size="small"
-            >
-              Chưa kiểm
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
-          width="100"
-          align="center"
-          fixed="right"
-        >
-          <template #default="{ row }">
-            <el-button
-              v-if="!row.confirmed"
-              type="primary"
-              size="small"
-              :loading="batchSaving === row.category_id"
-              @click="confirmBatchGroup(row)"
-            >
-              Xác nhận
-            </el-button>
-            <el-button
-              v-else
-              size="small"
-              @click="resetBatchGroup(row)"
-            >
-              Sửa lại
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+                Đã xác nhận
+              </el-tag>
+              <el-tag
+                v-else
+                type="info"
+                size="small"
+              >
+                Chưa kiểm
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            width="100"
+            align="center"
+            fixed="right"
+          >
+            <template #default="{ row }">
+              <el-button
+                v-if="!row.confirmed"
+                type="primary"
+                size="small"
+                :loading="batchSaving === row.category_id"
+                @click="confirmBatchGroup(row)"
+              >
+                Xác nhận
+              </el-button>
+              <el-button
+                v-else
+                size="small"
+                @click="resetBatchGroup(row)"
+              >
+                Sửa lại
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
     </el-card>
 
     <!-- Check Asset Dialog -->

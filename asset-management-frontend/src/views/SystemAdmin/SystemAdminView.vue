@@ -505,54 +505,58 @@
         description="Chưa có file backup nào. Nhấn 'Tạo Backup' để tạo bản sao lưu đầu tiên."
         :image-size="80"
       />
-      <el-table
+      <div
         v-else
-        :data="backups"
-        stripe
+        class="responsive-table"
       >
-        <el-table-column
-          prop="name"
-          label="Tên file"
-          min-width="260"
-        />
-        <el-table-column
-          prop="size"
-          label="Kích thước"
-          width="120"
-        />
-        <el-table-column
-          prop="created"
-          label="Ngày tạo"
-          width="180"
-        />
-        <el-table-column
-          label="Thạo tác"
-          width="220"
-          fixed="right"
+        <el-table
+          :data="backups"
+          stripe
         >
-          <template #default="{ row }">
-            <el-button
-              size="small"
-              type="primary"
-              plain
-              :icon="Download"
-              :loading="downloadingFile === row.name"
-              @click="downloadBackup(row.name)"
-            >
-              Tải về
-            </el-button>
-            <el-button
-              size="small"
-              type="warning"
-              :icon="RefreshLeft"
-              :loading="restoringFile === row.name"
-              @click="confirmRestore(row.name)"
-            >
-              Khôi phục
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+          <el-table-column
+            prop="name"
+            label="Tên file"
+            min-width="260"
+          />
+          <el-table-column
+            prop="size"
+            label="Kích thước"
+            width="120"
+          />
+          <el-table-column
+            prop="created"
+            label="Ngày tạo"
+            width="180"
+          />
+          <el-table-column
+            label="Thạo tác"
+            width="220"
+            fixed="right"
+          >
+            <template #default="{ row }">
+              <el-button
+                size="small"
+                type="primary"
+                plain
+                :icon="Download"
+                :loading="downloadingFile === row.name"
+                @click="downloadBackup(row.name)"
+              >
+                Tải về
+              </el-button>
+              <el-button
+                size="small"
+                type="warning"
+                :icon="RefreshLeft"
+                :loading="restoringFile === row.name"
+                @click="confirmRestore(row.name)"
+              >
+                Khôi phục
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
     </el-card>
 
     <!-- Restore Confirmation Dialog -->

@@ -84,110 +84,112 @@
         </el-button>
       </div>
 
-      <el-table
-        v-loading="loading"
-        :data="rows"
-        stripe
-        @selection-change="handleSelectionChange"
-      >
-        <el-table-column
-          v-if="isAdmin"
-          type="selection"
-          width="46"
-        />
-        <el-table-column
-          type="index"
-          label="STT"
-          width="60"
-          align="center"
-        />
-        <el-table-column
-          prop="asset_code"
-          label="Mã tài sản"
-          width="140"
-        />
-        <el-table-column
-          prop="name"
-          label="Tên tài sản"
-          min-width="220"
-        />
-        <el-table-column
-          label="Đơn vị"
-          min-width="180"
+      <div class="responsive-table">
+        <el-table
+          v-loading="loading"
+          :data="rows"
+          stripe
+          @selection-change="handleSelectionChange"
         >
-          <template #default="{ row }">
-            {{ row.department?.name || '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="Cơ sở"
-          width="150"
-        >
-          <template #default="{ row }">
-            {{ campusLabel(row.campus) }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="Trạng thái"
-          width="110"
-          align="center"
-        >
-          <template #default="{ row }">
-            <el-tag
-              :type="row.status === 'lost' ? 'danger' : 'warning'"
-              size="small"
-            >
-              {{ row.status === 'lost' ? 'Mất' : 'Hư hỏng' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="Nguyên giá (đồng)"
-          width="160"
-          align="right"
-        >
-          <template #default="{ row }">
-            {{ formatMoney(row.purchase_price) }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="Giá trị còn lại (đồng)"
-          width="170"
-          align="right"
-        >
-          <template #default="{ row }">
-            {{ formatMoney(row.current_value) }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="discrepancy_reason"
-          label="Nguyên nhân"
-          min-width="200"
-        />
-        <el-table-column
-          prop="responsibility"
-          label="Trách nhiệm"
-          min-width="160"
-        />
-        <el-table-column
-          v-if="isAdmin"
-          label="Thao tác"
-          width="90"
-          align="center"
-          fixed="right"
-        >
-          <template #default="{ row }">
-            <el-button
-              link
-              type="primary"
-              :icon="Edit"
-              @click.stop="openEdit(row)"
-            >
-              Sửa
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+          <el-table-column
+            v-if="isAdmin"
+            type="selection"
+            width="46"
+          />
+          <el-table-column
+            type="index"
+            label="STT"
+            width="60"
+            align="center"
+          />
+          <el-table-column
+            prop="asset_code"
+            label="Mã tài sản"
+            width="140"
+          />
+          <el-table-column
+            prop="name"
+            label="Tên tài sản"
+            min-width="220"
+          />
+          <el-table-column
+            label="Đơn vị"
+            min-width="180"
+          >
+            <template #default="{ row }">
+              {{ row.department?.name || '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Cơ sở"
+            width="150"
+          >
+            <template #default="{ row }">
+              {{ campusLabel(row.campus) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Trạng thái"
+            width="110"
+            align="center"
+          >
+            <template #default="{ row }">
+              <el-tag
+                :type="row.status === 'lost' ? 'danger' : 'warning'"
+                size="small"
+              >
+                {{ row.status === 'lost' ? 'Mất' : 'Hư hỏng' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Nguyên giá (đồng)"
+            width="160"
+            align="right"
+          >
+            <template #default="{ row }">
+              {{ formatMoney(row.purchase_price) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Giá trị còn lại (đồng)"
+            width="170"
+            align="right"
+          >
+            <template #default="{ row }">
+              {{ formatMoney(row.current_value) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="discrepancy_reason"
+            label="Nguyên nhân"
+            min-width="200"
+          />
+          <el-table-column
+            prop="responsibility"
+            label="Trách nhiệm"
+            min-width="160"
+          />
+          <el-table-column
+            v-if="isAdmin"
+            label="Thao tác"
+            width="90"
+            align="center"
+            fixed="right"
+          >
+            <template #default="{ row }">
+              <el-button
+                link
+                type="primary"
+                :icon="Edit"
+                @click.stop="openEdit(row)"
+              >
+                Sửa
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
 
       <div class="totals">
         <span>Tổng số: <b>{{ rows.length }}</b> tài sản</span>
