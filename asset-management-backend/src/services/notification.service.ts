@@ -1,6 +1,7 @@
 import { Notification, User, Department } from '../models';
 import type { NotificationType } from '../models/Notification';
 import logger from '../utils/logger';
+import { sendPushToUsers } from '../config/webPush';
 
 export interface NotifyInput {
   /** Danh sách user_id nhận thông báo */
@@ -39,6 +40,14 @@ async function notify(input: NotifyInput): Promise<void> {
         is_read: false,
       }))
     );
+
+    // Push tới thiết bị đã đăng ký; lỗi push không ảnh hưởng nghiệp vụ.
+    void sendPushToUsers(ids, {
+      title: input.title,
+      body: input.message || input.title,
+      url: input.link || '/notifications',
+      tag: `notif:${input.type}`,
+    });
   } catch (error) {
     logger.error('Failed to create notifications:', error as any);
   }

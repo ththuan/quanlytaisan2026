@@ -237,6 +237,14 @@
                       🔐 Xác thực 2 bước
                     </el-dropdown-item>
                     <el-dropdown-item
+                      v-if="canUsePush"
+                      :disabled="pushBusy"
+                      divided
+                      @click="togglePushNotifications"
+                    >
+                      {{ pushEnabled ? '🔕 Tắt thông báo đẩy' : '🔔 Bật thông báo đẩy' }}
+                    </el-dropdown-item>
+                    <el-dropdown-item
                       divided
                       @click="handleLogout"
                     >
@@ -341,6 +349,8 @@ import TotpSetupDialog from '@/components/Auth/TotpSetupDialog.vue';
 import ChangePasswordDialog from '@/components/Auth/ChangePasswordDialog.vue';
 import { FEATURES } from '@/constants/features';
 import { startMobileTableCards, stopMobileTableCards } from '@/utils/mobileTableCards';
+import { ElMessage } from 'element-plus';
+import { pushSupported, subscribePush, unsubscribePush, getPushSubscription } from '@/services/push.service';
 
 
 const router = useRouter();
@@ -365,6 +375,11 @@ const getRoleName = computed(() => {
 });
 
 const handleLogout = async () => {
+  try {
+    if (pushEnabled.value) await unsubscribePush();
+  } catch {
+    // Bỏ qua lỗi push, vẫn đăng xuất bình thường
+  }
   await authStore.logout();
   router.push('/login');
 };
@@ -380,6 +395,40 @@ const isOffline = ref(typeof navigator !== 'undefined' ? !navigator.onLine : fal
 
 const handleOnline = () => { isOffline.value = false; };
 const handleOffline = () => { isOffline.value = true; };
+
+const canUsePush = pushSupported();
+const pushEnabled = ref(false);
+const pushBusy = ref(false);
+
+const refreshPushState = async () => {
+  if (!canUsePush) return;
+  try {
+    const subscription = await getPushSubscription();
+    pushEnabled.value = Boolean(subscription);
+  } catch {
+    pushEnabled.value = false;
+  }
+};
+
+const togglePushNotifications = async () => {
+  if (pushBusy.value || !canUsePush) return;
+  pushBusy.value = true;
+  try {
+    if (pushEnabled.value) {
+      await unsubscribePush();
+      pushEnabled.value = false;
+      ElMessage.success('Đã tắt thông báo đẩy');
+    } else {
+      await subscribePush();
+      pushEnabled.value = true;
+      ElMessage.success('Đã bật thông báo đẩy');
+    }
+  } catch (error: any) {
+    ElMessage.error(error?.message || 'Không thể thay đổi thông báo đẩy');
+  } finally {
+    pushBusy.value = false;
+  }
+};
 
 // Overlay mode: sidebar là drawer trên mobile + tablet (iPad)
 const isOverlay = computed(() => isMobile.value || isTablet.value);
@@ -461,6 +510,7 @@ onMounted(() => {
   window.addEventListener('resize', updateIsMobile);
   window.addEventListener('online', handleOnline);
   window.addEventListener('offline', handleOffline);
+  void refreshPushState();
 
   const hiddenState = localStorage.getItem('sidebarHidden');
   if (hiddenState !== null && !isOverlay.value) {

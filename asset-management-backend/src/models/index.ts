@@ -22,6 +22,7 @@ import Signature from './Signature';
 import EquipmentNorm from './EquipmentNorm';
 import NormWarning from './NormWarning';
 import AssetAssignment from './AssetAssignment';
+import PushSubscription from './PushSubscription';
 
 import StockItem from './StockItem';
 import StockReceipt from './StockReceipt';
@@ -577,6 +578,7 @@ export {
   EquipmentNorm,
   NormWarning,
   AssetAssignment,
+  PushSubscription,
 };
 
 export default {
@@ -609,4 +611,5 @@ export default {
   EquipmentNorm,
   NormWarning,
   AssetAssignment,
+  PushSubscription,
 };

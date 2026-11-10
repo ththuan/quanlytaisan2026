@@ -3,6 +3,7 @@ import envConfig from './config/env';
 import { testConnection } from './config/database';
 import { connectRedis } from './config/redis';
 import { initRateLimitStore } from './config/rateLimiter';
+import { initWebPush } from './config/webPush';
 import logger from './utils/logger';
 import { startScheduler } from './utils/scheduler';
 import { ensureDefaultAdminAccount } from './utils/ensureDefaultAdminAccount';
@@ -38,6 +39,7 @@ const startServer = async () => {
     await testConnection();
     await connectRedis();
     initRateLimitStore();
+    initWebPush();
     // Chỉ worker đầu tiên kiểm tra/tạo admin mặc định, tránh 4 worker ghi đè nhau.
     const instanceId = process.env.NODE_APP_INSTANCE;
     if (instanceId === undefined || instanceId === '' || instanceId === '0') {

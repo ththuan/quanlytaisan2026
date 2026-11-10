@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { Notification } from '../models';
+import { Notification, PushSubscription } from '../models';
+import { getVapidPublicKey } from '../config/webPush';
 
 type AuthenticatedRequest = Request & {
   user?: { id: number; role: string; department_id?: number; fullname?: string };
@@ -130,6 +131,74 @@ export const getPendingApprovalsCompat = async (req: AuthenticatedRequest, res: 
       limit: 50,
     });
     res.status(200).json({ success: true, data: items, total: items.length });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** GET /api/notifications/push/public-key */
+export const getPushPublicKey = async (_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const publicKey = getVapidPublicKey();
+    if (!publicKey) {
+      res.status(503).json({ success: false, message: 'Web Push chưa được cấu hình' });
+      return;
+    }
+    res.status(200).json({ success: true, data: { publicKey } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** POST /api/notifications/push/subscribe */
+export const subscribePush = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const { endpoint, keys } = req.body || {};
+    const p256dh = keys?.p256dh;
+    const auth = keys?.auth;
+
+    if (!endpoint || !p256dh || !auth) {
+      res.status(400).json({ success: false, message: 'Thiếu thông tin đăng ký push' });
+      return;
+    }
+
+    const endpointValue = String(endpoint);
+    const existing = await PushSubscription.findOne({ where: { endpoint: endpointValue } });
+    if (existing) {
+      await existing.update({
+        user_id: userId,
+        p256dh: String(p256dh),
+        auth: String(auth),
+        user_agent: req.headers['user-agent'] || null,
+      });
+    } else {
+      await PushSubscription.create({
+        user_id: userId,
+        endpoint: endpointValue,
+        p256dh: String(p256dh),
+        auth: String(auth),
+        user_agent: req.headers['user-agent'] || null,
+      });
+    }
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** POST /api/notifications/push/unsubscribe */
+export const unsubscribePush = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const endpoint = req.body?.endpoint;
+    if (!endpoint) {
+      res.status(400).json({ success: false, message: 'Thiếu endpoint' });
+      return;
+    }
+    await PushSubscription.destroy({ where: { user_id: userId, endpoint: String(endpoint) } });
+    res.status(200).json({ success: true });
   } catch (error) {
     next(error);
   }

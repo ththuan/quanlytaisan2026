@@ -13,6 +13,12 @@ router.get('/', notificationsController.getNotifications);
 router.get('/pending-approvals', notificationsController.getPendingApprovalsCompat);
 
 router.get('/unread-count', notificationsController.getUnreadCount);
+
+// Web Push (thông báo khi app đóng)
+router.get('/push/public-key', notificationsController.getPushPublicKey);
+router.post('/push/subscribe', notificationsController.subscribePush);
+router.post('/push/unsubscribe', notificationsController.unsubscribePush);
+
 router.post('/read-all', notificationsController.markAllAsRead);
 router.delete('/read', notificationsController.clearRead);
 router.post('/:id/read', notificationsController.markAsRead);

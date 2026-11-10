@@ -98,6 +98,8 @@ export default defineConfig(({ mode }) => {
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,jpg,png,svg,woff,woff2,ttf,eot}'],
           cleanupOutdatedCaches: true,
+          // Handler Web Push (push/notificationclick) nằm trong public/push-sw.js
+          importScripts: ['/push-sw.js'],
           // SPA fallback khi offline
           navigateFallback: '/index.html',
           navigateFallbackDenylist: [/^\/api\//, /^\/scan\//, /^\/storage\//],
