@@ -51,6 +51,32 @@
       </div>
     </div>
 
+    <el-alert
+      v-if="isOfflineMode || pendingOfflineCount > 0"
+      class="offline-sync-alert"
+      :type="isOfflineMode ? 'warning' : 'info'"
+      :closable="false"
+      show-icon
+      style="margin-bottom: 12px;"
+    >
+      <template #title>
+        <span v-if="isOfflineMode">Đang offline — bạn vẫn có thể quét và lưu tạm trên thiết bị</span>
+        <span v-else>Có {{ pendingOfflineCount }} thao tác kiểm kê chờ đồng bộ</span>
+      </template>
+      <div class="offline-sync-actions">
+        <span v-if="pendingOfflineCount > 0">{{ pendingOfflineCount }} thao tác đang chờ.</span>
+        <el-button
+          v-if="!isOfflineMode && pendingOfflineCount > 0"
+          size="small"
+          type="primary"
+          :loading="syncingOffline"
+          @click="syncOfflineActions()"
+        >
+          Đồng bộ ngay
+        </el-button>
+      </div>
+    </el-alert>
+
     <!-- Round Info - Enhanced -->
     <el-card
       v-if="round"
@@ -1275,6 +1301,14 @@ import { assetService } from '@/services/asset.service';
 import { assetCategoryService } from '@/services/assetCategory.service';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import SignaturePad from '@/components/Common/SignaturePad.vue';
+import { prepareImageForUpload, fileToDataUrl } from '@/utils/image';
+import {
+  cacheInventorySnapshot,
+  getInventorySnapshot,
+  enqueueDetailAction,
+  getOfflineQueueCount,
+  syncOfflineInventoryQueue,
+} from '@/utils/offlineInventory';
 
 const route = useRoute();
 const router = useRouter();
@@ -1305,6 +1339,9 @@ watch(showSignDialog, (open) => {
 
 // Data
 const loading = ref(false);
+const isOfflineMode = ref(!navigator.onLine);
+const pendingOfflineCount = ref(0);
+const syncingOffline = ref(false);
 const saving = ref(false);
 const submitting = ref(false);
 const savingCheck = ref(false);
@@ -1602,12 +1639,31 @@ const confirmBatchGroup = async (group: { category_id: number; category_name: st
       compensation_amount: input.compensation_amount || 0,
     }));
 
-    const details = await inventoryService.addDetailsBulk(report.value.id, items);
+    let details: any[] = [];
+    if (!navigator.onLine) {
+      for (const item of items) {
+        const asset = group.assets.find((candidate) => Number(candidate.id) === Number(item.asset_id));
+        if (asset) details.push(await queueDetailOffline(report.value.id, asset, item, asset.inventory_detail?.id));
+      }
+      ElMessage.info('Đã lưu nhóm offline, sẽ tự đồng bộ khi có mạng');
+    } else {
+      try {
+        details = await inventoryService.addDetailsBulk(report.value.id, items);
+      } catch (error: any) {
+        if (error?.response) throw error;
+        for (const item of items) {
+          const asset = group.assets.find((candidate) => Number(candidate.id) === Number(item.asset_id));
+          if (asset) details.push(await queueDetailOffline(report.value.id, asset, item, asset.inventory_detail?.id));
+        }
+        ElMessage.info('Mất kết nối — đã lưu nhóm offline');
+      }
+    }
     const detailByAsset = new Map(details.map((detail: any) => [Number(detail.asset_id), detail]));
     for (const asset of group.assets) {
       const detail = detailByAsset.get(Number(asset.id));
       if (detail) asset.inventory_detail = detail;
     }
+    await cacheCurrentSnapshot();
 
     const difference = totalActual - group.book_quantity;
     ElMessage.success(
@@ -1626,6 +1682,10 @@ const confirmBatchGroup = async (group: { category_id: number; category_name: st
 
 const resetBatchGroup = async (group: { category_id: number; category_name?: string; assets: any[] }) => {
   if (!report.value) return;
+  if (!navigator.onLine) {
+    ElMessage.warning('Cần kết nối mạng để xóa kết quả kiểm kê nhóm');
+    return;
+  }
   try {
     await ElMessageBox.confirm(
       `Xóa toàn bộ kết quả kiểm kê của nhóm “${group.category_name || group.category_id}” để làm lại?`,
@@ -1664,8 +1724,11 @@ const loadCategories = async () => {
       }
     }
     categoriesMap.value = map;
+    if (report.value && round.value) {
+      await cacheCurrentSnapshot();
+    }
   } catch {
-    // non-critical — batch section just won’t appear if categories fail to load
+    // non-critical - batch section just won't appear if categories fail to load
   }
 };
 // ─── End batch ────────────────────────────────────────────────────────────────
@@ -1714,8 +1777,134 @@ const goBack = () => {
   router.push('/inventory');
 };
 
+const refreshOfflineQueueCount = async () => {
+  pendingOfflineCount.value = await getOfflineQueueCount();
+};
+
+const cacheCurrentSnapshot = async () => {
+  if (!report.value || !round.value) return;
+  await cacheInventorySnapshot({
+    key: `report:${report.value.id}`,
+    reportId: report.value.id,
+    roundId: round.value.id,
+    round: round.value,
+    report: report.value,
+    assets: assets.value,
+    categories: Array.from(categoriesMap.value.values()),
+    cachedAt: Date.now(),
+  });
+};
+
+const applyOfflineSnapshot = (snapshot: any) => {
+  round.value = snapshot.round;
+  report.value = snapshot.report;
+  assets.value = snapshot.assets || [];
+  const categories = snapshot.categories || [];
+  categoriesMap.value = new Map(categories.map((cat: any) => [cat.id, cat]));
+  for (const cat of categories) {
+    if (cat.tracking_type === 'batch' && !batchInputs.value[cat.id]) {
+      batchInputs.value[cat.id] = createBatchInput();
+    }
+  }
+  isOfflineMode.value = true;
+};
+
+const queueDetailOffline = async (
+  reportId: number,
+  asset: any,
+  data: any,
+  existingDetailId?: number
+) => {
+  const isExistingServerDetail = Boolean(existingDetailId && existingDetailId > 0);
+  await enqueueDetailAction({
+    op: isExistingServerDetail ? 'update' : 'add',
+    reportId,
+    assetId: Number(asset.id),
+    detailId: existingDetailId,
+    data,
+  });
+  await refreshOfflineQueueCount();
+
+  const localDetail = {
+    id: isExistingServerDetail ? existingDetailId : -Date.now(),
+    asset_id: asset.id,
+    assigned_quantity: data.assigned_quantity ?? (Number(asset.quantity) || 1),
+    actual_quantity: Number(data.actual_quantity) || 0,
+    quantity_discrepancy: (Number(data.actual_quantity) || 0) - (Number(asset.quantity) || 1),
+    condition: data.condition,
+    original_asset_condition: data.asset_condition,
+    suggest_disposal: Boolean(data.suggest_disposal),
+    suggest_repair: Boolean(data.suggest_repair),
+    disposal_reason: data.disposal_reason,
+    notes: data.notes,
+    scan_method: data.scan_method,
+    manual_reason: data.manual_reason,
+    image_urls: Array.isArray(data.image_urls) ? data.image_urls : [],
+    discrepancy_reason: data.discrepancy_reason ?? null,
+    responsibility: data.responsibility ?? null,
+    compensation_amount: data.compensation_amount ?? null,
+    asset_condition: data.asset_condition,
+    check_status: data.check_status || 'matched',
+    actual_value: null,
+    offline_pending: true,
+  };
+  return localDetail;
+};
+
+const saveBulkWithOfflineFallback = async (
+  reportId: number,
+  items: any[],
+  assetSource: any[] = assets.value
+): Promise<any[]> => {
+  const queueAll = async () => {
+    const localDetails = [];
+    for (const item of items) {
+      const asset = assetSource.find((candidate) => Number(candidate.id) === Number(item.asset_id));
+      if (!asset) continue;
+      localDetails.push(await queueDetailOffline(reportId, asset, item, asset.inventory_detail?.id));
+    }
+    return localDetails;
+  };
+
+  if (!navigator.onLine) return queueAll();
+  try {
+    return await inventoryService.addDetailsBulk(reportId, items);
+  } catch (error: any) {
+    if (error?.response) throw error;
+    return queueAll();
+  }
+};
+
+const syncOfflineActions = async (silent = false) => {
+  if (syncingOffline.value || !navigator.onLine) return;
+  if ((await getOfflineQueueCount()) === 0) return;
+
+  syncingOffline.value = true;
+  try {
+    const result = await syncOfflineInventoryQueue();
+    await refreshOfflineQueueCount();
+    if (result.synced > 0) {
+      if (!silent) ElMessage.success(`Đã đồng bộ ${result.synced} thao tác kiểm kê`);
+      if (report.value) await fetchData();
+    } else if (result.error && !silent) {
+      ElMessage.error(result.error);
+    }
+  } finally {
+    syncingOffline.value = false;
+  }
+};
+
+const handleBrowserOnline = () => {
+  isOfflineMode.value = false;
+  void syncOfflineActions(true);
+};
+const handleBrowserOffline = () => {
+  isOfflineMode.value = true;
+};
+
 const fetchData = async () => {
   loading.value = true;
+  let preferredReportId: number | undefined;
   try {
     const roundId = route.query.round_id as string | undefined;
     const reportId = route.query.report_id as string | undefined;
@@ -1730,6 +1919,21 @@ const fetchData = async () => {
     // Validate department
     if (!authStore.user?.department_id) {
       ElMessage.error('Bạn chưa được phân công vào phòng ban nào');
+      router.push('/inventory');
+      return;
+    }
+
+    preferredReportId = reportId ? parseInt(reportId, 10) : undefined;
+
+    // Ưu tiên dữ liệu offline nếu đang mất mạng.
+    if (!navigator.onLine) {
+      const snapshot = await getInventorySnapshot(preferredReportId);
+      if (snapshot) {
+        applyOfflineSnapshot(snapshot);
+        await refreshOfflineQueueCount();
+        return;
+      }
+      ElMessage.error('Không có kết nối mạng và chưa có dữ liệu kiểm kê lưu offline.');
       router.push('/inventory');
       return;
     }
@@ -1933,6 +2137,10 @@ const fetchData = async () => {
         } else {
           assets.value = assetsData.map(asset => ({ ...asset, inventory_detail: null }));
         }
+
+        isOfflineMode.value = false;
+        await cacheCurrentSnapshot();
+        await refreshOfflineQueueCount();
       } catch (error: any) {
         console.error('Error fetching assets:', error);
         ElMessage.error(error.response?.data?.message || 'Không thể tải danh sách tài sản');
@@ -1951,6 +2159,19 @@ const fetchData = async () => {
     }
   } catch (error: any) {
     console.error('Error fetching data:', error);
+
+    // Mạng lỗi → dùng snapshot offline nếu đã từng tải dữ liệu.
+    if (!error?.response) {
+      const snapshot = await getInventorySnapshot(preferredReportId);
+      if (snapshot) {
+        applyOfflineSnapshot(snapshot);
+        await refreshOfflineQueueCount();
+        isOfflineMode.value = true;
+        ElMessage.info('Đang dùng dữ liệu kiểm kê lưu offline');
+        return;
+      }
+    }
+
     ElMessage.error(error.response?.data?.message || 'Không thể tải dữ liệu kiểm kê');
     // Redirect to inventory list on critical error
     setTimeout(() => {
@@ -2061,7 +2282,19 @@ const onCheckImagesSelected = async (e: Event) => {
   uploadingCheckImage.value = true;
   try {
     for (const f of files) {
-      const url = await inventoryService.uploadImage(f);
+      let url = '';
+      if (!navigator.onLine) {
+        const prepared = await prepareImageForUpload(f);
+        url = await fileToDataUrl(prepared);
+      } else {
+        try {
+          url = await inventoryService.uploadImage(f);
+        } catch (error: any) {
+          if (error?.response) throw error;
+          const prepared = await prepareImageForUpload(f);
+          url = await fileToDataUrl(prepared);
+        }
+      }
       if (url && !checkForm.value.image_urls.includes(url)) {
         checkForm.value.image_urls.push(url);
       }
@@ -2085,6 +2318,11 @@ const onReportImagesSelected = async (e: Event) => {
   const input = e.target as HTMLInputElement;
   const files = Array.from(input.files || []);
   if (!files.length || !report.value) {
+    input.value = '';
+    return;
+  }
+  if (!navigator.onLine) {
+    ElMessage.warning('Cần kết nối mạng để tải ảnh tổng thể lên máy chủ');
     input.value = '';
     return;
   }
@@ -2131,7 +2369,19 @@ const onBatchImagesSelected = async (categoryId: number, e: Event) => {
   }
   try {
     for (const f of files) {
-      const url = await inventoryService.uploadImage(f);
+      let url = '';
+      if (!navigator.onLine) {
+        const prepared = await prepareImageForUpload(f);
+        url = await fileToDataUrl(prepared);
+      } else {
+        try {
+          url = await inventoryService.uploadImage(f);
+        } catch (error: any) {
+          if (error?.response) throw error;
+          const prepared = await prepareImageForUpload(f);
+          url = await fileToDataUrl(prepared);
+        }
+      }
       if (url && !target.image_urls.includes(url)) target.image_urls.push(url);
     }
   } catch (e: any) {
@@ -2162,6 +2412,28 @@ const showAssetDepartmentWarning = async (message: string) => {
   }
 };
 
+const resolveOfflineScannedAsset = (value: string) => {
+  let code = value.trim();
+  try {
+    const parsed = JSON.parse(code);
+    if (parsed?.asset_code) code = String(parsed.asset_code);
+  } catch {
+    if (code.startsWith('http://') || code.startsWith('https://')) {
+      const parts = code.replace(/\/$/, '').split('/');
+      const scanIndex = parts.indexOf('scan');
+      code = scanIndex !== -1 && parts[scanIndex + 1] ? parts[scanIndex + 1] : parts[parts.length - 1];
+    }
+  }
+  try {
+    code = decodeURIComponent(code).split('?')[0].trim();
+  } catch {
+    // giữ nguyên mã
+  }
+  return assets.value.find(
+    (asset) => String(asset.asset_code || '').toLowerCase() === code.toLowerCase()
+  ) || null;
+};
+
 const handleScanCode = async () => {
   if (!scannedCode.value.trim()) {
     ElMessage.warning('Vui lòng nhập hoặc quét mã tài sản');
@@ -2172,6 +2444,15 @@ const handleScanCode = async () => {
   try {
     const scannedValue = scannedCode.value.trim();
     let assetData: any;
+
+    if (!navigator.onLine) {
+      assetData = resolveOfflineScannedAsset(scannedValue);
+      if (!assetData) {
+        ElMessage.error('Không tìm thấy tài sản trong dữ liệu kiểm kê offline');
+        scannedCode.value = '';
+        return;
+      }
+    } else {
 
     // Thử decode như QR code JSON trước
     try {
@@ -2218,6 +2499,8 @@ const handleScanCode = async () => {
       // Clean up the code (remove URL encoding, query params)
       codeToLookup = decodeURIComponent(codeToLookup).split('?')[0].trim();
       assetData = await inventoryService.findAssetByCode(codeToLookup, report.value?.department_id);
+    }
+
     }
 
     // Cảnh báo khi tài sản đang thuộc đơn vị khác (di chuyển vật lý nhưng chưa điều chuyển trên hệ thống)
@@ -2312,16 +2595,20 @@ const handleScanCode = async () => {
         };
         
         let detail;
-        if (foundAsset.inventory_detail) {
-          // Update existing
-          detail = await inventoryService.updateDetail(
-            report.value.id,
-            foundAsset.inventory_detail.id,
-            autoSaveData
-          );
+        const existingDetail = foundAsset.inventory_detail;
+        if (!navigator.onLine) {
+          detail = await queueDetailOffline(report.value.id, foundAsset, autoSaveData, existingDetail?.id);
         } else {
-          // Add new
-          detail = await inventoryService.addDetail(report.value.id, autoSaveData);
+          try {
+            if (existingDetail) {
+              detail = await inventoryService.updateDetail(report.value.id, existingDetail.id, autoSaveData);
+            } else {
+              detail = await inventoryService.addDetail(report.value.id, autoSaveData);
+            }
+          } catch (error: any) {
+            if (error?.response) throw error;
+            detail = await queueDetailOffline(report.value.id, foundAsset, autoSaveData, existingDetail?.id);
+          }
         }
         
         // Update local state
@@ -2331,10 +2618,13 @@ const handleScanCode = async () => {
         }
         
         hasChanges.value = true;
-        
+        await cacheCurrentSnapshot();
+        const offlineSaved = Boolean((detail as any).offline_pending);
+        const successText = offlineSaved ? 'Đã lưu offline' : 'Khớp sổ sách';
+
         // Hiển thị thông báo thành công trong camera dialog
         if (showCameraDialog.value) {
-          scanSuccessMessage.value = `✓ ${foundAsset.name || foundAsset.asset_code} - Khớp sổ sách`;
+          scanSuccessMessage.value = `✓ ${foundAsset.name || foundAsset.asset_code} - ${successText}`;
           // Tự động ẩn sau 1 giây
           setTimeout(() => {
             scanSuccessMessage.value = '';
@@ -2342,7 +2632,7 @@ const handleScanCode = async () => {
         } else {
           // Nếu không dùng camera thì vẫn hiển thị ElMessage như cũ
           ElMessage.success({
-            message: `✓ ${foundAsset.name || foundAsset.asset_code} - Khớp sổ sách`,
+            message: `✓ ${foundAsset.name || foundAsset.asset_code} - ${successText}`,
             duration: 2000,
             showClose: true,
             offset: 60
@@ -2493,17 +2783,24 @@ const saveCheck = async () => {
       data.notes = checkForm.value.notes;
     }
 
+    const existingDetail = selectedAsset.value.inventory_detail;
+
     let detail;
-    if (selectedAsset.value.inventory_detail) {
-      // Update existing
-      detail = await inventoryService.updateDetail(
-        report.value.id,
-        selectedAsset.value.inventory_detail.id,
-        data
-      );
+    if (!navigator.onLine) {
+      detail = await queueDetailOffline(report.value.id, selectedAsset.value, data, existingDetail?.id);
+      ElMessage.info('Đã lưu offline, sẽ tự đồng bộ khi có mạng');
     } else {
-      // Add new
-      detail = await inventoryService.addDetail(report.value.id, data);
+      try {
+        if (existingDetail) {
+          detail = await inventoryService.updateDetail(report.value.id, existingDetail.id, data);
+        } else {
+          detail = await inventoryService.addDetail(report.value.id, data);
+        }
+      } catch (error: any) {
+        if (error?.response) throw error;
+        detail = await queueDetailOffline(report.value.id, selectedAsset.value, data, existingDetail?.id);
+        ElMessage.info('Mất kết nối — đã lưu offline, sẽ đồng bộ khi có mạng');
+      }
     }
 
     // Update local state
@@ -2513,6 +2810,7 @@ const saveCheck = async () => {
     }
 
     hasChanges.value = true;
+    await cacheCurrentSnapshot();
     showCheckDialog.value = false;
     isFromScan.value = false;
     isManualConfirm.value = false;
@@ -2571,8 +2869,12 @@ const confirmMarkMissing = async () => {
     }));
 
     try {
-      const details = await inventoryService.addDetailsBulk(report.value.id, items);
+      const details = await saveBulkWithOfflineFallback(report.value.id, items, bulkMissingAssets.value);
       const detailByAsset = new Map(details.map((detail: any) => [Number(detail.asset_id), detail]));
+
+      if (details.some((detail: any) => detail.offline_pending)) {
+        ElMessage.info('Đã lưu offline, sẽ tự đồng bộ khi có mạng');
+      }
 
       for (const asset of bulkMissingAssets.value) {
         const detail = detailByAsset.get(Number(asset.id));
@@ -2592,6 +2894,7 @@ const confirmMarkMissing = async () => {
     }
 
     hasChanges.value = true;
+    await cacheCurrentSnapshot();
     bulkMissingVisible.value = false;
 
     if (errorCount === 0) {
@@ -2612,6 +2915,22 @@ const saveAsDraft = async () => {
 
 const submitReport = async () => {
   if (!report.value) return;
+
+  if (!navigator.onLine) {
+    ElMessage.warning('Cần kết nối mạng để nộp báo cáo kiểm kê');
+    return;
+  }
+
+  await refreshOfflineQueueCount();
+  if (pendingOfflineCount.value > 0) {
+    ElMessage.info('Đang đồng bộ các thao tác offline trước khi nộp...');
+    await syncOfflineActions(true);
+    await refreshOfflineQueueCount();
+    if (pendingOfflineCount.value > 0) {
+      ElMessage.warning('Vẫn còn thao tác offline chưa đồng bộ được. Vui lòng thử lại.');
+      return;
+    }
+  }
 
   // Bắt buộc có ít nhất 1 ảnh tổng thể đơn vị
   if (((report.value?.image_urls?.length) || 0) === 0) {
@@ -3225,7 +3544,17 @@ onMounted(async () => {
   }
   
   await loadCategories();
+
+  window.addEventListener('online', handleBrowserOnline);
+  window.addEventListener('offline', handleBrowserOffline);
+  isOfflineMode.value = !navigator.onLine;
+
   await fetchData();
+  await refreshOfflineQueueCount();
+
+  if (navigator.onLine && pendingOfflineCount.value > 0) {
+    void syncOfflineActions(true);
+  }
   
   // Tự động focus vào input scanner sau khi load xong
   await nextTick();
@@ -3233,6 +3562,9 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  window.removeEventListener('online', handleBrowserOnline);
+  window.removeEventListener('offline', handleBrowserOffline);
+
   // Clear all pending timeouts
   pendingTimeouts.forEach(id => clearTimeout(id));
   pendingTimeouts.clear();
@@ -4023,4 +4355,5 @@ onUnmounted(() => {
 .inv-photo-add { display: inline-flex; align-items: center; justify-content: center; padding: 8px 14px; border: 1px dashed #c0c4cc; border-radius: 8px; cursor: pointer; color: #409eff; font-size: 13px; }
 .inv-photo-add input { display: none; }
 .inv-table-pagination { display: flex; justify-content: flex-end; padding: 12px 4px 0; }
+.offline-sync-actions { display: flex; align-items: center; gap: 10px; margin-top: 6px; font-size: 12px; }
 </style>

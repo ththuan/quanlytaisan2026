@@ -3,6 +3,15 @@
  * - Giảm kích thước để tránh quá giới hạn body/multer và upload nhanh hơn trên 3G/4G.
  * - Chuyển HEIC/HEIF (ảnh mặc định của iPhone) sang JPEG để backend/browser hiển thị được.
  */
+export function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error || new Error('Cannot read image'));
+    reader.readAsDataURL(file);
+  });
+}
+
 export async function prepareImageForUpload(
   file: File,
   options: { maxDimension?: number; quality?: number } = {},

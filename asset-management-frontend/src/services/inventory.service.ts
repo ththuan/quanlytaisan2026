@@ -346,6 +346,17 @@ class InventoryService {
     return payload?.image_url || payload?.data?.image_url || '';
   }
 
+  /** Upload ảnh đang lưu dạng data URL (dùng khi đồng bộ offline). */
+  async uploadImageDataUrl(dataUrl: string): Promise<string> {
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    const extension = blob.type.includes('png') ? 'png' : 'jpg';
+    const file = new File([blob], `offline_${Date.now()}.${extension}`, {
+      type: blob.type || 'image/jpeg',
+    });
+    return this.uploadImage(file);
+  }
+
   /** Cập nhật ảnh tổng thể của báo cáo/đơn vị */
   async updateReportImages(id: number, image_urls: string[]): Promise<InventoryReport> {
     const payload: any = await api.patch(`/inventory/reports/${id}/images`, { image_urls });

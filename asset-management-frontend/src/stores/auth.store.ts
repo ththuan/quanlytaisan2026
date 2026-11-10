@@ -5,11 +5,11 @@ import type { AuthResponse } from '@/services/auth.service';
 import type { User } from '@/types/models';
 import { ElMessage } from 'element-plus';
 import { decodeJwtPayload } from '@/utils/jwt';
-import { clearAccessToken, setAccessToken } from '@/services/authToken';
+import { clearAccessToken, getAccessToken, setAccessToken } from '@/services/authToken';
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null);
-  const accessToken = ref<string | null>(null);
+  const accessToken = ref<string | null>(getAccessToken());
   const loading = ref(false);
   // Holds the temp token while waiting for the user to enter their TOTP code
   const totpPendingToken = ref<string | null>(null);
@@ -106,7 +106,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function checkAuth() {
     let token = accessToken.value;
 
-    // Access token ch? n?m trong b? nh? nên sau khi t?i l?i trang ph?i l?y token m?i
+    // Access token ch? n?m trong b? nh? nï¿½n sau khi t?i l?i trang ph?i l?y token m?i
     // b?ng refresh token trong cookie HttpOnly.
     if (!token) {
       try {
