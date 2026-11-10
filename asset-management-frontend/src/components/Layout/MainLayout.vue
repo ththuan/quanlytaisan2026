@@ -1,6 +1,9 @@
 <template>
   <!-- Một root duy nhất để <Transition name="app-view"> trong App.vue hoạt động (Vue không animate fragment) -->
-  <div class="main-layout-root">
+  <div
+    class="main-layout-root"
+    :class="{ 'has-mobile-tabbar': isOverlay }"
+  >
     <el-container class="main-layout">
       <transition name="backdrop-fade">
         <div
@@ -165,6 +168,7 @@
           <div class="header-content">
             <div class="header-left">
               <el-button
+                v-if="!isOverlay"
                 :icon="isHidden ? Expand : Fold"
                 circle
                 size="small"
@@ -188,6 +192,7 @@
                     <HomeFilled />
                   </el-icon>
                 </span>
+                <span class="mobile-app-title">Quản lý tài sản</span>
               </nav>
             </div>
             <div class="header-right">
@@ -237,13 +242,69 @@
                trang cũ leave rồi trang mới enter, gây cảm giác chậm. -->
           <router-view />
         </el-main>
-        <footer class="app-footer">
+        <footer
+          v-if="!isOverlay"
+          class="app-footer"
+        >
           <div class="footer-copyright">
             Copyright &copy; 2026 Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ.
           </div>
         </footer>
       </el-container>
     </el-container>
+
+    <!-- Bottom navigation kiểu ứng dụng cho mobile/tablet/PWA -->
+    <nav
+      v-if="isOverlay"
+      class="mobile-tabbar"
+      aria-label="Điều hướng ứng dụng"
+    >
+      <button
+        type="button"
+        class="mobile-tabbar__item"
+        :class="{ active: $route.path === '/' }"
+        @click="router.push('/')"
+      >
+        <el-icon><House /></el-icon>
+        <span>Trang chủ</span>
+      </button>
+      <button
+        type="button"
+        class="mobile-tabbar__item"
+        :class="{ active: $route.path.startsWith('/assets') }"
+        @click="router.push('/assets')"
+      >
+        <el-icon><Box /></el-icon>
+        <span>Tài sản</span>
+      </button>
+      <button
+        type="button"
+        class="mobile-tabbar__item"
+        :class="{ active: $route.path.startsWith('/inventory') }"
+        @click="router.push('/inventory')"
+      >
+        <el-icon><Notebook /></el-icon>
+        <span>Kiểm kê</span>
+      </button>
+      <button
+        type="button"
+        class="mobile-tabbar__item"
+        :class="{ active: $route.path.startsWith('/notifications') }"
+        @click="router.push('/notifications')"
+      >
+        <el-icon><Bell /></el-icon>
+        <span>Thông báo</span>
+      </button>
+      <button
+        type="button"
+        class="mobile-tabbar__item"
+        :class="{ active: !isHidden }"
+        @click="toggleSidebar"
+      >
+        <el-icon><Menu /></el-icon>
+        <span>Menu</span>
+      </button>
+    </nav>
 
     <TotpSetupDialog v-model="showTotpDialog" />
     <ChangePasswordDialog v-model="showChangePasswordDialog" />
@@ -254,7 +315,7 @@
 import { computed, nextTick, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
-import { House, HomeFilled, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, Warning } from '@element-plus/icons-vue';
+import { House, HomeFilled, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, Warning, Bell, Menu } from '@element-plus/icons-vue';
 import NotificationBell from '@/components/Notifications/NotificationBell.vue';
 import TotpSetupDialog from '@/components/Auth/TotpSetupDialog.vue';
 import ChangePasswordDialog from '@/components/Auth/ChangePasswordDialog.vue';
@@ -288,8 +349,8 @@ const handleLogout = async () => {
 };
 
 const MOBILE_BREAKPOINT = 768;
-// Tăng lên 1280 để bao gồm tất cả iPad (landscape iPad Pro 11" = 1194px, iPad Air = 1180px)
-const TABLET_BREAKPOINT = 1280;
+// Bao gồm cả iPad Pro 12.9" landscape (1366px) để giao diện dùng bottom nav như app.
+const TABLET_BREAKPOINT = 1367;
 
 const isMobile = ref(false);
 const isTablet = ref(false);
@@ -820,6 +881,70 @@ const toggleSidebar = () => {
   .el-main {
     /* Keep main scrollable without a permanent scroll-position hint */
     transform: translateZ(0);
+  }
+}
+
+/* App-like bottom navigation for mobile / tablet / PWA */
+.mobile-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 900;
+  display: flex;
+  align-items: stretch;
+  background: rgba(255, 255, 255, 0.98);
+  border-top: 1px solid #e2e8f0;
+  box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.mobile-tabbar__item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 2px 7px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-tabbar__item .el-icon {
+  font-size: 21px;
+}
+
+.mobile-tabbar__item.active {
+  color: #2563eb;
+}
+
+.has-mobile-tabbar .el-main {
+  padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+.mobile-app-title {
+  display: none;
+}
+
+@media (max-width: 1279px) {
+  .mobile-app-title {
+    display: inline-block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
   }
 }
 

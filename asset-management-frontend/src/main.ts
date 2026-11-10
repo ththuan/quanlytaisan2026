@@ -30,6 +30,12 @@ use([
   GraphChart,
 ]);
 
+// Chế độ PWA/standalone: dùng để tinh chỉnh giao diện giống ứng dụng riêng.
+const isStandalone =
+  window.matchMedia?.('(display-mode: standalone)').matches
+  || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+document.documentElement.classList.toggle('pwa-standalone', Boolean(isStandalone));
+
 const app = createApp(App);
 const pinia = createPinia();
 
