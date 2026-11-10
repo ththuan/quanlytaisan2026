@@ -128,29 +128,45 @@ async function prepareUsers(departments) {
   const hash = await bcrypt.hash(PASSWORD, 10);
   const users = [];
 
+  // Chia user vào các đơn vị CÓ tài sản, cân bằng theo vòng tròn.
+  const groups = departments.map(() => []);
   for (let i = 0; i < TOTAL_USERS; i += 1) {
-    const n = i + 1;
-    const username = `${USER_PREFIX}${String(n).padStart(4, '0')}`;
-    const department = departments[i % departments.length];
-    const role = n % 20 === 0 ? 'department_head' : 'staff';
+    groups[i % departments.length].push(i);
+  }
 
-    await pool.query(
-      `INSERT INTO users
-        (username, password_hash, fullname, role, department_id, is_active,
-         failed_login_attempts, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, true, 0, NOW(), NOW())
-       ON CONFLICT (username) DO UPDATE SET
-         password_hash = EXCLUDED.password_hash,
-         role = EXCLUDED.role,
-         department_id = EXCLUDED.department_id,
-         is_active = true,
-         failed_login_attempts = 0,
-         locked_until = NULL,
-         updated_at = NOW()`,
-      [username, hash, `Load Test ${String(n).padStart(2, '0')}`, role, department.id]
-    );
+  for (let deptIndex = 0; deptIndex < departments.length; deptIndex += 1) {
+    const department = departments[deptIndex];
+    const slots = groups[deptIndex];
+    for (let slot = 0; slot < slots.length; slot += 1) {
+      const i = slots[slot];
+      const n = i + 1;
+      const username = `${USER_PREFIX}${String(n).padStart(4, '0')}`;
+      const role = n % 20 === 0 ? 'department_head' : 'staff';
 
-    users.push({ username, departmentId: Number(department.id), index: i });
+      await pool.query(
+        `INSERT INTO users
+          (username, password_hash, fullname, role, department_id, is_active,
+           failed_login_attempts, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, true, 0, NOW(), NOW())
+         ON CONFLICT (username) DO UPDATE SET
+           password_hash = EXCLUDED.password_hash,
+           role = EXCLUDED.role,
+           department_id = EXCLUDED.department_id,
+           is_active = true,
+           failed_login_attempts = 0,
+           locked_until = NULL,
+           updated_at = NOW()`,
+        [username, hash, `Load Test ${String(n).padStart(2, '0')}`, role, department.id]
+      );
+
+      users.push({
+        username,
+        departmentId: Number(department.id),
+        deptSlot: slot,
+        deptUserCount: slots.length,
+        index: i,
+      });
+    }
   }
 
   return users;
@@ -235,11 +251,15 @@ async function loadAssets(token, roundId, reportId, departmentId) {
   return all;
 }
 
-function scanItemsForUser(assets, userIndex) {
+function scanItemsForUser(assets, user) {
   if (SCAN_PER_USER === 0) return [];
   const selected = [];
+  const slots = Math.max(1, Number(user.deptUserCount) || 1);
+  const slot = Number(user.deptSlot) || 0;
+  // Chia tài sản trong cùng đơn vị cho các user của đơn vị đó,
+  // tránh mỗi user chỉ quét được 1-2 tài sản khi đơn vị đông user.
   for (let i = 0; i < assets.length && selected.length < SCAN_PER_USER; i += 1) {
-    if (i % TOTAL_USERS === userIndex) selected.push(assets[i]);
+    if (i % slots === slot) selected.push(assets[i]);
   }
   return selected;
 }
@@ -281,7 +301,7 @@ async function runUser(user, roundId) {
   const departmentId = Number(auth.user?.department_id || user.departmentId);
   const report = await ensureReport(auth.token, roundId, departmentId);
   const assets = await loadAssets(auth.token, roundId, report.id, departmentId);
-  const selected = scanItemsForUser(assets, user.index);
+  const selected = scanItemsForUser(assets, user);
 
   let success = 0;
   let skipped = 0;
@@ -344,11 +364,17 @@ async function cleanupRound(roundId) {
 async function main() {
   const startedAt = Date.now();
   const { rows: departments } = await pool.query(
-    `SELECT id, name FROM departments WHERE parent_department_id IS NULL ORDER BY id`
+    `SELECT a.current_department_id AS id, COUNT(*)::int AS asset_count
+     FROM assets a
+     WHERE a.current_department_id IS NOT NULL
+       AND a.status IN ('active', 'inactive', 'damaged', 'pending_disposal', 'pending_repair')
+     GROUP BY a.current_department_id
+     ORDER BY COUNT(*) DESC, a.current_department_id ASC`
   );
   if (departments.length === 0) {
-    throw new Error('Chưa có phòng ban. Hãy tạo phòng ban trước khi load test.');
+    throw new Error('Chưa có đơn vị nào có tài sản. Hãy nhập tài sản trước khi load test.');
   }
+  const totalAssetsInScope = departments.reduce((sum, dept) => sum + Number(dept.asset_count), 0);
 
   const configuredRoundId = process.env.ROUND_ID ? parseInt(process.env.ROUND_ID, 10) : null;
   const roundId = configuredRoundId || await createLoadTestRound();
@@ -357,6 +383,7 @@ async function main() {
   console.log(`API: ${BASE_URL}`);
   console.log(`Đợt kiểm kê: ${roundId}${createdRound ? ' (do script tạo)' : ''}`);
   console.log(`Users: ${TOTAL_USERS} | Quét/user: ${SCAN_PER_USER} | Bulk: ${BULK_MODE ? 'có' : 'không'}`);
+  console.log(`Đơn vị có tài sản: ${departments.length} | Tổng tài sản: ${totalAssetsInScope}`);
 
   const users = await prepareUsers(departments);
   console.log(`Đã chuẩn bị ${users.length} user test (mật khẩu: ${PASSWORD}). Đang chạy đồng thời...`);
