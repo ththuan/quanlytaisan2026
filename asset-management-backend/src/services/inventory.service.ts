@@ -550,8 +550,7 @@ class InventoryService {
     const tx = await sequelize.transaction();
     let reportId: number;
     try {
-      // Khóa đợt kiểm kê để tránh 2 nhân viên cùng tạo 2 báo cáo cho một đơn vị.
-      const round = await InventoryRound.findByPk(roundId, { transaction: tx, lock: true });
+      const round = await InventoryRound.findByPk(roundId, { transaction: tx });
       if (!round) {
         throw new NotFoundError('Inventory round not found');
       }
@@ -559,6 +558,13 @@ class InventoryService {
         throw new ValidationError('Inventory round is not active');
       }
       assertRoundOpenForEditing(round);
+
+      // Chỉ khóa theo cặp (đợt, đơn vị) để 50 đơn vị tạo báo cáo song song,
+      // không khóa cả đợt làm các đơn vị khác phải chờ nhau.
+      await sequelize.query(
+        'SELECT pg_advisory_xact_lock(:roundId, :departmentId)',
+        { replacements: { roundId, departmentId }, transaction: tx }
+      );
 
       // Mỗi đơn vị chỉ có 1 báo cáo trong 1 đợt kiểm kê.
       const existing = await InventoryReport.findOne({
