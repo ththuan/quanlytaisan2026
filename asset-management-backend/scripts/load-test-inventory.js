@@ -128,10 +128,22 @@ async function prepareUsers(departments) {
   const hash = await bcrypt.hash(PASSWORD, 10);
   const users = [];
 
-  // Chia user vào các đơn vị CÓ tài sản, cân bằng theo vòng tròn.
+  // Chia user vào các đơn vị CÓ tài sản theo tỷ lệ số tài sản.
+  // Đơn vị càng nhiều tài sản càng nhận nhiều user, đảm bảo tạo đủ tải quét.
   const groups = departments.map(() => []);
+  const assigned = departments.map(() => 0);
   for (let i = 0; i < TOTAL_USERS; i += 1) {
-    groups[i % departments.length].push(i);
+    let bestIndex = 0;
+    let bestScore = -1;
+    for (let d = 0; d < departments.length; d += 1) {
+      const score = Number(departments[d].asset_count || 0) / (assigned[d] + 1);
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = d;
+      }
+    }
+    groups[bestIndex].push(i);
+    assigned[bestIndex] += 1;
   }
 
   for (let deptIndex = 0; deptIndex < departments.length; deptIndex += 1) {
