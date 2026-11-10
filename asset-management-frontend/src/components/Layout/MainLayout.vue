@@ -180,6 +180,7 @@
                 aria-label="Breadcrumb"
               >
                 <span
+                  v-if="!isOverlay"
                   class="breadcrumb-home-chip"
                   :title="$t('common.home')"
                   aria-label="Trang chủ"
@@ -192,7 +193,18 @@
                     <HomeFilled />
                   </el-icon>
                 </span>
-                <span class="mobile-app-title">Quản lý tài sản</span>
+                <button
+                  v-if="isOverlay && $route.path !== '/'"
+                  type="button"
+                  class="mobile-back-btn"
+                  aria-label="Quay lại"
+                  @click="router.back()"
+                >
+                  <el-icon><ArrowLeft /></el-icon>
+                </button>
+                <span class="mobile-app-title">
+                  {{ $route.meta.titleKey ? $t(String($route.meta.titleKey)) : 'Quản lý tài sản' }}
+                </span>
               </nav>
             </div>
             <div class="header-right">
@@ -315,11 +327,12 @@
 import { computed, nextTick, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
-import { House, HomeFilled, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, Warning, Bell, Menu } from '@element-plus/icons-vue';
+import { House, HomeFilled, Box, User, ArrowDown, ArrowLeft, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, Warning, Bell, Menu } from '@element-plus/icons-vue';
 import NotificationBell from '@/components/Notifications/NotificationBell.vue';
 import TotpSetupDialog from '@/components/Auth/TotpSetupDialog.vue';
 import ChangePasswordDialog from '@/components/Auth/ChangePasswordDialog.vue';
 import { FEATURES } from '@/constants/features';
+import { startMobileTableCards, stopMobileTableCards } from '@/utils/mobileTableCards';
 
 
 const router = useRouter();
@@ -411,6 +424,7 @@ const updateIsMobile = () => {
   const prevOverlay = isOverlay.value;
   isMobile.value = window.innerWidth < MOBILE_BREAKPOINT;
   isTablet.value = window.innerWidth >= MOBILE_BREAKPOINT && window.innerWidth < TABLET_BREAKPOINT;
+  document.documentElement.classList.toggle('app-overlay', isMobile.value || isTablet.value);
 
   // Chuyển sang overlay mode → ẩn sidebar
   if (!prevOverlay && isOverlay.value) {
@@ -431,6 +445,7 @@ const closeSidebar = () => {
 
 onMounted(() => {
   updateIsMobile();
+  startMobileTableCards();
   window.addEventListener('resize', updateIsMobile);
 
   const hiddenState = localStorage.getItem('sidebarHidden');
@@ -457,6 +472,7 @@ watch([isHidden, isOverlay], () => nextTick(updateMenuHighlight));
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateIsMobile);
+  stopMobileTableCards();
   cancelAnimationFrame(highlightFrame);
 });
 
@@ -935,14 +951,33 @@ const toggleSidebar = () => {
   display: none;
 }
 
-@media (max-width: 1279px) {
+.mobile-back-btn {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #334155;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-back-btn .el-icon {
+  font-size: 18px;
+}
+
+@media (max-width: 1367px) {
   .mobile-app-title {
     display: inline-block;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
     color: #0f172a;
   }
