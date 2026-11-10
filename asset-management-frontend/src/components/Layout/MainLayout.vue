@@ -4,6 +4,10 @@
     class="main-layout-root"
     :class="{ 'has-mobile-tabbar': isOverlay }"
   >
+    <div
+      class="pwa-statusbar-cap"
+      aria-hidden="true"
+    />
     <el-container class="main-layout">
       <transition name="backdrop-fade">
         <div
@@ -568,6 +572,23 @@ const toggleSidebar = () => {
   position: relative;
 }
 
+.pwa-statusbar-cap {
+  display: none;
+}
+
+html.pwa-standalone .pwa-statusbar-cap {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: max(env(safe-area-inset-top, 0px), 6px);
+  background: #ffffff;
+  z-index: 150;
+  pointer-events: none;
+}
+
 .main-layout {
   height: 100vh;
   height: 100dvh;
@@ -708,7 +729,7 @@ const toggleSidebar = () => {
 
 .el-header {
   height: 56px !important;
-  background-color: rgba(255, 255, 255, 0.97);
+  background-color: #ffffff;
   border-bottom: 1px solid #f1f5f9;
   display: flex;
   align-items: center;
@@ -975,7 +996,7 @@ const toggleSidebar = () => {
   z-index: 900;
   display: flex;
   align-items: stretch;
-  background: rgba(255, 255, 255, 0.98);
+  background: #ffffff;
   border-top: 1px solid #e2e8f0;
   box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08);
   padding-bottom: env(safe-area-inset-bottom, 0px);

@@ -273,7 +273,7 @@ html.pwa-standalone body {
 
 html.pwa-standalone .el-header {
   height: calc(56px + env(safe-area-inset-top, 0px)) !important;
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: env(safe-area-inset-top, 0px) !important;
 }
 
 
@@ -305,7 +305,13 @@ html.app-overlay .page-header .header-right {
 
   html.app-overlay .responsive-table.mobile-card-table .el-table {
     min-width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible;
     background: transparent;
+  }
+
+  html.app-overlay .responsive-table.mobile-card-table .el-table__inner-wrapper {
+    height: auto;
   }
 
   html.app-overlay .responsive-table.mobile-card-table .el-table__header-wrapper {
@@ -313,7 +319,13 @@ html.app-overlay .page-header .header-right {
   }
 
   html.app-overlay .responsive-table.mobile-card-table .el-table__body-wrapper,
-  html.app-overlay .responsive-table.mobile-card-table .el-table__body-wrapper .el-scrollbar__wrap {
+  html.app-overlay .responsive-table.mobile-card-table .el-table__body-wrapper .el-scrollbar,
+  html.app-overlay .responsive-table.mobile-card-table .el-table__body-wrapper .el-scrollbar__wrap,
+  html.app-overlay .responsive-table.mobile-card-table .el-table__body-wrapper .el-scrollbar__view {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
     overflow: visible !important;
   }
 
@@ -321,6 +333,7 @@ html.app-overlay .page-header .header-right {
   html.app-overlay .responsive-table.mobile-card-table .el-table__body tbody {
     display: block;
     width: 100% !important;
+    max-width: 100% !important;
   }
 
   html.app-overlay .responsive-table.mobile-card-table .el-table__row {
@@ -351,12 +364,23 @@ html.app-overlay .page-header .header-right {
 
   html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell::before {
     content: attr(data-label);
+    position: static !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    display: block;
+    width: auto !important;
+    height: auto !important;
     flex: 0 0 104px;
     padding-top: 2px;
+    overflow: visible;
+    box-shadow: none;
     color: #64748b;
     font-size: 12px;
     font-weight: 600;
     line-height: 1.4;
+    pointer-events: none;
   }
 
   html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell[data-label='']::before {
@@ -368,6 +392,12 @@ html.app-overlay .page-header .header-right {
     min-width: 0;
     padding: 0;
     word-break: break-word;
+  }
+
+  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell .cell .text-truncate {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
   }
 
   html.app-overlay .responsive-table.mobile-card-table .el-table__empty-block {
