@@ -191,15 +191,6 @@
               </nav>
             </div>
             <div class="header-right">
-              <el-button
-                :icon="MagicStick"
-                circle
-                size="small"
-                class="effects-toggle"
-                :class="{ 'effects-toggle--active': effectsLite }"
-                :title="effectsLite ? 'Bật lại hiệu ứng' : 'Giảm hiệu ứng để mượt hơn'"
-                @click="toggleEffectsMode"
-              />
               <NotificationBell />
 
               <el-dropdown class="user-dropdown">
@@ -239,18 +230,12 @@
               </el-dropdown>
             </div>
           </div>
-          <ScrollProgress />
         </el-header>
 
         <el-main>
-          <router-view v-slot="{ Component }">
-            <transition
-              name="route"
-              mode="out-in"
-            >
-              <component :is="Component" />
-            </transition>
-          </router-view>
+          <!-- Không dùng transition out-in: mỗi lần chuyển menu phải chờ
+               trang cũ leave rồi trang mới enter, gây cảm giác chậm. -->
+          <router-view />
         </el-main>
         <footer class="app-footer">
           <div class="footer-copyright">
@@ -269,10 +254,8 @@
 import { computed, nextTick, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
-import { House, HomeFilled, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, Warning, MagicStick } from '@element-plus/icons-vue';
+import { House, HomeFilled, Box, User, ArrowDown, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, Warning } from '@element-plus/icons-vue';
 import NotificationBell from '@/components/Notifications/NotificationBell.vue';
-import ScrollProgress from '@/components/animate/ScrollProgress.vue';
-import { toggleEffectsMode, useEffectsLite } from '@/utils/effects';
 import TotpSetupDialog from '@/components/Auth/TotpSetupDialog.vue';
 import ChangePasswordDialog from '@/components/Auth/ChangePasswordDialog.vue';
 import { FEATURES } from '@/constants/features';
@@ -280,7 +263,6 @@ import { FEATURES } from '@/constants/features';
 
 const router = useRouter();
 const authStore = useAuthStore();
-const effectsLite = useEffectsLite();
 const showTotpDialog = ref(false);
 const showChangePasswordDialog = ref(false);
 const isStaffOrHead = computed(() => {
@@ -665,31 +647,6 @@ const toggleSidebar = () => {
 .sidebar-toggle:hover {
   background: #e2e8f0;
   color: #0f172a;
-}
-
-.effects-toggle {
-  border: none;
-  background: #f1f5f9;
-  color: #64748b;
-  width: 32px;
-  height: 32px;
-}
-
-.effects-toggle:hover {
-  background: #e2e8f0;
-  color: #0f172a;
-}
-
-.effects-toggle--active {
-  background: #eff6ff;
-  color: #2563eb;
-}
-
-@media (max-width: 768px) {
-  .effects-toggle {
-    width: 36px;
-    height: 36px;
-  }
 }
 
 .breadcrumb :deep(.el-breadcrumb__inner) {

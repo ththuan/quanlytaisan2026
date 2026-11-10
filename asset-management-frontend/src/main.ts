@@ -4,7 +4,6 @@ import ElementPlus from 'element-plus';
 import 'element-plus/dist/index.css';
 import './styles/responsive.scss';
 import './styles/page-layout.scss';
-import './styles/motion.scss';
 import './styles/dialog-optimization.scss';
 import './styles/dialog-close-fix.scss';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
@@ -14,8 +13,6 @@ import i18n from './i18n';
 import { useAuthStore } from '@/stores/auth.store';
 import { initPWA } from '@/pwa';
 import { initUpdateCheck } from '@/update-check';
-import { installAnimateDirectives } from '@/directives/animate';
-import { initEffectsMode, watchPerformance } from '@/utils/effects';
 
 import { use } from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -32,8 +29,6 @@ use([
   PieChart,
   GraphChart,
 ]);
-
-initEffectsMode();
 
 const app = createApp(App);
 const pinia = createPinia();
@@ -53,7 +48,6 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 app.use(pinia);
 app.use(ElementPlus);
 app.use(i18n);
-installAnimateDirectives(app);
 
 // Initialize PWA (service worker registration, update prompts)
 initPWA();
@@ -80,7 +74,6 @@ const bootstrap = async () => {
 
   app.use(router);
   app.mount('#app');
-  watchPerformance();
 };
 
 bootstrap();

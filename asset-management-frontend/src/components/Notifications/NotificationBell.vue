@@ -20,15 +20,9 @@
               :icon="Bell"
               circle
               class="bell-button"
-              :class="{ 'bell-button--pulse': pulse }"
               @click="handleBellClick"
             />
           </el-badge>
-          <ParticlesBurst
-            :active="pulse"
-            :count="10"
-            :radius="30"
-          />
         </span>
       </template>
 
@@ -139,7 +133,6 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useNotificationStore, type Notification } from '@/stores/notification.store';
 import { Bell, Switch, Tools, Document, Close, List, DeleteFilled, ShoppingCart } from '@element-plus/icons-vue';
-import ParticlesBurst from '@/components/animate/ParticlesBurst.vue';
 import moment from 'moment';
 
 const router = useRouter();
@@ -150,20 +143,6 @@ let refreshInterval: number | null = null;
 let visibilityTimeout: number | null = null;
 
 const unreadCount = computed(() => notificationStore.unreadCount);
-const pulse = ref(false);
-let pulseTimer: number | null = null;
-
-watch(unreadCount, (now, previous) => {
-  if (previous === undefined || now <= previous) return;
-  if (pulseTimer) clearTimeout(pulseTimer);
-  pulse.value = false;
-  requestAnimationFrame(() => {
-    pulse.value = true;
-    pulseTimer = window.setTimeout(() => {
-      pulse.value = false;
-    }, 1100);
-  });
-});
 
 // Start/stop polling based on tab visibility to prevent unnecessary API calls and UI flashing
 function startPolling() {
@@ -221,9 +200,6 @@ onUnmounted(() => {
   stopPolling();
   if (visibilityTimeout) {
     clearTimeout(visibilityTimeout);
-  }
-  if (pulseTimer) {
-    clearTimeout(pulseTimer);
   }
   document.removeEventListener('visibilitychange', handleVisibilityChange);
 });
@@ -310,44 +286,8 @@ const formatTime = (date: string) => {
   background: #f5f7fa;
 }
 
-.bell-button--pulse {
-  animation: bell-ring 0.9s cubic-bezier(0.36, 0.07, 0.19, 0.97);
-}
-
 .bell-badge :deep(.el-badge__content) {
   border: 2px solid #fff;
-  animation: badge-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-@keyframes badge-pop {
-  0% {
-    transform: translateY(-50%) translateX(100%) scale(0.4);
-  }
-  60% {
-    transform: translateY(-50%) translateX(100%) scale(1.25);
-  }
-  100% {
-    transform: translateY(-50%) translateX(100%) scale(1);
-  }
-}
-
-@keyframes bell-ring {
-  0%,
-  100% {
-    transform: rotate(0);
-  }
-  15% {
-    transform: rotate(-14deg);
-  }
-  35% {
-    transform: rotate(12deg);
-  }
-  55% {
-    transform: rotate(-8deg);
-  }
-  75% {
-    transform: rotate(5deg);
-  }
 }
 
 .notif-enter-active {
@@ -377,11 +317,6 @@ const formatTime = (date: string) => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bell-button--pulse,
-  .bell-badge :deep(.el-badge__content) {
-    animation: none;
-  }
-
   .notif-enter-active,
   .notif-leave-active,
   .notif-move {

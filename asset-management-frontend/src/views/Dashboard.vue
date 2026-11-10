@@ -7,7 +7,7 @@
             <el-icon class="title-icon">
               <Box />
             </el-icon>
-            <GradientText text="Phần mềm Quản lý tài sản" />
+            <span class="dashboard-title-blue">Phần mềm Quản lý tài sản</span>
           </h1>
           <p class="page-subtitle">
             Tổng quan tài sản và hoạt động trong hệ thống
@@ -19,7 +19,6 @@
     <!-- Tabs wrapper -->
     <el-tabs
       v-model="activeTab"
-      v-tabs-highlight
       type="border-card"
       class="dashboard-tabs"
     >
@@ -30,7 +29,6 @@
         </template>
 
         <el-row
-          v-stagger="{ step: 55, distance: 18 }"
           :gutter="16"
           class="stats-row"
           justify="space-between"
@@ -42,8 +40,6 @@
             :md="4"
           >
             <el-card
-              v-tilt
-              v-ripple
               class="stat-card stat-clickable"
               shadow="hover"
               @click="$router.push('/assets')"
@@ -79,8 +75,6 @@
             :md="4"
           >
             <el-card
-              v-tilt
-              v-ripple
               class="stat-card stat-clickable"
               shadow="hover"
               @click="$router.push('/purchase-requests')"
@@ -116,8 +110,6 @@
             :md="4"
           >
             <el-card
-              v-tilt
-              v-ripple
               class="stat-card stat-clickable"
               shadow="hover"
               @click="$router.push('/maintenance')"
@@ -152,8 +144,6 @@
             :md="4"
           >
             <el-card
-              v-tilt
-              v-ripple
               class="stat-card stat-clickable"
               shadow="hover"
               @click="$router.push('/transfers')"
@@ -188,8 +178,6 @@
             :md="4"
           >
             <el-card
-              v-tilt
-              v-ripple
               class="stat-card stat-clickable"
               shadow="hover"
               @click="$router.push('/inventory')"
@@ -224,8 +212,6 @@
             :md="4"
           >
             <el-card
-              v-tilt
-              v-ripple
               class="stat-card stat-clickable"
               shadow="hover"
               @click="$router.push('/asset-disposals')"
@@ -260,8 +246,6 @@
             :md="4"
           >
             <el-card
-              v-tilt
-              v-ripple
               class="stat-card stat-clickable"
               shadow="hover"
               @click="handleLossDamageClick"
@@ -297,8 +281,6 @@
             :md="4"
           >
             <el-card
-              v-tilt
-              v-ripple
               class="stat-card stat-clickable"
               shadow="hover"
               @click="$router.push('/procurements')"
@@ -333,7 +315,6 @@
         >
           <el-col :span="24">
             <el-card
-              v-reveal
               class="chart-card"
               shadow="hover"
             >
@@ -395,7 +376,6 @@
             :md="24"
           >
             <el-card
-              v-reveal
               class="chart-card"
               shadow="hover"
             >
@@ -406,7 +386,6 @@
               </template>
 
               <div
-                v-stagger-rows
                 class="responsive-table"
               >
                 <el-table
@@ -491,7 +470,6 @@ import { useRouter } from 'vue-router';
 import { Box, ShoppingCart, Setting, Sort, List, Delete, Warning, Document } from '@element-plus/icons-vue';
 import VChart from 'vue-echarts';
 import AnimatedNumber from '@/components/animate/AnimatedNumber.vue';
-import GradientText from '@/components/animate/GradientText.vue';
 import * as dashboardService from '@/services/dashboard.service';
 import { inventoryService } from '@/services/inventory.service';
 import { assetService } from '@/services/asset.service';
@@ -962,14 +940,9 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
   color: #0f172a;
 }
 
-.dashboard-title {
+.dashboard-title-blue {
   display: inline-block;
-}
-
-.dashboard-title :deep(.gradient-text__label) {
-  font-size: inherit;
-  font-weight: inherit;
-  line-height: inherit;
+  color: #2563eb;
 }
 
 /* Stats Cards Section */

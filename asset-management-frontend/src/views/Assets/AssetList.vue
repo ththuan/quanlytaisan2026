@@ -383,7 +383,6 @@
 
       <!-- Table -->
       <div
-        v-stagger-rows
         class="responsive-table"
       >
         <el-table

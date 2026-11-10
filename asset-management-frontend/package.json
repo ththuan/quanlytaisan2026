@@ -23,7 +23,6 @@
     "html5-qrcode": "^2.3.8",
     "lodash-es": "^4.17.21",
     "moment": "^2.29.4",
-    "motion-v": "^2.9.0",
     "pinia": "^2.1.7",
     "vite-plugin-pwa": "^0.21.2",
     "vue": "^3.4.0",
