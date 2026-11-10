@@ -373,5 +373,34 @@ html.app-overlay .page-header .header-right {
   html.app-overlay .responsive-table.mobile-card-table .el-table__empty-block {
     min-height: 120px;
   }
+
+  html.app-overlay .responsive-table.mobile-card-table .el-table__fixed,
+  html.app-overlay .responsive-table.mobile-card-table .el-table__fixed-right {
+    display: none !important;
+  }
+
+  html.app-overlay .responsive-table.mobile-card-table .el-table__row {
+    position: relative;
+  }
+
+  /* Cột checkbox chọn dòng: đưa lên góc phải card */
+  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell[data-label='__selection'] {
+    position: absolute !important;
+    top: 8px;
+    right: 10px;
+    z-index: 2;
+    width: auto !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+
+  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell[data-label='__selection']::before {
+    display: none;
+  }
+
+  html.app-overlay .responsive-table.mobile-card-table .el-table__expanded-cell {
+    display: block;
+    width: 100% !important;
+  }
 }
 

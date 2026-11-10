@@ -26,18 +26,25 @@ const applyMobileCards = () => {
     const table = wrapper.querySelector<HTMLElement>('.el-table');
     if (!table) return;
 
-    // Bỏ qua bảng có checkbox chọn dòng, expand hoặc cột fixed để tránh phá thao tác.
-    if (table.querySelector('th .el-checkbox, .el-table__expand-icon, .el-table__fixed, .el-table__fixed-right')) {
-      wrapper.classList.remove('mobile-card-table');
-      return;
-    }
+    // Chỉ lấy header/body chính, bỏ qua bản sao của cột fixed (nếu có).
+    const headerWrapper =
+      table.querySelector<HTMLElement>(':scope > .el-table__inner-wrapper > .el-table__header-wrapper')
+      || table.querySelector<HTMLElement>(':scope > .el-table__header-wrapper');
+    const bodyWrapper =
+      table.querySelector<HTMLElement>(':scope > .el-table__inner-wrapper > .el-table__body-wrapper')
+      || table.querySelector<HTMLElement>(':scope > .el-table__body-wrapper');
+    if (!headerWrapper || !bodyWrapper) return;
 
     const headerCells = Array.from(
-      table.querySelectorAll<HTMLElement>('.el-table__header-wrapper thead th.el-table__cell')
+      headerWrapper.querySelectorAll<HTMLElement>('thead th.el-table__cell')
     );
-    const labels = headerCells.map((cell) => (cell.textContent || '').trim());
+    const labels = headerCells.map((cell) => {
+      const isSelection = cell.classList.contains('el-table-column--selection')
+        || Boolean(cell.querySelector('.el-checkbox'));
+      return isSelection ? '__selection' : (cell.textContent || '').trim();
+    });
 
-    const rows = table.querySelectorAll<HTMLElement>('.el-table__body-wrapper tbody tr.el-table__row');
+    const rows = bodyWrapper.querySelectorAll<HTMLElement>('tbody tr.el-table__row');
     rows.forEach((row) => {
       const cells = row.querySelectorAll<HTMLElement>('td.el-table__cell');
       cells.forEach((cell, index) => {
