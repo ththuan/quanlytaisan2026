@@ -1397,6 +1397,40 @@ onMounted(async () => {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
+@media (max-width: 767px) {
+  .active-round-card {
+    margin-bottom: 14px;
+  }
+
+  .active-round-card :deep(.el-card__body) {
+    padding: 14px !important;
+  }
+
+  .round-title-section {
+    gap: 10px;
+  }
+
+  .round-icon {
+    margin-top: 2px;
+    font-size: 24px;
+  }
+
+  .round-title {
+    margin-bottom: 4px;
+    font-size: 17px;
+  }
+
+  .round-meta {
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .inventory-tabs {
+    padding: 12px;
+    border-radius: 14px;
+  }
+}
+
 .filters {
   display: flex;
   flex-wrap: wrap;

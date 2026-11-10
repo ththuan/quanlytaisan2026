@@ -955,6 +955,36 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
   display: flex !important;
 }
 
+@media (max-width: 767px) {
+  .stats-row {
+    flex-wrap: nowrap;
+    gap: 10px;
+    overflow-x: auto;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    padding-bottom: 4px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .stats-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .stats-row .el-col {
+    flex: 0 0 166px !important;
+    width: 166px !important;
+    max-width: 166px !important;
+    scroll-snap-align: start;
+  }
+
+  .stats-row .stat-card {
+    height: 96px;
+    min-height: 96px;
+  }
+}
+
 .stat-card {
   width: 100%;
   height: 100%;

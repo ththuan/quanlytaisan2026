@@ -1,7 +1,10 @@
 <template>
   <div class="inventory-conduct">
     <!-- Header -->
-    <div class="page-header">
+    <div
+      v-if="!isCompact"
+      class="page-header"
+    >
       <div class="header-content">
         <div class="header-left">
           <h1 class="page-title">
@@ -77,9 +80,259 @@
       </div>
     </el-alert>
 
+    <!-- App layout cho mobile/tablet/PWA -->
+    <div
+      v-if="isCompact"
+      class="inv-mobile"
+    >
+      <div
+        v-if="round"
+        class="inv-mobile-summary"
+      >
+        <div class="inv-mobile-summary__head">
+          <div class="inv-mobile-summary__title">
+            <span class="inv-mobile-summary__name">{{ round.round_name }}</span>
+            <span class="inv-mobile-summary__meta">
+              {{ departmentName }} · {{ formatDate(round.start_date) }} - {{ formatDate(round.end_date) }}
+            </span>
+          </div>
+          <el-dropdown
+            trigger="click"
+            @command="handleMobileAction"
+          >
+            <button
+              type="button"
+              class="inv-mobile-more"
+              aria-label="Tùy chọn"
+            >
+              <el-icon><MoreFilled /></el-icon>
+            </button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item
+                  command="missing"
+                  :disabled="!hasUnscannedAssets"
+                >
+                  Đánh dấu chưa quét là Thiếu
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
+        <div class="inv-mobile-summary__progress">
+          <div class="inv-mobile-progress">
+            <div
+              class="inv-mobile-progress__fill"
+              :style="{ width: progressPercent + '%' }"
+            />
+          </div>
+          <span class="inv-mobile-summary__progress-text">{{ checkedCount }}/{{ totalAssets }} đã kiểm</span>
+        </div>
+        <div class="inv-mobile-chips">
+          <span class="inv-chip is-success">{{ matchedCount }} khớp</span>
+          <span class="inv-chip is-danger">{{ missingCount }} thiếu</span>
+          <span class="inv-chip is-warning">{{ damagedCount + needsRepairCount }} hỏng/sửa</span>
+          <span class="inv-chip is-muted">{{ unscannedCount }} chưa quét</span>
+        </div>
+      </div>
+
+      <div class="inv-mobile-scan">
+        <el-input
+          v-model="scannedCode"
+          placeholder="Quét mã QR hoặc nhập mã tài sản"
+          :prefix-icon="Search"
+          clearable
+          size="large"
+          class="inv-mobile-scan__input"
+          @keyup.enter="handleScanCode"
+          @clear="scannedCode = ''"
+        >
+          <template #append>
+            <el-button
+              :icon="Search"
+              :loading="scanning"
+              :disabled="!scannedCode"
+              @click="handleScanCode"
+            />
+          </template>
+        </el-input>
+        <button
+          type="button"
+          class="inv-mobile-scan__camera"
+          :disabled="scanning"
+          aria-label="Mở camera quét QR"
+          @click="openCameraScanner"
+        >
+          <el-icon><Camera /></el-icon>
+        </button>
+      </div>
+
+      <div class="inv-mobile-list-head">
+        <div>
+          <h3>Danh sách tài sản</h3>
+          <span>{{ filteredAssets.length }} tài sản</span>
+        </div>
+      </div>
+
+      <div class="inv-mobile-filter">
+        <el-input
+          v-model="searchText"
+          placeholder="Tìm tài sản..."
+          :prefix-icon="Search"
+          clearable
+        />
+        <el-select
+          v-model="filterStatus"
+          placeholder="Trạng thái"
+          clearable
+        >
+          <el-option
+            label="Chưa kiểm"
+            value="unchecked"
+          />
+          <el-option
+            label="Đã kiểm"
+            value="checked"
+          />
+          <el-option
+            label="Khớp"
+            value="matched"
+          />
+          <el-option
+            label="Thiếu"
+            value="missing"
+          />
+          <el-option
+            label="Hỏng"
+            value="damaged"
+          />
+          <el-option
+            label="Chờ thanh lý"
+            value="pending_disposal"
+          />
+        </el-select>
+      </div>
+
+      <div
+        v-loading="loading"
+        class="inv-mobile-list"
+      >
+        <button
+          v-for="asset in pagedAssets"
+          :key="asset.id"
+          type="button"
+          class="inv-asset"
+          @click="handleRowClick(asset)"
+        >
+          <span
+            class="inv-asset__dot"
+            :class="asset.inventory_detail?.check_status || 'unchecked'"
+          />
+          <div class="inv-asset__body">
+            <div class="inv-asset__top">
+              <span class="inv-asset__name">{{ asset.name }}</span>
+              <el-tag
+                v-if="asset.inventory_detail"
+                :type="getStatusType(asset.inventory_detail.check_status)"
+                size="small"
+                effect="dark"
+              >
+                {{ getCheckStatusLabel(asset.inventory_detail.check_status) }}
+              </el-tag>
+              <el-tag
+                v-else
+                type="info"
+                size="small"
+              >
+                Chưa kiểm
+              </el-tag>
+            </div>
+            <div class="inv-asset__meta">
+              <span class="inv-asset__code">{{ asset.asset_code || '-' }}</span>
+              <span v-if="asset.category_code">· {{ asset.category_code }}</span>
+              <span>· {{ asset.unit || 'Cái' }}</span>
+              <el-tag
+                v-if="asset.status === 'pending_disposal'"
+                type="danger"
+                size="small"
+                effect="plain"
+              >
+                Chờ thanh lý
+              </el-tag>
+            </div>
+            <div class="inv-asset__values">
+              <span>Sổ sách <b>{{ asset.quantity || 1 }}</b></span>
+              <span>Thực tế <b>{{ asset.inventory_detail?.actual_quantity ?? '—' }}</b></span>
+              <span v-if="asset.inventory_detail">
+                Lệch
+                <b :class="getDifferenceClass(asset)">{{ formatDifference(getCalculatedDifference(asset)) }}</b>
+              </span>
+              <span
+                v-if="asset.inventory_detail"
+                class="inv-asset__condition"
+              >
+                {{ getConditionLabel(asset.inventory_detail.asset_condition) }}
+              </span>
+            </div>
+          </div>
+          <el-icon class="inv-asset__chevron">
+            <ArrowRight />
+          </el-icon>
+        </button>
+        <el-empty
+          v-if="!loading && !pagedAssets.length"
+          description="Không có tài sản cần kiểm kê"
+          :image-size="70"
+        />
+        <el-button
+          v-if="filteredAssets.length > pagedAssets.length"
+          class="inv-mobile-loadmore"
+          @click="assetPage += 1"
+        >
+          Tải thêm {{ Math.min(assetPageSize, filteredAssets.length - pagedAssets.length) }} tài sản
+        </el-button>
+      </div>
+
+      <div class="inv-mobile-actions">
+        <button
+          v-if="!hasOverallPhotos"
+          type="button"
+          class="inv-mobile-actions__hint"
+          @click="scrollToOverallPhotos"
+        >
+          <el-icon><Warning /></el-icon>
+          Cần 1 ảnh tổng thể để gửi báo cáo — chạm để chụp
+        </button>
+        <div class="inv-mobile-actions__row">
+          <div class="inv-mobile-actions__meta">
+            <b>{{ checkedCount }}/{{ totalAssets }}</b>
+            <span>đã kiểm</span>
+          </div>
+          <el-button
+            class="inv-mobile-actions__save"
+            :loading="saving"
+            :disabled="!hasChanges"
+            @click="saveAsDraft"
+          >
+            <el-icon><DocumentCopy /></el-icon>
+            Lưu nháp
+          </el-button>
+          <el-button
+            class="inv-mobile-actions__submit"
+            type="success"
+            :loading="submitting"
+            :disabled="!canSubmit"
+            @click="submitReport"
+          >
+            Gửi báo cáo
+          </el-button>
+        </div>
+      </div>
+    </div>
+
     <!-- Round Info - Enhanced -->
     <el-card
-      v-if="round"
+      v-if="!isCompact && round"
       class="round-info"
     >
       <div class="round-info-header">
@@ -123,7 +376,10 @@
     </el-card>
 
     <!-- Summary Stats - Enhanced Dashboard -->
-    <div class="summary-stats">
+    <div
+      v-if="!isCompact"
+      class="summary-stats"
+    >
       <el-card class="stat-card">
         <div class="stat-value">
           {{ totalAssets }}
@@ -217,7 +473,7 @@
 
     <!-- Barcode Scanner Input -->
     <el-card
-      v-if="round"
+      v-if="!isCompact && round"
       class="scanner-card"
     >
       <div class="scanner-container">
@@ -382,7 +638,10 @@
     </el-dialog>
 
     <!-- Asset List for Inventory -->
-    <el-card class="asset-list-card">
+    <el-card
+      v-if="!isCompact"
+      class="asset-list-card"
+    >
       <template #header>
         <div class="card-header">
           <span>Danh sách tài sản cần kiểm kê</span>
@@ -617,7 +876,10 @@
     </el-card>
 
     <!-- Ảnh tổng thể đơn vị (bắt buộc trước khi nộp) -->
-    <el-card style="margin-top: 16px;">
+    <el-card
+      id="inventory-overall-photos"
+      style="margin-top: 16px;"
+    >
       <template #header>
         <span style="font-weight: 600;">
           Ảnh tổng thể đơn vị
@@ -926,6 +1188,21 @@
         v-if="selectedAsset"
         class="check-dialog-content"
       >
+        <div class="asset-info-mobile">
+          <div class="asset-info-mobile__name">
+            {{ selectedAsset.name }}
+          </div>
+          <div class="asset-info-mobile__meta">
+            <span class="inv-asset__code">{{ selectedAsset.asset_code }}</span>
+            <span v-if="selectedAsset.category_code">{{ selectedAsset.category_code }}</span>
+            <span>· {{ selectedAsset.unit || 'Cái' }} · SL sổ sách {{ selectedAsset.quantity || 1 }}</span>
+          </div>
+          <div class="asset-info-mobile__values">
+            <span>Nguyên giá <b>{{ formatCurrency(selectedAsset.original_value) }}</b></span>
+            <span>Còn lại <b>{{ formatCurrency(selectedAsset.current_value) }}</b></span>
+          </div>
+        </div>
+
         <div class="asset-info">
           <el-descriptions
             :column="2"
@@ -1296,7 +1573,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { ArrowLeft, DocumentCopy, Select, Search, InfoFilled, Camera, Calendar, Timer, OfficeBuilding, Warning, Box } from '@element-plus/icons-vue';
+import { ArrowLeft, ArrowRight, DocumentCopy, MoreFilled, Select, Search, InfoFilled, Camera, Calendar, Timer, OfficeBuilding, Warning, Box } from '@element-plus/icons-vue';
 import { useAuthStore } from '@/stores/auth.store';
 import inventoryService, { type InventoryRound, type InventoryReport } from '@/services/inventory.service';
 import { assetService } from '@/services/asset.service';
@@ -1376,6 +1653,27 @@ const batchSaving = ref<number | null>(null);
 const scannedCode = ref('');
 const scanning = ref(false);
 const scannerInputRef = ref();
+const isCompact = ref(window.matchMedia('(max-width: 1367px)').matches);
+
+const updateCompactMode = () => {
+  isCompact.value = window.matchMedia('(max-width: 1367px)').matches;
+};
+
+const focusScannerInput = () => {
+  if (isCompact.value) return;
+  nextTick(() => scannerInputRef.value?.focus());
+};
+
+const handleMobileAction = (command: string) => {
+  if (command === 'missing') void markUnscannedAsMissing();
+};
+
+const scrollToOverallPhotos = () => {
+  document.getElementById('inventory-overall-photos')?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'center',
+  });
+};
 
 // Camera Scanner
 const showCameraDialog = ref(false);
@@ -1462,8 +1760,7 @@ const canSubmit = computed(() => {
                           report.value?.status === 'rejected_by_head' || 
                           report.value?.status === 'rejected_by_admin';
   // Bắt buộc có ít nhất 1 ảnh tổng thể đơn vị
-  const hasOverallPhotos = ((report.value?.image_urls?.length) || 0) > 0;
-  return checkedCount.value > 0 && canSubmitStatus && hasOverallPhotos;
+  return checkedCount.value > 0 && canSubmitStatus && hasOverallPhotos.value;
 });
 
 // Kiểm tra có tài sản chưa quét (có thể quét QR nhưng chưa được quét)
@@ -1486,6 +1783,12 @@ const unscannedCount = computed(() => {
 });
 
 // Danh sách đơn vị tính không cần quét QR (tài sản diện tích, không đếm được)
+const progressPercent = computed(() => (
+  totalAssets.value > 0 ? Math.round((checkedCount.value / totalAssets.value) * 100) : 0
+));
+
+const hasOverallPhotos = computed(() => ((report.value?.image_urls?.length) || 0) > 0);
+
 const nonScannableUnits = ['m2', 'm²', 'ha', 'km2', 'km²', 'cm2', 'cm²'];
 
 // Kiểm tra xem tài sản có thể quét QR không
@@ -2221,7 +2524,7 @@ const handleRowClick = (row: any) => {
     }).catch((action: string) => {
       if (action === 'cancel') {
         // cancelButton: focus về ô quét QR
-        nextTick(() => { scannerInputRef.value?.focus(); });
+        nextTick(() => { focusScannerInput(); });
       }
       // close (X) → không làm gì
     });
@@ -2669,7 +2972,7 @@ const handleScanCode = async () => {
     scannedCode.value = '';
     if (!showCameraDialog.value) {
       await nextTick();
-      scannerInputRef.value?.focus();
+      focusScannerInput();
     }
     
   } catch (error: any) {
@@ -2690,7 +2993,7 @@ const handleScanCode = async () => {
     scannedCode.value = '';
     if (!showCameraDialog.value) {
       await nextTick();
-      scannerInputRef.value?.focus();
+      focusScannerInput();
     }
   } finally {
     scanning.value = false;
@@ -3509,6 +3812,8 @@ const handleOrientationChange = () => {
 };
 
 onMounted(async () => {
+  updateCompactMode();
+  window.addEventListener('resize', updateCompactMode);
   // Làm mới thông tin người dùng (phòng ban/vai trò có thể vừa được admin thay đổi)
   try { await authStore.checkAuth(); } catch { /* bỏ qua */ }
 
@@ -3560,10 +3865,11 @@ onMounted(async () => {
   
   // Tự động focus vào input scanner sau khi load xong
   await nextTick();
-  scannerInputRef.value?.focus();
+  focusScannerInput();
 });
 
 onUnmounted(() => {
+  window.removeEventListener('resize', updateCompactMode);
   window.removeEventListener('online', handleBrowserOnline);
   window.removeEventListener('offline', handleBrowserOffline);
 
@@ -4358,4 +4664,470 @@ onUnmounted(() => {
 .inv-photo-add input { display: none; }
 .inv-table-pagination { display: flex; justify-content: flex-end; padding: 12px 4px 0; }
 .offline-sync-actions { display: flex; align-items: center; gap: 10px; margin-top: 6px; font-size: 12px; }
+</style>
+
+<style>
+@media (max-width: 1367px) {
+  .inventory-conduct {
+    padding-bottom: 96px;
+  }
+
+  .inv-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .inv-mobile-summary {
+    padding: 14px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.25);
+  }
+
+  .inv-mobile-summary__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .inv-mobile-summary__title {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 3px;
+  }
+
+  .inv-mobile-summary__name {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .inv-mobile-summary__meta {
+    overflow: hidden;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 11.5px;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .inv-mobile-more {
+    display: inline-flex;
+    flex: 0 0 34px;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    font-size: 18px;
+  }
+
+  .inv-mobile-summary__progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .inv-mobile-progress {
+    flex: 1;
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.22);
+  }
+
+  .inv-mobile-progress__fill {
+    height: 100%;
+    border-radius: 999px;
+    background: #fff;
+    transition: width 0.25s ease;
+  }
+
+  .inv-mobile-summary__progress-text {
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .inv-mobile-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .inv-chip {
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .inv-chip.is-success {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .inv-chip.is-danger {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+
+  .inv-chip.is-warning {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .inv-mobile-scan {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    gap: 8px;
+    margin: 0 -4px;
+    padding: 8px;
+    border-radius: 14px;
+    background: rgba(248, 250, 252, 0.96);
+    backdrop-filter: blur(8px);
+  }
+
+  .inv-mobile-scan__input {
+    flex: 1;
+  }
+
+  .inv-mobile-scan__input .el-input__wrapper {
+    border-radius: 12px;
+  }
+
+  .inv-mobile-scan__camera {
+    display: inline-flex;
+    flex: 0 0 46px;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border: none;
+    border-radius: 12px;
+    background: #2563eb;
+    color: #fff;
+    font-size: 21px;
+  }
+
+  .inv-mobile-scan__camera:disabled {
+    opacity: 0.6;
+  }
+
+  .inv-mobile-list-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2px;
+  }
+
+  .inv-mobile-list-head h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .inv-mobile-list-head span {
+    color: #64748b;
+    font-size: 12px;
+  }
+
+  .inv-mobile-filter {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 8px;
+  }
+
+  .inv-mobile-filter .el-input__wrapper,
+  .inv-mobile-filter .el-select__wrapper {
+    border-radius: 10px;
+  }
+
+  .inv-mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 60px;
+  }
+
+  .inv-asset {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .inv-asset:active {
+    background: #f8fafc;
+  }
+
+  .inv-asset__dot {
+    flex: 0 0 8px;
+    width: 8px;
+    height: 8px;
+    margin-top: 7px;
+    border-radius: 50%;
+    background: #cbd5e1;
+  }
+
+  .inv-asset__dot.matched {
+    background: #16a34a;
+  }
+
+  .inv-asset__dot.missing {
+    background: #dc2626;
+  }
+
+  .inv-asset__dot.damaged,
+  .inv-asset__dot.needs_repair {
+    background: #f59e0b;
+  }
+
+  .inv-asset__dot.surplus {
+    background: #2563eb;
+  }
+
+  .inv-asset__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .inv-asset__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .inv-asset__name {
+    display: -webkit-box;
+    flex: 1;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+    min-width: 0;
+  }
+
+  .inv-asset__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    color: #64748b;
+    font-size: 11.5px;
+  }
+
+  .inv-asset__code {
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: #eff6ff;
+    color: #2563eb;
+    font-weight: 600;
+  }
+
+  .inv-asset__values {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    color: #475569;
+    font-size: 12px;
+  }
+
+  .inv-asset__values b {
+    color: #0f172a;
+  }
+
+  .inv-asset__values b.text-danger {
+    color: #dc2626;
+  }
+
+  .inv-asset__values b.text-warning {
+    color: #d97706;
+  }
+
+  .inv-asset__values b.text-success {
+    color: #16a34a;
+  }
+
+  .inv-asset__condition {
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    font-size: 11px;
+  }
+
+  .inv-asset__chevron {
+    flex: 0 0 auto;
+    margin-top: 2px;
+    color: #cbd5e1;
+    font-size: 16px;
+  }
+
+  .inv-mobile-loadmore {
+    margin-top: 4px;
+  }
+
+  .inv-mobile-actions {
+    position: fixed;
+    right: 8px;
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+    left: 8px;
+    z-index: 850;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.16);
+    backdrop-filter: blur(10px);
+  }
+
+  .inv-mobile-actions__hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 6px 8px;
+    border: none;
+    border-radius: 8px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+
+  .inv-mobile-actions__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .inv-mobile-actions__meta {
+    display: flex;
+    flex-direction: column;
+    padding: 0 4px;
+    line-height: 1.1;
+  }
+
+  .inv-mobile-actions__meta b {
+    color: #0f172a;
+    font-size: 15px;
+  }
+
+  .inv-mobile-actions__meta span {
+    color: #64748b;
+    font-size: 10.5px;
+  }
+
+  .inv-mobile-actions__save {
+    min-height: 40px;
+    border-radius: 10px;
+  }
+
+  .inv-mobile-actions__submit {
+    flex: 1;
+    min-height: 40px;
+    border-radius: 10px;
+    font-weight: 700;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1367px) {
+  .inv-mobile-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+  }
+
+  .inv-mobile-list > .el-empty,
+  .inv-mobile-loadmore {
+    grid-column: 1 / -1;
+  }
+}
+
+.asset-info-mobile {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .check-dialog-content .asset-info {
+    display: none;
+  }
+
+  .asset-info-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+  }
+
+  .asset-info-mobile__name {
+    color: #0f172a;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .asset-info-mobile__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    color: #64748b;
+    font-size: 12px;
+  }
+
+  .asset-info-mobile__values {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    color: #475569;
+    font-size: 12px;
+  }
+
+  .asset-info-mobile__values b {
+    color: #0f172a;
+  }
+}
 </style>

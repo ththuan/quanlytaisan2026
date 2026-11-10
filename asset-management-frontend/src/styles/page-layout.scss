@@ -215,6 +215,31 @@
   border-radius: 12px;
 }
 
+@media (max-width: 767px) {
+  .el-main .filter-row {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px !important;
+    align-items: stretch;
+  }
+
+  .el-main .filter-row .filter-item {
+    flex: none !important;
+    width: 100%;
+    min-width: 0 !important;
+  }
+
+  .el-main .filter-row .filter-item.search-input,
+  .el-main .filter-row .filter-item--dept,
+  .el-main .filter-row .filter-actions {
+    grid-column: 1 / -1;
+  }
+
+  .el-main .filter-row .filter-actions .el-button {
+    flex: 1;
+  }
+}
+
 /* PhÃ¢n trang */
 .el-main .el-pagination {
   --el-pagination-font-size: 14px;
@@ -313,6 +338,31 @@ html.app-overlay .page-header .header-content {
 html.app-overlay .page-header .header-right {
   width: 100%;
   justify-content: flex-end;
+}
+
+@media (max-width: 1367px) {
+  html.app-overlay .page-header .header-right {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  html.app-overlay .page-header .header-right::-webkit-scrollbar {
+    display: none;
+  }
+
+  html.app-overlay .page-header .header-right .el-button {
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    height: 36px;
+    padding: 0 12px !important;
+    border-radius: 10px;
+    font-size: 13px;
+  }
 }
 
 /* Bang danh sach tren mobile/tablet/PWA: chuyen sang dang card */
