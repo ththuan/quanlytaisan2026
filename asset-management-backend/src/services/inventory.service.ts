@@ -822,13 +822,30 @@ class InventoryService {
       );
     }
 
-    const detail = await InventoryReportDetail.create({
-      inventory_report_id: reportId,
-      asset_id: assetId,
-      ...buildDetailAttributes(asset, data),
-    });
+    const attributes = buildDetailAttributes(asset, data);
+    const tx = await sequelize.transaction();
+    let detail!: InventoryReportDetail;
+    try {
+      detail = await InventoryReportDetail.create({
+        inventory_report_id: reportId,
+        asset_id: assetId,
+        ...attributes,
+      }, { transaction: tx });
 
-    await this.updateReportSummary(reportId);
+      // Cập nhật tổng hợp theo kiểu cộng dồn O(1), tránh aggregate lại
+      // toàn bộ chi tiết sau mỗi lần quét (rất chậm khi có hàng nghìn tài sản).
+      await this.applyReportSummaryDelta(reportId, {
+        assigned: Number(attributes.assigned_quantity) || 0,
+        actual: Number(attributes.actual_quantity) || 0,
+        discrepancy: Math.abs(Number(attributes.quantity_discrepancy) || 0),
+        disposal: attributes.suggest_disposal ? 1 : 0,
+      }, tx);
+
+      await tx.commit();
+    } catch (error) {
+      await tx.rollback();
+      throw error;
+    }
 
     return toDetailResponse(detail);
   }
@@ -1020,11 +1037,28 @@ class InventoryService {
       updateData.suggest_repair = false;
     }
 
-    await detail.update(updateData);
+    const oldAssigned = Number(detail.assigned_quantity) || 0;
+    const oldActual = Number(detail.actual_quantity) || 0;
+    const oldDiscrepancy = Math.abs(Number(detail.quantity_discrepancy) || 0);
+    const oldDisposal = detail.suggest_disposal ? 1 : 0;
 
-    await this.updateReportSummary(detail.inventory_report_id);
+    const tx = await sequelize.transaction();
+    try {
+      await detail.update(updateData, { transaction: tx });
+      await detail.reload({ transaction: tx });
 
-    await detail.reload();
+      await this.applyReportSummaryDelta(detail.inventory_report_id, {
+        assigned: (Number(detail.assigned_quantity) || 0) - oldAssigned,
+        actual: (Number(detail.actual_quantity) || 0) - oldActual,
+        discrepancy: Math.abs(Number(detail.quantity_discrepancy) || 0) - oldDiscrepancy,
+        disposal: (detail.suggest_disposal ? 1 : 0) - oldDisposal,
+      }, tx);
+
+      await tx.commit();
+    } catch (error) {
+      await tx.rollback();
+      throw error;
+    }
 
     return toDetailResponse(detail) as any;
   }
@@ -1080,6 +1114,26 @@ class InventoryService {
       await tx.rollback();
       throw error;
     }
+  }
+
+  /** Cộng/trừ tổng hợp báo cáo theo delta (O(1), an toàn khi nhiều user cùng quét). */
+  async applyReportSummaryDelta(
+    reportId: number,
+    delta: { assigned?: number; actual?: number; discrepancy?: number; disposal?: number },
+    transaction?: any
+  ): Promise<void> {
+    const values = {
+      total_assigned_quantity: Number(delta.assigned || 0),
+      total_actual_quantity: Number(delta.actual || 0),
+      total_discrepancy: Number(delta.discrepancy || 0),
+      total_disposal_suggestions: Number(delta.disposal || 0),
+    };
+    if (Object.values(values).every((value) => value === 0)) return;
+
+    await InventoryReport.increment(values, {
+      where: { id: reportId },
+      transaction,
+    });
   }
 
   async updateReportSummary(reportId: number, transaction?: any): Promise<void> {
