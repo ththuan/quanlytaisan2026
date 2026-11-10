@@ -9,6 +9,7 @@
     "start": "node dist/server.js",
     "start:cluster": "node ./node_modules/pm2/bin/pm2-runtime start ecosystem.config.js --no-daemon",
     "load-test-data": "node scripts/load-test-data.js",
+    "load-test-inventory": "node scripts/load-test-inventory.js",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "test:damage-images": "ts-node src/scripts/test-damage-images.ts",
