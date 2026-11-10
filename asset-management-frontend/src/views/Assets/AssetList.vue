@@ -2081,30 +2081,30 @@ const handleExportQRPDF = async () => {
 
 <style>
 @media (max-width: 1367px) {
-  html.pwa-standalone .asset-list-page .asset-mobile-list {
+  html.app-overlay .asset-list-page .asset-mobile-list {
     display: flex;
     flex-direction: column;
     gap: 8px;
   }
 
-  html.pwa-standalone .asset-list-page .responsive-table {
+  html.app-overlay .asset-list-page .responsive-table {
     display: none;
   }
 
-  html.pwa-standalone .asset-list-page .asset-mobile-list > .el-empty {
+  html.app-overlay .asset-list-page .asset-mobile-list > .el-empty {
     grid-column: 1 / -1;
   }
 }
 
 @media (min-width: 768px) and (max-width: 1367px) {
-  html.pwa-standalone .asset-list-page .asset-mobile-list {
+  html.app-overlay .asset-list-page .asset-mobile-list {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1200px) and (max-width: 1367px) {
-  html.pwa-standalone .asset-list-page .asset-mobile-list {
+  html.app-overlay .asset-list-page .asset-mobile-list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
