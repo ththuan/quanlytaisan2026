@@ -317,15 +317,6 @@
       <button
         type="button"
         class="mobile-tabbar__item"
-        :class="{ active: $route.path.startsWith('/notifications') }"
-        @click="router.push('/notifications')"
-      >
-        <el-icon><Bell /></el-icon>
-        <span>Thông báo</span>
-      </button>
-      <button
-        type="button"
-        class="mobile-tabbar__item"
         :class="{ active: !isHidden }"
         @click="toggleSidebar"
       >
@@ -343,7 +334,7 @@
 import { computed, nextTick, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
-import { House, HomeFilled, Box, User, ArrowDown, ArrowLeft, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, Warning, Bell, Menu } from '@element-plus/icons-vue';
+import { House, HomeFilled, Box, User, ArrowDown, ArrowLeft, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, Warning, Menu } from '@element-plus/icons-vue';
 import NotificationBell from '@/components/Notifications/NotificationBell.vue';
 import TotpSetupDialog from '@/components/Auth/TotpSetupDialog.vue';
 import ChangePasswordDialog from '@/components/Auth/ChangePasswordDialog.vue';

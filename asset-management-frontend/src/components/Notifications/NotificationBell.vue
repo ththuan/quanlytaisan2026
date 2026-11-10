@@ -4,6 +4,7 @@
       v-model:visible="showDropdown"
       placement="bottom-end"
       :width="400"
+      :disabled="compactMode"
       trigger="click"
       popper-class="notification-popover"
     >
@@ -139,6 +140,7 @@ const router = useRouter();
 const notificationStore = useNotificationStore();
 
 const showDropdown = ref(false);
+const compactMode = ref(false);
 let refreshInterval: number | null = null;
 let visibilityTimeout: number | null = null;
 
@@ -183,15 +185,22 @@ function handleVisibilityChange() {
   }
 }
 
+const updateCompactMode = () => {
+  compactMode.value = window.matchMedia('(max-width: 1367px)').matches;
+};
+
 onMounted(() => {
   // Fetch notifications immediately on mount
   notificationStore.fetchNotifications(true);
-  
+
+  updateCompactMode();
+  window.addEventListener('resize', updateCompactMode);
+
   // Start polling only if tab is currently visible
   if (!document.hidden) {
     startPolling();
   }
-  
+
   // Listen for tab visibility changes
   document.addEventListener('visibilitychange', handleVisibilityChange);
 });
@@ -201,12 +210,16 @@ onUnmounted(() => {
   if (visibilityTimeout) {
     clearTimeout(visibilityTimeout);
   }
+  window.removeEventListener('resize', updateCompactMode);
   document.removeEventListener('visibilitychange', handleVisibilityChange);
 });
 
-// Force-refresh notifications when the bell button is clicked
 const handleBellClick = () => {
-  // If dropdown will open (currently closed), fetch fresh data immediately
+  if (compactMode.value) {
+    showDropdown.value = false;
+    router.push('/notifications');
+    return;
+  }
   if (!showDropdown.value) {
     notificationStore.fetchNotifications(true);
   }
