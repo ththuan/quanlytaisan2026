@@ -189,7 +189,18 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem('user', JSON.stringify(data.user));
 
     setTimeout(() => {
-      window.location.href = '/?_t=' + Date.now();
+      let redirect = '/';
+      try {
+        const stored = sessionStorage.getItem('postLoginRedirect');
+        sessionStorage.removeItem('postLoginRedirect');
+        if (stored && stored.startsWith('/') && !stored.startsWith('//')) {
+          redirect = stored;
+        }
+      } catch {
+        // ignore storage errors
+      }
+      const separator = redirect.includes('?') ? '&' : '?';
+      window.location.href = `${redirect}${separator}_t=${Date.now()}`;
     }, 300);
   }
 

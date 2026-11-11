@@ -15,6 +15,9 @@ const router = Router();
 // Apply authentication to all routes
 router.use(authenticateToken);
 
+// Quick damage report - any authenticated user can report damage for their unit
+router.post('/report-damage', auditLog('create'), maintenanceController.reportDamage);
+
 // Get pending counts - admin only
 router.get('/pending-counts', requireRole('admin'), maintenanceController.getPendingCounts);
 

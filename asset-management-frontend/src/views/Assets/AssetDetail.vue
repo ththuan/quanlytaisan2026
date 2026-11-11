@@ -21,6 +21,16 @@
           >
             {{ $t('common.back') }}
           </el-button>
+          <el-button
+            v-if="assetStore.currentAsset"
+            type="warning"
+            plain
+            :icon="Warning"
+            :disabled="assetStore.currentAsset.status !== 'active'"
+            @click="showReportDamageDialog = true"
+          >
+            Báo hỏng
+          </el-button>
           <el-tooltip
             v-if="canManageAssets"
             content="Chỉ xóa khi nhập liệu sai, chưa qua quy trình nào"
@@ -676,6 +686,13 @@
       :asset="assetStore.currentAsset"
       @saved="handleSaved"
     />
+
+    <ReportDamageDialog
+      v-if="assetStore.currentAsset"
+      v-model:visible="showReportDamageDialog"
+      :asset="assetStore.currentAsset"
+      @submitted="handleReportDamageSubmitted"
+    />
   </div>
 </template>
 
@@ -685,8 +702,9 @@ import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAssetStore } from '@/stores/asset.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { ArrowLeft, Edit, Delete, Document, Location, Box, TrendCharts, Download, Refresh, Picture, Upload, Clock, User, Camera } from '@element-plus/icons-vue';
+import { ArrowLeft, Edit, Delete, Document, Location, Box, TrendCharts, Download, Refresh, Picture, Upload, Clock, User, Camera, Warning } from '@element-plus/icons-vue';
 import AssetFormDialog from '@/components/Assets/AssetFormDialog.vue';
+import ReportDamageDialog from '@/components/Assets/ReportDamageDialog.vue';
 import ImageZoom from '@/components/animate/ImageZoom.vue';
 import { assetService } from '@/services/asset.service';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -704,6 +722,7 @@ const assetStore = useAssetStore();
 const authStore = useAuthStore();
 
 const showEditDialog = ref(false);
+const showReportDamageDialog = ref(false);
 const timeline = ref<any[]>([]);
 const loadingTimeline = ref(false);
 const assignmentHistory = ref<any[]>([]);
@@ -959,6 +978,13 @@ const handleSaved = async () => {
   const categoryGroup = assetStore.currentAsset?.assetCategory?.category_group;
   if (categoryGroup !== 'nha_cua') {
     await loadQRCode(id);
+  }
+};
+
+const handleReportDamageSubmitted = async () => {
+  const id = parseInt(route.params.id as string);
+  if (!Number.isNaN(id)) {
+    await assetStore.fetchAssetById(id);
   }
 };
 

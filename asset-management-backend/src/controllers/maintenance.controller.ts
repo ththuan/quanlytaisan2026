@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
+import { Op } from 'sequelize';
 import maintenanceService from '../services/maintenance.service';
 import { AuthRequest } from '../middleware/auth.middleware';
 import logger from '../utils/logger';
+import { Asset, MaintenanceRequest } from '../models';
 
 class MaintenanceController {
   async getAllMaintenance(req: AuthRequest, res: Response, next: NextFunction) {
@@ -442,6 +444,99 @@ class MaintenanceController {
       return res.json({
         success: true,
         message: 'Đã đánh dấu hoàn thành sửa chữa. Chờ Admin xác nhận.',
+        data: maintenance,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * POST /maintenance/report-damage
+   * Người dùng gửi nhanh báo hỏng tài sản; yêu cầu vào trạng thái chờ Admin duyệt.
+   */
+  async reportDamage(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const user = req.user!;
+      const assetId = Number(req.body.asset_id);
+      const description = String(req.body.description || '').trim();
+      const urgency = ['low', 'normal', 'high', 'critical'].includes(req.body.urgency)
+        ? req.body.urgency
+        : 'normal';
+
+      if (!assetId || !description) {
+        return res.status(400).json({
+          success: false,
+          message: 'Vui lòng chọn tài sản và mô tả tình trạng hỏng',
+        });
+      }
+
+      if (description.length < 5) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mô tả tình trạng cần chi tiết hơn',
+        });
+      }
+
+      const asset = await Asset.findByPk(assetId);
+      if (!asset) {
+        return res.status(404).json({
+          success: false,
+          message: 'Không tìm thấy tài sản',
+        });
+      }
+
+      if ((asset as any).status !== 'active') {
+        return res.status(409).json({
+          success: false,
+          message: 'Tài sản không ở trạng thái đang sử dụng, không thể gửi báo hỏng',
+        });
+      }
+
+      if (user.role !== 'admin' && user.role !== 'director') {
+        const assetDepartmentId = Number((asset as any).current_department_id);
+        if (!user.department_id || assetDepartmentId !== Number(user.department_id)) {
+          return res.status(403).json({
+            success: false,
+            message: 'Chỉ được báo hỏng tài sản thuộc đơn vị của bạn',
+          });
+        }
+      }
+
+      const existing = await MaintenanceRequest.findOne({
+        where: {
+          asset_id: assetId,
+          request_type: 'repair',
+          status: {
+            [Op.in]: ['new', 'pending', 'approved_by_head', 'approved_by_admin', 'in_progress', 'repair_completed'],
+          },
+        },
+      });
+
+      if (existing) {
+        return res.status(409).json({
+          success: false,
+          message: 'Tài sản đang có yêu cầu sửa chữa chờ xử lý',
+        });
+      }
+
+      const maintenance = await maintenanceService.createMaintenance(
+        {
+          request_type: 'repair',
+          asset_id: assetId,
+          department_id: (asset as any).current_department_id || user.department_id,
+          description,
+          justification: String(req.body.justification || description),
+          urgency,
+          status: 'new',
+          damage_images: req.body.damage_images,
+        } as any,
+        user.id
+      );
+
+      return res.status(201).json({
+        success: true,
+        message: 'Đã gửi báo hỏng. Quản trị viên sẽ xem xét và phê duyệt.',
         data: maintenance,
       });
     } catch (error) {

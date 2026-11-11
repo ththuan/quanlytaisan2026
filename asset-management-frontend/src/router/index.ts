@@ -221,7 +221,7 @@ router.beforeEach((to, _from, next) => {
 
   const requiresAuth = to.meta.requiresAuth !== false;
   if (requiresAuth && !isAuthed) {
-    return next('/login');
+    return next({ path: '/login', query: { redirect: to.fullPath } });
   }
 
   // Kiểm tra quyền admin cho các route có meta.requiresAdmin

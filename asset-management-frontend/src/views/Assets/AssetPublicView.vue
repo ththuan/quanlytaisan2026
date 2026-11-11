@@ -78,11 +78,13 @@
           Sao chép mã
         </button>
       </p>
-      <a
+      <router-link
         v-if="asset.id"
         class="open-app"
-        :href="`/assets/${asset.id}`"
-      >Mở trong hệ thống →</a>
+        :to="`/assets/${asset.id}`"
+      >
+        Đăng nhập để xem chi tiết / Báo hỏng →
+      </router-link>
 
       <!-- Details -->
       <div class="info-list">
@@ -153,10 +155,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
+import { useAuthStore } from '@/stores/auth.store';
 
 const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
 const code = computed(() => route.params.code as string);
 
 interface PublicAsset {
@@ -224,6 +229,10 @@ onMounted(async () => {
     });
     if (res.data?.success) {
       asset.value = res.data.data;
+      if (authStore.isAuthenticated && asset.value?.id) {
+        await router.replace(`/assets/${asset.value.id}`);
+        return;
+      }
     } else {
       error.value = res.data?.message || 'Không tìm thấy tài sản';
     }

@@ -63,6 +63,18 @@ class MaintenanceService {
     return response;
   }
 
+  async reportDamage(data: {
+    asset_id: number;
+    department_id?: number;
+    description: string;
+    justification?: string;
+    urgency?: 'low' | 'normal' | 'high' | 'critical';
+    damage_images?: string[];
+  }) {
+    const response: any = await api.post('/maintenance/report-damage', data);
+    return response;
+  }
+
   async update(id: number, data: UpdateMaintenanceData) {
     const response: any = await api.put(`/maintenance/${id}`, data);
     return response;

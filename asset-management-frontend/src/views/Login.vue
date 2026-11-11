@@ -163,6 +163,7 @@
 
 <script setup lang="ts">
 import { reactive, ref, onMounted, onUnmounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
 import InputOTP from '@/components/animate/InputOTP.vue';
 import AutoHeight from '@/components/animate/AutoHeight.vue';
@@ -170,6 +171,7 @@ import AutoHeight from '@/components/animate/AutoHeight.vue';
 import logoUrl from '@/login/logo-truong.jpg';
 
 const authStore = useAuthStore();
+const route = useRoute();
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const passwordRef = ref<HTMLInputElement | null>(null);
 const rememberMe = ref(false);
@@ -205,6 +207,10 @@ const handleLogin = async () => {
   loading.value = true;
 
   try {
+    const redirectQuery = route.query.redirect;
+    if (typeof redirectQuery === 'string' && redirectQuery.startsWith('/') && !redirectQuery.startsWith('//')) {
+      sessionStorage.setItem('postLoginRedirect', redirectQuery);
+    }
     const result = await authStore.login(username, password);
     loading.value = false;
     if (result === true) {

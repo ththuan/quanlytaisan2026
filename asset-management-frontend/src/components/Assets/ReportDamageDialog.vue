@@ -19,6 +19,29 @@
       </el-form-item>
 
       <el-form-item
+        label="Tình trạng hiện tại"
+        prop="condition"
+      >
+        <el-select
+          v-model="form.condition"
+          style="width: 100%;"
+        >
+          <el-option
+            label="Cần sửa chữa"
+            value="needs_repair"
+          />
+          <el-option
+            label="Hư hỏng / không sử dụng được"
+            value="damaged"
+          />
+          <el-option
+            label="Còn sử dụng được nhưng cần kiểm tra"
+            value="usable"
+          />
+        </el-select>
+      </el-form-item>
+
+      <el-form-item
         label="Mô tả tình trạng hỏng hóc"
         prop="description"
       >
@@ -57,7 +80,7 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item label="Hình ảnh minh họa tình trạng hư hỏng (tùy chọn)">
+      <el-form-item label="Hình ảnh hiện trạng (bắt buộc, tối đa 3 ảnh)">
         <el-upload
           v-model:file-list="damageImageList"
           list-type="picture-card"
@@ -69,7 +92,7 @@
           <el-icon><Plus /></el-icon>
         </el-upload>
         <div style="margin-top: 8px; font-size: 12px; color: #909399;">
-          Tối đa 3 hình ảnh. Cho phép thợ kỹ thuật hình dung được hư hỏng.
+          Vui lòng chụp ít nhất 1 ảnh để quản trị viên xem xét nhanh.
         </div>
       </el-form-item>
     </el-form>
@@ -132,11 +155,15 @@ const previewVisible = ref(false);
 const previewImageUrl = ref('');
 
 const form = reactive({
+  condition: 'needs_repair' as 'needs_repair' | 'damaged' | 'usable',
   description: '',
   urgency: 'normal' as 'low' | 'normal' | 'high' | 'critical',
 });
 
 const rules = reactive<any>({
+  condition: [
+    { required: true, message: 'Vui lòng chọn tình trạng tài sản', trigger: 'change' }
+  ],
   description: [
     { required: true, message: 'Vui lòng mô tả tình trạng hỏng hóc', trigger: 'blur' },
     { min: 5, message: 'Mô tả cần chi tiết hơn', trigger: 'blur' }
@@ -145,6 +172,12 @@ const rules = reactive<any>({
     { required: true, message: 'Vui lòng chọn mức độ khẩn cấp', trigger: 'change' }
   ]
 });
+
+const conditionLabels: Record<string, string> = {
+  needs_repair: 'Cần sửa chữa',
+  damaged: 'Hư hỏng / không sử dụng được',
+  usable: 'Còn sử dụng được nhưng cần kiểm tra',
+};
 
 const handlePreview = (file: any) => {
   previewImageUrl.value = file.url || '';
@@ -169,6 +202,10 @@ const handleSubmit = async () => {
         ElMessage.error('Không tìm thấy thông tin tài sản');
         return;
       }
+      if (damageImageList.value.length === 0) {
+        ElMessage.warning('Vui lòng chụp/đính kèm ít nhất 1 ảnh hiện trạng tài sản');
+        return;
+      }
       loading.value = true;
       try {
         let base64Images: string[] = [];
@@ -181,33 +218,25 @@ const handleSubmit = async () => {
           }
         }
 
+        const conditionLabel = conditionLabels[form.condition] || form.condition;
+        const description = `Tình trạng: ${conditionLabel}. ${form.description.trim()}`;
+
         const payload: any = {
           asset_id: props.asset.id,
-          request_type: 'repair',
           department_id: props.asset.current_department_id || props.asset.department_id,
-          description: form.description,
-          justification: form.description, // Ghi vào cả justification để đảm bảo hiển thị đồng bộ
-          urgency: form.urgency
+          description,
+          justification: description,
+          urgency: form.urgency,
+          damage_images: base64Images,
         };
 
-        if (base64Images.length > 0) {
-          payload.damage_images = base64Images;
-        }
+        await maintenanceService.reportDamage(payload);
 
-        console.log('📤 Sending maintenance request (Data):', {
-          request_type: payload.request_type,
-          asset_id: payload.asset_id,
-          hasImages: payload.damage_images && payload.damage_images.length > 0,
-          imageCount: base64Images.length,
-          payloadKeys: Object.keys(payload)
-        });
-
-        await maintenanceService.create(payload);
-        
-        ElMessage.success('Đã gửi yêu cầu báo hỏng thành công. Quy trình phê duyệt đã được kích hoạt.');
+        ElMessage.success('Đã gửi báo hỏng. Quản trị viên sẽ xem xét và phê duyệt.');
         dialogVisible.value = false;
         
         // Reset state
+        form.condition = 'needs_repair';
         form.description = '';
         form.urgency = 'normal';
         damageImageList.value = [];
