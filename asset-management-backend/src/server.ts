@@ -55,7 +55,7 @@ const startServer = async () => {
     server = app.listen(PORT, HOST, () => {
       logger.info(`Server is running on http://${HOST}:${PORT}`);
       logger.info(`Environment: ${envConfig.nodeEnv}`);
-      logger.info(`API Documentation: http://${HOST}:${PORT}/api/docs`);
+      logger.info(`API Documentation: http://${HOST}:${PORT}/api-docs`);
     });
     // Giữ kết nối lâu hơn nginx upstream keepalive (65s) để tránh 502 khi tái sử dụng connection.
     server.keepAliveTimeout = 65000;

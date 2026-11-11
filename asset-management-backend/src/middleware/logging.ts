@@ -39,7 +39,7 @@ export const requestLogger = (req: AuthenticatedRequest, res: Response, next: Ne
     logger.info('HTTP Request', {
       requestId,
       method: req.method,
-      path: req.path,
+      path: req.originalUrl,
       statusCode: res.statusCode,
       duration: `${duration}ms`,
       ip: getClientIp(req),

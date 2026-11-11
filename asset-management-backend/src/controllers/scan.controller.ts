@@ -29,6 +29,10 @@ function renderPage(title: string, bodyContent: string): string {
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="robots" content="noindex, nofollow"/>
+<meta name="color-scheme" content="light"/>
+<meta name="theme-color" content="#0f2f57"/>
+<meta name="description" content="Tra cứu thông tin tài sản qua mã QR - Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ"/>
 <title>${escapeHtml(title)}</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}

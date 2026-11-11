@@ -57,12 +57,16 @@ router.use('/search', searchRoutes);
 router.use('/system-admin', systemAdminRoutes);
 router.use('/export/tt120', tt120ExportRoutes);
 
-// Health check route
+// Health check route - dùng cho Docker healthcheck / load balancer.
+// Giữ lightweight (không query DB) để không tạo tải khi bị poll liên tục.
 router.get('/health', (_req, res) => {
   res.status(200).json({
+    status: 'ok',
     success: true,
     message: 'API is running',
     timestamp: new Date().toISOString(),
+    uptime: Math.round(process.uptime()),
+    environment: process.env.NODE_ENV || 'development',
   });
 });
 

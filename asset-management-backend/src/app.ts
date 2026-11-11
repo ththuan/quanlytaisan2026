@@ -22,6 +22,10 @@ app.set('trust proxy', 1);
 
 app.disable('etag');
 
+// Request logging + correlation ID: đặt sớm nhất có thể để mọi response
+// (kể cả lỗi parse body, lỗi bảo mật) đều có X-Request-Id để trace.
+app.use(requestLogger);
+
 // Security middleware
 app.use(
   helmet({
@@ -140,9 +144,6 @@ const bodyLimit = process.env.BODY_LIMIT || '10mb';
 app.use(express.json({ limit: bodyLimit }));
 app.use(express.urlencoded({ extended: true, limit: bodyLimit }));
 
-// Request logging
-app.use(requestLogger);
-
 /**
  * Rate limit key:
  * - Đã đăng nhập: băm Authorization token → mỗi phiên có hạn mức riêng
@@ -194,8 +195,12 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // Skip rate limiting for auth routes (they have their own limiter)
-    return req.path.startsWith('/api/auth/login') || req.path.startsWith('/api/auth/register');
+    // Skip rate limiting for auth routes (they have their own limiter).
+    // Dùng originalUrl vì middleware được mount tại /api (req.path đã bị cắt prefix).
+    return (
+      req.originalUrl.startsWith('/api/auth/login') ||
+      req.originalUrl.startsWith('/api/auth/register')
+    );
   },
 });
 

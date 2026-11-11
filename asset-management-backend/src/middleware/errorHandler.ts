@@ -6,13 +6,18 @@ export const errorHandler = (
   err: Error | AppError,
   req: Request,
   res: Response,
-  _next: NextFunction
+  next: NextFunction
 ): void => {
+  // Nếu response đã bắt đầu gửi thì phải để Express xử lý tiếp (tránh crash).
+  if (res.headersSent) {
+    return next(err);
+  }
+
   // Log error
   logger.error('Error occurred:', {
     message: err.message,
     stack: err.stack,
-    path: req.path,
+    path: req.originalUrl,
     method: req.method,
     user: (req as any).user?.id,
   });
@@ -27,6 +32,21 @@ export const errorHandler = (
     statusCode = err.statusCode;
     message = err.message;
     isOperational = err.isOperational;
+  }
+
+  // Handle lỗi parse JSON body (express.json)
+  const bodyParserError = err as Error & { type?: string; status?: number };
+  if (bodyParserError.type === 'entity.parse.failed' || (err instanceof SyntaxError && 'body' in err)) {
+    statusCode = 400;
+    message = 'Dữ liệu JSON không hợp lệ.';
+    isOperational = true;
+  }
+
+  // Handle body vượt quá giới hạn (express.json limit)
+  if (bodyParserError.type === 'entity.too.large') {
+    statusCode = 413;
+    message = 'Dữ liệu gửi lên quá lớn. Vui lòng giảm kích thước và thử lại.';
+    isOperational = true;
   }
 
   // Handle Sequelize validation errors
@@ -92,9 +112,11 @@ export const errorHandler = (
   }
 
   // Format error response consistently
+  const requestId = (req as Request & { requestId?: string }).requestId;
   const errorResponse: any = {
     success: false,
     message,
+    ...(requestId ? { requestId } : {}),
   };
 
   // Include error details in development
@@ -115,8 +137,10 @@ export const errorHandler = (
 };
 
 export const notFoundHandler = (req: Request, res: Response): void => {
+  const requestId = (req as Request & { requestId?: string }).requestId;
   res.status(404).json({
     success: false,
     message: `Route ${req.method} ${req.path} not found`,
+    ...(requestId ? { requestId } : {}),
   });
 };
