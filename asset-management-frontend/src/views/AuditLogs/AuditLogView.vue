@@ -165,7 +165,7 @@
           />
           <el-table-column
             label="Thời gian"
-            width="170"
+            width="160"
           >
             <template #default="{ row }">
               {{ formatDate(row.created_at) }}
@@ -173,7 +173,7 @@
           </el-table-column>
           <el-table-column
             label="Người thực hiện"
-            min-width="160"
+            min-width="140"
           >
             <template #default="{ row }">
               <div>{{ row.user?.fullname || row.user?.username || `User #${row.user_id}` }}</div>
@@ -214,7 +214,7 @@
           />
           <el-table-column
             label="Mô tả"
-            min-width="200"
+            min-width="180"
           >
             <template #default="{ row }">
               <span class="log-description">{{ row.description || row.new_value || '—' }}</span>
@@ -223,7 +223,7 @@
           <el-table-column
             prop="ip_address"
             label="IP"
-            width="130"
+            width="120"
           />
           <el-table-column
             label="Chi tiết"

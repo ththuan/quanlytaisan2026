@@ -319,79 +319,41 @@
               :index="detailIndexMethod"
             />
             <el-table-column
-              prop="asset.asset_code"
-              label="Mã tài sản"
-              width="120"
-            />
-            <el-table-column
-              label="Mã loại TS"
-              width="100"
+              label="Tài sản"
+              min-width="240"
             >
               <template #default="{ row }">
-                {{ row.asset?.category_code || row.asset?.category || '-' }}
+                <div class="detail-asset-cell">
+                  <span class="name">{{ row.asset?.name }}</span>
+                  <span class="meta">
+                    {{ row.asset?.asset_code }} · {{ row.asset?.category_code || row.asset?.category || '-' }} · {{ row.asset?.unit || '-' }}
+                  </span>
+                </div>
               </template>
             </el-table-column>
             <el-table-column
-              prop="asset.name"
-              label="Tên tài sản"
-              min-width="200"
-            />
-            <el-table-column
-              label="ĐVT"
-              width="80"
+              label="Số lượng"
+              width="140"
               align="center"
             >
               <template #default="{ row }">
-                {{ row.asset?.unit || '-' }}
+                <div class="detail-qty-cell">
+                  <span>Sổ sách: <b>{{ row.book_quantity ?? row.asset?.quantity ?? 1 }}</b></span>
+                  <span>Thực tế: <b :class="getQuantityClass(row)">{{ row.actual_quantity ?? 0 }}</b></span>
+                  <span>Lệch: <b :class="getDifferenceClass(row)">{{ formatDifference(row.quantity_difference) }}</b></span>
+                </div>
               </template>
             </el-table-column>
             <el-table-column
-              label="SL sổ sách"
-              width="100"
-              align="center"
-            >
-              <template #default="{ row }">
-                {{ row.book_quantity ?? row.asset?.quantity ?? 1 }}
-              </template>
-            </el-table-column>
-            <el-table-column
-              label="SL thực tế"
-              width="100"
-              align="center"
-            >
-              <template #default="{ row }">
-                <span :class="getQuantityClass(row)">
-                  {{ row.actual_quantity ?? 0 }}
-                </span>
-              </template>
-            </el-table-column>
-            <el-table-column
-              label="Chênh lệch"
-              width="100"
-              align="center"
-            >
-              <template #default="{ row }">
-                <span :class="getDifferenceClass(row)">
-                  {{ formatDifference(row.quantity_difference) }}
-                </span>
-              </template>
-            </el-table-column>
-            <el-table-column
-              label="Nguyên giá (đồng)"
-              width="160"
-              align="right"
-            >
-              <template #default="{ row }">
-                {{ formatCurrency(row.asset?.original_value ?? row.asset?.purchase_price ?? 0) }}
-              </template>
-            </el-table-column>
-            <el-table-column
-              label="Giá trị còn lại (đồng)"
+              label="Giá trị"
               width="170"
               align="right"
             >
               <template #default="{ row }">
-                {{ formatCurrency(row.asset?.current_value ?? 0) }}
+                <div class="detail-value-cell">
+                  <span>{{ formatCurrency(row.asset?.original_value ?? row.asset?.purchase_price ?? 0) }}</span>
+                  <small>{{ formatCurrency(row.asset?.current_value ?? 0) }}</small>
+                </div>
               </template>
             </el-table-column>
             <el-table-column
@@ -424,7 +386,7 @@
             </el-table-column>
             <el-table-column
               label="Ảnh"
-              width="120"
+              width="100"
               align="center"
             >
               <template #default="{ row }">
@@ -454,7 +416,7 @@
             </el-table-column>
             <el-table-column
               label="Ghi chú"
-              min-width="200"
+              min-width="150"
             >
               <template #default="{ row }">
                 <span v-if="row.notes">{{ row.notes }}</span>
@@ -1488,6 +1450,35 @@ onMounted(() => {
   .stat-box .stat-number {
     font-size: 24px;
   }
+}
+
+.detail-asset-cell,
+.detail-qty-cell,
+.detail-value-cell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.detail-asset-cell .name {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.detail-asset-cell .meta,
+.detail-value-cell small {
+  color: #94a3b8;
+  font-size: 11.5px;
+}
+
+.detail-qty-cell {
+  align-items: center;
+  font-size: 12px;
+}
+
+.detail-qty-cell b {
+  color: #0f172a;
 }
 
 .detail-table-pagination {

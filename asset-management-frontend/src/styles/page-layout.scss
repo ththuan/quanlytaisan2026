@@ -367,31 +367,32 @@ html.app-overlay .page-header .header-right {
 
 /* Bang danh sach tren mobile/tablet/PWA: chuyen sang dang card */
 @media (max-width: 1367px) {
-  html.app-overlay .responsive-table.mobile-card-table {
+  html.app-overlay .mobile-card-table {
     overflow: visible;
     border-radius: 0;
     background: transparent;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table {
+  html.app-overlay .mobile-card-table.el-table,
+  html.app-overlay .mobile-card-table .el-table {
     min-width: 100% !important;
     max-width: 100% !important;
     overflow: visible;
     background: transparent;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__inner-wrapper {
+  html.app-overlay .mobile-card-table .el-table__inner-wrapper {
     height: auto;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__header-wrapper {
+  html.app-overlay .mobile-card-table .el-table__header-wrapper {
     display: none;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__body-wrapper,
-  html.app-overlay .responsive-table.mobile-card-table .el-table__body-wrapper .el-scrollbar,
-  html.app-overlay .responsive-table.mobile-card-table .el-table__body-wrapper .el-scrollbar__wrap,
-  html.app-overlay .responsive-table.mobile-card-table .el-table__body-wrapper .el-scrollbar__view {
+  html.app-overlay .mobile-card-table .el-table__body-wrapper,
+  html.app-overlay .mobile-card-table .el-table__body-wrapper .el-scrollbar,
+  html.app-overlay .mobile-card-table .el-table__body-wrapper .el-scrollbar__wrap,
+  html.app-overlay .mobile-card-table .el-table__body-wrapper .el-scrollbar__view {
     display: block !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -399,14 +400,14 @@ html.app-overlay .page-header .header-right {
     overflow: visible !important;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__body,
-  html.app-overlay .responsive-table.mobile-card-table .el-table__body tbody {
+  html.app-overlay .mobile-card-table .el-table__body,
+  html.app-overlay .mobile-card-table .el-table__body tbody {
     display: block;
     width: 100% !important;
     max-width: 100% !important;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row {
+  html.app-overlay .mobile-card-table .el-table__row {
     position: relative;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -420,7 +421,7 @@ html.app-overlay .page-header .header-right {
     box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell {
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell {
     display: flex;
     flex-direction: column;
     gap: 1px;
@@ -433,7 +434,7 @@ html.app-overlay .page-header .header-right {
     position: static !important;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell::before {
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell::before {
     content: attr(data-label);
     position: static !important;
     top: auto !important;
@@ -454,40 +455,46 @@ html.app-overlay .page-header .header-right {
     pointer-events: none;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell[data-label='']::before,
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell[data-mobile-title]::before,
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell[data-mobile-status]::before,
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell[data-mobile-action]::before {
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell[data-label='']::before,
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell[data-mobile-title]::before,
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell[data-mobile-status]::before,
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell[data-mobile-action]::before {
     display: none;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell[data-mobile-index],
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell[data-mobile-empty] {
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell[data-mobile-index],
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell[data-mobile-empty] {
     display: none !important;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell[data-mobile-title] {
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell[data-mobile-title] {
     order: 0;
     grid-column: 1 / -1;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row[data-mobile-has-status] > td.el-table__cell[data-mobile-title] {
+  html.app-overlay .mobile-card-table .el-table__row[data-mobile-has-status] > td.el-table__cell[data-mobile-title] {
     padding-right: calc(46% + 8px) !important;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row[data-mobile-has-selection] > td.el-table__cell[data-mobile-title] {
+  html.app-overlay .mobile-card-table .el-table__row[data-mobile-has-selection] > td.el-table__cell[data-mobile-title] {
     padding-right: 38px !important;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row[data-mobile-has-status][data-mobile-has-selection] > td.el-table__cell[data-mobile-title] {
+  html.app-overlay .mobile-card-table .el-table__row[data-mobile-has-status][data-mobile-has-selection] > td.el-table__cell[data-mobile-title] {
     padding-right: calc(46% + 44px) !important;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell[data-mobile-tag] {
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell[data-mobile-tag],
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell[data-mobile-block] {
     grid-column: 1 / -1;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell[data-mobile-title] .cell {
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell[data-mobile-block] .cell {
+    text-align: left;
+    white-space: normal;
+  }
+
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell[data-mobile-title] .cell {
     display: -webkit-box;
     overflow: hidden;
     -webkit-line-clamp: 2;
@@ -499,7 +506,7 @@ html.app-overlay .page-header .header-right {
     white-space: normal;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell[data-mobile-status] {
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell[data-mobile-status] {
     position: absolute !important;
     top: 10px;
     right: 12px;
@@ -511,11 +518,11 @@ html.app-overlay .page-header .header-right {
     border: none !important;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row[data-mobile-has-selection] > td.el-table__cell[data-mobile-status] {
+  html.app-overlay .mobile-card-table .el-table__row[data-mobile-has-selection] > td.el-table__cell[data-mobile-status] {
     right: 40px;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell[data-mobile-status] .cell {
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell[data-mobile-status] .cell {
     display: flex;
     justify-content: flex-end;
     overflow: hidden;
@@ -523,13 +530,13 @@ html.app-overlay .page-header .header-right {
     white-space: nowrap;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell[data-mobile-status] .el-tag {
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell[data-mobile-status] .el-tag {
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell .cell {
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell .cell {
     min-width: 0;
     padding: 0;
     color: #334155;
@@ -539,13 +546,13 @@ html.app-overlay .page-header .header-right {
     word-break: break-word;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell .cell .text-truncate {
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell .cell .text-truncate {
     white-space: normal;
     overflow: visible;
     text-overflow: clip;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell[data-mobile-action] {
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell[data-mobile-action] {
     order: 2;
     grid-column: 1 / -1;
     display: flex;
@@ -554,14 +561,14 @@ html.app-overlay .page-header .header-right {
     border-top: 1px dashed #eef2f7;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell[data-mobile-action] .cell {
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell[data-mobile-action] .cell {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: 6px;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell[data-mobile-action] .el-button {
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell[data-mobile-action] .el-button {
     min-height: 30px;
     height: 30px;
     padding: 0 10px;
@@ -569,17 +576,17 @@ html.app-overlay .page-header .header-right {
     font-size: 12px;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__empty-block {
+  html.app-overlay .mobile-card-table .el-table__empty-block {
     min-height: 120px;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__fixed,
-  html.app-overlay .responsive-table.mobile-card-table .el-table__fixed-right {
+  html.app-overlay .mobile-card-table .el-table__fixed,
+  html.app-overlay .mobile-card-table .el-table__fixed-right {
     display: none !important;
   }
 
   /* Cá»™t checkbox chá»n dÃ²ng: Ä‘Æ°a lÃªn gÃ³c pháº£i card */
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell[data-label='__selection'] {
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell[data-label='__selection'] {
     position: absolute !important;
     top: 10px;
     right: 12px;
@@ -589,23 +596,23 @@ html.app-overlay .page-header .header-right {
     border: none !important;
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__row > td.el-table__cell[data-label='__selection']::before {
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell[data-label='__selection']::before {
     display: none;
   }
 
   @media (min-width: 768px) {
-    html.app-overlay .responsive-table.mobile-card-table .el-table__body tbody {
+    html.app-overlay .mobile-card-table .el-table__body tbody {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
     }
 
-    html.app-overlay .responsive-table.mobile-card-table .el-table__row {
+    html.app-overlay .mobile-card-table .el-table__row {
       margin-bottom: 0;
     }
   }
 
-  html.app-overlay .responsive-table.mobile-card-table .el-table__expanded-cell {
+  html.app-overlay .mobile-card-table .el-table__expanded-cell {
     display: block;
     width: 100% !important;
   }

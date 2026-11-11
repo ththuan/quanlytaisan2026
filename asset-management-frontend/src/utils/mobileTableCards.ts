@@ -11,8 +11,8 @@ let started = false;
 const isOverlayViewport = () => window.matchMedia('(max-width: 1367px)').matches;
 
 const clearMobileCards = () => {
-  document.querySelectorAll('.responsive-table.mobile-card-table').forEach((wrapper) => {
-    wrapper.classList.remove('mobile-card-table');
+  document.querySelectorAll('.mobile-card-table').forEach((el) => {
+    el.classList.remove('mobile-card-table');
   });
 };
 
@@ -31,8 +31,11 @@ const isTitleLabel = (label: string) => {
 const isCodeLabel = (label: string) => /(mã|code)/i.test(label);
 const isActionCell = (cell: HTMLElement, label: string) => {
   if (isStatusLabel(label)) return false;
-  if (isActionLabel(label)) return true;
-  return cellText(cell).length <= 24 && Boolean(cell.querySelector('.el-button, button, .el-dropdown, a.el-link'));
+  const hasControl = Boolean(cell.querySelector('.el-button, button, .el-dropdown, a.el-link, a'));
+  if (isActionLabel(label)) {
+    return hasControl || cellText(cell).length <= 24;
+  }
+  return cellText(cell).length <= 24 && hasControl;
 };
 
 const applyMobileCards = () => {
@@ -41,9 +44,10 @@ const applyMobileCards = () => {
     return;
   }
 
-  document.querySelectorAll<HTMLElement>('.el-main .responsive-table').forEach((wrapper) => {
-    const table = wrapper.querySelector<HTMLElement>('.el-table');
-    if (!table) return;
+  document.querySelectorAll<HTMLElement>('.el-main .el-table').forEach((table) => {
+    if (table.closest('.el-dialog, .el-drawer, .el-overlay, .el-message-box')) return;
+
+    const wrapper = table.closest<HTMLElement>('.responsive-table') || table;
 
     // Chỉ lấy header/body chính, bỏ qua bản sao của cột fixed (nếu có).
     const headerWrapper =
@@ -77,6 +81,7 @@ const applyMobileCards = () => {
         cell.removeAttribute('data-mobile-status');
         cell.removeAttribute('data-mobile-action');
         cell.removeAttribute('data-mobile-tag');
+        cell.removeAttribute('data-mobile-block');
       });
 
       const selectionCell = cells.find(
@@ -110,6 +115,9 @@ const applyMobileCards = () => {
           return;
         }
         if (cell.querySelector('.el-tag')) cell.setAttribute('data-mobile-tag', '');
+        if (cell.querySelectorAll(':scope > .cell > div').length >= 3 || /(chi tiết|ghi chú|mô tả|nội dung)/i.test(label)) {
+          cell.setAttribute('data-mobile-block', '');
+        }
         candidates.push(cell);
       });
 

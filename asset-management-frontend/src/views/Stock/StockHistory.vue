@@ -85,30 +85,28 @@
           <el-table-column
             prop="date"
             label="Ngày"
-            width="130"
+            width="120"
           />
           <el-table-column
-            label="Loại"
-            width="110"
-            align="center"
+            label="Phiếu"
+            min-width="150"
           >
             <template #default="{ row }">
-              <el-tag
-                :type="row.type === 'in' ? 'success' : 'warning'"
-                effect="light"
-              >
-                {{ row.type === 'in' ? 'Nhập' : 'Xuất' }}
-              </el-tag>
+              <div class="stock-code-cell">
+                <span class="code">{{ row.code }}</span>
+                <el-tag
+                  :type="row.type === 'in' ? 'success' : 'warning'"
+                  size="small"
+                  effect="light"
+                >
+                  {{ row.type === 'in' ? 'Nhập' : 'Xuất' }}
+                </el-tag>
+              </div>
             </template>
           </el-table-column>
           <el-table-column
-            prop="code"
-            label="Mã phiếu"
-            width="150"
-          />
-          <el-table-column
             label="Vật tư"
-            min-width="260"
+            min-width="220"
           >
             <template #default="{ row }">
               <div style="font-weight: 600;">
@@ -122,12 +120,12 @@
           <el-table-column
             prop="quantity"
             label="SL"
-            width="90"
+            width="80"
             align="right"
           />
           <el-table-column
             label="Đơn giá"
-            width="150"
+            width="130"
             align="right"
           >
             <template #default="{ row }">
@@ -136,7 +134,7 @@
           </el-table-column>
           <el-table-column
             label="Thành tiền"
-            width="160"
+            width="140"
             align="right"
           >
             <template #default="{ row }">
@@ -145,7 +143,7 @@
           </el-table-column>
           <el-table-column
             label="Chi tiết"
-            min-width="320"
+            min-width="220"
           >
             <template #default="{ row }">
               <template v-if="row.type === 'in'">
@@ -239,5 +237,17 @@ const formatCurrency = (value?: number | string | null) => {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+.stock-code-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  line-height: 1.3;
+}
+
+.stock-code-cell .code {
+  color: #0f172a;
+  font-weight: 600;
 }
 </style>

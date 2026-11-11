@@ -103,29 +103,25 @@
             align="center"
           />
           <el-table-column
-            prop="asset_code"
-            label="Mã tài sản"
-            width="140"
-          />
-          <el-table-column
-            prop="name"
-            label="Tên tài sản"
-            min-width="220"
-          />
-          <el-table-column
-            label="Đơn vị"
-            min-width="180"
+            label="Tài sản"
+            min-width="200"
           >
             <template #default="{ row }">
-              {{ row.department?.name || '-' }}
+              <div class="loss-asset-cell">
+                <span class="name">{{ row.name }}</span>
+                <span class="code">{{ row.asset_code }}</span>
+              </div>
             </template>
           </el-table-column>
           <el-table-column
-            label="Cơ sở"
-            width="150"
+            label="Đơn vị / Cơ sở"
+            min-width="160"
           >
             <template #default="{ row }">
-              {{ campusLabel(row.campus) }}
+              <div class="loss-org-cell">
+                <span>{{ row.department?.name || '-' }}</span>
+                <small>{{ campusLabel(row.campus) }}</small>
+              </div>
             </template>
           </el-table-column>
           <el-table-column
@@ -143,32 +139,26 @@
             </template>
           </el-table-column>
           <el-table-column
-            label="Nguyên giá (đồng)"
-            width="160"
-            align="right"
-          >
-            <template #default="{ row }">
-              {{ formatMoney(row.purchase_price) }}
-            </template>
-          </el-table-column>
-          <el-table-column
-            label="Giá trị còn lại (đồng)"
+            label="Giá trị"
             width="170"
             align="right"
           >
             <template #default="{ row }">
-              {{ formatMoney(row.current_value) }}
+              <div class="loss-value-cell">
+                <span>{{ formatMoney(row.purchase_price) }}</span>
+                <small>{{ formatMoney(row.current_value) }}</small>
+              </div>
             </template>
           </el-table-column>
           <el-table-column
             prop="discrepancy_reason"
             label="Nguyên nhân"
-            min-width="200"
+            min-width="140"
           />
           <el-table-column
             prop="responsibility"
             label="Trách nhiệm"
-            min-width="160"
+            min-width="120"
           />
           <el-table-column
             v-if="isAdmin"
@@ -483,4 +473,25 @@ onMounted(load);
 .page-head h2 { margin: 0; font-size: 18px; }
 .toolbar { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
 .totals { display: flex; justify-content: flex-end; gap: 24px; margin-top: 12px; font-size: 14px; }
+
+.loss-asset-cell,
+.loss-org-cell,
+.loss-value-cell {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+  min-width: 0;
+}
+
+.loss-asset-cell .name {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.loss-asset-cell .code,
+.loss-org-cell small,
+.loss-value-cell small {
+  color: #94a3b8;
+  font-size: 11.5px;
+}
 </style>

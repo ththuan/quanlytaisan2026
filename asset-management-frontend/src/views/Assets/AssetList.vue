@@ -394,63 +394,30 @@
           @row-click="handleRowClick"
         >
           <el-table-column
-            prop="category_code"
-            label="Mã loại TS"
-            width="120"
-            fixed="left"
-          >
-            <template #default="{ row }">
-              <el-tooltip
-                v-if="row.category_code"
-                :content="row.assetCategory?.name ? `${row.category_code} - ${row.assetCategory.name}` : row.category_code"
-                placement="top"
-                :show-after="300"
-              >
-                <span class="category-code">
-                  {{ row.category_code }}
-                </span>
-              </el-tooltip>
-              <span
-                v-else
-                class="category-code"
-              >-</span>
-            </template>
-          </el-table-column>
-          <el-table-column
             prop="name"
             :label="$t('assets.assetName')"
-            min-width="320"
-            fixed="left"
-            show-overflow-tooltip
+            min-width="220"
           >
             <template #default="{ row }">
-              <span class="asset-name text-truncate">{{ row.name }}</span>
+              <div class="asset-name-cell">
+                <span class="asset-name">{{ row.name }}</span>
+                <span class="asset-code">{{ row.category_code || '-' }}</span>
+              </div>
             </template>
           </el-table-column>
           <el-table-column
-            prop="unit"
-            label="ĐVT"
+            label="SL / ĐVT"
             width="90"
             align="center"
           >
             <template #default="{ row }">
-              <span>{{ row.unit || 'Cái' }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="quantity"
-            label="SL"
-            width="90"
-            align="center"
-          >
-            <template #default="{ row }">
-              <span>{{ row.quantity || 1 }}</span>
+              <span>{{ row.quantity || 1 }} {{ row.unit || 'Cái' }}</span>
             </template>
           </el-table-column>
           <el-table-column
             prop="purchase_price"
-            label="Nguyên giá (đồng)"
-            width="170"
+            label="Nguyên giá"
+            width="130"
             align="right"
           >
             <template #default="{ row }">
@@ -459,8 +426,8 @@
           </el-table-column>
           <el-table-column
             prop="residual_value"
-            label="Giá trị còn lại (đồng)"
-            width="180"
+            label="Giá trị còn lại"
+            width="140"
             align="right"
           >
             <template #default="{ row }">
@@ -470,7 +437,7 @@
           <el-table-column
             prop="status"
             :label="$t('common.status')"
-            width="130"
+            width="140"
           >
             <template #default="{ row }">
               <el-tag
@@ -483,27 +450,20 @@
             </template>
           </el-table-column>
           <el-table-column
-            prop="campus"
-            label="Cơ sở"
-            width="150"
-          >
-            <template #default="{ row }">
-              {{ campusLabel(row.campus) }}
-            </template>
-          </el-table-column>
-          <el-table-column
             prop="current_department.name"
             :label="$t('assets.department')"
-            min-width="180"
+            min-width="160"
           >
             <template #default="{ row }">
-              <span v-if="row.current_department">{{ row.current_department.name }}</span>
-              <span v-else>-</span>
+              <div class="asset-dept-cell">
+                <span>{{ row.current_department?.name || '-' }}</span>
+                <small v-if="row.campus">{{ campusLabel(row.campus) }}</small>
+              </div>
             </template>
           </el-table-column>
           <el-table-column
             label="Người sử dụng"
-            min-width="190"
+            min-width="150"
           >
             <template #default="{ row }">
               <div
@@ -1781,21 +1741,35 @@ const handleExportQRPDF = async () => {
 }
 
 .asset-code {
+  color: #64748b;
   font-family: inherit;
-  font-size: 14px;
-  font-weight: 700;
-  color: #3b82f6;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .asset-name-cell {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
 }
 
 .asset-name {
-  font-weight: 600;
   color: #0f172a;
   font-size: 14px;
-  line-height: 1.4;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.asset-dept-cell {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.asset-dept-cell small {
+  color: #94a3b8;
+  font-size: 11px;
 }
 
 .text-truncate {
