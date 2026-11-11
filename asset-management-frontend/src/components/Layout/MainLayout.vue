@@ -82,6 +82,14 @@
             </el-menu-item>
 
             <el-menu-item
+              v-if="FEATURES.repairModule && authStore.user?.role === 'admin'"
+              index="/maintenance"
+            >
+              <el-icon><Tools /></el-icon>
+              <span>{{ $t('menu.repairTracking') }}</span>
+            </el-menu-item>
+
+            <el-menu-item
               v-if="authStore.user?.role === 'admin'"
               index="/procurements"
             >
@@ -110,14 +118,6 @@
             >
               <el-icon><ShoppingCart /></el-icon>
               <span>{{ $t('menu.purchaseRequests') }}</span>
-            </el-menu-item>
-
-            <el-menu-item
-              v-if="FEATURES.repairModule && authStore.user?.role === 'admin'"
-              index="/maintenance"
-            >
-              <el-icon><Tools /></el-icon>
-              <span>{{ $t('menu.repairTracking') }}</span>
             </el-menu-item>
 
             <el-menu-item

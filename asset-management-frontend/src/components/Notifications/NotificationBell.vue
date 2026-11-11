@@ -186,7 +186,10 @@ function handleVisibilityChange() {
 }
 
 const updateCompactMode = () => {
-  compactMode.value = window.matchMedia('(max-width: 1367px)').matches;
+  const isPhone = window.matchMedia('(max-width: 767px)').matches;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  compactMode.value = isPhone || isStandalone;
 };
 
 onMounted(() => {

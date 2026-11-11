@@ -6,6 +6,7 @@ import { getPaginationParams, buildPaginationResult, getOffset, PaginationResult
 import { MaintenanceStatus } from '../models/MaintenanceRequest';
 import { UserRole } from '../models/User';
 import { saveBase64Image } from '../utils/fileStorage';
+import notificationService from './notification.service';
 
 export interface CreateMaintenanceInput {
   request_type?: 'procurement' | 'repair';
@@ -1103,6 +1104,29 @@ class MaintenanceService {
           ],
         });
         
+        const createdRequest = reloadedMaintenance || maintenance;
+
+        try {
+          if (requestType === 'repair' && ['new', 'pending'].includes(String(createdRequest.status))) {
+            const repairAsset = createdRequest.asset_id ? await Asset.findByPk(createdRequest.asset_id) : null;
+            const adminIds = await notificationService.getAdminIds();
+            await notificationService.notify({
+              userIds: adminIds,
+              type: 'maintenance',
+              title: 'Có báo hỏng / yêu cầu sửa chữa mới',
+              message: repairAsset
+                ? `${repairAsset.asset_code} - ${repairAsset.name}: ${String(createdRequest.description || '').slice(0, 140)}`
+                : `Yêu cầu sửa chữa #${createdRequest.id}`,
+              link: '/maintenance',
+              entityType: 'maintenance_request',
+              entityId: createdRequest.id,
+              excludeUserId: requestedBy,
+            });
+          }
+        } catch {
+          // Notification failure must not block request creation.
+        }
+
         if (reloadedMaintenance) {
           console.log('✅ [createMaintenance] Successfully reloaded maintenance with associations');
           return reloadedMaintenance;
@@ -1675,6 +1699,43 @@ class MaintenanceService {
           }
         }
       }
+    }
+
+    try {
+      if (maintenance.request_type === 'repair' && maintenance.requested_by) {
+        const isRepairRejected = decision === 'rejected' && String(newStatus).startsWith('rejected');
+        const isCompletionRejected = decision === 'rejected' && newStatus === 'in_progress';
+        const isCompleted = newStatus === 'repair_approved' || String(newStatus) === 'completed';
+
+        const title = isRepairRejected
+          ? 'Yêu cầu sửa chữa bị từ chối'
+          : isCompletionRejected
+            ? 'Sửa chữa bị trả lại để làm lại'
+            : isCompleted
+              ? 'Sửa chữa đã hoàn thành'
+              : 'Yêu cầu sửa chữa đã được duyệt';
+
+        const message = isRepairRejected
+          ? `Tài sản đã chuyển sang Hư hỏng. Lý do: ${reason || 'Không rõ'}`
+          : isCompletionRejected
+            ? `Yêu cầu xác nhận hoàn thành bị trả lại. Lý do: ${reason || 'Không rõ'}`
+            : isCompleted
+              ? 'Tài sản đã được xác nhận hoàn thành sửa chữa và trở lại trạng thái đang sử dụng.'
+              : 'Yêu cầu sửa chữa đã được duyệt, tài sản đang được sửa chữa.';
+
+        await notificationService.notify({
+          userIds: [Number(maintenance.requested_by)],
+          type: 'maintenance',
+          title,
+          message,
+          link: maintenance.asset_id ? `/assets/${maintenance.asset_id}` : '/notifications',
+          entityType: 'maintenance_request',
+          entityId: id,
+          excludeUserId: approver.id,
+        });
+      }
+    } catch {
+      // Notification failure must not block approval/rejection.
     }
 
     return this.getMaintenanceById(id);
