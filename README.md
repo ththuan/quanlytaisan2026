@@ -172,7 +172,7 @@ Người dùng không có `department_id` sẽ bị từ chối ở các chức 
 | QR | qrcode, html5-qrcode |
 | Giao diện động | motion-v, @vueuse/core |
 | Hạ tầng | Docker, Docker Compose, nginx, Cloudflare Tunnel |
-| CI/CD | GitHub Actions, self-hosted runner (tùy chọn) |
+| CI | GitHub Actions (chạy thủ công) |
 
 Luồng cơ bản:
 
@@ -229,8 +229,7 @@ quanlytaisan2026/
 │   └── nginx.dev.conf
 ├── scripts/
 ├── .github/workflows/
-│   ├── ci.yml
-│   └── deploy.yml
+│   └── ci.yml
 ├── docker-compose.yml
 ├── docker-compose.dev.yml
 ├── docker-compose.prod.yml
@@ -480,13 +479,7 @@ Nếu đặt repo ở đường dẫn khác:
 REPO_PATH=/opt/quanlytaisan2026 ./deploy.sh
 ```
 
-Tự động: cài GitHub self-hosted runner:
-
-```bash
-RUNNER_TOKEN=<TOKEN> bash scripts/setup-github-runner.sh
-```
-
-Workflow: `.github/workflows/deploy.yml`.
+Tự động: không còn auto-deploy khi push. Deploy production thực hiện thủ công bằng `./deploy.sh` trên server.
 
 ### 9.4 Cloudflare Tunnel
 
@@ -605,7 +598,7 @@ Khuyến nghị trước khi đưa lên Internet:
 |---|---|
 | `setup.sh` | Cài đặt lần đầu trên server Debian |
 | `deploy.sh` | Pull code mới và rebuild container |
-| `scripts/setup-github-runner.sh` | Cài GitHub self-hosted runner |
+| `scripts/setup-github-runner.sh` | Cài GitHub self-hosted runner (tùy chọn) |
 | `scripts/fix-env-secrets.sh` | Kiểm tra/sửa secret yếu trong `.env` |
 | `scripts/generate-secrets.js` | Sinh JWT_SECRET/DEFAULT_PASSWORD |
 | `scripts/backup-db.ps1` | Sao lưu database (Windows) |
@@ -641,10 +634,10 @@ npm run test:e2e        # build + Playwright smoke tests (mock API, không cần
 
 CI:
 
-- `.github/workflows/ci.yml` chạy khi push/pull request:
+- `.github/workflows/ci.yml`: chạy thủ công (`workflow_dispatch`) khi cần kiểm tra:
   - Backend: `lint` → `typecheck` → `test` (contract tests cho health, error envelope, security headers, auth, request-id).
   - Frontend: `lint:ci` → `typecheck` → `build` → Playwright E2E (login, phân quyền chuyển trang, tra cứu QR, PWA/robots/404).
-- `.github/workflows/deploy.yml`: deploy production qua self-hosted runner.
+- Deploy production: chạy thủ công `./deploy.sh` trên server (không auto-deploy khi push).
 
 ---
 

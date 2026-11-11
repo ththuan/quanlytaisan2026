@@ -46,7 +46,9 @@ docker compose -f "$COMPOSE_FILE" up -d postgres redis
 
 # Tạo lại luôn nginx để đồng bộ cấu hình/port theo prod (tránh trường hợp nginx
 # còn là container cũ cấu hình dev → trỏ sai cổng frontend → 502).
-docker compose -f "$COMPOSE_FILE" up -d --build --force-recreate backend frontend nginx
+docker compose -f "$COMPOSE_FILE" build backend
+docker compose -f "$COMPOSE_FILE" build frontend
+docker compose -f "$COMPOSE_FILE" up -d --no-build --force-recreate backend frontend nginx
 
 log "Waiting for backend to become healthy..."
 for i in $(seq 1 30); do

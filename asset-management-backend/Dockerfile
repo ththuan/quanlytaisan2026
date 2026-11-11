@@ -25,6 +25,9 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# Giới hạn heap khi build để tránh ăn hết RAM server (8GB) lúc deploy.
+ENV NODE_OPTIONS=--max-old-space-size=1024
+
 COPY package*.json ./
 RUN npm ci
 
