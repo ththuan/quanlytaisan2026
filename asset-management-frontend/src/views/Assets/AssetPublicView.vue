@@ -78,13 +78,53 @@
           Sao chép mã
         </button>
       </p>
-      <router-link
+      <div
         v-if="asset.id"
-        class="open-app"
-        :to="`/assets/${asset.id}`"
+        class="public-actions"
       >
-        Đăng nhập để xem chi tiết / Báo hỏng →
-      </router-link>
+        <button
+          v-if="canReport"
+          type="button"
+          class="report-btn"
+          @click="showReportDamageDialog = true"
+        >
+          <span class="report-icon">!</span>
+          Báo hỏng tài sản
+        </button>
+        <button
+          v-else-if="!authStore.isAuthenticated"
+          type="button"
+          class="report-btn"
+          @click="loginForReport"
+        >
+          Đăng nhập để báo hỏng
+        </button>
+        <div
+          v-else
+          class="report-denied"
+        >
+          Tài sản thuộc đơn vị khác — không thể báo hỏng.
+        </div>
+        <div
+          v-if="reported"
+          class="report-done"
+        >
+          Đã gửi báo hỏng, chờ quản trị viên xem xét.
+        </div>
+        <router-link
+          class="open-app"
+          :to="`/assets/${asset.id}`"
+        >
+          Mở chi tiết tài sản →
+        </router-link>
+      </div>
+
+      <ReportDamageDialog
+        v-if="asset"
+        v-model:visible="showReportDamageDialog"
+        :asset="asset"
+        @submitted="handleReported"
+      />
 
       <!-- Details -->
       <div class="info-list">
@@ -158,6 +198,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import { useAuthStore } from '@/stores/auth.store';
+import ReportDamageDialog from '@/components/Assets/ReportDamageDialog.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -189,6 +230,29 @@ interface PublicAsset {
 const loading = ref(true);
 const error = ref<string | null>(null);
 const asset = ref<PublicAsset | null>(null);
+const showReportDamageDialog = ref(false);
+const reported = ref(false);
+
+const canReport = computed(() => {
+  const user = authStore.user;
+  if (!authStore.isAuthenticated || !user || !asset.value || asset.value.status !== 'active') return false;
+  if (user.role === 'admin' || user.role === 'director') return true;
+  const departmentId = asset.value.current_department?.id;
+  return Boolean(user.department_id && departmentId && Number(user.department_id) === Number(departmentId));
+});
+
+const loginForReport = () => {
+  const assetId = asset.value?.id;
+  router.push({
+    path: '/login',
+    query: assetId ? { redirect: `/assets/${assetId}?report=1` } : undefined,
+  });
+};
+
+const handleReported = () => {
+  reported.value = true;
+  showReportDamageDialog.value = false;
+};
 
 const statusClass = computed(() => {
   const s = asset.value?.status;
@@ -229,10 +293,6 @@ onMounted(async () => {
     });
     if (res.data?.success) {
       asset.value = res.data.data;
-      if (authStore.isAuthenticated && asset.value?.id) {
-        await router.replace(`/assets/${asset.value.id}`);
-        return;
-      }
     } else {
       error.value = res.data?.message || 'Không tìm thấy tài sản';
     }
@@ -403,12 +463,70 @@ onMounted(async () => {
   font-family: inherit;
 }
 
-.open-app {
-  display: inline-block;
+.public-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin: -8px 0 16px;
+}
+
+.report-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 46px;
+  border: none;
+  border-radius: 12px;
+  background: #dc2626;
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.25);
+}
+
+.report-btn:active {
+  transform: scale(0.99);
+}
+
+.report-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.report-denied,
+.report-done {
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  text-align: center;
+}
+
+.report-denied {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.report-done {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.open-app {
+  display: block;
+  margin: 0;
   color: #2563eb;
   font-size: 13px;
   font-weight: 600;
+  text-align: center;
   text-decoration: none;
 }
 

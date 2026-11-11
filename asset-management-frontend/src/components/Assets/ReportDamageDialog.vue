@@ -223,7 +223,7 @@ const handleSubmit = async () => {
 
         const payload: any = {
           asset_id: props.asset.id,
-          department_id: props.asset.current_department_id || props.asset.department_id,
+          department_id: props.asset.current_department_id || props.asset.current_department?.id || props.asset.department_id,
           description,
           justification: description,
           urgency: form.urgency,

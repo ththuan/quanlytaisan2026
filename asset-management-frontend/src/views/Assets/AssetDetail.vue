@@ -856,6 +856,9 @@ onMounted(async () => {
   const id = parseInt(route.params.id as string);
   const asset = await assetStore.fetchAssetById(id);
   if (!asset) return;
+  if (route.query.report === '1' && asset.status === 'active') {
+    showReportDamageDialog.value = true;
+  }
   await Promise.all([loadTimeline(id), loadAssignmentHistory(id)]);
   const categoryGroup = assetStore.currentAsset?.assetCategory?.category_group;
   if (authStore.isAdmin && categoryGroup !== 'nha_cua') {
