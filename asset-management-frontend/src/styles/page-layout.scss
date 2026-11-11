@@ -302,6 +302,13 @@ html.pwa-standalone .el-header {
   background-color: #ffffff !important;
 }
 
+html.app-overlay #app {
+  transform: none;
+  will-change: auto;
+  contain: none;
+  backface-visibility: visible;
+}
+
 #pwa-statusbar-cap {
   display: none;
 }

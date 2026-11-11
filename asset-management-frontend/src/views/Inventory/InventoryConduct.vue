@@ -293,41 +293,43 @@
         </el-button>
       </div>
 
-      <div class="inv-mobile-actions">
-        <button
-          v-if="!hasOverallPhotos"
-          type="button"
-          class="inv-mobile-actions__hint"
-          @click="scrollToOverallPhotos"
-        >
-          <el-icon><Warning /></el-icon>
-          Cần 1 ảnh tổng thể để gửi báo cáo — chạm để chụp
-        </button>
-        <div class="inv-mobile-actions__row">
-          <div class="inv-mobile-actions__meta">
-            <b>{{ checkedCount }}/{{ totalAssets }}</b>
-            <span>đã kiểm</span>
+      <Teleport to="body">
+        <div class="inv-mobile-actions">
+          <button
+            v-if="!hasOverallPhotos"
+            type="button"
+            class="inv-mobile-actions__hint"
+            @click="scrollToOverallPhotos"
+          >
+            <el-icon><Warning /></el-icon>
+            Cần 1 ảnh tổng thể để gửi báo cáo — chạm để chụp
+          </button>
+          <div class="inv-mobile-actions__row">
+            <div class="inv-mobile-actions__meta">
+              <b>{{ checkedCount }}/{{ totalAssets }}</b>
+              <span>đã kiểm</span>
+            </div>
+            <el-button
+              class="inv-mobile-actions__save"
+              :loading="saving"
+              :disabled="!hasChanges"
+              @click="saveAsDraft"
+            >
+              <el-icon><DocumentCopy /></el-icon>
+              Lưu nháp
+            </el-button>
+            <el-button
+              class="inv-mobile-actions__submit"
+              type="success"
+              :loading="submitting"
+              :disabled="!canSubmit"
+              @click="submitReport"
+            >
+              Gửi báo cáo
+            </el-button>
           </div>
-          <el-button
-            class="inv-mobile-actions__save"
-            :loading="saving"
-            :disabled="!hasChanges"
-            @click="saveAsDraft"
-          >
-            <el-icon><DocumentCopy /></el-icon>
-            Lưu nháp
-          </el-button>
-          <el-button
-            class="inv-mobile-actions__submit"
-            type="success"
-            :loading="submitting"
-            :disabled="!canSubmit"
-            @click="submitReport"
-          >
-            Gửi báo cáo
-          </el-button>
         </div>
-      </div>
+      </Teleport>
     </div>
 
     <!-- Round Info - Enhanced -->

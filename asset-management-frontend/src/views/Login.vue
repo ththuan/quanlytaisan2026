@@ -39,12 +39,8 @@
                 type="text"
                 placeholder="Nhập tên đăng nhập"
                 autocomplete="username"
-                autofocus
               >
             </div>
-            <p class="field-hint">
-              Vui lòng nhập tên đăng nhập
-            </p>
           </div>
 
           <div class="form-group">
@@ -60,7 +56,7 @@
                 v-model="loginForm.password"
                 class="input-field pw-field"
                 :type="showPassword ? 'text' : 'password'"
-                placeholder="••••••••"
+                placeholder="Nhập mật khẩu"
                 autocomplete="current-password"
                 @keyup.enter="handleSubmit"
               >
@@ -73,9 +69,6 @@
                 <span class="material-symbols-rounded">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
               </button>
             </div>
-            <p class="field-hint">
-              Vui lòng nhập mật khẩu
-            </p>
           </div>
 
           <div
