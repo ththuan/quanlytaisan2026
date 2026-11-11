@@ -80,6 +80,13 @@ test.describe('Xác thực', () => {
     await expect(page.locator('#f-password')).toBeVisible();
   });
 
+  test('trang login có nền particle và orb', async ({ page }) => {
+    await page.goto('/login');
+
+    await expect(page.locator('#particle-canvas')).toBeVisible();
+    await expect(page.locator('.login-orb')).toHaveCount(2);
+  });
+
   test('form login bắt buộc nhập tên đăng nhập và mật khẩu', async ({ page }) => {
     await page.goto('/login');
     await expect(page.locator('#login-form')).toBeVisible();

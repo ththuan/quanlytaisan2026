@@ -1,5 +1,18 @@
 <template>
   <div class="login-container">
+    <canvas
+      id="particle-canvas"
+      ref="canvasRef"
+    />
+    <div
+      class="login-orb login-orb--one"
+      aria-hidden="true"
+    />
+    <div
+      class="login-orb login-orb--two"
+      aria-hidden="true"
+    />
+
     <div class="login-center">
       <div class="form-card">
         <div class="login-header">
@@ -149,7 +162,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue';
+import { reactive, ref, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '@/stores/auth.store';
 import InputOTP from '@/components/animate/InputOTP.vue';
 import AutoHeight from '@/components/animate/AutoHeight.vue';
@@ -157,6 +170,7 @@ import AutoHeight from '@/components/animate/AutoHeight.vue';
 import logoUrl from '@/login/logo-truong.jpg';
 
 const authStore = useAuthStore();
+const canvasRef = ref<HTMLCanvasElement | null>(null);
 const passwordRef = ref<HTMLInputElement | null>(null);
 const rememberMe = ref(false);
 const showPassword = ref(false);
@@ -244,6 +258,107 @@ onMounted(async () => {
   await authStore.checkAuth();
 });
 
+// Canvas particle network (nền cũ) - tự giảm mật độ trên máy yếu / giảm chuyển động
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  r: number;
+  alpha: number;
+}
+
+let animFrameId = 0;
+let removeResizeListener: (() => void) | null = null;
+
+function initCanvas() {
+  const canvas = canvasRef.value;
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const reduceMotion =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const lite = reduceMotion || (navigator.hardwareConcurrency ?? 8) <= 4;
+  const COUNT = lite ? 36 : 80;
+  const MAX_DIST = 140;
+  const MAX_DIST_SQ = MAX_DIST * MAX_DIST;
+  const drawLinks = !lite;
+
+  let w = 0;
+  let h = 0;
+
+  const resize = () => {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  };
+  resize();
+  window.addEventListener('resize', resize);
+  removeResizeListener = () => window.removeEventListener('resize', resize);
+
+  const particles: Particle[] = Array.from({ length: COUNT }, () => ({
+    x: Math.random() * w,
+    y: Math.random() * h,
+    vx: (Math.random() - 0.5) * 0.45,
+    vy: (Math.random() - 0.5) * 0.45,
+    r: Math.random() * 1.8 + 0.5,
+    alpha: Math.random() * 0.55 + 0.25,
+  }));
+
+  const renderFrame = () => {
+    ctx.clearRect(0, 0, w, h);
+
+    for (const p of particles) {
+      if (!reduceMotion) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > w) p.vx *= -1;
+        if (p.y < 0 || p.y > h) p.vy *= -1;
+      }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(180, 210, 255, ${p.alpha})`;
+      ctx.fill();
+    }
+
+    if (drawLinks) {
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const distSq = dx * dx + dy * dy;
+          if (distSq < MAX_DIST_SQ) {
+            const dist = Math.sqrt(distSq);
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(100, 180, 255, ${(1 - dist / MAX_DIST) * 0.28})`;
+            ctx.lineWidth = 0.6;
+            ctx.stroke();
+          }
+        }
+      }
+    }
+  };
+
+  if (reduceMotion) {
+    renderFrame();
+  } else {
+    const draw = () => {
+      renderFrame();
+      animFrameId = requestAnimationFrame(draw);
+    };
+    draw();
+  }
+}
+
+onMounted(() => initCanvas());
+
+onUnmounted(() => {
+  cancelAnimationFrame(animFrameId);
+  removeResizeListener?.();
+});
 </script>
 
 <style>
@@ -266,6 +381,57 @@ onMounted(async () => {
   font-size: 16px;
   color: #1e293b;
   overflow: hidden;
+}
+
+#particle-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.login-orb {
+  position: fixed;
+  border-radius: 50%;
+  opacity: 0.3;
+  z-index: 1;
+  pointer-events: none;
+  will-change: transform;
+  animation: login-orb-float 16s ease-in-out infinite alternate;
+}
+
+.login-orb--one {
+  width: 420px;
+  height: 420px;
+  top: -140px;
+  left: -120px;
+  background: radial-gradient(circle, #2563eb 0%, transparent 70%);
+}
+
+.login-orb--two {
+  width: 520px;
+  height: 520px;
+  right: -160px;
+  bottom: -200px;
+  background: radial-gradient(circle, #8b5cf6 0%, transparent 70%);
+  animation-delay: -7s;
+}
+
+@keyframes login-orb-float {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(34px, -28px, 0) scale(1.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-orb {
+    animation: none;
+  }
 }
 
 .login-center {
