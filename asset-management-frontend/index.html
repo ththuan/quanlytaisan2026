@@ -2,37 +2,57 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/x-icon" href="/logo-truong.ico?v=2" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <title>Phần mềm Quản lý tài sản | Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ</title>
+    <meta name="description" content="Phần mềm Quản lý tài sản - Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ" />
+    <meta name="author" content="Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ" />
+
+    <!-- Open Graph / mạng xã hội -->
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="vi_VN" />
+    <meta property="og:site_name" content="Quản lý tài sản - CTEC" />
+    <meta property="og:title" content="Phần mềm Quản lý tài sản | Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ" />
+    <meta property="og:description" content="Quản lý tài sản theo đơn vị, danh mục, điều chuyển, kiểm kê, mua sắm, sửa chữa, thanh lý và tra cứu QR công khai." />
+    <meta property="og:image" content="/icon-512.png" />
+    <meta property="og:image:alt" content="Logo Quản lý tài sản CTEC" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Phần mềm Quản lý tài sản | CTEC" />
+    <meta name="twitter:description" content="Quản lý tài sản theo đơn vị, danh mục, điều chuyển, kiểm kê, mua sắm, sửa chữa, thanh lý và tra cứu QR công khai." />
+    <meta name="twitter:image" content="/icon-512.png" />
+
+    <!-- Favicon / PWA icons (manifest do vite-plugin-pwa tự inject) -->
+    <link rel="icon" href="/logo-truong.ico?v=2" sizes="any" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+    <!-- PWA / mobile -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Quan ly tai san" />
+    <meta name="apple-mobile-web-app-title" content="Quản lý tài sản" />
     <meta name="theme-color" content="#409eff" />
-    <meta name="description" content="Phần mềm Quản lý tài sản - Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ" />
-    <meta name="format-detection" content="telephone=no" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <title>Phần mềm Quản lý tài sản | Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ</title>
+    <meta name="msapplication-TileColor" content="#409eff" />
 
+    <!-- Fonts: preconnect trước, chỉ tải 1 stylesheet để tránh render-blocking kép -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Preload Inter font to prevent FOUT (Flash of Unstyled Text) -->
     <link
-      rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@800;900&display=swap"
       rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@800;900&display=swap"
     />
   </head>
   <body>
-    <div
-      id="pwa-statusbar-cap"
-      aria-hidden="true"
-    ></div>
+    <noscript>
+      <div style="padding: 24px; font-family: sans-serif; line-height: 1.5">
+        <h1>Phần mềm Quản lý tài sản</h1>
+        <p>Trình duyệt của bạn đang tắt JavaScript. Vui lòng bật JavaScript để sử dụng phần mềm.</p>
+      </div>
+    </noscript>
+    <div id="pwa-statusbar-cap" aria-hidden="true"></div>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

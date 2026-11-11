@@ -1,0 +1,5 @@
+# Phần mềm nội bộ - không cho công cụ tìm kiếm lập chỉ mục.
+# https://www.robotstxt.org/
+
+User-agent: *
+Disallow: /

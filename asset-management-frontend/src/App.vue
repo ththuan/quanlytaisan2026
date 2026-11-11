@@ -195,8 +195,6 @@ onMounted(() => {
 </script>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
 :root {
   /* Typography scale: 14px base + semantic steps for hierarchy */
   --font-size-xs: 12px;
@@ -217,14 +215,6 @@ html {
 /* Prevent font flash (FOUT/FOIT) */
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
-}
-
-/* Ensure Inter font is loaded before displaying text */
-@supports (font-display: swap) {
-  @font-face {
-    font-family: 'Inter';
-    font-display: swap;
-  }
 }
 
 /* Reset and Global Styles */

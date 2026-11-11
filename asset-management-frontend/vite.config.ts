@@ -16,6 +16,8 @@ export default defineConfig(({ mode }) => {
   const useHttps = String(process.env.VITE_HTTPS || env.VITE_HTTPS || '').toLowerCase().trim() === 'true';
   const port = Number(env.FRONTEND_PORT || env.VITE_FRONTEND_PORT) || 4000;
   const protocol = useHttps ? 'https' : 'http';
+  // Không tự mở trình duyệt khi chạy CI/Playwright (tránh treo/ồn log).
+  const shouldOpenBrowser = !process.env.CI && process.env.VITE_NO_OPEN !== '1';
   if (useHttps) {
     console.log('[vite] HTTPS mode: VITE_HTTPS=true detected');
   }
@@ -64,6 +66,7 @@ export default defineConfig(({ mode }) => {
           'apple-touch-icon.png',
         ],
         manifest: {
+          id: '/',
           name: 'Quản lý tài sản - CTEC',
           short_name: 'QLTS CTEC',
           description: 'Phần mềm Quản lý tài sản - Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ',
@@ -74,6 +77,8 @@ export default defineConfig(({ mode }) => {
           scope: '/',
           start_url: '/',
           lang: 'vi',
+          categories: ['business', 'productivity'],
+          prefer_related_applications: false,
           icons: [
             {
               src: '/icon-192.png',
@@ -179,7 +184,9 @@ export default defineConfig(({ mode }) => {
             if (useHttps) {
               console.log('  Trinh duyet bao "Khong bao mat" -> Nang cao -> Truy cap localhost\n');
             }
-            import('open').then(({ default: open }) => open(actualUrl));
+            if (shouldOpenBrowser) {
+              import('open').then(({ default: open }) => open(actualUrl));
+            }
           });
         },
       },
