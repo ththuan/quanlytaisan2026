@@ -7,6 +7,7 @@
 export const FEATURES = {
   /** Module Sửa chữa/Bảo trì, Mua sắm/Tăng tài sản (admin) */
   auxiliaryModules: false,
+  repairModule: true,
   /** Module Kho vật tư (admin) */
   stockModule: true,
   /** Xác thực 2 bước (TOTP) */

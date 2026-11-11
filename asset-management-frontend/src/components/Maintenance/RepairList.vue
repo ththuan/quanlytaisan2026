@@ -196,6 +196,14 @@
               {{ getApproveButtonText(row) }}
             </el-button>
             <el-button
+              v-if="canRejectRepair(row)"
+              size="small"
+              type="danger"
+              @click="handleRejectRepair(row)"
+            >
+              Từ chối sửa chữa
+            </el-button>
+            <el-button
               v-if="canCompleteRepair(row)"
               size="small"
               type="warning"
@@ -204,7 +212,7 @@
               Hoàn thành sửa chữa
             </el-button>
             <el-button
-              v-if="authStore.isAdmin && row.status === 'in_progress' && !row.linked_disposal_case_id"
+              v-if="authStore.isAdmin && ['in_progress', 'rejected_by_admin', 'rejected_due_to_high_cost'].includes(row.status) && !row.linked_disposal_case_id"
               size="small"
               type="danger"
               :loading="toDisposalLoading"
@@ -546,6 +554,12 @@ const canApproveAtCurrentLevel = (row: any) => {
   return false;
 };
 
+const canRejectRepair = (row: any) => {
+  if (!authStore.user) return false;
+  return authStore.user.role === 'admin'
+    && ['pending', 'new', 'approved_by_head', 'approved_by_admin'].includes(row.status);
+};
+
 const canCompleteRepair = (row: any) => {
   if (!authStore.user) return false;
   return (
@@ -593,6 +607,32 @@ const handleApprove = async (row: any) => {
     fetchData({}, true);
   } catch (error: any) {
     if (error !== 'cancel') {
+      ElMessage.error(error.response?.data?.message || error.message || t('common.error'));
+    }
+  }
+};
+
+const handleRejectRepair = async (row: any) => {
+  try {
+    const result = await ElMessageBox.prompt(
+      'Nhập lý do từ chối sửa chữa. Tài sản sẽ chuyển sang trạng thái Hư hỏng để làm thủ tục thanh lý.',
+      'Từ chối sửa chữa',
+      {
+        confirmButtonText: 'Từ chối sửa chữa',
+        cancelButtonText: 'Hủy',
+        inputType: 'textarea',
+        inputPlaceholder: 'Lý do từ chối...',
+        inputValidator: (value: string) => (value && value.trim() ? true : 'Vui lòng nhập lý do từ chối'),
+      }
+    );
+    await api.put(`/maintenance/${row.id}/process-approval`, {
+      decision: 'rejected',
+      reason: result.value.trim(),
+    });
+    ElMessage.success('Đã từ chối sửa chữa. Tài sản chuyển sang Hư hỏng.');
+    fetchData({}, true);
+  } catch (error: any) {
+    if (error !== 'cancel' && error !== 'close') {
       ElMessage.error(error.response?.data?.message || error.message || t('common.error'));
     }
   }

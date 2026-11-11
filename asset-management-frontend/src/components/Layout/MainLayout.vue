@@ -113,7 +113,7 @@
             </el-menu-item>
 
             <el-menu-item
-              v-if="FEATURES.auxiliaryModules && authStore.user?.role === 'admin'"
+              v-if="FEATURES.repairModule && authStore.user?.role === 'admin'"
               index="/maintenance"
             >
               <el-icon><Tools /></el-icon>

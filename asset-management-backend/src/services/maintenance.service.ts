@@ -1629,59 +1629,22 @@ class MaintenanceService {
       if (!asset) {
         console.warn('⚠️ Asset not found for repair request:', maintenance.asset_id);
       } else {
-        // Handle rejection: chuyển tài sản sang chờ thanh lý (pending_disposal)
-        // và tự động tạo hồ sơ thanh lý
-        if (decision === 'rejected') {
+        // Từ chối sửa chữa: tài sản chuyển sang Hư hỏng để xử lý thanh lý ở bước riêng.
+        if (decision === 'rejected' && String(newStatus).startsWith('rejected')) {
           try {
             const oldStatus = asset.status;
-            await asset.update({ status: 'pending_disposal' });
-            console.log('✅ Asset status changed to pending_disposal after repair rejection');
-
-            // Tạo hồ sơ thanh lý nếu chưa có
-            if (!(maintenance as any).linked_disposal_case_id) {
-              try {
-                const year = new Date().getFullYear();
-                const roleLabel = 'Quản trị viên';
-
-                const disposalCase = await AssetDisposalCase.create({
-                  code: 'TEMP',
-                  source_type: 'maintenance',
-                  source_maintenance_request_id: id,
-                  disposal_type: 'liquidation',
-                  origin_department_id: maintenance.department_id ?? null,
-                  status: 'pending',
-                  notes: `Tự động tạo từ đề nghị sửa chữa #${id} bị ${roleLabel} từ chối. Lý do: ${reason || 'Không rõ'}`,
-                  created_by: approver.id,
-                } as any);
-
-                const code = `TL-${year}-${String(disposalCase.id).padStart(6, '0')}`;
-                await disposalCase.update({ code });
-
-                await AssetDisposalItem.create({
-                  disposal_case_id: disposalCase.id,
-                  asset_id: maintenance.asset_id,
-                  moved_at: new Date(),
-                  moved_by: approver.id,
-                  reason: `Đề nghị sửa chữa #${id} bị từ chối bởi ${roleLabel}`,
-                } as any);
-
-                await AuditLog.create({
-                  user_id: approver.id,
-                  action: 'update',
-                  table_name: 'assets',
-                  record_id: maintenance.asset_id,
-                  old_value: { status: oldStatus },
-                  new_value: { status: 'pending_disposal' },
-                } as any);
-
-                await maintenance.update({ linked_disposal_case_id: disposalCase.id } as any);
-                console.log('✅ Auto-created disposal case:', code);
-              } catch (disposalError: any) {
-                console.warn('⚠️ Could not auto-create disposal case:', disposalError.message);
-              }
-            }
+            const oldCondition = (asset as any).asset_condition;
+            await asset.update({ status: 'damaged', asset_condition: 'damaged' });
+            await AuditLog.create({
+              user_id: approver.id,
+              action: 'update',
+              table_name: 'assets',
+              record_id: maintenance.asset_id,
+              old_value: { status: oldStatus, asset_condition: oldCondition },
+              new_value: { status: 'damaged', asset_condition: 'damaged' },
+            } as any);
           } catch (error: any) {
-            console.error('❌ Error updating asset status after rejection:', error);
+            console.error('❌ Error updating asset status after repair rejection:', error);
           }
         }
 
