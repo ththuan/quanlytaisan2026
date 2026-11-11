@@ -198,6 +198,64 @@
         </el-table>
       </div>
 
+      <div class="report-mobile-list">
+        <div
+          v-for="report in reportStore.reports"
+          :key="report.id"
+          class="report-card"
+          role="button"
+          tabindex="0"
+          @click="handleView(report)"
+          @keydown.enter="handleView(report)"
+        >
+          <div class="report-card__head">
+            <div class="report-card__title">
+              <span class="name">{{ reportDepartmentName(report) }}</span>
+              <span class="meta">Năm {{ report.year }}</span>
+            </div>
+            <el-tag
+              :type="getStatusType(report.status)"
+              size="small"
+            >
+              {{ getStatusText(report.status) }}
+            </el-tag>
+          </div>
+          <div class="report-card__stats">
+            <span><b>{{ report.total_assets || 0 }}</b> tổng</span>
+            <span class="ok"><b>{{ report.active_assets || 0 }}</b> hoạt động</span>
+            <span class="warn"><b>{{ report.damaged_assets || 0 }}</b> hỏng</span>
+            <span class="danger"><b>{{ report.lost_assets || 0 }}</b> mất</span>
+          </div>
+          <div class="report-card__foot">
+            <span class="value">{{ formatCurrency(report.total_value) }}</span>
+            <div class="actions">
+              <el-button
+                size="small"
+                text
+                type="primary"
+                @click.stop="handleView(report)"
+              >
+                Xem
+              </el-button>
+              <el-button
+                v-if="canEdit(report)"
+                size="small"
+                text
+                type="warning"
+                @click.stop="handleEdit(report)"
+              >
+                Sửa
+              </el-button>
+            </div>
+          </div>
+        </div>
+        <el-empty
+          v-if="!reportStore.loading && reportStore.reports.length === 0"
+          description="Chưa có báo cáo"
+          :image-size="70"
+        />
+      </div>
+
       <div class="pagination">
         <el-pagination
           v-if="reportStore.pagination"
@@ -327,6 +385,8 @@ const handleView = async (report: any) => {
     detailLoading.value = false;
   }
 };
+
+const reportDepartmentName = (report: any) => report?.department?.name || '—';
 
 const canEdit = (_report: any) => authStore.isAdmin;
 
@@ -463,4 +523,116 @@ const handleExport = async () => {
   }
 }
 
+.report-mobile-list {
+  display: none;
+}
+
+.report-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.report-card:active {
+  background: #f8fafc;
+}
+
+.report-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.report-card__title {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.report-card__title .name {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.report-card__title .meta {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.report-card__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  color: #475569;
+  font-size: 12px;
+}
+
+.report-card__stats b {
+  color: #0f172a;
+}
+
+.report-card__stats .ok b {
+  color: #16a34a;
+}
+
+.report-card__stats .warn b {
+  color: #d97706;
+}
+
+.report-card__stats .danger b {
+  color: #dc2626;
+}
+
+.report-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed #eef2f7;
+}
+
+.report-card__foot .value {
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.report-card__foot .actions {
+  display: flex;
+  gap: 2px;
+}
+
+</style>
+
+<style>
+@media (max-width: 1367px) {
+  html.app-overlay .report-list .responsive-table {
+    display: none;
+  }
+
+  html.app-overlay .report-list .report-mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1367px) {
+  html.app-overlay .report-list .report-mobile-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 </style>

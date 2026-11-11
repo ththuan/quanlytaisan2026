@@ -291,20 +291,44 @@
       </div>
 
       <div
-        v-if="batchGroups.length > 0"
+        v-if="availableBatchGroups.length > 0"
         class="inv-batch"
       >
         <div class="inv-batch__head">
           <div>
             <h3>Kiểm kê theo nhóm</h3>
-            <span>{{ batchGroups.length }} nhóm · {{ batchUnconfirmedCount }} chưa xác nhận</span>
+            <span>{{ batchGroups.length }} nhóm đã chọn · {{ batchUnconfirmedCount }} chưa xác nhận</span>
           </div>
+          <div class="inv-batch__head-actions">
+            <el-button
+              type="primary"
+              size="small"
+              plain
+              @click="openBatchPicker"
+            >
+              Chọn nhóm
+            </el-button>
+            <el-button
+              text
+              size="small"
+              @click="showBatchSection = !showBatchSection"
+            >
+              {{ showBatchSection ? 'Ẩn' : 'Hiện' }}
+            </el-button>
+          </div>
+        </div>
+
+        <div
+          v-show="showBatchSection && batchGroups.length === 0"
+          class="inv-batch-empty"
+        >
+          <span>Chưa chọn nhóm tài sản để kiểm kê</span>
           <el-button
-            text
+            type="primary"
             size="small"
-            @click="showBatchSection = !showBatchSection"
+            @click="openBatchPicker"
           >
-            {{ showBatchSection ? 'Ẩn' : 'Hiện' }}
+            Chọn tài sản kiểm kê nhóm
           </el-button>
         </div>
 
@@ -343,6 +367,14 @@
                 />
               </div>
 
+              <div
+                class="inv-batch-card__diff"
+                :class="batchDiffClass(group)"
+              >
+                <span>Sổ sách: {{ group.book_quantity }} {{ group.unit }}</span>
+                <strong>{{ batchDiffLabel(group) }}</strong>
+              </div>
+
               <div class="inv-batch-card__field">
                 <label>Tình trạng</label>
                 <el-select
@@ -370,18 +402,30 @@
                 placeholder="Ghi chú (không bắt buộc)"
               />
 
-              <template v-if="batchInputs[group.category_id].actual_quantity !== group.book_quantity">
+              <div
+                v-if="batchDifference(group) !== 0"
+                class="inv-batch-card__discrepancy"
+              >
+                <span class="title">
+                  {{ batchDifference(group) > 0 ? 'Giải trình tài sản thừa' : 'Giải trình tài sản thiếu' }}
+                </span>
                 <el-input
                   v-model="batchInputs[group.category_id].discrepancy_reason"
                   size="small"
-                  placeholder="Nguyên nhân chênh lệch (không bắt buộc)"
+                  placeholder="Lý do (bắt buộc)"
                 />
                 <el-input
+                  v-if="batchDifference(group) < 0"
                   v-model="batchInputs[group.category_id].responsibility"
                   size="small"
-                  placeholder="Trách nhiệm (không bắt buộc)"
+                  placeholder="Người chịu trách nhiệm (bắt buộc)"
                 />
-              </template>
+                <p class="hint">
+                  {{ batchDifference(group) > 0
+                    ? 'Số thừa sẽ được ghi nhận để cập nhật sổ sách sau khi báo cáo được duyệt.'
+                    : 'Số thiếu sẽ được ghi nhận mất/thiếu; cần xác định trách nhiệm và đền bù nếu có.' }}
+                </p>
+              </div>
 
               <div class="inv-batch-card__photos">
                 <div
@@ -1064,20 +1108,27 @@
 
     <!-- Kiểm kê theo nhóm (bạch items) -->
     <el-card
-      v-if="!isCompact && batchGroups.length > 0"
+      v-if="!isCompact && availableBatchGroups.length > 0"
       style="margin-top: 16px;"
     >
       <template #header>
-        <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
           <span style="font-weight:600;">
             <el-icon style="margin-right:6px;vertical-align:-2px;"><Box /></el-icon>
-            Kiểm kê theo nhóm — Công cụ dụng cụ
+            Kiểm kê theo nhóm
           </span>
-          <div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <el-button
+              size="small"
+              type="primary"
+              plain
+              @click="openBatchPicker"
+            >
+              Chọn nhóm
+            </el-button>
             <el-tag
               v-if="batchUnconfirmedCount > 0"
               type="warning"
-              style="margin-right:8px;"
             >
               {{ batchUnconfirmedCount }} nhóm chưa xác nhận
             </el-tag>
@@ -1094,9 +1145,25 @@
         type="info"
         :closable="false"
         style="margin-bottom:12px;"
-        description="Chỉ các tài sản KHÔNG có mã QR thuộc danh mục công cụ dụng cụ mới được kiểm kê theo nhóm. Tài sản có mã QR vẫn phải quét riêng. Bắt buộc chụp ít nhất 1 ảnh nhóm."
+        description="Chọn nhóm tài sản cần kiểm kê theo nhóm. Chỉ áp dụng cho tài sản không có mã QR; tài sản có mã QR vẫn phải quét riêng. Bắt buộc chụp ít nhất 1 ảnh nhóm."
       />
-      <div class="responsive-table">
+      <div
+        v-if="batchGroups.length === 0"
+        class="batch-empty"
+      >
+        <span>Chưa chọn nhóm tài sản để kiểm kê.</span>
+        <el-button
+          type="primary"
+          size="small"
+          @click="openBatchPicker"
+        >
+          Chọn tài sản kiểm kê nhóm
+        </el-button>
+      </div>
+      <div
+        v-else
+        class="responsive-table"
+      >
         <el-table
           :data="batchGroups"
           border
@@ -1138,6 +1205,17 @@
                 style="width:108px;"
                 :disabled="row.confirmed"
               />
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Chênh lệch"
+            width="130"
+            align="center"
+          >
+            <template #default="{ row }">
+              <span :class="batchDifference(row) === 0 ? 'text-success' : 'text-danger'">
+                {{ batchDiffLabel(row) }}
+              </span>
             </template>
           </el-table-column>
           <el-table-column
@@ -1342,6 +1420,67 @@
         </el-button>
       </div>
     </div>
+
+    <el-dialog
+      v-model="showBatchPicker"
+      title="Chọn nhóm tài sản kiểm kê"
+      width="560"
+      append-to-body
+    >
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        style="margin-bottom:12px;"
+      >
+        <template #title>
+          Chọn danh mục tài sản cần kiểm kê theo nhóm. Chỉ áp dụng cho tài sản không có mã QR.
+        </template>
+      </el-alert>
+      <div
+        v-if="availableBatchGroups.length === 0"
+        class="batch-picker-empty"
+      >
+        Không có nhóm tài sản phù hợp để kiểm kê theo nhóm.
+      </div>
+      <div
+        v-else
+        class="batch-picker-list"
+      >
+        <label
+          v-for="group in availableBatchGroups"
+          :key="group.category_id"
+          class="batch-picker-item"
+        >
+          <el-checkbox
+            v-model="batchPickerSelection"
+            :value="group.category_id"
+          />
+          <div class="batch-picker-item__body">
+            <span class="name">{{ group.category_name }}</span>
+            <span class="meta">{{ group.category_code }} · Sổ sách {{ group.book_quantity }} {{ group.unit }}</span>
+          </div>
+          <el-tag
+            v-if="group.confirmed"
+            size="small"
+            type="success"
+          >
+            Đã kiểm
+          </el-tag>
+        </label>
+      </div>
+      <template #footer>
+        <el-button @click="showBatchPicker = false">
+          Hủy
+        </el-button>
+        <el-button
+          type="primary"
+          @click="confirmBatchPicker"
+        >
+          Xác nhận
+        </el-button>
+      </template>
+    </el-dialog>
 
     <!-- Check Asset Dialog -->
     <el-dialog
@@ -2015,7 +2154,7 @@ const createBatchInput = () => ({
   compensation_amount: 0,
 });
 
-const batchGroups = computed(() => {
+const availableBatchGroups = computed(() => {
   const groups = new Map<number, {
     category_id: number; category_name: string; category_code: string;
     unit: string; book_quantity: number; assets: any[]; confirmed: boolean;
@@ -2048,9 +2187,46 @@ const batchGroups = computed(() => {
   return Array.from(groups.values());
 });
 
+const selectedBatchIds = ref<number[]>([]);
+const showBatchPicker = ref(false);
+const batchPickerSelection = ref<number[]>([]);
+
+const batchGroups = computed(() => availableBatchGroups.value.filter(
+  (group) => selectedBatchIds.value.includes(group.category_id)
+));
+
+const openBatchPicker = () => {
+  batchPickerSelection.value = [...selectedBatchIds.value];
+  showBatchPicker.value = true;
+};
+
+const confirmBatchPicker = () => {
+  selectedBatchIds.value = [...batchPickerSelection.value];
+  showBatchPicker.value = false;
+};
+
+const batchDifference = (group: any) => (
+  (Number(batchInputs.value[group.category_id]?.actual_quantity) || 0) - Number(group.book_quantity || 0)
+);
+
+const batchDiffLabel = (group: any) => {
+  const diff = batchDifference(group);
+  if (diff === 0) return 'Khớp sổ sách';
+  return diff > 0 ? `Thừa ${diff} ${group.unit}` : `Thiếu ${Math.abs(diff)} ${group.unit}`;
+};
+
+const batchDiffClass = (group: any) => {
+  const diff = batchDifference(group);
+  return diff === 0 ? 'is-ok' : diff > 0 ? 'is-surplus' : 'is-short';
+};
+
 watch(
-  batchGroups,
+  availableBatchGroups,
   (groups) => {
+    if (!selectedBatchIds.value.length) {
+      const confirmed = groups.filter((group) => group.confirmed).map((group) => group.category_id);
+      if (confirmed.length) selectedBatchIds.value = confirmed;
+    }
     for (const group of groups) {
       const input = batchInputs.value[group.category_id]
         || (batchInputs.value[group.category_id] = createBatchInput());
@@ -2080,6 +2256,20 @@ const confirmBatchGroup = async (group: { category_id: number; category_name: st
     return;
   }
 
+  const groupDifference = (Math.round(Number(input.actual_quantity) || 0)) - Number(group.book_quantity || 0);
+  if (groupDifference !== 0 && !String(input.discrepancy_reason || '').trim()) {
+    ElMessage.warning(
+      groupDifference > 0
+        ? 'Vui lòng nhập lý do tài sản thừa so với sổ sách'
+        : 'Vui lòng nhập lý do tài sản thiếu so với sổ sách'
+    );
+    return;
+  }
+  if (groupDifference < 0 && !String(input.responsibility || '').trim()) {
+    ElMessage.warning('Vui lòng nhập người chịu trách nhiệm cho số lượng thiếu');
+    return;
+  }
+
   batchSaving.value = group.category_id;
   try {
     const totalActual = Math.max(0, Math.round(Number(input.actual_quantity) || 0));
@@ -2101,7 +2291,7 @@ const confirmBatchGroup = async (group: { category_id: number; category_name: st
     const items = allocations.map(({ asset, bookQty, actualQty }) => ({
       asset_id: asset.id,
       actual_quantity: actualQty,
-      check_status: actualQty === 0 ? 'missing' : actualQty > bookQty ? 'surplus' : 'matched',
+      check_status: actualQty === 0 || actualQty < bookQty ? 'missing' : actualQty > bookQty ? 'surplus' : 'matched',
       asset_condition: input.condition,
       notes: (input.notes ? input.notes + ' — ' : '') + 'Kiểm theo nhóm',
       scan_method: 'batch' as const,
@@ -5401,6 +5591,115 @@ onUnmounted(() => {
   .inv-mobile-loadmore {
     grid-column: 1 / -1;
   }
+}
+
+.inv-batch__head-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.inv-batch-empty,
+.batch-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.inv-batch-card__diff {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+}
+
+.inv-batch-card__diff.is-ok {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.inv-batch-card__diff.is-surplus {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.inv-batch-card__diff.is-short {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.inv-batch-card__discrepancy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inv-batch-card__discrepancy .title {
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.inv-batch-card__discrepancy .hint {
+  margin: 0;
+  color: #64748b;
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.batch-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.batch-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.batch-picker-item__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.batch-picker-item__body .name {
+  color: #0f172a;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.batch-picker-item__body .meta {
+  color: #64748b;
+  font-size: 11.5px;
+}
+
+.batch-picker-empty {
+  padding: 16px;
+  text-align: center;
+  color: #64748b;
+  font-size: 13px;
 }
 
 .asset-info-mobile {
