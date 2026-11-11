@@ -30,6 +30,11 @@ coverage/
 *.test.js
 *.spec.js
 
+# Playwright
+playwright-report/
+test-results/
+playwright/.cache/
+
 # IDE
 .vscode/
 .idea/

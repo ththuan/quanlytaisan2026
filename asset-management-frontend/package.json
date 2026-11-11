@@ -11,6 +11,9 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.ts,.tsx --fix",
     "lint:ci": "eslint . --ext .vue,.js,.jsx,.ts,.tsx --max-warnings 0",
     "typecheck": "vue-tsc --noEmit",
+    "test:e2e": "playwright test",
+    "pretest:e2e": "npm run build",
+    "test:e2e:ui": "playwright test --ui",
     "format": "prettier --write \"src/**/*.{js,ts,vue,css,scss}\""
   },
   "dependencies": {
@@ -31,6 +34,7 @@
     "vue-router": "^4.2.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "@types/lodash-es": "^4.17.12",
     "@vitejs/plugin-basic-ssl": "^1.2.0",
     "@vitejs/plugin-vue": "^5.0.0",

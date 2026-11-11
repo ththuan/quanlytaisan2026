@@ -16,6 +16,10 @@ Thumbs.db
 .gitignore
 coverage
 .nyc_output
+playwright-report
+test-results
+e2e
+playwright.config.ts
 temp
 tmp
 *.tmp

@@ -636,11 +636,14 @@ cd asset-management-frontend
 npm run typecheck
 npm run build
 npm run lint:ci
+npm run test:e2e        # build + Playwright smoke tests (mock API, không cần backend/DB)
 ```
 
 CI:
 
-- `.github/workflows/ci.yml`: typecheck/build khi push hoặc pull request.
+- `.github/workflows/ci.yml` chạy khi push/pull request:
+  - Backend: `lint` → `typecheck` → `test` (contract tests cho health, error envelope, security headers, auth, request-id).
+  - Frontend: `lint:ci` → `typecheck` → `build` → Playwright E2E (login, phân quyền chuyển trang, tra cứu QR, PWA/robots/404).
 - `.github/workflows/deploy.yml`: deploy production qua self-hosted runner.
 
 ---
