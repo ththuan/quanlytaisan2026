@@ -2079,31 +2079,9 @@ const handleExportQRPDF = async () => {
 }
 
 @media (max-width: 767px) {
-  .stats-section .el-row {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 10px;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .stats-section .el-row::-webkit-scrollbar {
-    display: none;
-  }
-
-  .stats-section .el-col {
-    flex: 0 0 168px !important;
-    width: 168px !important;
-    max-width: 168px !important;
-    scroll-snap-align: start;
-  }
-
   .stats-section .stat-card {
-    height: 68px;
-    min-height: 68px;
+    height: 64px;
+    min-height: 64px;
     margin-bottom: 0;
   }
 }

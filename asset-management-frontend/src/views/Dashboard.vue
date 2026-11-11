@@ -957,31 +957,35 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
 
 @media (max-width: 767px) {
   .stats-row {
-    flex-wrap: nowrap;
-    gap: 10px;
-    overflow-x: auto;
+    row-gap: 10px;
     margin-right: 0 !important;
     margin-left: 0 !important;
-    padding-bottom: 4px;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .stats-row::-webkit-scrollbar {
-    display: none;
+    margin-bottom: 16px;
   }
 
   .stats-row .el-col {
-    flex: 0 0 166px !important;
-    width: 166px !important;
-    max-width: 166px !important;
-    scroll-snap-align: start;
+    flex: 0 0 50% !important;
+    width: 50% !important;
+    max-width: 50% !important;
   }
 
   .stats-row .stat-card {
-    height: 96px;
-    min-height: 96px;
+    height: auto;
+    min-height: 84px;
+    margin-bottom: 0;
+  }
+
+  .stats-row .stat-card :deep(.el-card__body) {
+    padding: 12px;
+  }
+
+  .stats-row .stat-content {
+    min-width: 0;
+  }
+
+  .stats-row .stat-label {
+    font-size: 10px;
+    line-height: 1.25;
   }
 }
 
