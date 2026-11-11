@@ -110,6 +110,12 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item
+                  command="draft"
+                  :disabled="!hasChanges"
+                >
+                  Lưu nháp
+                </el-dropdown-item>
+                <el-dropdown-item
                   command="missing"
                   :disabled="!hasUnscannedAssets"
                 >
@@ -156,15 +162,6 @@
             />
           </template>
         </el-input>
-        <button
-          type="button"
-          class="inv-mobile-scan__camera"
-          :disabled="scanning"
-          aria-label="Mở camera quét QR"
-          @click="openCameraScanner"
-        >
-          <el-icon><Camera /></el-icon>
-        </button>
       </div>
 
       <div class="inv-mobile-list-head">
@@ -293,42 +290,167 @@
         </el-button>
       </div>
 
-      <Teleport to="body">
-        <div class="inv-mobile-actions">
-          <button
-            v-if="!hasOverallPhotos"
-            type="button"
-            class="inv-mobile-actions__hint"
-            @click="scrollToOverallPhotos"
+      <div
+        v-if="batchGroups.length > 0"
+        class="inv-batch"
+      >
+        <div class="inv-batch__head">
+          <div>
+            <h3>Kiểm kê theo nhóm</h3>
+            <span>{{ batchGroups.length }} nhóm · {{ batchUnconfirmedCount }} chưa xác nhận</span>
+          </div>
+          <el-button
+            text
+            size="small"
+            @click="showBatchSection = !showBatchSection"
           >
-            <el-icon><Warning /></el-icon>
-            Cần 1 ảnh tổng thể để gửi báo cáo — chạm để chụp
-          </button>
-          <div class="inv-mobile-actions__row">
-            <div class="inv-mobile-actions__meta">
-              <b>{{ checkedCount }}/{{ totalAssets }}</b>
-              <span>đã kiểm</span>
+            {{ showBatchSection ? 'Ẩn' : 'Hiện' }}
+          </el-button>
+        </div>
+
+        <div
+          v-show="showBatchSection"
+          class="inv-batch__list"
+        >
+          <div
+            v-for="group in batchGroups"
+            :key="group.category_id"
+            class="inv-batch-card"
+            :class="{ 'is-confirmed': group.confirmed }"
+          >
+            <div class="inv-batch-card__head">
+              <div class="inv-batch-card__title">
+                <span class="name">{{ group.category_name }}</span>
+                <span class="meta">{{ group.category_code }} · Sổ sách {{ group.book_quantity }} {{ group.unit }}</span>
+              </div>
+              <el-tag
+                :type="group.confirmed ? 'success' : 'warning'"
+                size="small"
+              >
+                {{ group.confirmed ? 'Đã xác nhận' : 'Chưa xác nhận' }}
+              </el-tag>
             </div>
-            <el-button
-              class="inv-mobile-actions__save"
-              :loading="saving"
-              :disabled="!hasChanges"
-              @click="saveAsDraft"
-            >
-              <el-icon><DocumentCopy /></el-icon>
-              Lưu nháp
-            </el-button>
-            <el-button
-              class="inv-mobile-actions__submit"
-              type="success"
-              :loading="submitting"
-              :disabled="!canSubmit"
-              @click="submitReport"
-            >
-              Gửi báo cáo
-            </el-button>
+
+            <template v-if="!group.confirmed">
+              <div class="inv-batch-card__field">
+                <label>Số lượng thực tế</label>
+                <el-input-number
+                  v-model="batchInputs[group.category_id].actual_quantity"
+                  :min="0"
+                  :max="group.book_quantity + 50"
+                  size="small"
+                  controls-position="right"
+                />
+              </div>
+
+              <div class="inv-batch-card__field">
+                <label>Tình trạng</label>
+                <el-select
+                  v-model="batchInputs[group.category_id].condition"
+                  size="small"
+                >
+                  <el-option
+                    value="good"
+                    label="Đang dùng tốt"
+                  />
+                  <el-option
+                    value="usable"
+                    label="Còn dùng được"
+                  />
+                  <el-option
+                    value="damaged"
+                    label="Hỏng - đề nghị thanh lý"
+                  />
+                </el-select>
+              </div>
+
+              <el-input
+                v-model="batchInputs[group.category_id].notes"
+                size="small"
+                placeholder="Ghi chú (không bắt buộc)"
+              />
+
+              <template v-if="batchInputs[group.category_id].actual_quantity !== group.book_quantity">
+                <el-input
+                  v-model="batchInputs[group.category_id].discrepancy_reason"
+                  size="small"
+                  placeholder="Nguyên nhân chênh lệch (không bắt buộc)"
+                />
+                <el-input
+                  v-model="batchInputs[group.category_id].responsibility"
+                  size="small"
+                  placeholder="Trách nhiệm (không bắt buộc)"
+                />
+              </template>
+
+              <div class="inv-batch-card__photos">
+                <div
+                  v-for="url in batchInputs[group.category_id].image_urls"
+                  :key="url"
+                  class="inv-batch-card__photo"
+                >
+                  <el-image
+                    :src="url"
+                    fit="cover"
+                    :preview-src-list="batchInputs[group.category_id].image_urls"
+                    preview-teleported
+                  />
+                  <button
+                    type="button"
+                    @click="removeBatchImage(group.category_id, url)"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <label class="inv-batch-card__photo-add">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    @change="(e) => onBatchImagesSelected(group.category_id, e)"
+                  >
+                  <el-icon><Camera /></el-icon>
+                  <span>Ảnh nhóm</span>
+                </label>
+              </div>
+
+              <el-button
+                type="primary"
+                class="inv-batch-card__confirm"
+                :loading="batchSaving === group.category_id"
+                @click="confirmBatchGroup(group)"
+              >
+                Xác nhận nhóm
+              </el-button>
+            </template>
+
+            <template v-else>
+              <div class="inv-batch-card__summary">
+                <span>Thực tế <b>{{ batchInputs[group.category_id]?.actual_quantity ?? group.book_quantity }}</b> {{ group.unit }}</span>
+                <span>{{ getConditionLabel(batchInputs[group.category_id]?.condition || 'good') }}</span>
+                <span v-if="batchInputs[group.category_id]?.image_urls?.length">{{ batchInputs[group.category_id].image_urls.length }} ảnh</span>
+              </div>
+              <el-button
+                size="small"
+                @click="resetBatchGroup(group)"
+              >
+                Sửa lại
+              </el-button>
+            </template>
           </div>
         </div>
+      </div>
+
+      <Teleport to="body">
+        <button
+          type="button"
+          class="inv-fab"
+          aria-label="Mở camera quét QR"
+          :disabled="scanning"
+          @click="openCameraScanner"
+        >
+          <el-icon><Camera /></el-icon>
+        </button>
       </Teleport>
     </div>
 
@@ -942,7 +1064,7 @@
 
     <!-- Kiểm kê theo nhóm (bạch items) -->
     <el-card
-      v-if="batchGroups.length > 0"
+      v-if="!isCompact && batchGroups.length > 0"
       style="margin-top: 16px;"
     >
       <template #header>
@@ -1176,6 +1298,50 @@
         </el-table>
       </div>
     </el-card>
+
+    <div
+      v-if="isCompact"
+      class="inv-submit-card"
+    >
+      <div class="inv-submit-card__head">
+        <div>
+          <strong>Hoàn tất kiểm kê</strong>
+          <span>{{ checkedCount }}/{{ totalAssets }} tài sản đã kiểm</span>
+        </div>
+        <el-tag
+          :type="hasOverallPhotos ? 'success' : 'warning'"
+          size="small"
+        >
+          {{ hasOverallPhotos ? 'Đủ ảnh tổng thể' : 'Thiếu ảnh tổng thể' }}
+        </el-tag>
+      </div>
+      <button
+        v-if="!hasOverallPhotos"
+        type="button"
+        class="inv-submit-card__hint"
+        @click="scrollToOverallPhotos"
+      >
+        <el-icon><Warning /></el-icon>
+        Chạm để chụp ảnh tổng thể trước khi gửi
+      </button>
+      <div class="inv-submit-card__actions">
+        <el-button
+          :loading="saving"
+          :disabled="!hasChanges"
+          @click="saveAsDraft"
+        >
+          Lưu nháp
+        </el-button>
+        <el-button
+          type="success"
+          :loading="submitting"
+          :disabled="!canSubmit"
+          @click="submitReport"
+        >
+          Gửi báo cáo
+        </el-button>
+      </div>
+    </div>
 
     <!-- Check Asset Dialog -->
     <el-dialog
@@ -1656,6 +1822,7 @@ const scannedCode = ref('');
 const scanning = ref(false);
 const scannerInputRef = ref();
 const isCompact = ref(window.matchMedia('(max-width: 1367px)').matches);
+const showBatchSection = ref(true);
 
 const updateCompactMode = () => {
   isCompact.value = window.matchMedia('(max-width: 1367px)').matches;
@@ -1667,6 +1834,7 @@ const focusScannerInput = () => {
 };
 
 const handleMobileAction = (command: string) => {
+  if (command === 'draft') void saveAsDraft();
   if (command === 'missing') void markUnscannedAsMissing();
 };
 
@@ -4671,7 +4839,7 @@ onUnmounted(() => {
 <style>
 @media (max-width: 1367px) {
   .inventory-conduct {
-    padding-bottom: 96px;
+    padding-bottom: 16px;
   }
 
   .inv-mobile {
@@ -4795,16 +4963,8 @@ onUnmounted(() => {
   }
 
   .inv-mobile-scan {
-    position: sticky;
-    top: 0;
-    z-index: 20;
     display: flex;
     gap: 8px;
-    margin: 0 -4px;
-    padding: 8px;
-    border-radius: 14px;
-    background: rgba(248, 250, 252, 0.96);
-    backdrop-filter: blur(8px);
   }
 
   .inv-mobile-scan__input {
@@ -4813,24 +4973,6 @@ onUnmounted(() => {
 
   .inv-mobile-scan__input .el-input__wrapper {
     border-radius: 12px;
-  }
-
-  .inv-mobile-scan__camera {
-    display: inline-flex;
-    flex: 0 0 46px;
-    align-items: center;
-    justify-content: center;
-    width: 46px;
-    height: 46px;
-    border: none;
-    border-radius: 12px;
-    background: #2563eb;
-    color: #fff;
-    font-size: 21px;
-  }
-
-  .inv-mobile-scan__camera:disabled {
-    opacity: 0.6;
   }
 
   .inv-mobile-list-head {
@@ -5002,71 +5144,248 @@ onUnmounted(() => {
     margin-top: 4px;
   }
 
-  .inv-mobile-actions {
+  .inv-fab {
     position: fixed;
-    right: 8px;
-    bottom: calc(64px + env(safe-area-inset-bottom, 0px));
-    left: 8px;
+    right: 16px;
+    bottom: calc(78px + env(safe-area-inset-bottom, 0px));
     z-index: 850;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
-    padding: 8px;
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.98);
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.16);
-    backdrop-filter: blur(10px);
-  }
-
-  .inv-mobile-actions__hint {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    width: 100%;
-    padding: 6px 8px;
+    width: 56px;
+    height: 56px;
     border: none;
-    border-radius: 8px;
-    background: #fef3c7;
-    color: #92400e;
-    font-size: 11.5px;
-    font-weight: 600;
+    border-radius: 50%;
+    background: #2563eb;
+    color: #fff;
+    font-size: 24px;
+    box-shadow: 0 8px 22px rgba(37, 99, 235, 0.4);
   }
 
-  .inv-mobile-actions__row {
+  .inv-fab:disabled {
+    opacity: 0.6;
+  }
+
+  .inv-batch {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .inv-batch__head {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0 2px;
+  }
+
+  .inv-batch__head h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .inv-batch__head span {
+    color: #64748b;
+    font-size: 12px;
+  }
+
+  .inv-batch__list {
+    display: flex;
+    flex-direction: column;
     gap: 8px;
   }
 
-  .inv-mobile-actions__meta {
+  .inv-batch-card {
     display: flex;
     flex-direction: column;
-    padding: 0 4px;
-    line-height: 1.1;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #fff;
   }
 
-  .inv-mobile-actions__meta b {
+  .inv-batch-card.is-confirmed {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+  }
+
+  .inv-batch-card__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .inv-batch-card__title {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 2px;
+  }
+
+  .inv-batch-card__title .name {
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .inv-batch-card__title .meta {
+    color: #64748b;
+    font-size: 11.5px;
+  }
+
+  .inv-batch-card__field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .inv-batch-card__field label {
+    color: #64748b;
+    font-size: 12px;
+  }
+
+  .inv-batch-card__field .el-input-number,
+  .inv-batch-card__field .el-select {
+    width: 180px;
+    max-width: 65%;
+  }
+
+  .inv-batch-card__photos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .inv-batch-card__photo {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    overflow: hidden;
+    border-radius: 8px;
+  }
+
+  .inv-batch-card__photo .el-image {
+    width: 100%;
+    height: 100%;
+  }
+
+  .inv-batch-card__photo > button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    border-radius: 0 0 0 6px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 10px;
+  }
+
+  .inv-batch-card__photo-add {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 48px;
+    height: 48px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    color: #2563eb;
+    font-size: 10px;
+    cursor: pointer;
+  }
+
+  .inv-batch-card__photo-add input {
+    display: none;
+  }
+
+  .inv-batch-card__photo-add .el-icon {
+    font-size: 16px;
+  }
+
+  .inv-batch-card__confirm {
+    width: 100%;
+    min-height: 38px;
+    border-radius: 10px;
+  }
+
+  .inv-batch-card__summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    color: #475569;
+    font-size: 12px;
+  }
+
+  .inv-batch-card__summary b {
+    color: #0f172a;
+  }
+
+  .inv-submit-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+    padding: 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: #fff;
+  }
+
+  .inv-submit-card__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .inv-submit-card__head strong {
+    display: block;
     color: #0f172a;
     font-size: 15px;
   }
 
-  .inv-mobile-actions__meta span {
+  .inv-submit-card__head span {
     color: #64748b;
-    font-size: 10.5px;
+    font-size: 12px;
   }
 
-  .inv-mobile-actions__save {
-    min-height: 40px;
+  .inv-submit-card__hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px;
+    border: none;
     border-radius: 10px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 12px;
+    font-weight: 600;
   }
 
-  .inv-mobile-actions__submit {
+  .inv-submit-card__actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .inv-submit-card__actions .el-button {
     flex: 1;
-    min-height: 40px;
+    min-height: 42px;
     border-radius: 10px;
+  }
+
+  .inv-submit-card__actions .el-button--success {
     font-weight: 700;
   }
 }
