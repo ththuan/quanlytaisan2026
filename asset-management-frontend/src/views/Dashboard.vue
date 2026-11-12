@@ -102,9 +102,9 @@
             </el-card>
           </el-col>
 
-          <!-- 3. Sửa chữa (chỉ admin và director) -->
+          <!-- 3. Sửa chữa (admin) -->
           <el-col
-            v-if="FEATURES.auxiliaryModules && isAdminOrDirector"
+            v-if="FEATURES.repairModule && authStore.isAdmin"
             :xs="12"
             :sm="8"
             :md="4"
