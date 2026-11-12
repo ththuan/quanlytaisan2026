@@ -129,7 +129,7 @@ class UserService {
       throw new NotFoundError('User not found');
     }
 
-    // ─── Chặn đổi phòng ban khi còn báo cáo kiểm kê chưa hoàn tất ─────────────
+    // ─── Chặn đổi đơn vị khi còn báo cáo kiểm kê chưa hoàn tất ─────────────
     // Tránh tình trạng báo cáo bị "treo" ở đơn vị cũ sau khi chuyển người.
     if (data.department_id !== undefined && data.department_id !== user.department_id) {
       const activeRounds = await InventoryRound.findAll({
@@ -150,7 +150,7 @@ class UserService {
         });
         if (ownUnfinished) {
           throw new ConflictError(
-            `Không thể đổi phòng ban: người dùng đang có báo cáo kiểm kê chưa hoàn tất (${ownUnfinished.report_code}) trong đợt đang diễn ra. ` +
+            `Không thể đổi đơn vị: người dùng đang có báo cáo kiểm kê chưa hoàn tất (${ownUnfinished.report_code}) trong đợt đang diễn ra. ` +
             'Vui lòng hoàn tất hoặc từ chối báo cáo trước khi chuyển đơn vị.'
           );
         }
@@ -166,7 +166,7 @@ class UserService {
           });
           if (pendingForHead) {
             throw new ConflictError(
-              `Không thể đổi phòng ban: đang có báo cáo kiểm kê chờ Trưởng đơn vị duyệt (${pendingForHead.report_code}) tại đơn vị cũ. ` +
+              `Không thể đổi đơn vị: đang có báo cáo kiểm kê chờ Trưởng đơn vị duyệt (${pendingForHead.report_code}) tại đơn vị cũ. ` +
               'Vui lòng duyệt/từ chối báo cáo trước khi chuyển đơn vị.'
             );
           }

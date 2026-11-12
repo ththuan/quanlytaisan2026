@@ -450,13 +450,13 @@ const submit = async () => {
   for (let idx = 0; idx < form.items.length; idx++) {
     const it = form.items[idx];
     if (!it.category_id && !it.category_code) return ElMessage.error(`Tài sản #${idx + 1}: Vui lòng chọn loại tài sản`);
-    if (!it.current_department_id) return ElMessage.error(`Tài sản #${idx + 1}: Vui lòng chọn phòng ban`);
+    if (!it.current_department_id) return ElMessage.error(`Tài sản #${idx + 1}: Vui lòng chọn đơn vị`);
     if (!it.purchase_date) return ElMessage.error(`Tài sản #${idx + 1}: Vui lòng chọn ngày mua`);
   }
 
   const firstItemDeptId = form.items[0]?.current_department_id;
   const receivingDepartmentId = firstItemDeptId ? Number(firstItemDeptId) : 0;
-  if (!receivingDepartmentId || isNaN(receivingDepartmentId)) return ElMessage.error('Thiếu phòng ban (không hợp lệ)');
+  if (!receivingDepartmentId || isNaN(receivingDepartmentId)) return ElMessage.error('Thiếu đơn vị (không hợp lệ)');
 
   loading.value = true;
   try {

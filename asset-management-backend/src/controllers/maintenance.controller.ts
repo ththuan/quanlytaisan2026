@@ -83,7 +83,7 @@ class MaintenanceController {
       } else if (!user.department_id) {
         return res.status(400).json({
           success: false,
-          message: 'Bạn chưa được phân công vào phòng ban nào.',
+          message: 'Bạn chưa được phân công vào đơn vị nào.',
         });
       } else {
         // Prevent non-admin users from creating requests for another unit.
@@ -147,7 +147,7 @@ class MaintenanceController {
       if (user.role !== 'admin' && !user.department_id) {
         return res.status(400).json({
           success: false,
-          message: 'Bạn chưa được phân công vào phòng ban nào.',
+          message: 'Bạn chưa được phân công vào đơn vị nào.',
         });
       }
 
@@ -383,7 +383,7 @@ class MaintenanceController {
   }
 
   /**
-   * Hoàn tất mua sắm/cấp phát: tạo tài sản tự động và gán về phòng ban nhận
+   * Hoàn tất mua sắm/cấp phát: tạo tài sản tự động và gán về đơn vị nhận
    * POST /maintenance/:id/fulfill-procurement
    */
   async fulfillProcurement(req: AuthRequest, res: Response, next: NextFunction) {
@@ -423,7 +423,7 @@ class MaintenanceController {
       if (user.role !== 'admin' && !user.department_id) {
         return res.status(400).json({
           success: false,
-          message: 'Bạn chưa được phân công vào phòng ban nào.',
+          message: 'Bạn chưa được phân công vào đơn vị nào.',
         });
       }
 

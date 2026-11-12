@@ -9,7 +9,7 @@ const isLoading = ref(false);
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 
 /**
- * Xóa cache phòng ban (gọi sau reset DB / seed từ Quản trị hệ thống).
+ * Xóa cache đơn vị (gọi sau reset DB / seed từ Quản trị hệ thống).
  * Nếu không gọi, UI có thể vẫn hiện danh sách cũ tới 5 phút.
  */
 export function invalidateGlobalDepartmentCache() {
@@ -86,7 +86,7 @@ export function useDepartments(options: {
       return cachedDepartments.value;
     } catch (err: any) {
       error.value = err.message || 'Failed to load departments';
-      ElMessage.error('Không thể tải danh sách phòng ban');
+      ElMessage.error('Không thể tải danh sách đơn vị');
       throw err;
     } finally {
       isLoading.value = false;
@@ -104,7 +104,7 @@ export function useDepartments(options: {
       await departmentStore.fetchDepartmentTree();
     } catch (err: any) {
       error.value = err.message || 'Failed to load department tree';
-      ElMessage.error('Không thể tải cây phòng ban');
+      ElMessage.error('Không thể tải cây đơn vị');
       throw err;
     } finally {
       isLoading.value = false;

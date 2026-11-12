@@ -30,7 +30,7 @@
         >
           {{ item.title }}
         </el-descriptions-item>
-        <el-descriptions-item label="Cấp phát (phòng ban)">
+        <el-descriptions-item label="Cấp phát (đơn vị)">
           {{ item.receiving_department?.name }}
         </el-descriptions-item>
         <el-descriptions-item label="Ngày mua">

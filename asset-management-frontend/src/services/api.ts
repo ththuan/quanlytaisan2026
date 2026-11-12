@@ -223,7 +223,7 @@ api.interceptors.response.use(
         showClose: true,
       });
     } else if (error.response?.status === 409) {
-      // 409 Conflict - để component (ví dụ xóa phòng ban) tự hiển thị và xử lý (gỡ rồi xóa)
+      // 409 Conflict - để component (ví dụ xóa đơn vị) tự hiển thị và xử lý (gỡ rồi xóa)
       // Không hiện toast ở đây để tránh trùng và để component show dialog khi cần
     } else {
       // Chỉ hiện lỗi nếu không phải 401/403/404/429/409

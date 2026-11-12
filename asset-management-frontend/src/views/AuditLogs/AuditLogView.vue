@@ -86,7 +86,7 @@
               value="users"
             />
             <el-option
-              label="Phòng ban"
+              label="Đơn vị"
               value="departments"
             />
             <el-option
@@ -426,7 +426,7 @@ const tableLabel = (name: string) => {
   const map: Record<string, string> = {
     assets: 'Tài sản',
     users: 'Người dùng',
-    departments: 'Phòng ban',
+    departments: 'Đơn vị',
     asset_transfers: 'Điều chuyển',
     maintenance_requests: 'Bảo trì',
     asset_disposal_cases: 'Thanh lý',

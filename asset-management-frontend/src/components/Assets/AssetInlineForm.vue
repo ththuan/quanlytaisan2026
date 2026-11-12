@@ -484,7 +484,7 @@ const rules = computed<FormRules>(() => ({
   name: [{ required: true, message: t('validation.required'), trigger: 'blur' }],
   category_id: [{ required: true, message: 'Vui lòng chọn loại tài sản', trigger: 'change' }],
   status: [{ required: true, message: t('validation.required'), trigger: 'change' }],
-  current_department_id: [{ required: true, message: 'Vui lòng chọn phòng ban', trigger: 'change' }],
+  current_department_id: [{ required: true, message: 'Vui lòng chọn đơn vị', trigger: 'change' }],
   purchase_date: [{ required: true, message: 'Vui lòng chọn ngày mua', trigger: 'change' }],
   quantity: [
     {

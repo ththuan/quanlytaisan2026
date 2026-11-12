@@ -145,7 +145,7 @@
           v-if="asset.current_department?.name"
           class="info-row"
         >
-          <span class="info-label">Phòng ban</span>
+          <span class="info-label">Đơn vị</span>
           <span class="info-value">{{ asset.current_department.name }}</span>
         </div>
         <div

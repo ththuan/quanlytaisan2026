@@ -17,7 +17,7 @@ export interface AnnualReport {
   approved_date?: string;
   created_at: string;
   updated_at: string;
-  /** Chi tiết GET /reports/:id — tổng hợp đa module theo phòng ban & năm */
+  /** Chi tiết GET /reports/:id — tổng hợp đa module theo đơn vị & năm */
   year_summary?: Record<string, unknown>;
 }
 

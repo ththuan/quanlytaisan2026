@@ -1006,7 +1006,8 @@ class AssetService {
       ],
       order: [['created_at', 'DESC']],
       attributes: [
-        'id', 'description', 'status', 'estimated_cost',
+        'id', 'description', 'justification', 'repair_content', 'notes', 'urgency',
+        'status', 'estimated_cost', 'requested_by',
         'start_date', 'completion_date', 'created_at', 'updated_at',
         'head_approved_at', 'admin_approved_at', 'director_approved_at',
         'rejection_reason', 'admin_notes', 'head_notes', 'director_notes',

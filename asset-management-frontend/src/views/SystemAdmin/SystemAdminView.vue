@@ -472,7 +472,7 @@
               </el-icon>
             </div>
             <h4>Reset Data</h4>
-            <p>Xóa toàn bộ dữ liệu nghiệp vụ và phòng ban</p>
+            <p>Xóa toàn bộ dữ liệu nghiệp vụ và đơn vị</p>
             <el-button
               type="danger"
               :loading="actionLoading.reset"
@@ -616,7 +616,7 @@
         <template #title>
           CẢNH BÁO: Thao tác này không thể hoàn tác!
         </template>
-        Tất cả dữ liệu nghiệp vụ sẽ bị xóa bao gồm: <strong>phòng ban</strong>, tài sản, bảo trì, điều chuyển, kiểm kê, thanh lý, v.v.
+        Tất cả dữ liệu nghiệp vụ sẽ bị xóa bao gồm: <strong>đơn vị</strong>, tài sản, bảo trì, điều chuyển, kiểm kê, thanh lý, v.v.
         <br><br>
         <strong>GIỮ NGUYÊN:</strong> users, asset_categories
       </el-alert>

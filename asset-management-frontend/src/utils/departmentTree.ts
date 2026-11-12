@@ -11,7 +11,7 @@ export type FlatDept = {
 };
 
 /**
- * Xây cây phòng ban từ danh sách phẳng (parent_department_id), sắp xếp nhánh theo tên (vi).
+ * Xây cây đơn vị từ danh sách phẳng (parent_department_id), sắp xếp nhánh theo tên (vi).
  */
 export function flatDepartmentsToTree(departments: FlatDept[]): DeptTreeNode[] {
   if (!departments.length) return [];

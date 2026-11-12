@@ -380,7 +380,7 @@ class ProcurementService {
           || (procurement as any).receiving_department_id;
 
         if (!itemDepartmentId) {
-          throw new ConflictError(`Thiếu phòng ban cho tài sản "${(item as any).name || 'không tên'}" trong phiếu`);
+          throw new ConflictError(`Thiếu đơn vị cho tài sản "${(item as any).name || 'không tên'}" trong phiếu`);
         }
 
         const itemDept = await Department.findByPk(itemDepartmentId, { transaction });

@@ -191,7 +191,7 @@
             </div>
           </el-card>
 
-          <!-- Vị trí & Phòng ban -->
+          <!-- Vị trí & Đơn vị -->
           <el-card
             v-reveal
             class="info-card"
@@ -290,6 +290,78 @@
               <el-empty
                 v-else
                 description="Chưa có lịch sử bàn giao"
+                :image-size="60"
+              />
+            </div>
+          </el-card>
+
+          <!-- Lịch sử sửa chữa -->
+          <el-card
+            v-reveal
+            class="info-card repair-history-card"
+            shadow="never"
+          >
+            <template #header>
+              <div class="card-title">
+                <el-icon><Tools /></el-icon>
+                <span>Lịch sử sửa chữa</span>
+              </div>
+            </template>
+            <div
+              v-loading="loadingRepairHistory"
+              class="repair-history-content"
+            >
+              <template v-if="repairHistory.length > 0">
+                <div
+                  v-for="item in repairHistory"
+                  :key="item.id"
+                  class="repair-item"
+                >
+                  <div class="repair-header">
+                    <strong>{{ item.repair_content || item.description || 'Yêu cầu sửa chữa' }}</strong>
+                    <el-tag
+                      :type="getRepairStatusType(item.status)"
+                      size="small"
+                    >
+                      {{ getRepairStatusText(item.status) }}
+                    </el-tag>
+                  </div>
+                  <div class="repair-date">
+                    Ngày yêu cầu: {{ formatDate(item.created_at) }}
+                    <span v-if="item.completion_date"> · Hoàn thành: {{ formatDate(item.completion_date) }}</span>
+                    <span v-else-if="item.start_date"> · Bắt đầu sửa: {{ formatDate(item.start_date) }}</span>
+                  </div>
+                  <div class="repair-details">
+                    <div v-if="item.description">
+                      <span class="detail-label">Nội dung:</span>
+                      <span class="detail-text">{{ item.description }}</span>
+                    </div>
+                    <div v-if="item.justification && item.justification !== item.description">
+                      <span class="detail-label">Thuyết minh:</span>
+                      <span class="detail-text">{{ item.justification }}</span>
+                    </div>
+                    <div v-if="item.estimated_cost">
+                      <span class="detail-label">Chi phí dự kiến:</span>
+                      <span class="detail-text cost-value">{{ formatCurrency(item.estimated_cost) }}</span>
+                    </div>
+                    <div v-if="item.requester">
+                      <span class="detail-label">Người yêu cầu:</span>
+                      <span class="detail-text">{{ item.requester.fullname || item.requester.username }}</span>
+                    </div>
+                    <div v-if="item.admin_notes || item.head_notes || item.director_notes || item.notes">
+                      <span class="detail-label">Ghi chú xử lý:</span>
+                      <span class="detail-text">{{ item.admin_notes || item.head_notes || item.director_notes || item.notes }}</span>
+                    </div>
+                    <div v-if="item.rejection_reason">
+                      <span class="detail-label">Lý do từ chối:</span>
+                      <span class="detail-text">{{ item.rejection_reason }}</span>
+                    </div>
+                  </div>
+                </div>
+              </template>
+              <el-empty
+                v-else
+                description="Chưa có lịch sử sửa chữa"
                 :image-size="60"
               />
             </div>
@@ -702,7 +774,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAssetStore } from '@/stores/asset.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { ArrowLeft, Edit, Delete, Document, Location, Box, TrendCharts, Download, Refresh, Picture, Upload, Clock, User, Camera, Warning } from '@element-plus/icons-vue';
+import { ArrowLeft, Edit, Delete, Document, Location, Box, TrendCharts, Download, Refresh, Picture, Upload, Clock, User, Camera, Warning, Tools } from '@element-plus/icons-vue';
 import AssetFormDialog from '@/components/Assets/AssetFormDialog.vue';
 import ReportDamageDialog from '@/components/Assets/ReportDamageDialog.vue';
 import ImageZoom from '@/components/animate/ImageZoom.vue';
@@ -727,6 +799,8 @@ const timeline = ref<any[]>([]);
 const loadingTimeline = ref(false);
 const assignmentHistory = ref<any[]>([]);
 const loadingAssignmentHistory = ref(false);
+const repairHistory = ref<any[]>([]);
+const loadingRepairHistory = ref(false);
 const qrCodeImage = ref<string | null>(null);
 const loadingQRCode = ref(false);
 const generatingQR = ref(false);
@@ -863,7 +937,7 @@ onMounted(async () => {
   if (route.query.report === '1' && asset.status === 'active') {
     showReportDamageDialog.value = true;
   }
-  await Promise.all([loadTimeline(id), loadAssignmentHistory(id)]);
+  await Promise.all([loadTimeline(id), loadAssignmentHistory(id), loadRepairHistory(id)]);
   const categoryGroup = assetStore.currentAsset?.assetCategory?.category_group;
   if (authStore.isAdmin && categoryGroup !== 'nha_cua') {
     await loadQRCode(id);
@@ -882,6 +956,48 @@ const loadAssignmentHistory = async (assetId: number) => {
   }
 };
 
+const loadRepairHistory = async (assetId: number) => {
+  loadingRepairHistory.value = true;
+  try {
+    const response: any = await assetService.getRepairHistory(assetId);
+    repairHistory.value = response?.data || [];
+  } catch (error) {
+    console.error('Error loading repair history:', error);
+    repairHistory.value = [];
+  } finally {
+    loadingRepairHistory.value = false;
+  }
+};
+
+const getRepairStatusText = (status: string) => {
+  const map: Record<string, string> = {
+    draft: 'Nháp',
+    new: 'Mới',
+    pending: 'Chờ duyệt',
+    approved_by_head: 'Chờ quản trị duyệt',
+    approved_by_admin: 'Đã duyệt',
+    approved_by_director: 'Đã duyệt',
+    in_progress: 'Đang sửa chữa',
+    repair_completed: 'Chờ xác nhận hoàn thành',
+    repair_approved: 'Đã hoàn thành',
+    completed: 'Đã hoàn thành',
+    rejected: 'Bị từ chối',
+    rejected_by_head: 'Bị từ chối',
+    rejected_by_admin: 'Bị từ chối',
+    rejected_by_director: 'Bị từ chối',
+    rejected_due_to_high_cost: 'Chuyển thanh lý/tiêu hủy',
+  };
+  return map[status] || status || '-';
+};
+
+const getRepairStatusType = (status: string) => {
+  if (!status) return 'info';
+  if (status.startsWith('rejected') || status === 'rejected') return 'danger';
+  if (status === 'completed' || status === 'repair_approved') return 'success';
+  if (status === 'in_progress' || status === 'repair_completed') return 'warning';
+  if (status === 'pending' || status === 'new') return 'primary';
+  return 'info';
+};
 const loadTimeline = async (assetId: number) => {
   loadingTimeline.value = true;
   try {

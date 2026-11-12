@@ -874,7 +874,7 @@ const qrRegenerate = ref(false);
 const currentDepartmentName = computed(() => {
   if (!authStore.userDepartmentId) return '';
   const dept = departments.value.find(d => d.id === authStore.userDepartmentId);
-  return dept?.name || 'Phòng ban của bạn';
+  return dept?.name || 'Đơn vị của bạn';
 });
 
 const categories = ref<any[]>([]);
@@ -1161,7 +1161,7 @@ const handleExport = async () => {
     
     // Apply department filter based on user role
     // Admin và Director: có thể export tất cả hoặc theo filter
-    // Trưởng đơn vị và Cán bộ: chỉ export tài sản của phòng ban mình (tự động áp dụng ở backend)
+    // Trưởng đơn vị và Cán bộ: chỉ export tài sản của đơn vị mình (tự động áp dụng ở backend)
     if (authStore.isAdmin || authStore.isDirector) {
       if (filterDepartment.value) {
         exportParams.current_department_id = filterDepartment.value;

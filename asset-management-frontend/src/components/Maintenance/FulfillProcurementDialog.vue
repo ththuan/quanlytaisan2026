@@ -26,10 +26,10 @@
         :model="form"
         label-width="160px"
       >
-        <el-form-item label="Phòng ban nhận">
+        <el-form-item label="Đơn vị nhận">
           <DepartmentTreeSelect
             v-model="form.department_id"
-            placeholder="Chọn phòng ban nhận"
+            placeholder="Chọn đơn vị nhận"
           />
         </el-form-item>
 
@@ -247,7 +247,7 @@ watch(
 const submit = async () => {
   if (!props.request) return;
   if (!form.department_id) {
-    ElMessage.error('Vui lòng chọn phòng ban nhận');
+    ElMessage.error('Vui lòng chọn đơn vị nhận');
     return;
   }
   if (!form.assets.length) {

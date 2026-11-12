@@ -675,7 +675,7 @@ const getTargetText = (row: any) => {
   const tableMap: Record<string, string> = {
     assets: 'Tài sản',
     users: 'Người dùng',
-    departments: 'Phòng ban',
+    departments: 'Đơn vị',
     asset_transfers: 'Điều chuyển tài sản',
     maintenance_requests: 'Yêu cầu sửa chữa',
     procurements: 'Yêu cầu mua sắm',

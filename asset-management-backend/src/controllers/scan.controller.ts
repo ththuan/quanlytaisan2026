@@ -198,14 +198,14 @@ export const scanAssetPage = async (req: Request, res: Response): Promise<void> 
 
     const rows: Array<[string, string]> = [];
     if (categoryName) rows.push(['Loại tài sản', escapeHtml(categoryName)]);
-    if (deptName) rows.push(['Phòng ban', escapeHtml(deptName)]);
+    if (deptName) rows.push(['Đơn vị', escapeHtml(deptName)]);
     if (d.location) rows.push(['Vị trí', escapeHtml(d.location)]);
     if (d.year_in_use) rows.push(['Năm sử dụng', escapeHtml(d.year_in_use)]);
     if (d.quantity) rows.push(['Số lượng', `${escapeHtml(d.quantity)}${d.unit ? ' ' + escapeHtml(d.unit) : ''}`]);
 
     const rowIcons: Record<string, string> = {
       'Loại tài sản': '🗂️',
-      'Phòng ban': '🏢',
+      'Đơn vị': '🏢',
       'Vị trí': '📍',
       'Năm sử dụng': '📅',
       'Số lượng': '🔢',

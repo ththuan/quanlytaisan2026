@@ -152,10 +152,10 @@ class TransferService {
     // Only allow creating transfer from requester's own department (except admin/director)
     if (requester.role !== 'admin') {
       if (!requester.department_id) {
-        throw new ForbiddenError('Bạn chưa được gán phòng ban, không thể tạo điều chuyển');
+        throw new ForbiddenError('Bạn chưa được gán đơn vị, không thể tạo điều chuyển');
       }
       if (Number(fromDepartmentId) !== Number(requester.department_id)) {
-        throw new ForbiddenError('Bạn chỉ có thể tạo điều chuyển tài sản thuộc phòng ban của mình');
+        throw new ForbiddenError('Bạn chỉ có thể tạo điều chuyển tài sản thuộc đơn vị của mình');
       }
     }
 
@@ -250,7 +250,7 @@ class TransferService {
           {
             current_department_id: transfer.to_department_id,
             campus: (toDepartment as any)?.campus || (transfer as any).to_campus || 'main',
-            location: newLocation, // Cập nhật vị trí theo phòng ban mới
+            location: newLocation, // Cập nhật vị trí theo đơn vị mới
             assigned_user_id: null,
             assigned_at: null,
           },

@@ -58,7 +58,7 @@
             {{ formatDate(round.start_date) }} - {{ formatDate(round.end_date) }}
           </el-descriptions-item>
           <el-descriptions-item label="Tiến độ">
-            {{ (round as any).completed_reports || round.completed_departments || 0 }}/{{ round.total_departments || 0 }} phòng ban
+            {{ (round as any).completed_reports || round.completed_departments || 0 }}/{{ round.total_departments || 0 }} đơn vị
           </el-descriptions-item>
         </el-descriptions>
 
@@ -182,7 +182,7 @@
                   {{ summaryStats.total_departments }}
                 </div>
                 <div class="stat-label">
-                  Số phòng ban
+                  Số đơn vị
                 </div>
               </div>
             </el-col>
@@ -192,7 +192,7 @@
         <el-divider />
 
         <div class="section-title">
-          Báo cáo theo phòng ban
+          Báo cáo theo đơn vị
         </div>
 
         <div class="responsive-table">
@@ -208,7 +208,7 @@
               align="center"
             />
             <el-table-column
-              label="Phòng ban"
+              label="Đơn vị"
               min-width="200"
             >
               <template #default="scope">
@@ -293,7 +293,7 @@
         <template v-if="round.unsubmitted_departments?.length || round.incomplete_departments?.length">
           <el-divider />
           <div class="section-title">
-            Thống kê phòng ban chưa nộp báo cáo
+            Thống kê đơn vị chưa nộp báo cáo
           </div>
           <el-row :gutter="20">
             <el-col
@@ -564,14 +564,14 @@ const exportReport = async () => {
       [],
       ['Tổng nguyên giá', '', '', formatCurrency(summaryStats.value.total_original_value)],
       ['Tổng giá trị còn lại', '', '', formatCurrency(summaryStats.value.total_current_value)],
-      ['Số phòng ban tham gia', summaryStats.value.total_departments, '', ''],
+      ['Số đơn vị tham gia', summaryStats.value.total_departments, '', ''],
     ];
 
-    // Sheet 2: Chi tiết theo phòng ban
+    // Sheet 2: Chi tiết theo đơn vị
     const departmentData = [
-      ['CHI TIẾT THEO PHÒNG BAN'],
+      ['CHI TIẾT THEO ĐƠN VỊ'],
       [],
-      ['STT', 'Phòng ban', 'Tổng TS', 'Khớp', 'Thiếu/Mất', 'Cần sửa', 'Hỏng/Thanh lý', 'Trạng thái', 'Nguyên giá', 'Giá trị còn lại'],
+      ['STT', 'Đơn vị', 'Tổng TS', 'Khớp', 'Thiếu/Mất', 'Cần sửa', 'Hỏng/Thanh lý', 'Trạng thái', 'Nguyên giá', 'Giá trị còn lại'],
     ];
 
     reports.value.forEach((report, index) => {
@@ -597,7 +597,7 @@ const exportReport = async () => {
         widths: [30, 15, 12, 20],
       },
       {
-        name: 'Chi tiết phòng ban',
+        name: 'Chi tiết đơn vị',
         rows: departmentData,
         widths: [5, 30, 10, 10, 12, 10, 15, 20, 18, 18],
       },

@@ -157,7 +157,7 @@
             min-width="240"
           />
           <el-table-column
-            label="Cấp phát (phòng ban)"
+            label="Cấp phát (đơn vị)"
             min-width="220"
           >
             <template #default="scope">

@@ -187,7 +187,7 @@ export const getInventoryReportById = async (req: AuthRequest, res: Response, ne
 
     // Phân quyền xem chi tiết báo cáo:
     // - Admin & Giám hiệu (director): xem tất cả
-    // - Trưởng đơn vị cha: xem báo cáo của phòng ban mình và các đơn vị con
+    // - Trưởng đơn vị cha: xem báo cáo của đơn vị mình và các đơn vị con
     // - Cán bộ: xem báo cáo của đơn vị mình (báo cáo dùng chung theo đơn vị)
     if (user.role !== 'admin' && user.role !== 'director') {
       if (user.role === 'department_head') {
@@ -195,7 +195,7 @@ export const getInventoryReportById = async (req: AuthRequest, res: Response, ne
           // Trưởng đơn vị xem được báo cáo của toàn bộ đơn vị con/cháu trong cây.
           const subtreeIds = await InventoryService.getSubtreeDepartmentIds(Number(user.department_id));
           if (!subtreeIds.includes(Number(report.department_id))) {
-            throw new ForbiddenError('Bạn chỉ được xem báo cáo kiểm kê của phòng ban mình và các đơn vị con');
+            throw new ForbiddenError('Bạn chỉ được xem báo cáo kiểm kê của đơn vị mình và các đơn vị con');
           }
         }
       } else if (Number(report.department_id) !== Number(user.department_id)) {
@@ -417,7 +417,7 @@ export const processInventoryApproval = async (req: AuthRequest, res: Response, 
 };
 
 /**
- * Lấy danh sách tài sản cần kiểm kê trong phòng ban
+ * Lấy danh sách tài sản cần kiểm kê trong đơn vị
  */
 export const getAssetsForInventory = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -451,7 +451,7 @@ export const getPendingReportsCount = async (req: AuthRequest, res: Response, ne
 };
 
 /**
- * Tìm tài sản theo mã (QR code/barcode) trong phòng ban
+ * Tìm tài sản theo mã (QR code/barcode) trong đơn vị
  */
 export const findAssetByCode = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {

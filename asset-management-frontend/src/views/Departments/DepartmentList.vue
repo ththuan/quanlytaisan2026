@@ -10,7 +10,7 @@
             {{ $t('departments.title') }}
           </h1>
           <p class="page-subtitle">
-            Quản lý phòng ban, khoa và đơn vị trong trường
+            Quản lý đơn vị, khoa, phòng, trung tâm và lớp học trong trường
           </p>
         </div>
         <div
@@ -206,7 +206,7 @@
       <!-- Pagination -->
       <div class="pagination-section">
         <div class="total-info">
-          Tổng số: <strong>{{ filteredDepartments.length }}</strong> phòng ban
+          Tổng số: <strong>{{ filteredDepartments.length }}</strong> đơn vị
         </div>
         <el-pagination
           v-model:current-page="currentPage"
@@ -346,7 +346,7 @@ onMounted(() => {
 const fetchDepartments = async () => {
   loading.value = true;
   try {
-    // Lấy tất cả phòng ban (limit=1000 để lấy hết)
+    // Lấy tất cả đơn vị (limit=1000 để lấy hết)
     const response: any = await api.get('/departments', {
       params: {
         limit: 1000,
@@ -425,12 +425,12 @@ const handleDelete = async (id: number, reassignAndDelete = false) => {
   } catch (error: any) {
     if (error === 'cancel') return;
     const msg = error.response?.data?.message || error.message || '';
-    const canReassign = /người dùng|tài sản|Gỡ phòng ban/i.test(msg);
+    const canReassign = /người dùng|tài sản|Gỡ đơn vị/i.test(msg);
     if (canReassign) {
       try {
         await ElMessageBox.confirm(
-          'Phòng ban này đang có người dùng và/hoặc tài sản. Bạn có muốn gỡ phòng ban khỏi họ rồi xóa phòng ban?',
-          'Gỡ phòng ban rồi xóa',
+          'Đơn vị này đang có người dùng và/hoặc tài sản. Bạn có muốn gỡ đơn vị khỏi họ rồi xóa đơn vị?',
+          'Gỡ đơn vị rồi xóa',
           {
             confirmButtonText: 'Gỡ và xóa',
             cancelButtonText: 'Hủy',
@@ -444,7 +444,7 @@ const handleDelete = async (id: number, reassignAndDelete = false) => {
         }
       }
     } else {
-      ElMessage.error(msg || 'Không thể xóa phòng ban');
+      ElMessage.error(msg || 'Không thể xóa đơn vị');
     }
   }
 };
@@ -484,7 +484,7 @@ const handleFileChange = async (event: Event) => {
     if (result?.success) {
       ElMessage.success(
         result.message ||
-          `Import thành công ${summary.imported || 0}/${summary.total || 0} phòng ban`
+          `Import thành công ${summary.imported || 0}/${summary.total || 0} đơn vị`
       );
     } else {
       const detail = errors.length
@@ -501,7 +501,7 @@ const handleFileChange = async (event: Event) => {
     await fetchDepartments();
   } catch (error) {
     console.error('Error importing departments:', error);
-    ElMessage.error('Không thể import phòng ban. Vui lòng thử lại.');
+    ElMessage.error('Không thể import đơn vị. Vui lòng thử lại.');
   } finally {
     importing.value = false;
     target.value = '';
@@ -511,7 +511,7 @@ const handleFileChange = async (event: Event) => {
 const getTypeColor = (type: string) => {
   const colors: Record<string, string> = {
     department: 'primary',
-    'phòng ban': 'primary',
+    'đơn vị': 'primary',
     faculty: 'success',
     khoa: 'success',
     center: 'warning',
@@ -533,7 +533,7 @@ const getTypeText = (type: string) => {
   // Map cả key nội bộ lẫn giá trị tiếng Việt (sau import có thể có nhiều dạng)
   const labels: Record<string, string> = {
     department: t('departments.types.department'),
-    'phòng ban': t('departments.types.department'),
+    'đơn vị': t('departments.types.department'),
     phòng: t('departments.types.department'),
     faculty: t('departments.types.faculty'),
     khoa: t('departments.types.faculty'),

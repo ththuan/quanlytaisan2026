@@ -405,7 +405,7 @@ class SystemAdminService {
 
       return {
         success: true,
-        message: 'Dữ liệu nghiệp vụ và phòng ban đã xóa. Tài khoản người dùng (bao gồm admin) được giữ nguyên; nếu chưa có admin hệ thống sẽ được tạo mới.',
+        message: 'Dữ liệu nghiệp vụ và đơn vị đã xóa. Tài khoản người dùng (bao gồm admin) được giữ nguyên; nếu chưa có admin hệ thống sẽ được tạo mới.',
       };
     } catch (error) {
       logger.error('Reset business data failed:', error);

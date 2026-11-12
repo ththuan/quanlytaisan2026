@@ -527,7 +527,7 @@
               <el-icon class="detail-icon">
                 <OfficeBuilding />
               </el-icon>
-              <span class="detail-label">Phòng ban:</span>
+              <span class="detail-label">Đơn vị:</span>
               <span class="detail-value">{{ departmentName }}</span>
             </div>
           </div>
@@ -2583,7 +2583,7 @@ const fetchData = async () => {
 
     // Validate department
     if (!authStore.user?.department_id) {
-      ElMessage.error('Bạn chưa được phân công vào phòng ban nào');
+      ElMessage.error('Bạn chưa được phân công vào đơn vị nào');
       router.push('/inventory');
       return;
     }
@@ -2765,7 +2765,7 @@ const fetchData = async () => {
       
       // Validate department_id
       if (!authStore.user?.department_id) {
-        ElMessage.error('Bạn chưa được phân công vào phòng ban nào');
+        ElMessage.error('Bạn chưa được phân công vào đơn vị nào');
         assets.value = [];
         return;
       }
@@ -4174,7 +4174,7 @@ const handleOrientationChange = () => {
 onMounted(async () => {
   updateCompactMode();
   window.addEventListener('resize', updateCompactMode);
-  // Làm mới thông tin người dùng (phòng ban/vai trò có thể vừa được admin thay đổi)
+  // Làm mới thông tin người dùng (đơn vị/vai trò có thể vừa được admin thay đổi)
   try { await authStore.checkAuth(); } catch { /* bỏ qua */ }
 
   // Kiểm tra quyền: Admin không được thực hiện kiểm kê trực tiếp
@@ -4205,7 +4205,7 @@ onMounted(async () => {
   }
   
   if (!hasDepartment && !reportId) {
-    ElMessage.warning('Bạn chưa được phân công vào phòng ban nào');
+    ElMessage.warning('Bạn chưa được phân công vào đơn vị nào');
     router.push('/inventory');
     return;
   }

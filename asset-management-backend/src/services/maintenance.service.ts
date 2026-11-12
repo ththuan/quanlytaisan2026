@@ -337,7 +337,7 @@ class MaintenanceService {
   /**
    * Hoàn tất mua sắm/cấp phát:
    * - Chỉ áp dụng cho request_type=procurement đã được duyệt cấp cuối
-   * - Tự động tạo tài sản và gán về phòng ban nhận
+   * - Tự động tạo tài sản và gán về đơn vị nhận
    * - Lưu created_asset_ids để tránh tạo trùng
    */
   async fulfillProcurement(
@@ -372,12 +372,12 @@ class MaintenanceService {
       | number
       | undefined;
     if (!receivingDepartmentId) {
-      throw new ConflictError('Thiếu phòng ban nhận (department_id)');
+      throw new ConflictError('Thiếu đơn vị nhận (department_id)');
     }
 
     const receivingDept = await Department.findByPk(receivingDepartmentId);
     if (!receivingDept) {
-      throw new NotFoundError('Phòng ban nhận không tồn tại');
+      throw new NotFoundError('Đơn vị nhận không tồn tại');
     }
 
     const purchaseDate = input.purchase_date ? new Date(input.purchase_date) : null;

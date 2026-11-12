@@ -400,7 +400,7 @@ function listQueryParams(page?: number) {
 }
 
 /**
- * Sau tạo mới (có payload): về trang 1, bỏ lọc trạng thái, khớp năm & phòng ban để thấy bản nháp vừa tạo.
+ * Sau tạo mới (có payload): về trang 1, bỏ lọc trạng thái, khớp năm & đơn vị để thấy bản nháp vừa tạo.
  * Sau chỉnh sửa: chỉ làm mới danh sách với bộ lọc hiện tại.
  */
 const handleFormSuccess = async (payload?: { year?: number; department_id?: number }) => {

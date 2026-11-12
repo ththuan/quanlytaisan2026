@@ -449,7 +449,7 @@
     >
       <div v-if="report">
         <div class="approve-header">
-          <h3>Phòng ban: <strong>{{ report.department?.name }}</strong></h3>
+          <h3>Đơn vị: <strong>{{ report.department?.name }}</strong></h3>
           <div class="approve-stats">
             <el-row :gutter="16">
               <el-col

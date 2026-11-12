@@ -23,7 +23,7 @@ export const exportAssetsToExcel = async (
   // Apply permission-based filtering
   const exportQuery: any = { ...query };
   
-  // Trưởng đơn vị và cán bộ chỉ export tài sản của phòng ban mình.
+  // Trưởng đơn vị và cán bộ chỉ export tài sản của đơn vị mình.
   // Không gán đơn vị thì từ chối, tránh fail-open xuất toàn bộ dữ liệu.
   if (userRole !== 'admin' && userRole !== 'director') {
     if (!userDepartmentId) {
@@ -69,7 +69,7 @@ export const exportAssetsToExcel = async (
     { header: 'Tỷ lệ HM (%)', key: 'depreciation_rate', width: 12 },
     { header: 'Thời gian sử dụng (năm)', key: 'useful_life', width: 18 },
     { header: 'Tình trạng', key: 'status', width: 12 },
-    { header: 'Phòng ban', key: 'department', width: 30 },
+    { header: 'Đơn vị', key: 'department', width: 30 },
     { header: 'Vị trí', key: 'location', width: 25 },
     { header: 'Số serial', key: 'serial_number', width: 25 },
     { header: 'Mô tả', key: 'description', width: 40 },

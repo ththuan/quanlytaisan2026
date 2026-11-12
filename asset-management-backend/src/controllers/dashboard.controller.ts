@@ -33,7 +33,7 @@ export const getAssetStatusStats = async (req: AuthRequest, res: Response, next:
 export const getDepartmentStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const query = { ...req.query };
-    // Với Trưởng đơn vị/Viên chức, có thể muốn xem nhánh phòng ban của mình
+    // Với Trưởng đơn vị/Viên chức, có thể muốn xem nhánh đơn vị của mình
     if (!['admin', 'director'].includes(req.user?.role || '')) {
       const deptId = req.user?.department_id;
       if (deptId) query.rootDepartmentId = String(deptId);

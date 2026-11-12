@@ -12,7 +12,7 @@ export interface AssetQueryParams {
   status?: string;
   campus?: string;
   current_department_id?: number | string;
-  /** Lọc theo phòng ban cha + tất cả phòng ban con (backend) */
+  /** Lọc theo đơn vị cha + tất cả đơn vị con (backend) */
   include_children?: string | boolean;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';

@@ -109,10 +109,10 @@
             style="margin-top: 8px; font-size: 12px; color: #909399;"
           >
             <span v-if="!authStore.userDepartmentId">
-              ⚠️ Bạn chưa được gán vào phòng ban nào. Vui lòng liên hệ quản trị viên.
+              ⚠️ Bạn chưa được gán vào đơn vị nào. Vui lòng liên hệ quản trị viên.
             </span>
             <span v-else>
-              ⚠️ Không có tài sản đang sử dụng trong phòng ban của bạn.
+              ⚠️ Không có tài sản đang sử dụng trong đơn vị của bạn.
             </span>
           </div>
         </el-form-item>
@@ -466,7 +466,7 @@ const loadInitialAssets = async () => {
   
   assetLoading.value = true;
   try {
-    // Load tất cả tài sản active trong phòng ban của user
+    // Load tất cả tài sản active trong đơn vị của user
     const response: any = await api.get('/assets', {
       params: {
         status: 'active',

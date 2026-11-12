@@ -56,7 +56,7 @@
                 class="meta-item"
               >
                 <el-icon><TrendCharts /></el-icon>
-                Tiến độ: {{ (activeRound as any).completed_reports || activeRound.completed_departments || 0 }}/{{ activeRound.total_departments || 0 }} phòng ban
+                Tiến độ: {{ (activeRound as any).completed_reports || activeRound.completed_departments || 0 }}/{{ activeRound.total_departments || 0 }} đơn vị
               </span>
             </div>
           </div>
@@ -344,7 +344,7 @@
           >
             <el-table-column
               prop="department.name"
-              label="Phòng ban"
+              label="Đơn vị"
               min-width="150"
             />
             <el-table-column
@@ -573,7 +573,7 @@
     >
       <div v-if="selectedReport">
         <div class="approve-header">
-          <h3>Phòng ban: <strong>{{ selectedReport.department?.name }}</strong></h3>
+          <h3>Đơn vị: <strong>{{ selectedReport.department?.name }}</strong></h3>
           <div class="approve-stats">
             <el-row :gutter="16">
               <el-col
@@ -867,7 +867,7 @@ const normalizeRound = (round: any): InventoryRound => {
   return {
     ...round,
     // Backend đang lưu số báo cáo đã hoàn tất trong completed_reports.
-    // Mỗi phòng ban tương ứng 1 báo cáo, nên có thể dùng completed_reports để hiển thị tiến độ.
+    // Mỗi đơn vị tương ứng 1 báo cáo, nên có thể dùng completed_reports để hiển thị tiến độ.
     completed_departments: typeof round.completed_departments === 'number' 
       ? round.completed_departments 
       : (round.completed_reports ? parseInt(round.completed_reports) || 0 : 0),
@@ -1032,7 +1032,7 @@ const goToMyReport = async () => {
   }
   
   if (!authStore.user?.department_id) {
-    ElMessage.error('Bạn chưa được phân công vào phòng ban nào');
+    ElMessage.error('Bạn chưa được phân công vào đơn vị nào');
     return;
   }
   
@@ -1239,7 +1239,7 @@ const getStatusLabel = (status: string) => {
 };
 
 onMounted(async () => {
-  // Làm mới phòng ban/vai trò (admin có thể vừa thay đổi)
+  // Làm mới đơn vị/vai trò (admin có thể vừa thay đổi)
   try { await authStore.checkAuth(); } catch { /* bỏ qua */ }
   fetchActiveRound();
   fetchRounds();

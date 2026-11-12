@@ -60,7 +60,7 @@ export default {
   menu: {
     dashboard: 'Bảng điều khiển',
     assets: 'Quản lý tài sản',
-    departments: 'Phòng ban',
+    departments: 'Đơn vị',
     users: 'Người dùng',
     reports: 'Báo cáo thường niên',
     maintenance: 'Mua sắm / Sửa chữa',
@@ -104,15 +104,15 @@ export default {
 
       sec2Title: 'Tra cứu tài sản đơn vị (menu Tài sản)',
       sec2Body: `1. Vào menu “Tài sản” (hoặc “Tài sản đơn vị”). Dùng ô tìm kiếm/lọc theo mã, tên, danh mục, trạng thái để tìm nhanh.
-2. Nhấp một dòng để mở chi tiết: xem thông tin định danh, phòng ban hiện tại, giá trị, khấu hao (nếu có), lịch sử thay đổi.
+2. Nhấp một dòng để mở chi tiết: xem thông tin định danh, đơn vị hiện tại, giá trị, khấu hao (nếu có), lịch sử thay đổi.
 3. Nếu tài sản có mã QR: có thể dùng chức năng quét (trên trình duyệt/thiết bị hỗ trợ) hoặc tra cứu bằng mã in trên nhãn.
 4. Viên chức thường không thêm/sửa/xóa hàng loạt trừ khi đơn vị giao nhiệm vụ; thao tác “Thêm tài sản”, import Excel thường dành cho quản trị.`,
 
       sec3Title: 'Đề nghị điều chuyển tài sản (menu Điều chuyển)',
-      sec3Body: `1. Khi cần chuyển tài sản sang phòng ban khác: vào “Điều chuyển” → tạo yêu cầu mới, chọn tài sản, đơn vị đi, đơn vị đến, ghi rõ lý do và thời gian bàn giao dự kiến (theo biểu mẫu trên màn hình).
+      sec3Body: `1. Khi cần chuyển tài sản sang đơn vị khác: vào “Điều chuyển” → tạo yêu cầu mới, chọn tài sản, đơn vị đi, đơn vị đến, ghi rõ lý do và thời gian bàn giao dự kiến (theo biểu mẫu trên màn hình).
 2. Gửi yêu cầu kèm chữ ký số. Trạng thái hiển thị “chờ đơn vị nhận ký”.
 3. Đơn vị nhận (viên chức hoặc Trưởng đơn vị) ký xác nhận; sau đó quản trị viên ký duyệt cuối. Nếu bị từ chối, đọc lý do và liên hệ người xử lý.
-4. Sau khi quản trị viên ký duyệt, phần mềm cập nhật phòng ban hiện tại của tài sản; bạn có thể kiểm tra lại trong chi tiết tài sản.`,
+4. Sau khi quản trị viên ký duyệt, phần mềm cập nhật đơn vị hiện tại của tài sản; bạn có thể kiểm tra lại trong chi tiết tài sản.`,
 
       sec4Title: 'Đề nghị mua sắm (menu Đề nghị mua sắm)',
       sec4Body: `1. Dùng khi đơn vị cần mua thiết bị/vật tư theo quy trình nội bộ: tạo phiếu đề nghị, điền nội dung, số lượng, dự toán (nếu có), lý do.
@@ -153,7 +153,7 @@ export default {
       sec2Title: 'Phê duyệt điều chuyển tài sản',
       sec2Body: `1. Vào “Điều chuyển”, lọc phiếu trạng thái “chờ xử lý” (hoặc tương đương). Hệ thống chỉ cho phép bạn duyệt các phiếu mà đơn vị xuất tài sản là đơn vị bạn làm Trưởng đơn vị.
 2. Mở chi tiết phiếu: kiểm tra tài sản, đơn vị đến, lý do. Nếu đồng ý → Phê duyệt; nếu không đạt → Từ chối và nhập lý do bắt buộc.
-3. Sau khi phê duyệt, hệ thống cập nhật phòng ban hiện tại của tài sản sang đơn vị nhận và hoàn tất phiếu. Thông báo cho bên nhận để bàn giao thực tế và cập nhật sổ sách (nếu có).`,
+3. Sau khi phê duyệt, hệ thống cập nhật đơn vị hiện tại của tài sản sang đơn vị nhận và hoàn tất phiếu. Thông báo cho bên nhận để bàn giao thực tế và cập nhật sổ sách (nếu có).`,
 
       sec3Title: 'Phê duyệt yêu cầu sửa chữa / bảo trì (cấp đơn vị)',
       sec3Body: `1. Vào mục theo dõi sửa chữa, xem các yêu cầu do viên chức đơn vị tạo ở trạng thái chờ Trưởng đơn vị.
@@ -206,23 +206,23 @@ export default {
 3. Chỉ đạo xử lý các trường hợp sai lệch lớn (mất mát, hư hỏng nặng) theo quy trình kỷ luật và báo cáo cấp trên nếu cần.`,
 
       sec5Title: 'Báo cáo tổng hợp và phối hợp cấp trên',
-      sec5Body: `1. Menu "Báo cáo": dùng để xuất/xem thống kê theo phòng ban, danh mục, giá trị — phục vụ họp giao ban hoặc báo cáo Sở/đoàn thanh tra.
-2. Yêu cầu Quản trị viên hỗ trợ cấu hình danh mục, phòng ban, nhập liệu tài sản mới và điều chỉnh quyền khi cần.
+      sec5Body: `1. Menu "Báo cáo": dùng để xuất/xem thống kê theo đơn vị, danh mục, giá trị — phục vụ họp giao ban hoặc báo cáo Sở/đoàn thanh tra.
+2. Yêu cầu Quản trị viên hỗ trợ cấu hình danh mục, đơn vị, nhập liệu tài sản mới và điều chỉnh quyền khi cần.
 3. Khi đổi quy trình nội bộ: thông báo cho Quản trị viên cập nhật hướng dẫn; thông báo cho Trưởng đơn vị/viên chức để thao tác thống nhất trên phần mềm.`,
 
     },
 
     admin: {
       intro:
-        'Quản trị viên có toàn quyền trên hệ thống: quản lý tài khoản, cấu hình danh mục/phòng ban, kho vật tư, mua sắm/cấp phát và xem nhật ký hệ thống. Đây là vai trò duy nhất có thể truy cập các menu Kho vật tư, Mua sắm, Quản trị hệ thống.',
+        'Quản trị viên có toàn quyền trên hệ thống: quản lý tài khoản, cấu hình danh mục/đơn vị, kho vật tư, mua sắm/cấp phát và xem nhật ký hệ thống. Đây là vai trò duy nhất có thể truy cập các menu Kho vật tư, Mua sắm, Quản trị hệ thống.',
       sec1Title: 'Quản lý tài khoản người dùng',
-      sec1Body: `1. Vào "Quản trị hệ thống > Người dùng": tạo tài khoản mới, gán vai trò (admin / giám hiệu / trưởng đơn vị / viên chức), gắn phòng ban.
+      sec1Body: `1. Vào "Quản trị hệ thống > Người dùng": tạo tài khoản mới, gán vai trò (admin / giám hiệu / trưởng đơn vị / viên chức), gắn đơn vị.
 2. Vô hiệu hóa tài khoản khi nhân sự nghỉ việc hoặc chuyển công tác; không xóa để giữ lịch sử thao tác.
 3. Đặt lại mật khẩu khi người dùng quên; nhắc đổi mật khẩu ngay sau lần đầu đăng nhập.`,
 
-      sec2Title: 'Cấu hình danh mục và phòng ban',
+      sec2Title: 'Cấu hình danh mục và đơn vị',
       sec2Body: `1. Vào "Quản trị hệ thống > Danh mục tài sản": thêm/sửa/ẩn danh mục; thiết lập thuộc tính khấu hao, đơn vị tính (cái, m², bộ...).
-2. Vào "Quản trị hệ thống > Phòng ban": cập nhật cơ cấu tổ chức khi có thay đổi; đảm bảo mỗi phòng ban có Trưởng đơn vị đúng vai trò.
+2. Vào "Quản trị hệ thống > Đơn vị": cập nhật cơ cấu tổ chức khi có thay đổi; đảm bảo mỗi đơn vị có Trưởng đơn vị đúng vai trò.
 3. Danh mục đất và diện tích phòng (Đất, Phòng học, Phòng thực hành, Hội trường) không tính khấu hao — có thể nhập mà không cần giá mua.`,
 
       sec3Title: 'Kho vật tư',
@@ -233,7 +233,7 @@ export default {
       sec4Title: 'Mua sắm và cấp phát',
       sec4Body: `1. Vào "Mua sắm": xem và xử lý các đề nghị mua sắm từ các đơn vị; theo dõi tiến độ thực hiện.
 2. Phê duyệt hoặc từ chối đề nghị; nhập kết quả mua sắm khi hoàn thành.
-3. Cấp phát tài sản/vật tư cho phòng ban sau khi nhập kho; đảm bảo số liệu khớp với hồ sơ kế toán.`,
+3. Cấp phát tài sản/vật tư cho đơn vị sau khi nhập kho; đảm bảo số liệu khớp với hồ sơ kế toán.`,
 
       sec5Title: 'Phê duyệt điều chuyển và sửa chữa',
       sec5Body: `1. Admin và Trưởng đơn vị đều có quyền phê duyệt phiếu điều chuyển tài sản.
@@ -247,18 +247,18 @@ export default {
     },
 
     block1Title: 'Tài sản & mã QR',
-    block1a: 'Thêm, sửa, tra cứu tài sản; lọc theo phòng ban, danh mục, trạng thái.',
+    block1a: 'Thêm, sửa, tra cứu tài sản; lọc theo đơn vị, danh mục, trạng thái.',
     block1b: 'Xuất / nhập Excel (quyền quản trị); tạo và in mã QR gắn tài sản.',
     block1c: 'Xem lịch sử thay đổi và thông tin khấu hao trên từng tài sản.',
     block2Title: 'Điều chuyển & luân chuyển',
     block2a: 'Tạo đề nghị điều chuyển (viên chức / Admin); Trưởng đơn vị hoặc Admin phê duyệt.',
-    block2b: 'Danh sách tài sản cập nhật theo phòng ban hiện tại sau khi hoàn tất.',
+    block2b: 'Danh sách tài sản cập nhật theo đơn vị hiện tại sau khi hoàn tất.',
     block3Title: 'Kiểm kê & thanh lý',
     block3a: 'Tạo đợt kiểm kê, quét QR khi kiểm đếm, xem báo cáo lệch.',
     block3b: 'Luồng đề nghị thanh lý / tiêu hủy theo quy định đơn vị.',
     block4Title: 'Báo cáo & phân quyền',
-    block4a: 'Báo cáo tổng hợp theo phòng ban, danh mục; xuất file khi được phép.',
-    block4b: 'Admin: người dùng, phòng ban, kho vật tư, mua sắm, nhật ký và quản trị hệ thống.',
+    block4a: 'Báo cáo tổng hợp theo đơn vị, danh mục; xuất file khi được phép.',
+    block4b: 'Admin: người dùng, đơn vị, kho vật tư, mua sắm, nhật ký và quản trị hệ thống.',
     tip: 'Quy trình giấy tờ, hội đồng, ngưỡng giá trị phê duyệt và biểu mẫu riêng của trường có thể chi tiết hơn quy định trên phần mềm — vui lòng bổ sung trong quy chế nội bộ và đào tạo thêm tại đơn vị. Liên hệ Quản trị viên khi cần chỉnh quyền hoặc cấu hình.',
   },
 
@@ -273,8 +273,8 @@ export default {
     faqTitle: 'Câu hỏi thường gặp',
     faq1q: 'Quên mật khẩu thì làm sao?',
     faq1a: 'Liên hệ quản trị viên hệ thống để được cấp lại hoặc đặt mật khẩu mới. Không chia sẻ mật khẩu qua kênh không bảo mật.',
-    faq2q: 'Không thấy menu hoặc tài sản của phòng ban khác?',
-    faq2a: 'Phần mềm giới hạn dữ liệu theo vai trò và phòng ban. Nếu cần quyền xem thêm, trưởng đơn vị hoặc quản trị viên sẽ điều chỉnh phân quyền.',
+    faq2q: 'Không thấy menu hoặc tài sản của đơn vị khác?',
+    faq2a: 'Phần mềm giới hạn dữ liệu theo vai trò và đơn vị. Nếu cần quyền xem thêm, trưởng đơn vị hoặc quản trị viên sẽ điều chỉnh phân quyền.',
     faq3q: 'Lỗi khi tải trang hoặc lưu dữ liệu?',
     faq3a: 'Thử tải lại trang, xóa cache trình duyệt hoặc dùng trình duyệt khác. Nếu vẫn lỗi, gửi email hỗ trợ kèm thời gian xảy ra và tài khoản đăng nhập (không gửi mật khẩu).',
   },
@@ -371,7 +371,7 @@ export default {
     assetCode: 'Mã tài sản',
     assetName: 'Tên tài sản',
     category: 'Danh mục',
-    department: 'Phòng ban',
+    department: 'Đơn vị',
     purchaseDate: 'Ngày mua',
     purchasePrice: 'Nguyên giá (đồng)',
     currentValue: 'Giá trị còn lại (đồng)',
@@ -387,7 +387,7 @@ export default {
     assetTypePlaceholder: 'VD: Laptop, Máy in, Bàn ghế...',
     imageUrl: 'Ảnh tài sản',
     basicInfo: 'Thông tin cơ bản',
-    locationInfo: 'Vị trí & Phòng ban',
+    locationInfo: 'Vị trí & Đơn vị',
     financialInfo: 'Thông tin tài chính',
     locationPlaceholder: 'VD: Phòng 301, Tầng 3, Tòa nhà A',
     // Thông tin hao mòn (thiết bị, tài sản cố định)
@@ -423,20 +423,20 @@ export default {
     searchPlaceholder: 'Tìm kiếm theo mã hoặc tên tài sản...',
     filterByCategory: 'Lọc theo danh mục',
     filterByStatus: 'Lọc theo trạng thái',
-    filterByDepartment: 'Lọc theo phòng ban',
+    filterByDepartment: 'Lọc theo đơn vị',
   },
 
   // Departments
   departments: {
-    title: 'Quản lý phòng ban',
-    addDepartment: 'Thêm phòng ban',
-    editDepartment: 'Sửa phòng ban',
-    departmentName: 'Tên phòng ban',
-    departmentCode: 'Mã phòng ban',
-    departmentType: 'Loại phòng ban',
-    departmentDetails: 'Chi tiết phòng ban',
+    title: 'Quản lý đơn vị',
+    addDepartment: 'Thêm đơn vị',
+    editDepartment: 'Sửa đơn vị',
+    departmentName: 'Tên đơn vị',
+    departmentCode: 'Mã đơn vị',
+    departmentType: 'Loại đơn vị',
+    departmentDetails: 'Chi tiết đơn vị',
     manager: 'Trưởng phòng',
-    parentDepartment: 'Phòng ban cha',
+    parentDepartment: 'Đơn vị cha',
     description: 'Mô tả',
     type: 'Loại',
     types: {
@@ -448,11 +448,11 @@ export default {
       meeting_room: 'Phòng họp',
       hall: 'Hội trường',
     },
-    deleteConfirm: 'Bạn có chắc chắn muốn xóa phòng ban này?',
-    deleteSuccess: 'Xóa phòng ban thành công',
-    createSuccess: 'Thêm phòng ban thành công',
-    updateSuccess: 'Cập nhật phòng ban thành công',
-    searchPlaceholder: 'Tìm kiếm phòng ban...',
+    deleteConfirm: 'Bạn có chắc chắn muốn xóa đơn vị này?',
+    deleteSuccess: 'Xóa đơn vị thành công',
+    createSuccess: 'Thêm đơn vị thành công',
+    updateSuccess: 'Cập nhật đơn vị thành công',
+    searchPlaceholder: 'Tìm kiếm đơn vị...',
     filterByType: 'Lọc theo loại',
   },
 
@@ -465,7 +465,7 @@ export default {
     fullname: 'Họ và tên',
     username: 'Tên đăng nhập',
     role: 'Vai trò',
-    department: 'Phòng ban',
+    department: 'Đơn vị',
     isActive: 'Trạng thái hoạt động',
     lastLogin: 'Lần đăng nhập cuối',
     password: 'Mật khẩu',
@@ -500,12 +500,12 @@ export default {
     title: 'Bảng điều khiển',
     welcome: 'Chào mừng đến với Phần mềm Quản lý Tài sản | Trường Cao đẳng Kinh tế - Kỹ thuật Cần Thơ',
     totalAssets: 'Tổng tài sản',
-    totalDepartments: 'Tổng phòng ban',
+    totalDepartments: 'Tổng đơn vị',
     totalUsers: 'Tổng người dùng',
     recentAssets: 'Tài sản gần đây',
     assetsByCategory: 'Tài sản theo danh mục',
     assetsByStatus: 'Tài sản theo trạng thái',
-    assetsByDepartment: 'Tài sản theo phòng ban',
+    assetsByDepartment: 'Tài sản theo đơn vị',
     quickStats: 'Thống kê nhanh',
     activeAssets: 'Tài sản đang sử dụng',
     inactiveAssets: 'Tài sản không sử dụng',
@@ -549,8 +549,8 @@ export default {
     asset: 'Tài sản',
     assetCode: 'Mã tài sản',
     assetName: 'Tên tài sản',
-    fromDepartment: 'Từ phòng ban',
-    toDepartment: 'Đến phòng ban',
+    fromDepartment: 'Từ đơn vị',
+    toDepartment: 'Đến đơn vị',
     transferDate: 'Ngày điều chuyển',
     reason: 'Lý do',
     notes: 'Ghi chú',
@@ -561,16 +561,16 @@ export default {
     searchAsset: 'Tìm kiếm tài sản',
     enterAssetCode: 'Nhập mã tài sản',
     selectAsset: 'Chọn tài sản',
-    selectDepartment: 'Chọn phòng ban',
-    selectSourceDepartment: 'Chọn phòng ban nguồn',
-    selectTargetDepartment: 'Chọn phòng ban đích',
-    selectSourceDepartmentFirst: 'Vui lòng chọn phòng ban nguồn trước',
+    selectDepartment: 'Chọn đơn vị',
+    selectSourceDepartment: 'Chọn đơn vị nguồn',
+    selectTargetDepartment: 'Chọn đơn vị đích',
+    selectSourceDepartmentFirst: 'Vui lòng chọn đơn vị nguồn trước',
     selectedAssetInfo: 'Thông tin tài sản đã chọn',
     assetCount: 'Tổng số tài sản: {count}',
-    transferNote: 'Sau khi điều chuyển được duyệt, tài sản sẽ tự động chuyển sang phòng ban đích và lưu vết lịch sử.',
+    transferNote: 'Sau khi điều chuyển được duyệt, tài sản sẽ tự động chuyển sang đơn vị đích và lưu vết lịch sử.',
     enterReason: 'Nhập lý do điều chuyển',
     rejectReason: 'Nhập lý do từ chối',
-    sameDepartmentError: 'Phòng ban đích phải khác phòng ban hiện tại',
+    sameDepartmentError: 'Đơn vị đích phải khác đơn vị hiện tại',
     status: {
       pending: 'Chờ đơn vị nhận ký',
       approved: 'Đã duyệt',
@@ -589,7 +589,7 @@ export default {
     createSuccess: 'Tạo điều chuyển thành công',
     updateSuccess: 'Cập nhật điều chuyển thành công',
     filterByStatus: 'Lọc theo trạng thái',
-    filterByDepartment: 'Lọc theo phòng ban',
+    filterByDepartment: 'Lọc theo đơn vị',
     approve: 'Duyệt',
     reject: 'Từ chối',
   },
@@ -605,8 +605,8 @@ export default {
     assetCode: 'Mã tài sản',
     assetName: 'Tên tài sản',
     selectAsset: 'Chọn tài sản',
-    department: 'Phòng ban',
-    selectDepartment: 'Chọn phòng ban',
+    department: 'Đơn vị',
+    selectDepartment: 'Chọn đơn vị',
     requestType: 'Loại yêu cầu',
     urgency: 'Mức độ ưu tiên',
     description: 'Mô tả',
@@ -695,7 +695,7 @@ export default {
     filterByUrgency: 'Lọc theo mức độ ưu tiên',
     filterByStatus: 'Lọc theo trạng thái',
     filterByType: 'Lọc theo loại yêu cầu',
-    filterByDepartment: 'Lọc theo phòng ban',
+    filterByDepartment: 'Lọc theo đơn vị',
     startProgress: 'Bắt đầu xử lý',
     startWork: 'Bắt đầu thực hiện',
     startSuccess: 'Đã bắt đầu thực hiện thành công',
@@ -709,7 +709,7 @@ export default {
     editReport: 'Sửa báo cáo',
     reportDetail: 'Chi tiết báo cáo',
     reportList: 'Danh sách báo cáo',
-    department: 'Phòng ban',
+    department: 'Đơn vị',
     year: 'Năm',
     totalAssets: 'Tổng tài sản',
     activeAssets: 'Tài sản hoạt động',
@@ -717,20 +717,20 @@ export default {
     lostAssets: 'Tài sản mất',
     totalValue: 'Tổng giá trị (đồng)',
     notes: 'Ghi chú',
-    selectDepartment: 'Chọn phòng ban',
+    selectDepartment: 'Chọn đơn vị',
     selectYear: 'Chọn năm',
-    selectDepartmentFirst: 'Vui lòng chọn phòng ban trước',
+    selectDepartmentFirst: 'Vui lòng chọn đơn vị trước',
     enterNotes: 'Nhập ghi chú...',
     assetStatistics: 'Thống kê tài sản',
     autoCalculate: 'Tự động tính toán',
-    autoCalculateHint: 'Tự động lấy số liệu từ danh sách tài sản của phòng ban',
+    autoCalculateHint: 'Tự động lấy số liệu từ danh sách tài sản của đơn vị',
     calculateSuccess: 'Tính toán số liệu thành công',
     purposeAndWorkflow:
-      'Mục đích: tổng hợp số liệu tài sản theo từng phòng ban và năm (tính đến cuối năm) để lưu hồ sơ và đối chiếu cấp trường. Mở “Xem” chi tiết để xem thêm tổng hợp phát sinh trong năm: điều chuyển, mua sắm/sửa chữa, tăng tài sản, thanh lý, kiểm kê… Quy trình: Trưởng đơn vị hoặc Quản trị tạo báo cáo → chỉnh số liệu/ghi chú → Gửi duyệt; Quản trị hoặc Giám hiệu phê duyệt hoặc từ chối. Viên chức thường chỉ xem báo cáo của đơn vị mình.',
+      'Mục đích: tổng hợp số liệu tài sản theo từng đơn vị và năm (tính đến cuối năm) để lưu hồ sơ và đối chiếu cấp trường. Mở “Xem” chi tiết để xem thêm tổng hợp phát sinh trong năm: điều chuyển, mua sắm/sửa chữa, tăng tài sản, thanh lý, kiểm kê… Quy trình: Trưởng đơn vị hoặc Quản trị tạo báo cáo → chỉnh số liệu/ghi chú → Gửi duyệt; Quản trị hoặc Giám hiệu phê duyệt hoặc từ chối. Viên chức thường chỉ xem báo cáo của đơn vị mình.',
     detailIntro:
-      'Đây là báo cáo thường niên theo đơn vị và năm. Số liệu thống kê được lấy từ danh mục tài sản gắn với phòng ban tại thời điểm tính (cuối năm báo cáo), có thể chỉnh tay trước khi gửi duyệt.',
+      'Đây là báo cáo thường niên theo đơn vị và năm. Số liệu thống kê được lấy từ danh mục tài sản gắn với đơn vị tại thời điểm tính (cuối năm báo cáo), có thể chỉnh tay trước khi gửi duyệt.',
     statisticsBasis:
-      'Cơ sở số liệu: tài sản thuộc phòng ban, có ngày mua không sau ngày cuối năm báo cáo (hoặc chưa khai báo ngày mua).',
+      'Cơ sở số liệu: tài sản thuộc đơn vị, có ngày mua không sau ngày cuối năm báo cáo (hoặc chưa khai báo ngày mua).',
     workflowRoles: 'Ai làm việc gì',
     roleInitiator: 'Khởi tạo & gửi',
     roleInitiatorDesc: 'Trưởng đơn vị hoặc Quản trị viên (tạo bản nháp, cập nhật số liệu, gửi duyệt).',
@@ -773,10 +773,10 @@ export default {
     deleteConfirm: 'Bạn có chắc chắn muốn xóa báo cáo này?',
     filterByYear: 'Lọc theo năm',
     filterByStatus: 'Lọc theo trạng thái',
-    filterByDepartment: 'Lọc theo phòng ban',
+    filterByDepartment: 'Lọc theo đơn vị',
     scopeUnitOnly: 'Danh sách chỉ hiển thị báo cáo của đơn vị bạn (hệ thống tự lọc).',
     adminListHint:
-      'Quản trị / Giám hiệu: để xem toàn bộ báo cáo các phòng ban, không cần chọn phòng ban. Chỉ chọn phòng ban khi muốn thu hẹp.',
+      'Quản trị / Giám hiệu: để xem toàn bộ báo cáo các đơn vị, không cần chọn đơn vị. Chỉ chọn đơn vị khi muốn thu hẹp.',
     bulkApprove: 'Duyệt đã chọn',
     bulkApproveConfirm:
       'Chỉ các báo cáo đã gửi duyệt (trạng thái “Đã gửi”) mới được phê duyệt. Các dòng khác sẽ bị bỏ qua hoặc báo lỗi trong kết quả. Tiếp tục?',
@@ -791,13 +791,13 @@ export default {
       lead:
         'Phần dưới gom số liệu từ các module: tài sản (đầy đủ trạng thái), điều chuyển, đề nghị mua/sửa, phiếu tăng tài sản, hồ sơ thanh lý/tiêu hủy, kiểm kê, và tài sản mới/ghi nhận trong năm.',
       stockExcluded:
-        'Lưu ý: xuất/nhập kho vật tư trung tâm không gắn trực tiếp theo từng phòng ban nên không có trong báo cáo này.',
+        'Lưu ý: xuất/nhập kho vật tư trung tâm không gắn trực tiếp theo từng đơn vị nên không có trong báo cáo này.',
       snapshotTitle: '1. Ảnh chụp tài sản (cuối năm — cùng logic báo cáo)',
       snapshotScope:
-        'Đếm tài sản thuộc phòng ban, ngày mua không sau 31/12 năm báo cáo (hoặc chưa khai báo ngày mua). Phân theo trạng thái hiện tại trên hệ thống.',
+        'Đếm tài sản thuộc đơn vị, ngày mua không sau 31/12 năm báo cáo (hoặc chưa khai báo ngày mua). Phân theo trạng thái hiện tại trên hệ thống.',
       activityTitle: '2. Phát sinh trong năm dương lịch (1/1 — 31/12)',
       activityScope:
-        'Đếm bản ghi có thời điểm tạo (created_at) trong năm, theo đơn vị liên quan (phòng ban đề nghị / nhận / nguồn gốc hồ sơ…).',
+        'Đếm bản ghi có thời điểm tạo (created_at) trong năm, theo đơn vị liên quan (đơn vị đề nghị / nhận / nguồn gốc hồ sơ…).',
       totalInScope: 'Tổng số tài sản trong phạm vi',
       totalValueLive: 'Tổng giá trị (tính lại từ dữ liệu hiện tại)',
       byAssetStatus: 'Chi tiết theo trạng thái tài sản',

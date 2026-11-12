@@ -29,7 +29,7 @@ export const getAllAssets = async (req: AuthRequest, res: Response, next: NextFu
     const user = req.user!;
     const query = { ...req.query };
 
-    // Phân quyền: admin và giám hiệu xem toàn bộ; cán bộ/trưởng đơn vị chỉ xem phòng ban mình
+    // Phân quyền: admin và giám hiệu xem toàn bộ; cán bộ/trưởng đơn vị chỉ xem đơn vị mình
     if (user.role !== 'admin' && user.role !== 'director') {
       if (user.department_id) {
         query.current_department_id = String(user.department_id);
@@ -437,7 +437,7 @@ export const getStatistics = async (req: AuthRequest, res: Response, next: NextF
     const user = req.user!;
     const query: any = { ...req.query };
 
-    // Phân quyền: admin và giám hiệu xem toàn bộ; cán bộ/trưởng đơn vị chỉ xem phòng ban mình
+    // Phân quyền: admin và giám hiệu xem toàn bộ; cán bộ/trưởng đơn vị chỉ xem đơn vị mình
     if (user.role !== 'admin' && user.role !== 'director') {
       if (!user.department_id) {
         res.status(403).json({ success: false, message: 'Tài khoản chưa được gán đơn vị.' });
@@ -461,7 +461,7 @@ export const getStatistics = async (req: AuthRequest, res: Response, next: NextF
 /**
  * Export assets to Excel
  * Admin và Giám hiệu: xuất toàn bộ tài sản
- * Trưởng đơn vị và Cán bộ: chỉ xuất tài sản của phòng ban mình
+ * Trưởng đơn vị và Cán bộ: chỉ xuất tài sản của đơn vị mình
  */
 export const exportAssets = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -581,7 +581,7 @@ export const decodeQRCode = async (req: AuthRequest, res: Response, _next: NextF
       return;
     }
 
-    // Kiểm tra quyền: Cán bộ chỉ xem tài sản của phòng ban mình
+    // Kiểm tra quyền: Cán bộ chỉ xem tài sản của đơn vị mình
     const user = req.user!;
     if (user.role !== 'admin') {
       if (!user.department_id || asset.current_department_id !== user.department_id) {

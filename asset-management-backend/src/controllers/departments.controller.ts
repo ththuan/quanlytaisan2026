@@ -162,7 +162,7 @@ class DepartmentsController {
       return res.json({
         success: result.success,
         message: result.success
-          ? `Import thành công ${result.imported}/${result.total} phòng ban`
+          ? `Import thành công ${result.imported}/${result.total} đơn vị`
           : `Import hoàn tất với ${result.failed} lỗi`,
         data: {
           total: result.total,

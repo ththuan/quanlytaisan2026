@@ -164,7 +164,7 @@ class DepartmentService {
 
     if (subDepartments > 0) {
       throw new ConflictError(
-        'Không thể xóa phòng ban đang có phòng ban con. Vui lòng xóa hoặc chuyển các phòng ban con trước.'
+        'Không thể xóa đơn vị đang có đơn vị con. Vui lòng xóa hoặc chuyển các đơn vị con trước.'
       );
     }
 
@@ -186,7 +186,7 @@ class DepartmentService {
         if (userCount > 0) parts.push(`${userCount} người dùng`);
         if (assetCount > 0) parts.push(`${assetCount} tài sản`);
         throw new ConflictError(
-          `Không thể xóa phòng ban đang có ${parts.join(' và ')}. Bạn có thể chọn "Gỡ phòng ban rồi xóa" để gỡ và xóa.`
+          `Không thể xóa đơn vị đang có ${parts.join(' và ')}. Bạn có thể chọn "Gỡ đơn vị rồi xóa" để gỡ và xóa.`
         );
       }
     }
@@ -196,7 +196,7 @@ class DepartmentService {
     } catch (err: any) {
       if (err.name === 'SequelizeForeignKeyConstraintError' || err.message?.includes('foreign key')) {
         throw new ConflictError(
-          'Phòng ban vẫn đang được tham chiếu (ví dụ: báo cáo kiểm kê). Vui lòng xóa hoặc chuyển các bản ghi liên quan trước.'
+          'Đơn vị vẫn đang được tham chiếu (ví dụ: báo cáo kiểm kê). Vui lòng xóa hoặc chuyển các bản ghi liên quan trước.'
         );
       }
       throw err;

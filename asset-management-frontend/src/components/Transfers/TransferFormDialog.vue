@@ -14,7 +14,7 @@
       label-width="140px"
       label-position="top"
     >
-      <!-- Step 1: Chọn phòng ban nguồn -->
+      <!-- Step 1: Chọn đơn vị nguồn -->
       <el-form-item
         :label="$t('transfers.fromDepartment')"
         prop="from_department_id"
@@ -28,7 +28,7 @@
         />
       </el-form-item>
 
-      <!-- Step 2: Chọn tài sản từ phòng ban đã chọn -->
+      <!-- Step 2: Chọn tài sản từ đơn vị đã chọn -->
       <el-form-item
         :label="$t('transfers.selectAsset')"
         prop="asset_id"
@@ -105,7 +105,7 @@
         </el-descriptions>
       </el-card>
 
-      <!-- Step 3: Chọn phòng ban đích -->
+      <!-- Step 3: Chọn đơn vị đích -->
       <el-form-item
         :label="$t('transfers.toDepartment')"
         prop="to_department_id"
@@ -264,10 +264,10 @@ watch(() => props.visible, (val) => {
     departmentStore.fetchDepartments({ limit: 1000 });
     resetForm();
 
-    // Nếu user có phòng ban, tự động set phòng ban nguồn = phòng ban của user và khóa lại
+    // Nếu user có đơn vị, tự động set đơn vị nguồn = đơn vị của user và khóa lại
     if (userDepartmentId.value) {
       formData.from_department_id = userDepartmentId.value as any;
-      // Load tài sản theo phòng ban nguồn
+      // Load tài sản theo đơn vị nguồn
       handleSourceDepartmentChange(userDepartmentId.value as any);
     }
   }
@@ -283,7 +283,7 @@ const resetForm = () => {
   selectedAsset.value = null;
 };
 
-// Khi chọn phòng ban nguồn, load danh sách tài sản của phòng ban đó
+// Khi chọn đơn vị nguồn, load danh sách tài sản của đơn vị đó
 const handleSourceDepartmentChange = async (departmentId: number | null | undefined) => {
   formData.asset_id = null;
   formData.to_department_id = null;
