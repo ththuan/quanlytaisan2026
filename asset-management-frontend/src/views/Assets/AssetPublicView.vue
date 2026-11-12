@@ -100,6 +100,12 @@
           Đăng nhập để báo hỏng
         </button>
         <div
+          v-else-if="authStore.user?.role === 'director'"
+          class="report-denied"
+        >
+          Giám hiệu chỉ có quyền xem, không thao tác báo hỏng.
+        </div>
+        <div
           v-else
           class="report-denied"
         >
@@ -236,7 +242,8 @@ const reported = ref(false);
 const canReport = computed(() => {
   const user = authStore.user;
   if (!authStore.isAuthenticated || !user || !asset.value || asset.value.status !== 'active') return false;
-  if (user.role === 'admin' || user.role === 'director') return true;
+  if (user.role === 'director') return false;
+  if (user.role === 'admin') return true;
   const departmentId = asset.value.current_department?.id;
   return Boolean(user.department_id && departmentId && Number(user.department_id) === Number(departmentId));
 });

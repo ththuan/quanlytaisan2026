@@ -4,7 +4,7 @@
     <div class="list-header">
       <h4>Đề nghị sửa chữa</h4>
       <el-button
-        v-if="!authStore.isDirector"
+        v-if="authStore.isAdmin"
         type="primary"
         :icon="Plus"
         @click="handleCreate"
@@ -259,10 +259,10 @@
       @update="() => fetchData({}, true)"
     />
 
-    <!-- Admin Level-2 Approval Dialog with cost info -->
+    <!-- Admin approval dialog with cost info -->
     <el-dialog
       v-model="adminApprovalVisible"
-      title="Phê duyệt (Quản trị viên)"
+      title="Phê duyệt sửa chữa"
       width="480px"
       :close-on-click-modal="false"
     >
@@ -314,7 +314,7 @@
                 v-if="(adminEstimatedCost / Number(adminApprovalRow.asset.purchase_price) * 100) > 30"
                 style="color:#f56c6c; margin-left:8px; font-size:12px;"
               >
-                ⚠️ Vượt ngưỡng 30% — cần thông báo rõ lên Giám hiệu
+                ⚠️ Vượt ngưỡng 30% — cân nhắc chuyển sang thanh lý
               </span>
             </template>
             <el-tag
@@ -329,7 +329,7 @@
 
         <div style="margin-top:16px">
           <div style="margin-bottom:6px; font-weight:500">
-            Ghi chú cho Giám hiệu (sẽ lưu vào lịch sử phê duyệt):
+            Ghi chú phê duyệt (sẽ lưu vào lịch sử):
           </div>
           <el-input
             v-model="adminApprovalNotes"
@@ -349,7 +349,7 @@
           :loading="approvalLoading"
           @click="submitAdminApproval"
         >
-          Phê duyệt và gửi Giám hiệu
+          Phê duyệt sửa chữa
         </el-button>
       </template>
     </el-dialog>
@@ -397,19 +397,15 @@ const toDisposalLoading = ref(false);
 
 const statuses = computed(() => [
   { value: 'draft', label: 'Nháp' },
-  { value: 'new', label: t('maintenance.status.new') },
+  { value: 'new', label: 'Chờ phê duyệt' },
   { value: 'pending', label: 'Chờ phê duyệt' },
-  { value: 'approved_by_head', label: 'Trưởng Đơn vị đã duyệt' },
   { value: 'approved_by_admin', label: 'Quản trị viên đã duyệt' },
-  { value: 'approved_by_director', label: 'Giám hiệu đã duyệt - Chờ sửa chữa' },
   { value: 'in_progress', label: 'Đang thực hiện sửa chữa' },
   { value: 'repair_completed', label: 'Đã sửa xong - Chờ xác nhận' },
   { value: 'repair_approved', label: 'Đã xác nhận hoàn thành' },
   { value: 'completed', label: 'Hoàn thành' },
-  { value: 'rejected', label: t('maintenance.status.rejected') },
-  { value: 'rejected_by_head', label: 'Trưởng Đơn vị từ chối' },
+  { value: 'rejected', label: 'Bị từ chối' },
   { value: 'rejected_by_admin', label: 'Quản trị viên từ chối' },
-  { value: 'rejected_by_director', label: 'Giám hiệu từ chối' },
   { value: 'rejected_due_to_high_cost', label: 'Từ chối do chi phí cao' },
 ]);
 
@@ -574,7 +570,7 @@ const getApproveButtonText = (row: any) => {
   const userRole = authStore.user.role;
 
   if (userRole === 'admin' && status === 'repair_completed') return 'Xác nhận hoàn thành sửa chữa';
-  if (userRole === 'admin') return 'Phê duyệt (Admin)';
+  if (userRole === 'admin') return 'Phê duyệt sửa chữa';
 
   return 'Phê duyệt';
 };
@@ -583,7 +579,7 @@ const handleApprove = async (row: any) => {
   const id = row.id;
   const userRole = authStore.user?.role;
 
-  // Admin duyệt cấp 2 (approved_by_head): hiển thị dialog với thông tin chi phí
+  // Admin duyệt yêu cầu sửa chữa: hiển thị dialog với thông tin chi phí
   if (userRole === 'admin' && ['pending', 'new', 'approved_by_head', 'approved_by_admin'].includes(row.status)) {
     adminApprovalRow.value = row;
     adminApprovalNotes.value = '';

@@ -493,7 +493,14 @@ class MaintenanceController {
         });
       }
 
-      if (user.role !== 'admin' && user.role !== 'director') {
+      if (user.role === 'director') {
+        return res.status(403).json({
+          success: false,
+          message: 'Giám hiệu chỉ có quyền xem, không thực hiện báo hỏng',
+        });
+      }
+
+      if (user.role !== 'admin') {
         const assetDepartmentId = Number((asset as any).current_department_id);
         if (!user.department_id || assetDepartmentId !== Number(user.department_id)) {
           return res.status(403).json({

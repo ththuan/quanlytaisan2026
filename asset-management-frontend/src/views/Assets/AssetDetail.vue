@@ -22,11 +22,11 @@
             {{ $t('common.back') }}
           </el-button>
           <el-button
-            v-if="assetStore.currentAsset"
+            v-if="canReportDamage"
             type="warning"
             plain
             :icon="Warning"
-            :disabled="assetStore.currentAsset.status !== 'active'"
+            :disabled="assetStore.currentAsset?.status !== 'active'"
             @click="showReportDamageDialog = true"
           >
             Báo hỏng
@@ -795,6 +795,10 @@ const handleCameraImageSelected = async (e: Event) => {
 
 // Computed properties
 const canManageAssets = computed(() => authStore.isAdmin);
+
+const canReportDamage = computed(() => (
+  Boolean(assetStore.currentAsset) && authStore.user?.role !== 'director'
+));
 
 // Kiểm tra xem tài sản có phải là nhà cửa công trình không
 const isBuildingAsset = computed(() => {

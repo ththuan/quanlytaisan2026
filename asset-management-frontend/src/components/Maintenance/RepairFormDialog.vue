@@ -165,7 +165,7 @@
           />
         </el-form-item>
 
-        <!-- Chi phí dự kiến: chỉ admin nhập, chỉ admin và giám hiệu xem -->
+        <!-- Chi phí dự kiến: chỉ admin nhập và xem -->
         <el-form-item 
           v-if="canViewEstimatedCost"
           label="Chi phí dự kiến sửa chữa" 
@@ -370,7 +370,7 @@ const canEditEstimatedCost = computed(() => {
 });
 
 const canViewEstimatedCost = computed(() => {
-  return authStore.isAdmin || authStore.isDirector; // Admin và giám hiệu mới xem được
+  return authStore.isAdmin;
 });
 
 const canSaveDraft = computed(() => {

@@ -110,18 +110,6 @@
         </el-descriptions-item>
         <!-- Approval dates -->
         <el-descriptions-item
-          v-if="maintenanceData.head_approved_at"
-          label="Trưởng Đơn vị duyệt"
-        >
-          {{ formatDate(maintenanceData.head_approved_at) }}
-          <span
-            v-if="maintenanceData.headApprover"
-            style="color: #909399; margin-left: 8px;"
-          >
-            ({{ maintenanceData.headApprover?.fullname || maintenanceData.headApprover?.username }})
-          </span>
-        </el-descriptions-item>
-        <el-descriptions-item
           v-if="maintenanceData.admin_approved_at"
           label="Quản trị viên duyệt"
         >
@@ -131,18 +119,6 @@
             style="color: #909399; margin-left: 8px;"
           >
             ({{ maintenanceData.adminApprover?.fullname || maintenanceData.adminApprover?.username }})
-          </span>
-        </el-descriptions-item>
-        <el-descriptions-item
-          v-if="maintenanceData.director_approved_at"
-          label="Giám hiệu duyệt"
-        >
-          {{ formatDate(maintenanceData.director_approved_at) }}
-          <span
-            v-if="maintenanceData.directorApprover"
-            style="color: #909399; margin-left: 8px;"
-          >
-            ({{ maintenanceData.directorApprover?.fullname || maintenanceData.directorApprover?.username }})
           </span>
         </el-descriptions-item>
       </el-descriptions>
@@ -304,18 +280,6 @@
         </el-descriptions-item>
         <!-- Approval dates -->
         <el-descriptions-item
-          v-if="maintenanceData.head_approved_at"
-          label="Trưởng Đơn vị duyệt"
-        >
-          {{ formatDate(maintenanceData.head_approved_at) }}
-          <span
-            v-if="maintenanceData.headApprover"
-            style="color: #909399; margin-left: 8px;"
-          >
-            ({{ maintenanceData.headApprover?.fullname || maintenanceData.headApprover?.username }})
-          </span>
-        </el-descriptions-item>
-        <el-descriptions-item
           v-if="maintenanceData.admin_approved_at"
           label="Quản trị viên duyệt"
         >
@@ -325,18 +289,6 @@
             style="color: #909399; margin-left: 8px;"
           >
             ({{ maintenanceData.adminApprover?.fullname || maintenanceData.adminApprover?.username }})
-          </span>
-        </el-descriptions-item>
-        <el-descriptions-item
-          v-if="maintenanceData.director_approved_at"
-          label="Giám hiệu duyệt"
-        >
-          {{ formatDate(maintenanceData.director_approved_at) }}
-          <span
-            v-if="maintenanceData.directorApprover"
-            style="color: #909399; margin-left: 8px;"
-          >
-            ({{ maintenanceData.directorApprover?.fullname || maintenanceData.directorApprover?.username }})
           </span>
         </el-descriptions-item>
       </el-descriptions>
@@ -453,18 +405,6 @@
         </el-descriptions-item>
         <!-- Approval dates -->
         <el-descriptions-item
-          v-if="maintenanceData.head_approved_at"
-          label="Trưởng Đơn vị duyệt"
-        >
-          {{ formatDate(maintenanceData.head_approved_at) }}
-          <span
-            v-if="maintenanceData.headApprover"
-            style="color: #909399; margin-left: 8px;"
-          >
-            ({{ maintenanceData.headApprover?.fullname || maintenanceData.headApprover?.username }})
-          </span>
-        </el-descriptions-item>
-        <el-descriptions-item
           v-if="maintenanceData.admin_approved_at"
           label="Quản trị viên duyệt"
         >
@@ -474,18 +414,6 @@
             style="color: #909399; margin-left: 8px;"
           >
             ({{ maintenanceData.adminApprover?.fullname || maintenanceData.adminApprover?.username }})
-          </span>
-        </el-descriptions-item>
-        <el-descriptions-item
-          v-if="maintenanceData.director_approved_at"
-          label="Giám hiệu duyệt"
-        >
-          {{ formatDate(maintenanceData.director_approved_at) }}
-          <span
-            v-if="maintenanceData.directorApprover"
-            style="color: #909399; margin-left: 8px;"
-          >
-            ({{ maintenanceData.directorApprover?.fullname || maintenanceData.directorApprover?.username }})
           </span>
         </el-descriptions-item>
       </el-descriptions>
@@ -973,7 +901,7 @@ const fetchApprovalHistory = async () => {
 
 const canUpdateStatus = computed(() => {
   const data = maintenanceData.value;
-  return data && ['approved_by_admin', 'approved_by_director', 'in_progress'].includes(data.status);
+  return data && ['approved_by_admin', 'in_progress'].includes(data.status);
 });
 
 // Check if current user can approve at current level
@@ -1009,14 +937,9 @@ const getApproveButtonText = computed(() => {
 
 const getApprovalStep = (status: string) => {
   if (status === 'pending' || status === 'new' || status === 'draft') return 0;
-  if (status === 'approved_by_head') return 1;
-  if (status === 'rejected_by_head') return 1;
-  if (status === 'approved_by_admin') return 2;
-  if (status === 'rejected_by_admin') return 2;
-  if (status === 'approved_by_director' || status === 'in_progress') return 3;
-  if (status === 'rejected_by_director') return 3;
-  if (status === 'repair_completed' || status === 'repair_approved' || status === 'completed' || status === 'done') return 4;
-  return 0;
+  if (status === 'rejected' || status?.startsWith('rejected')) return 0;
+  if (status === 'repair_completed' || status === 'repair_approved' || status === 'completed' || status === 'done') return 2;
+  return 1;
 };
 
 const isRejected = computed(() => {
@@ -1026,29 +949,14 @@ const isRejected = computed(() => {
 
 const stepInfo = computed(() => {
   const s = maintenanceData.value?.status || '';
-
-  const headApproved = !['pending', 'new', 'draft', 'rejected_by_head'].includes(s);
-  const headRejected = s === 'rejected_by_head';
-  const adminApproved = !['pending', 'new', 'draft', 'approved_by_head', 'rejected_by_head', 'rejected_by_admin'].includes(s);
-  const adminRejected = s === 'rejected_by_admin';
-  const directorApproved = ['approved_by_director', 'in_progress', 'repair_completed', 'repair_approved', 'completed', 'done'].includes(s);
-  const directorRejected = s === 'rejected_by_director';
+  const adminRejected = String(s).startsWith('rejected');
+  const adminApproved = !['pending', 'new', 'draft', 'rejected'].includes(s) && !adminRejected;
 
   return {
-    head: {
-      title: headRejected ? 'Từ chối' : (headApproved ? 'Đã duyệt' : 'Xác nhận'),
-      status: headRejected ? 'error' : undefined,
-      icon: headRejected ? CircleCloseFilled : undefined,
-    },
     admin: {
       title: adminRejected ? 'Từ chối' : (adminApproved ? 'Đã duyệt' : 'Xác nhận'),
       status: adminRejected ? 'error' : undefined,
       icon: adminRejected ? CircleCloseFilled : undefined,
-    },
-    director: {
-      title: directorRejected ? 'Từ chối' : (directorApproved ? 'Đã duyệt' : 'Phê duyệt'),
-      status: directorRejected ? 'error' : undefined,
-      icon: directorRejected ? CircleCloseFilled : undefined,
     },
   };
 });
@@ -1322,47 +1230,24 @@ const processTimeline = computed(() => {
   
   // 2. Add approval/rejection events from approvalHistory (more accurate timestamps)
   if (approvalHistory.value && approvalHistory.value.length > 0) {
-    approvalHistory.value.forEach((item: any) => {
-      const isApproved = item.decision === 'approved';
-      let label = '';
-      if (item.approval_level === 1) {
-        label = isApproved ? 'Đã duyệt (Trưởng Đơn vị)' : 'Đã từ chối (Trưởng Đơn vị)';
-      } else if (item.approval_level === 2) {
-        label = isApproved ? 'Đã duyệt (Quản trị viên)' : 'Đã từ chối (Quản trị viên)';
-      } else if (item.approval_level === 3) {
-        label = isApproved ? 'Đã duyệt (Giám hiệu)' : 'Đã từ chối (Giám hiệu)';
-      } else if (item.approval_level === 4) {
-        label = 'Bắt đầu sửa chữa';
-      } else if (item.approval_level === 5) {
-        label = 'Báo hoàn thành sửa chữa';
-      } else if (item.approval_level === 6) {
-        label = isApproved ? 'Xác nhận hoàn thành sửa chữa' : 'Từ chối hoàn thành sửa chữa';
-      }
-      
-      timeline.push({
-        date: formatDate(item.decided_at) || '-',
-        timestamp: getTimestamp(item.decided_at),
-        label,
-        type: isApproved ? 'success' : 'danger',
-        actor: item.approver?.fullname || item.approver_name,
-        reason: !isApproved ? item.reason : undefined,
+    approvalHistory.value
+      .filter((item: any) => item.approver_role === 'admin')
+      .forEach((item: any) => {
+        const isApproved = item.decision === 'approved';
+        timeline.push({
+          date: formatDate(item.decided_at) || '-',
+          timestamp: getTimestamp(item.decided_at),
+          label: isApproved ? 'Quản trị viên đã duyệt' : 'Quản trị viên từ chối',
+          type: isApproved ? 'success' : 'danger',
+          actor: item.approver?.fullname || item.approver_name,
+          reason: !isApproved ? item.reason : undefined,
+        });
       });
-    });
   } else {
     // Fallback: use maintenance data fields if approvalHistory is empty
     // This handles cases where approval history API hasn't been called yet
     
-    if (data.head_approved_at) {
-      timeline.push({
-        date: formatDate(data.head_approved_at) || '-',
-        timestamp: getTimestamp(data.head_approved_at),
-        label: 'Trưởng Đơn vị đã duyệt',
-        type: 'success',
-        actor: data.headApprover?.fullname || data.headApprover?.username,
-      });
-    }
-    
-    if (data.admin_approved_at) {
+if (data.admin_approved_at) {
       timeline.push({
         date: formatDate(data.admin_approved_at) || '-',
         timestamp: getTimestamp(data.admin_approved_at),
@@ -1372,17 +1257,7 @@ const processTimeline = computed(() => {
       });
     }
     
-    if (data.director_approved_at) {
-      timeline.push({
-        date: formatDate(data.director_approved_at) || '-',
-        timestamp: getTimestamp(data.director_approved_at),
-        label: 'Giám hiệu đã duyệt',
-        type: 'success',
-        actor: data.directorApprover?.fullname || data.directorApprover?.username,
-      });
-    }
-    
-    // Add rejection if exists and not in approvalHistory
+// Add rejection if exists and not in approvalHistory
     if (data.rejected_at) {
       timeline.push({
         date: formatDate(data.rejected_at) || '-',

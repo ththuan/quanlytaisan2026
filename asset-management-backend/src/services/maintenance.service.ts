@@ -1594,7 +1594,7 @@ class MaintenanceService {
     const updateData: any = {};
 
     if (maintenance.status === 'repair_completed') {
-      approvalLevel = 2;
+      approvalLevel = 1;
       if (decision === 'approved') {
         newStatus = 'repair_approved';
         updateData.admin_approved_by = approver.id;
