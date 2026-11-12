@@ -273,7 +273,42 @@
             </el-card>
           </el-col>
 
-          <!-- 8. Tăng tài sản -->
+          <!-- 8. Kho vật tư -->
+          <el-col
+            v-if="FEATURES.stockModule && authStore.isAdmin"
+            :xs="12"
+            :sm="8"
+            :md="4"
+          >
+            <el-card
+              class="stat-card stat-clickable"
+              shadow="hover"
+              @click="$router.push('/stock')"
+            >
+              <div class="stat-icon stock-icon">
+                <el-icon size="24">
+                  <Goods />
+                </el-icon>
+              </div>
+              <div class="stat-content">
+                <el-skeleton
+                  v-if="loading"
+                  :rows="1"
+                  animated
+                />
+                <template v-else>
+                  <div class="stat-value text-truncate">
+                    <AnimatedNumber :value="stats.itemsTotal" />
+                  </div>
+                  <div class="stat-label">
+                    Kho vật tư
+                  </div>
+                </template>
+              </div>
+            </el-card>
+          </el-col>
+
+          <!-- 9. Tăng tài sản -->
           <el-col
             v-if="authStore.user?.role === 'admin'"
             :xs="12"
@@ -467,7 +502,7 @@
 import { ref, reactive, onMounted, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { Box, ShoppingCart, Setting, Sort, List, Delete, Warning, Document } from '@element-plus/icons-vue';
+import { Box, Goods, ShoppingCart, Setting, Sort, List, Delete, Warning, Document } from '@element-plus/icons-vue';
 import VChart from 'vue-echarts';
 import AnimatedNumber from '@/components/animate/AnimatedNumber.vue';
 import * as dashboardService from '@/services/dashboard.service';
@@ -1049,6 +1084,7 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
 .lost-damage-icon  { background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%); }
 .transfers-icon    { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
 .inventory-icon    { background: linear-gradient(135deg, #64748b 0%, #475569 100%); }
+.stock-icon        { background: linear-gradient(135deg, #10b981 0%, #047857 100%); }
 
 .stat-content {
   flex: 1;
