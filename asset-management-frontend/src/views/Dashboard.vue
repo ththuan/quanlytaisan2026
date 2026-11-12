@@ -37,7 +37,7 @@
           <el-col
             :xs="12"
             :sm="8"
-            :md="4"
+            :md="6"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -72,7 +72,7 @@
             v-if="FEATURES.auxiliaryModules && isAdminOrDirector"
             :xs="12"
             :sm="8"
-            :md="4"
+            :md="6"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -107,7 +107,7 @@
             v-if="FEATURES.repairModule && authStore.isAdmin"
             :xs="12"
             :sm="8"
-            :md="4"
+            :md="6"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -141,7 +141,7 @@
           <el-col
             :xs="12"
             :sm="8"
-            :md="4"
+            :md="6"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -175,7 +175,7 @@
           <el-col
             :xs="12"
             :sm="8"
-            :md="4"
+            :md="6"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -209,7 +209,7 @@
           <el-col
             :xs="12"
             :sm="8"
-            :md="4"
+            :md="6"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -243,7 +243,7 @@
           <el-col
             :xs="12"
             :sm="8"
-            :md="4"
+            :md="6"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -278,7 +278,7 @@
             v-if="FEATURES.stockModule && authStore.isAdmin"
             :xs="12"
             :sm="8"
-            :md="4"
+            :md="6"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -313,7 +313,7 @@
             v-if="authStore.user?.role === 'admin'"
             :xs="12"
             :sm="8"
-            :md="4"
+            :md="6"
           >
             <el-card
               class="stat-card stat-clickable"
@@ -1059,6 +1059,26 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
   gap: 16px;
   height: 100%;
   flex: 1;
+}
+
+.stats-row .stat-card :deep(.el-card__body) {
+  padding: 12px 14px;
+  gap: 10px;
+}
+
+.stats-row .stat-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+}
+
+.stats-row .stat-value {
+  font-size: 1.15rem;
+}
+
+.stats-row .stat-label {
+  font-size: 10px;
+  letter-spacing: 0.3px;
 }
 
 .stat-icon {

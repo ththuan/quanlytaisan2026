@@ -67,7 +67,7 @@
       >
         <DepartmentTreeSelect
           v-model="formData.parent_department_id"
-          :placeholder="$t('departments.parentDepartment')"
+          placeholder="Chọn đơn vị"
           :restrict-to-ids="parentChoiceRestrictIds"
         />
       </el-form-item>

@@ -436,7 +436,7 @@ export default {
     departmentType: 'Loại đơn vị',
     departmentDetails: 'Chi tiết đơn vị',
     manager: 'Trưởng phòng',
-    parentDepartment: 'Đơn vị cha',
+    parentDepartment: 'Đơn vị',
     description: 'Mô tả',
     type: 'Loại',
     types: {
