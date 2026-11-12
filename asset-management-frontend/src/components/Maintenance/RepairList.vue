@@ -655,7 +655,7 @@ const handleRejectRepair = async (row: any) => {
     );
     const signature = await requestSignature('Ký từ chối sửa chữa');
     if (!signature) return;
-    await api.put(`/maintenance/${row.id}/process-approval`, {
+    await api.post(`/maintenance/${row.id}/process-approval`, {
       decision: 'rejected',
       reason: result.value.trim(),
       signature,

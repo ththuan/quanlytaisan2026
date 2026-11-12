@@ -78,6 +78,15 @@ router.put(
   maintenanceController.approveMaintenancePut
 );
 
+// PUT alias for process-approval (frontend reject action)
+router.put(
+  '/:id/process-approval',
+  canApproveMaintenanceRequest,
+  validateRequest(processApprovalSchema),
+  auditLog('approve'),
+  maintenanceController.processApproval
+);
+
 // Legacy approve/reject routes
 router.post(
   '/:id/approve',

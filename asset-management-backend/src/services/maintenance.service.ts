@@ -1527,6 +1527,27 @@ class MaintenanceService {
       });
     }
 
+    try {
+      if (maintenance.request_type === 'repair') {
+        const adminIds = await notificationService.getAdminIds();
+        const repairAsset = maintenance.asset_id ? await Asset.findByPk(maintenance.asset_id) : null;
+        await notificationService.notify({
+          userIds: adminIds,
+          type: 'maintenance',
+          title: 'Yêu cầu sửa chữa mới',
+          message: repairAsset
+            ? `${repairAsset.asset_code} - ${repairAsset.name}: ${String(maintenance.description || '').slice(0, 140)}`
+            : `Yêu cầu sửa chữa #${id}`,
+          link: '/maintenance',
+          entityType: 'maintenance_request',
+          entityId: id,
+          excludeUserId: requestedBy,
+        });
+      }
+    } catch {
+      // Notification failure must not block submit.
+    }
+
     return this.getMaintenanceById(id);
   }
 

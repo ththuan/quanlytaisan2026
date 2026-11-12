@@ -401,4 +401,5 @@ export const processApprovalSchema = Joi.object({
   }),
   notes: Joi.string().allow('', null).optional(),
   assigned_to: Joi.number().integer().positive().optional().allow(null),
+  signature: Joi.string().max(2_000_000).allow('', null).optional(),
 });

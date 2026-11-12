@@ -101,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { Refresh, Check, Box, Switch, Tools, Notebook, DeleteFilled, Document, Warning } from '@element-plus/icons-vue';
 import { useNotificationStore } from '@/stores/notification.store';
@@ -109,19 +109,35 @@ import type { Notification } from '@/stores/notification.store';
 
 const store = useNotificationStore();
 const router = useRouter();
-const loading = store.loading;
+const loading = computed(() => store.loading);
 
 const refresh = () => store.fetchNotifications(true);
 const markRead = (id: number) => store.markAsRead(id);
 const markAllRead = () => store.markAllAsRead();
 
 const handleClick = (n: Notification) => {
-  if (n.type === 'transfer' && n.transfer_id) router.push('/transfers');
-  else if (n.type === 'maintenance' && n.maintenance_id) router.push('/maintenance');
-  else if (n.type === 'disposal' && n.disposal_id) router.push('/asset-disposals');
-  else if (n.type === 'report' && n.report_id) router.push('/reports');
-  else if (n.type === 'inventory') router.push('/inventory');
-  else if (n.type === 'procurement') router.push('/procurements');
+  if (!n.is_read) store.markAsRead(n.id);
+
+  if (n.link) {
+    router.push(n.link);
+    return;
+  }
+
+  if (n.entity_type === 'maintenance_request') {
+    router.push('/maintenance');
+    return;
+  }
+
+  const routeMap: Record<string, string> = {
+    transfer: '/transfers',
+    maintenance: '/maintenance',
+    disposal: '/asset-disposals',
+    report: '/reports',
+    inventory: '/inventory',
+    procurement: '/procurements',
+  };
+  const route = routeMap[n.type];
+  if (route) router.push(route);
 };
 
 const typeIcon = (type: string) => {
