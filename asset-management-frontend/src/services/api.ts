@@ -65,7 +65,7 @@ api.interceptors.response.use(
 
     // Retry proxy/connection errors (backend restarting) - up to 3 times with delay
     const config = error.config;
-    if (config && (!error.response || error.response.status >= 502)) {
+    if (config && !(config as any).__noRetry && (!error.response || error.response.status >= 502)) {
       const retryCount = (config as any).__retryCount || 0;
       if (retryCount < 3) {
         (config as any).__retryCount = retryCount + 1;

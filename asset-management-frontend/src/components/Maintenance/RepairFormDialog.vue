@@ -332,6 +332,7 @@ import SignaturePad from '@/components/Common/SignaturePad.vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus, Document, Promotion, Check } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules, UploadFile } from '@/types/element-plus';
+import { fileToDataUrl, prepareImageForUpload } from '@/utils/image';
 import api from '@/services/api';
 
 interface Asset {
@@ -522,28 +523,25 @@ const handleAssetChange = async (assetId: number | number[] | null) => {
 };
 
 const handleImageChange = async (file: UploadFile) => {
-  // Convert file ngay khi upload và lưu vào url
-  if (file.raw && !file.url?.startsWith('data:image')) {
-    const reader = new FileReader();
-    reader.onload = (e: any) => {
-      // Lưu base64 vào url của file
-      if (file.uid) {
-        const fileInList = damageImageList.value.find((f: UploadFile) => f.uid === file.uid);
-        if (fileInList) {
-          fileInList.url = e.target.result;
-        }
+  if (file.raw) {
+    try {
+      // Nén ảnh ngay khi chọn để tránh payload vượt giới hạn body khi gửi.
+      const prepared = await prepareImageForUpload(file.raw, { maxDimension: 1600, quality: 0.72 });
+      const dataUrl = await fileToDataUrl(prepared);
+      const fileInList = damageImageList.value.find((f: UploadFile) => f.uid === file.uid);
+      if (fileInList) {
+        fileInList.url = dataUrl;
       }
-      // Convert tất cả images và cập nhật formData
-      convertAllImagesToBase64();
-    };
-    reader.onerror = (error) => {
-      console.error('❌ Error reading file:', error);
-    };
-    reader.readAsDataURL(file.raw);
-  } else {
-    // Nếu đã có url, chỉ cần convert lại
-    convertAllImagesToBase64();
+      await convertAllImagesToBase64();
+    } catch (error) {
+      console.error('❌ Error preparing image:', error);
+      ElMessage.error('Không thể xử lý ảnh. Vui lòng chọn ảnh khác.');
+    }
+    return;
   }
+
+  // Nếu đã có url, chỉ cần convert lại
+  await convertAllImagesToBase64();
 };
 
 const handleRemove = async () => {
@@ -911,7 +909,10 @@ const handleSaveRequest = async (status: string) => {
   if (isEdit.value && props.item) {
     response = await api.put(`/maintenance/${props.item.id}`, payload);
   } else {
-    response = await api.post('/maintenance', payload);
+    response = await api.post('/maintenance', payload, {
+      timeout: 60000,
+      __noRetry: true,
+    } as any);
   }
   
   // Log response to verify damageImages
@@ -944,24 +945,17 @@ const convertAllImagesToBase64 = async (): Promise<void> => {
       if (f.url && (f.url.startsWith('/storage/') || f.url.startsWith('http'))) {
         return f.url; 
       }
-      // Nếu có raw file, convert sang base64
+      // Nén ảnh trước khi chuyển base64 để tránh vượt giới hạn body và upload chậm.
       if (f.raw) {
-        return new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (e: any) => {
-            // Lưu vào url của file để dùng lại
-            if (f.uid) {
-              const fileInList = damageImageList.value.find((file: UploadFile) => file.uid === f.uid);
-              if (fileInList) {
-                fileInList.url = e.target.result;
-              }
-            }
-            resolve(e.target.result);
-          };
-          reader.onerror = reject;
-          if (f.raw) reader.readAsDataURL(f.raw);
-          else reject(new Error('Missing file'));
-        });
+        const prepared = await prepareImageForUpload(f.raw, { maxDimension: 1600, quality: 0.72 });
+        const dataUrl = await fileToDataUrl(prepared);
+        if (f.uid) {
+          const fileInList = damageImageList.value.find((file: UploadFile) => file.uid === f.uid);
+          if (fileInList) {
+            fileInList.url = dataUrl;
+          }
+        }
+        return dataUrl;
       }
       return null;
     });

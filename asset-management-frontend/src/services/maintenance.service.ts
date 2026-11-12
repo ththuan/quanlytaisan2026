@@ -72,7 +72,10 @@ class MaintenanceService {
     damage_images?: string[];
     signature?: string;
   }) {
-    const response: any = await api.post('/maintenance/report-damage', data);
+    const response: any = await api.post('/maintenance/report-damage', data, {
+      timeout: 60000,
+      __noRetry: true,
+    } as any);
     return response;
   }
 

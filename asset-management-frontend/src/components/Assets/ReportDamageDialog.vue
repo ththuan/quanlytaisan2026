@@ -160,6 +160,7 @@ import { ElMessage } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 import maintenanceService from '@/services/maintenance.service';
 import SignaturePad from '@/components/Common/SignaturePad.vue';
+import { fileToDataUrl, prepareImageForUpload } from '@/utils/image';
 
 const props = defineProps<{
   visible: boolean;
@@ -221,13 +222,9 @@ const handlePreview = (file: any) => {
 };
 
 // Đọc ảnh và trả về base64
-const getBase64 = (fileRaw: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-    reader.readAsDataURL(fileRaw);
-  });
+const getBase64 = async (fileRaw: File): Promise<string> => {
+  const prepared = await prepareImageForUpload(fileRaw, { maxDimension: 1600, quality: 0.72 });
+  return fileToDataUrl(prepared);
 };
 
 const handleSubmit = async () => {
