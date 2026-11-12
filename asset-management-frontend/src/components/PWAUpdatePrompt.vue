@@ -161,8 +161,8 @@ async function applyUpdate() {
   updating.value = true;
   if (state?.updateServiceWorker) {
     await state.updateServiceWorker();
+    return;
   }
-  // After service worker updates, reload page
   window.location.reload();
 }
 

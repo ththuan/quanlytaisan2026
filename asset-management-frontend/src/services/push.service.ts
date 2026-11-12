@@ -1,10 +1,21 @@
 import api from './api';
 
+const isSafariBrowser = (): boolean => {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isSafari = /Safari/i.test(navigator.userAgent)
+    && !/(Chrome|Chromium|CriOS|FxiOS|EdgiOS|Edg|OPR|Opera|Android)/i.test(navigator.userAgent);
+  const standalone = window.matchMedia('(display-mode: standalone)').matches
+    || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  return (isIOS || isSafari) && !standalone;
+};
+
 const isSupported = (): boolean =>
   typeof window !== 'undefined'
   && 'serviceWorker' in navigator
   && 'PushManager' in window
-  && 'Notification' in window;
+  && 'Notification' in window
+  && !isSafariBrowser();
 
 const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -21,7 +32,8 @@ export const pushSupported = (): boolean => isSupported();
 
 export const getPushSubscription = async (): Promise<PushSubscription | null> => {
   if (!isSupported()) return null;
-  const registration = await navigator.serviceWorker.ready;
+  const registration = await navigator.serviceWorker.getRegistration();
+  if (!registration) return null;
   return registration.pushManager.getSubscription();
 };
 
@@ -50,7 +62,10 @@ export const subscribePush = async (): Promise<void> => {
   }
 
   const applicationServerKey = urlBase64ToUint8Array(publicKey);
-  const registration = await navigator.serviceWorker.ready;
+  const registration = await navigator.serviceWorker.getRegistration();
+  if (!registration) {
+    throw new Error('Thiết bị chưa sẵn sàng nhận thông báo đẩy');
+  }
   let subscription = await registration.pushManager.getSubscription();
 
   if (subscription) {
@@ -78,7 +93,8 @@ export const subscribePush = async (): Promise<void> => {
 
 export const unsubscribePush = async (): Promise<void> => {
   if (!isSupported()) return;
-  const registration = await navigator.serviceWorker.ready;
+  const registration = await navigator.serviceWorker.getRegistration();
+  if (!registration) return;
   const subscription = await registration.pushManager.getSubscription();
   if (!subscription) return;
   await api.post('/notifications/push/unsubscribe', { endpoint: subscription.endpoint });
