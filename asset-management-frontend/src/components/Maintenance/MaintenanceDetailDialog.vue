@@ -605,6 +605,12 @@
     </template>
   </el-dialog>
 
+  <SignaturePad
+    v-model="showSignDialog"
+    :title="signTitle"
+    @confirm="onSignConfirm"
+  />
+
   <FulfillProcurementDialog
     v-if="maintenanceData"
     :visible="fulfillDialogVisible"
@@ -625,6 +631,7 @@ import api from '@/services/api';
 import FulfillProcurementDialog from './FulfillProcurementDialog.vue';
 import procurementService from '@/services/procurement.service';
 import assetDisposalService from '@/services/assetDisposal.service';
+import SignaturePad from '@/components/Common/SignaturePad.vue';
 import { useRouter } from 'vue-router';
 
 const props = defineProps<{
@@ -641,6 +648,27 @@ const { t } = useI18n();
 const router = useRouter();
 const authStore = useAuthStore();
 const loading = ref(false);
+const showSignDialog = ref(false);
+const signTitle = ref('Ký xác nhận');
+let signResolve: ((signature: string | null) => void) | null = null;
+
+const requestSignature = (title: string): Promise<string | null> => {
+  signTitle.value = title;
+  showSignDialog.value = true;
+  return new Promise((resolve) => { signResolve = resolve; });
+};
+
+const onSignConfirm = (signature: string) => {
+  signResolve?.(signature);
+  signResolve = null;
+};
+
+watch(showSignDialog, (open) => {
+  if (!open && signResolve) {
+    signResolve(null);
+    signResolve = null;
+  }
+});
 const approvalHistory = ref<any[]>([]);
 const fullMaintenanceData = ref<any>(null);
 const fulfillDialogVisible = ref(false);
@@ -973,8 +1001,10 @@ const handleApprove = async () => {
       }
     );
     
+    const signature = await requestSignature('Ký duyệt sửa chữa');
+    if (!signature) return;
     loading.value = true;
-    await api.put(`/maintenance/${props.maintenance.id}/approve`);
+    await api.put(`/maintenance/${props.maintenance.id}/approve`, { signature });
     ElMessage.success('Đã phê duyệt thành công');
     // Close dialog first to prevent multiple updates
     emit('update:visible', false);
@@ -1008,10 +1038,13 @@ const handleReject = async () => {
       }
     );
     
+    const signature = await requestSignature('Ký từ chối sửa chữa');
+    if (!signature) return;
     loading.value = true;
     await api.post(`/maintenance/${props.maintenance.id}/process-approval`, {
       decision: 'rejected',
       reason: reason,
+      signature,
     });
     ElMessage.success('Đã từ chối yêu cầu');
     // Close dialog first to prevent multiple updates

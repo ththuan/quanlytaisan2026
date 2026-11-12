@@ -4,6 +4,27 @@ import maintenanceService from '../services/maintenance.service';
 import { AuthRequest } from '../middleware/auth.middleware';
 import logger from '../utils/logger';
 import { Asset, MaintenanceRequest } from '../models';
+import { assertSignature, recordSignature } from '../services/signature.service';
+
+const recordMaintenanceSignature = async (req: AuthRequest, maintenanceId: number, action: 'submit' | 'approve' | 'reject' | 'complete', signatureImage: string) => {
+  const user = req.user!;
+  await recordSignature({
+    entityType: 'maintenance_request',
+    entityId: maintenanceId,
+    action,
+    signerId: user.id,
+    signerName: user.fullname || user.username || `user#${user.id}`,
+    signerRole: user.role,
+    signatureImage,
+    ipAddress: req.ip,
+    userAgent: req.headers['user-agent'] as string | undefined,
+  });
+};
+
+const requiresRepairSignature = async (maintenanceId: number): Promise<boolean> => {
+  const request = await MaintenanceRequest.findByPk(maintenanceId, { attributes: ['id', 'request_type'] });
+  return request?.request_type === 'repair';
+};
 
 class MaintenanceController {
   async getAllMaintenance(req: AuthRequest, res: Response, next: NextFunction) {
@@ -154,8 +175,11 @@ class MaintenanceController {
     try {
       const id = parseInt(req.params.id);
       const userId = req.user!.id;
+      const requiresSignature = await requiresRepairSignature(id);
+      const signatureImage = requiresSignature ? assertSignature(req.body?.signature) : '';
       const { assigned_to } = req.body;
       const maintenance = await maintenanceService.approveMaintenance(id, userId, assigned_to);
+      if (requiresSignature) await recordMaintenanceSignature(req, id, 'approve', signatureImage);
 
       return res.json({
         success: true,
@@ -176,6 +200,8 @@ class MaintenanceController {
     try {
       const id = parseInt(req.params.id);
       const user = req.user!;
+      const requiresSignature = await requiresRepairSignature(id);
+      const signatureImage = requiresSignature ? assertSignature(req.body?.signature) : '';
       const { notes, assigned_to, estimated_cost } = req.body;
 
       // Use processApproval with decision='approved'
@@ -189,6 +215,8 @@ class MaintenanceController {
         },
         { decision: 'approved', notes, assigned_to, estimated_cost }
       );
+
+      if (requiresSignature) await recordMaintenanceSignature(req, id, 'approve', signatureImage);
 
       return res.json({
         success: true,
@@ -204,8 +232,11 @@ class MaintenanceController {
     try {
       const id = parseInt(req.params.id);
       const userId = req.user!.id;
+      const requiresSignature = await requiresRepairSignature(id);
+      const signatureImage = requiresSignature ? assertSignature(req.body?.signature) : '';
       const { notes } = req.body;
       const maintenance = await maintenanceService.rejectMaintenance(id, userId, notes);
+      if (requiresSignature) await recordMaintenanceSignature(req, id, 'reject', signatureImage);
 
       return res.json({
         success: true,
@@ -226,6 +257,8 @@ class MaintenanceController {
     try {
       const id = parseInt(req.params.id);
       const user = req.user!;
+      const requiresSignature = await requiresRepairSignature(id);
+      const signatureImage = requiresSignature ? assertSignature(req.body?.signature) : '';
       const { decision, reason, notes, assigned_to } = req.body;
 
       const maintenance = await maintenanceService.processApproval(
@@ -238,6 +271,10 @@ class MaintenanceController {
         },
         { decision, reason, notes, assigned_to }
       );
+
+      if (requiresSignature) {
+        await recordMaintenanceSignature(req, id, decision === 'approved' ? 'approve' : 'reject', signatureImage);
+      }
 
       const message = decision === 'approved'
         ? 'Yêu cầu đã được phê duyệt thành công'
@@ -298,6 +335,8 @@ class MaintenanceController {
       const id = parseInt(req.params.id);
       const user = req.user!;
       const userId = user.id;
+      const requiresSignature = await requiresRepairSignature(id);
+      const signatureImage = requiresSignature ? assertSignature(req.body?.signature) : '';
 
       console.log('📤 Submitting maintenance request for approval:', {
         requestId: id,
@@ -316,6 +355,8 @@ class MaintenanceController {
           department_id: user.department_id,
         }
       );
+
+      if (requiresSignature) await recordMaintenanceSignature(req, id, 'submit', signatureImage);
 
       console.log('✅ Successfully submitted for approval:', {
         requestId: id,
@@ -458,6 +499,7 @@ class MaintenanceController {
   async reportDamage(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const user = req.user!;
+      const signatureImage = assertSignature(req.body?.signature);
       const assetId = Number(req.body.asset_id);
       const description = String(req.body.description || '').trim();
       const urgency = ['low', 'normal', 'high', 'critical'].includes(req.body.urgency)
@@ -540,6 +582,8 @@ class MaintenanceController {
         } as any,
         user.id
       );
+
+      await recordMaintenanceSignature(req, maintenance.id, 'submit', signatureImage);
 
       return res.status(201).json({
         success: true,

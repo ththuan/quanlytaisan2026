@@ -1,7 +1,7 @@
 import { Model, DataTypes, Optional } from 'sequelize';
 import sequelize from '../config/database';
 
-export type SignatureEntityType = 'inventory_report' | 'asset_disposal_case' | 'asset_transfer';
+export type SignatureEntityType = 'inventory_report' | 'asset_disposal_case' | 'asset_transfer' | 'maintenance_request';
 export type SignatureAction = 'submit' | 'approve' | 'reject' | 'create' | 'complete';
 
 export interface SignatureAttributes {

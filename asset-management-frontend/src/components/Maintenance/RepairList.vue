@@ -353,11 +353,17 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <SignaturePad
+      v-model="showSignDialog"
+      :title="signTitle"
+      @confirm="onSignConfirm"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
@@ -370,6 +376,7 @@ import MaintenanceDetailDialog from './MaintenanceDetailDialog.vue';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 import api from '@/services/api';
 import assetDisposalService from '@/services/assetDisposal.service';
+import SignaturePad from '@/components/Common/SignaturePad.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -394,6 +401,27 @@ const adminApprovalRow = ref<any>(null);
 const adminEstimatedCost = ref<number | null>(null);
 const approvalLoading = ref(false);
 const toDisposalLoading = ref(false);
+const showSignDialog = ref(false);
+const signTitle = ref('Ký xác nhận');
+let signResolve: ((signature: string | null) => void) | null = null;
+
+const requestSignature = (title: string): Promise<string | null> => {
+  signTitle.value = title;
+  showSignDialog.value = true;
+  return new Promise((resolve) => { signResolve = resolve; });
+};
+
+const onSignConfirm = (signature: string) => {
+  signResolve?.(signature);
+  signResolve = null;
+};
+
+watch(showSignDialog, (open) => {
+  if (!open && signResolve) {
+    signResolve(null);
+    signResolve = null;
+  }
+});
 
 const statuses = computed(() => [
   { value: 'draft', label: 'Nháp' },
@@ -525,8 +553,10 @@ const handleSubmitForApproval = async (item: any) => {
         cancelButtonText: 'Hủy',
       }
     );
-    await api.post(`/maintenance/${item.id}/submit`);
-    ElMessage.success('Đã gửi phê duyệt thành công. Yêu cầu của bạn đang chờ trưởng phòng xem xét.');
+    const signature = await requestSignature('Ký xác nhận gửi sửa chữa');
+    if (!signature) return;
+    await api.post(`/maintenance/${item.id}/submit`, { signature });
+    ElMessage.success('Đã gửi phê duyệt thành công. Yêu cầu của bạn đang chờ quản trị viên xem xét.');
     const sidx = requests.value.findIndex((r: any) => r.id === item.id);
     if (sidx !== -1) requests.value[sidx] = { ...requests.value[sidx], status: 'pending' };
     fetchData({}, true);
@@ -595,7 +625,9 @@ const handleApprove = async (row: any) => {
       'Xác nhận phê duyệt',
       { type: 'warning', confirmButtonText: 'Phê duyệt', cancelButtonText: 'Hủy' }
     );
-    await api.put(`/maintenance/${id}/approve`);
+    const signature = await requestSignature('Ký duyệt sửa chữa');
+    if (!signature) return;
+    await api.put(`/maintenance/${id}/approve`, { signature });
     const aidx = requests.value.findIndex((r: any) => r.id === id);
     if (aidx !== -1) requests.value[aidx] = { ...requests.value[aidx], status: 'in_progress' };
     ElMessage.success('Đã phê duyệt thành công.');
@@ -621,9 +653,12 @@ const handleRejectRepair = async (row: any) => {
         inputValidator: (value: string) => (value && value.trim() ? true : 'Vui lòng nhập lý do từ chối'),
       }
     );
+    const signature = await requestSignature('Ký từ chối sửa chữa');
+    if (!signature) return;
     await api.put(`/maintenance/${row.id}/process-approval`, {
       decision: 'rejected',
       reason: result.value.trim(),
+      signature,
     });
     ElMessage.success('Đã từ chối sửa chữa. Tài sản chuyển sang Hư hỏng.');
     fetchData({}, true);
@@ -636,11 +671,14 @@ const handleRejectRepair = async (row: any) => {
 
 const submitAdminApproval = async () => {
   if (!adminApprovalRow.value) return;
+  const signature = await requestSignature('Ký duyệt sửa chữa');
+  if (!signature) return;
   approvalLoading.value = true;
   try {
     await api.put(`/maintenance/${adminApprovalRow.value.id}/approve`, {
       notes: adminApprovalNotes.value || undefined,
       estimated_cost: adminEstimatedCost.value ?? undefined,
+      signature,
     });
     ElMessage.success('Admin đã phê duyệt thành công.');
     adminApprovalVisible.value = false;

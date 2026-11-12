@@ -95,6 +95,28 @@
           Vui lòng chụp ít nhất 1 ảnh để quản trị viên xem xét nhanh.
         </div>
       </el-form-item>
+
+      <el-form-item label="Ký xác nhận gửi báo hỏng (bắt buộc)">
+        <div class="signature-box">
+          <img
+            v-if="signatureData"
+            :src="signatureData"
+            class="signature-preview"
+            alt="Chữ ký xác nhận"
+          >
+          <span
+            v-else
+            class="signature-empty"
+          >Chưa có chữ ký</span>
+          <el-button
+            type="primary"
+            plain
+            @click="showSignDialog = true"
+          >
+            {{ signatureData ? 'Ký lại' : 'Ký xác nhận' }}
+          </el-button>
+        </div>
+      </el-form-item>
     </el-form>
 
     <!-- Image preview dialog -->
@@ -108,6 +130,12 @@
         style="width: 100%;"
       >
     </el-dialog>
+
+    <SignaturePad
+      v-model="showSignDialog"
+      title="Ký xác nhận gửi báo hỏng"
+      @confirm="onSignatureConfirm"
+    />
 
     <template #footer>
       <div class="dialog-footer">
@@ -131,6 +159,7 @@ import { ref, reactive, computed } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 import maintenanceService from '@/services/maintenance.service';
+import SignaturePad from '@/components/Common/SignaturePad.vue';
 
 const props = defineProps<{
   visible: boolean;
@@ -151,6 +180,13 @@ const formRef = ref<any>();
 const loading = ref(false);
 
 const damageImageList = ref<any[]>([]);
+const signatureData = ref('');
+const showSignDialog = ref(false);
+
+const onSignatureConfirm = (signature: string) => {
+  signatureData.value = signature;
+  showSignDialog.value = false;
+};
 const previewVisible = ref(false);
 const previewImageUrl = ref('');
 
@@ -206,6 +242,11 @@ const handleSubmit = async () => {
         ElMessage.warning('Vui lòng chụp/đính kèm ít nhất 1 ảnh hiện trạng tài sản');
         return;
       }
+      if (!signatureData.value) {
+        ElMessage.warning('Vui lòng ký xác nhận trước khi gửi báo hỏng');
+        showSignDialog.value = true;
+        return;
+      }
       loading.value = true;
       try {
         let base64Images: string[] = [];
@@ -228,6 +269,7 @@ const handleSubmit = async () => {
           justification: description,
           urgency: form.urgency,
           damage_images: base64Images,
+          signature: signatureData.value,
         };
 
         await maintenanceService.reportDamage(payload);
@@ -240,6 +282,7 @@ const handleSubmit = async () => {
         form.description = '';
         form.urgency = 'normal';
         damageImageList.value = [];
+        signatureData.value = '';
         
         emit('submitted');
       } catch (error: any) {
@@ -257,5 +300,32 @@ const handleSubmit = async () => {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+}
+
+.signature-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.signature-preview {
+  width: 100%;
+  max-height: 120px;
+  object-fit: contain;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.signature-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 72px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 12px;
 }
 </style>

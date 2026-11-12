@@ -70,6 +70,7 @@ class MaintenanceService {
     justification?: string;
     urgency?: 'low' | 'normal' | 'high' | 'critical';
     damage_images?: string[];
+    signature?: string;
   }) {
     const response: any = await api.post('/maintenance/report-damage', data);
     return response;

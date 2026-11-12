@@ -315,6 +315,12 @@
       >
     </el-dialog>
   </el-dialog>
+
+  <SignaturePad
+    v-model="showSignDialog"
+    :title="signTitle"
+    @confirm="onSignConfirm"
+  />
 </template>
 
 <script setup lang="ts">
@@ -322,6 +328,7 @@ import { ref, reactive, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useDepartmentStore } from '@/stores/department.store';
 import { useAuthStore } from '@/stores/auth.store';
+import SignaturePad from '@/components/Common/SignaturePad.vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus, Document, Promotion, Check } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules, UploadFile } from '@/types/element-plus';
@@ -354,6 +361,27 @@ const authStore = useAuthStore();
 const formRef = ref<FormInstance>();
 const loading = ref(false);
 const submitting = ref(false);
+const showSignDialog = ref(false);
+const signTitle = ref('Ký xác nhận');
+let signResolve: ((signature: string | null) => void) | null = null;
+
+const requestSignature = (title: string): Promise<string | null> => {
+  signTitle.value = title;
+  showSignDialog.value = true;
+  return new Promise((resolve) => { signResolve = resolve; });
+};
+
+const onSignConfirm = (signature: string) => {
+  signResolve?.(signature);
+  signResolve = null;
+};
+
+watch(showSignDialog, (open) => {
+  if (!open && signResolve) {
+    signResolve(null);
+    signResolve = null;
+  }
+});
 const assetLoading = ref(false);
 const assetOptions = ref<Asset[]>([]);
 const selectedAsset = ref<Asset | null>(null);
@@ -747,8 +775,10 @@ const handleSubmitForApproval = async () => {
     }
 
     if (isEdit.value && props.item?.id) {
-      await api.post(`/maintenance/${props.item.id}/submit`);
-      ElMessage.success('Đã gửi phê duyệt thành công. Yêu cầu của bạn đang chờ trưởng phòng xem xét.');
+      const signature = await requestSignature('Ký xác nhận gửi sửa chữa');
+      if (!signature) return;
+      await api.post(`/maintenance/${props.item.id}/submit`, { signature });
+      ElMessage.success('Đã gửi phê duyệt thành công. Yêu cầu của bạn đang chờ quản trị viên xem xét.');
     }
 
     emit('success');
