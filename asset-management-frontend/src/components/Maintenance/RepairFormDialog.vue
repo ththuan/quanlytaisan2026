@@ -765,21 +765,20 @@ const handleSubmitForApproval = async () => {
       }
     );
 
+    const signature = await requestSignature('Ký xác nhận gửi sửa chữa');
+    if (!signature) return;
+
     submitting.value = true;
     loading.value = true;
 
-    if (!isEdit.value) {
-      await handleSaveRequest('draft');
-    } else {
-      await handleSaveRequest('draft');
+    const response: any = await handleSaveRequest('draft');
+    const requestId = response?.data?.id || response?.id || props.item?.id;
+    if (!requestId) {
+      throw new Error('Không xác định được yêu cầu sửa chữa vừa lưu');
     }
 
-    if (isEdit.value && props.item?.id) {
-      const signature = await requestSignature('Ký xác nhận gửi sửa chữa');
-      if (!signature) return;
-      await api.post(`/maintenance/${props.item.id}/submit`, { signature });
-      ElMessage.success('Đã gửi phê duyệt thành công. Yêu cầu của bạn đang chờ quản trị viên xem xét.');
-    }
+    await api.post(`/maintenance/${requestId}/submit`, { signature });
+    ElMessage.success('Đã gửi phê duyệt thành công. Yêu cầu của bạn đang chờ quản trị viên xem xét.');
 
     emit('success');
     emit('update:visible', false);
