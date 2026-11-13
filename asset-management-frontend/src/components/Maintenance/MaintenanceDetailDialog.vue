@@ -109,18 +109,6 @@
           {{ formatDate(createdDate) }}
         </el-descriptions-item>
         <!-- Approval dates -->
-        <el-descriptions-item
-          v-if="maintenanceData.admin_approved_at"
-          label="Quản trị viên duyệt"
-        >
-          {{ formatDate(maintenanceData.admin_approved_at) }}
-          <span
-            v-if="maintenanceData.adminApprover"
-            style="color: #909399; margin-left: 8px;"
-          >
-            ({{ maintenanceData.adminApprover?.fullname || maintenanceData.adminApprover?.username }})
-          </span>
-        </el-descriptions-item>
       </el-descriptions>
 
       <!-- Repair Request Details (request_type='repair') -->
@@ -279,18 +267,6 @@
           {{ formatDate(createdDate) }}
         </el-descriptions-item>
         <!-- Approval dates -->
-        <el-descriptions-item
-          v-if="maintenanceData.admin_approved_at"
-          label="Quản trị viên duyệt"
-        >
-          {{ formatDate(maintenanceData.admin_approved_at) }}
-          <span
-            v-if="maintenanceData.adminApprover"
-            style="color: #909399; margin-left: 8px;"
-          >
-            ({{ maintenanceData.adminApprover?.fullname || maintenanceData.adminApprover?.username }})
-          </span>
-        </el-descriptions-item>
       </el-descriptions>
 
       <!-- Equipment Repair Details (legacy) -->
@@ -404,18 +380,6 @@
           {{ formatDate(createdDate) }}
         </el-descriptions-item>
         <!-- Approval dates -->
-        <el-descriptions-item
-          v-if="maintenanceData.admin_approved_at"
-          label="Quản trị viên duyệt"
-        >
-          {{ formatDate(maintenanceData.admin_approved_at) }}
-          <span
-            v-if="maintenanceData.adminApprover"
-            style="color: #909399; margin-left: 8px;"
-          >
-            ({{ maintenanceData.adminApprover?.fullname || maintenanceData.adminApprover?.username }})
-          </span>
-        </el-descriptions-item>
       </el-descriptions>
 
       <!-- Facility Repair Details -->

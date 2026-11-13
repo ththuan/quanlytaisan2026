@@ -413,30 +413,6 @@
           {{ formatDateTime(report.submitted_date) }}
         </el-descriptions-item>
         <el-descriptions-item
-          v-if="report.status === 'approved'"
-          :label="$t('reports.approvedBy')"
-        >
-          {{ displayUser(report.approver) }}
-        </el-descriptions-item>
-        <el-descriptions-item
-          v-if="report.status === 'approved'"
-          :label="$t('reports.approvedAt')"
-        >
-          {{ formatDateTime(report.approved_date) }}
-        </el-descriptions-item>
-        <el-descriptions-item
-          v-if="report.status === 'rejected'"
-          :label="$t('reports.rejectedBy')"
-        >
-          {{ displayUser(report.approver) }}
-        </el-descriptions-item>
-        <el-descriptions-item
-          v-if="report.status === 'rejected'"
-          :label="$t('reports.rejectedAt')"
-        >
-          {{ formatDateTime(report.approved_date || report.updated_at) }}
-        </el-descriptions-item>
-        <el-descriptions-item
           :label="$t('common.updatedAt')"
         >
           {{ formatDateTime(report.updated_at) }}

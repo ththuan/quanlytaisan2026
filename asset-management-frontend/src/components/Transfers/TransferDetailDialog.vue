@@ -27,9 +27,6 @@
         <el-descriptions-item :label="$t('transfers.requestedBy')">
           {{ transfer.requester?.fullname || transfer.requester?.username }}
         </el-descriptions-item>
-        <el-descriptions-item :label="$t('transfers.approvedBy')">
-          {{ transfer.approver?.fullname || transfer.approver?.username || '-' }}
-        </el-descriptions-item>
         <el-descriptions-item :label="$t('common.status')">
           <el-tag :type="getStatusType(transfer.status)">
             {{ getStatusText(transfer.status) }}
