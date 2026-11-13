@@ -477,31 +477,6 @@
           {{ formatDate(createdDate) }}
         </el-descriptions-item>
       </el-descriptions>
-
-      <!-- Current Approval Status -->
-      <div
-        v-if="maintenanceData"
-        class="approval-status"
-      >
-        <h4>Trạng thái phê duyệt của Admin</h4>
-        <el-steps
-          :active="getApprovalStep(maintenanceData.status)"
-          :finish-status="isRejected ? 'error' : 'success'"
-          align-center
-        >
-          <el-step
-            :title="stepInfo.admin.title"
-            description="Admin"
-            :status="stepInfo.admin.status"
-            :icon="stepInfo.admin.icon"
-          />
-          <el-step
-            v-if="maintenanceData.status === 'repair_completed' || maintenanceData.status === 'repair_approved'"
-            title="Chờ duyệt hoàn thành"
-            description="Quản trị viên"
-          />
-        </el-steps>
-      </div>
     </div>
 
     <!-- Tiến trình xử lý (Processing Timeline) -->
@@ -625,7 +600,7 @@ import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Picture, Refresh, CircleCloseFilled } from '@element-plus/icons-vue';
+import { Picture, Refresh } from '@element-plus/icons-vue';
 import moment from 'moment';
 import api from '@/services/api';
 import FulfillProcurementDialog from './FulfillProcurementDialog.vue';
@@ -961,32 +936,6 @@ const getApproveButtonText = computed(() => {
   }
   
   return 'Phê duyệt';
-});
-
-const getApprovalStep = (status: string) => {
-  if (status === 'pending' || status === 'new' || status === 'draft') return 0;
-  if (status === 'rejected' || status?.startsWith('rejected')) return 0;
-  if (status === 'repair_completed' || status === 'repair_approved' || status === 'completed' || status === 'done') return 2;
-  return 1;
-};
-
-const isRejected = computed(() => {
-  const s = maintenanceData.value?.status || '';
-  return s.startsWith('rejected_by_');
-});
-
-const stepInfo = computed(() => {
-  const s = maintenanceData.value?.status || '';
-  const adminRejected = String(s).startsWith('rejected');
-  const adminApproved = !['pending', 'new', 'draft', 'rejected'].includes(s) && !adminRejected;
-
-  return {
-    admin: {
-      title: adminRejected ? 'Từ chối' : (adminApproved ? 'Đã duyệt' : 'Xác nhận'),
-      status: adminRejected ? 'error' : undefined,
-      icon: adminRejected ? CircleCloseFilled : undefined,
-    },
-  };
 });
 
 const handleApprove = async () => {
@@ -1334,17 +1283,6 @@ if (data.admin_approved_at) {
 }
 
 .status-timeline h4 {
-  margin-bottom: 15px;
-  color: #303133;
-}
-
-.approval-status {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #ebeef5;
-}
-
-.approval-status h4 {
   margin-bottom: 15px;
   color: #303133;
 }
