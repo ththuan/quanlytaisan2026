@@ -205,6 +205,16 @@ watch(
     }
   }
 );
+
+watch(
+  () => route.query.create,
+  (create) => {
+    if (String(create || '') === '1') {
+      destructionVisible.value = true;
+      nextTick().then(() => router.replace({ query: { ...route.query, create: undefined } }));
+    }
+  }
+);
 const detailVisible = ref(false);
 const selectedCaseId = ref<number | null>(null);
 const openDetail = (id: number) => {
@@ -241,6 +251,10 @@ onMounted(() => {
       openDetail(Number(String(openId)));
       router.replace({ query: { ...route.query, openId: undefined } });
     });
+  }
+  if (String(route.query.create || '') === '1') {
+    destructionVisible.value = true;
+    nextTick().then(() => router.replace({ query: { ...route.query, create: undefined } }));
   }
 });
 </script>

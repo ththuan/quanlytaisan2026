@@ -567,7 +567,7 @@
         <template v-else-if="canUpdateStatus && authStore.isAdmin && maintenanceData?.request_type !== 'procurement'">
           <!-- Nút Chuyển sang Thanh lý/Tiêu hủy (admin, khi đang sửa chữa) -->
           <el-button
-            v-if="authStore.isAdmin && maintenanceData?.status === 'in_progress' && !maintenanceData?.linked_disposal_case_id"
+            v-if="authStore.isAdmin && maintenanceData?.status === 'in_progress' && !maintenanceData?.linked_disposal_case_id && maintenanceData?.asset?.status !== 'pending_disposal'"
             type="warning"
             :loading="toDisposalLoading"
             @click="handleToDisposal"
@@ -1078,26 +1078,22 @@ const handleToProcurement = async () => {
 
 const handleToDisposal = async () => {
   try {
-    const { value: disposalType } = await ElMessageBox.confirm(
-      'Chuyển tài sản này sang hồ sơ Thanh lý hay Tiêu hủy?',
-      'Chuyển sang Thanh lý / Tiêu hủy',
+    await ElMessageBox.confirm(
+      'Chuyển tài sản này sang danh sách chờ thanh lý/tiêu hủy? Hồ sơ thanh lý sẽ được tạo mới khi cần và có thể chọn nhiều tài sản.',
+      'Chuyển sang danh sách thanh lý/tiêu hủy',
       {
-        distinguishCancelAndClose: true,
-        confirmButtonText: 'Thanh lý',
-        cancelButtonText: 'Tiêu hủy',
+        confirmButtonText: 'Chuyển',
+        cancelButtonText: 'Hủy',
         type: 'warning',
       }
-    ).then(() => 'liquidation').catch((action: string) => action === 'cancel' ? 'destruction' : null);
-
-    if (!disposalType) return; // user closed dialog
+    );
 
     toDisposalLoading.value = true;
-    const res: any = await assetDisposalService.createFromMaintenance(props.maintenance.id, disposalType as any);
-    const caseId = res?.data?.id;
-    ElMessage.success('Đã tạo hồ sơ Thanh lý/Tiêu hủy. Đang chuyển hướng...');
+    await assetDisposalService.createFromMaintenance(props.maintenance.id);
+    ElMessage.success('Đã chuyển tài sản sang danh sách chờ thanh lý/tiêu hủy. Chọn tài sản và tạo hồ sơ khi cần.');
     emit('update');
     emit('update:visible', false);
-    await router.push({ path: '/asset-disposals', query: { openId: String(caseId) } });
+    await router.push({ path: '/asset-disposals', query: { create: '1' } });
   } catch (error: any) {
     if (error !== 'cancel' && error !== 'close') {
       ElMessage.error(error.response?.data?.message || error.message || t('common.error'));

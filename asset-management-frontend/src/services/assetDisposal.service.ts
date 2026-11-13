@@ -85,9 +85,9 @@ class AssetDisposalService {
     return response;
   }
 
-  /** Chuyển đề nghị sửa chữa sang hồ sơ thanh lý/tiêu hủy khi chi phí > giá trị tài sản */
-  async createFromMaintenance(maintenanceId: number, disposalType: 'liquidation' | 'destruction' = 'liquidation') {
-    const response: any = await api.post(`/asset-disposals/from-maintenance/${maintenanceId}`, { disposal_type: disposalType });
+  /** Chuyển tài sản của đề nghị sửa chữa sang danh sách chờ thanh lý/tiêu hủy */
+  async createFromMaintenance(maintenanceId: number) {
+    const response: any = await api.post(`/asset-disposals/from-maintenance/${maintenanceId}`, {});
     return response;
   }
 }

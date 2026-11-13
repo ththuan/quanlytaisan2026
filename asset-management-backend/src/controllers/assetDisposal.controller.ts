@@ -124,15 +124,14 @@ class AssetDisposalController {
 
   /**
    * POST /api/asset-disposals/from-maintenance/:maintenanceId
-   * Chuyển đề nghị sửa chữa sang hồ sơ thanh lý/tiêu hủy khi chi phí > giá trị tài sản.
+   * Chuyển tài sản của đề nghị sửa chữa sang danh sách chờ thanh lý/tiêu hủy.
    */
   async createFromMaintenance(req: Request, res: Response) {
     try {
       const userId = (req as any).user?.id;
       const maintenanceId = parseInt(req.params.maintenanceId, 10);
-      const disposalType = req.body?.disposal_type ?? 'liquidation';
-      const result = await assetDisposalService.createFromMaintenance(maintenanceId, userId, disposalType);
-      res.status(201).json({ success: true, message: 'Đã tạo hồ sơ thanh lý/tiêu hủy từ đề nghị sửa chữa', data: result });
+      const result = await assetDisposalService.createFromMaintenance(maintenanceId, userId);
+      res.status(200).json({ success: true, message: 'Đã chuyển tài sản sang danh sách chờ thanh lý/tiêu hủy', data: result });
     } catch (err: any) {
       res.status(err.statusCode ?? 400).json({ success: false, message: err.message });
     }

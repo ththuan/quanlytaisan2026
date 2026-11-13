@@ -528,13 +528,10 @@ class AssetDisposalService {
   }
 
   /**
-   * Tạo hồ sơ thanh lý/tiêu hủy từ đề nghị sửa chữa khi chi phí sửa chữa vượt quá giá trị tài sản.
+   * Chuyển tài sản của đề nghị sửa chữa sang danh sách chờ thanh lý/tiêu hủy.
+   * Không tạo hồ sơ ngay; hồ sơ được tạo sau và có thể chọn nhiều tài sản.
    */
-  async createFromMaintenance(
-    maintenanceId: number,
-    userId: number,
-    disposalType: 'liquidation' | 'destruction' = 'liquidation'
-  ): Promise<any> {
+  async createFromMaintenance(maintenanceId: number, userId: number): Promise<any> {
     const maintenance = await MaintenanceRequest.findByPk(maintenanceId, {
       include: [{ model: Asset, as: 'asset', required: false }],
     });
@@ -543,49 +540,14 @@ class AssetDisposalService {
       throw new ConflictError('Chỉ áp dụng cho đề nghị sửa chữa');
     }
 
-    // Nếu đã có hồ sơ liên kết, trả về hồ sơ đó
-    if ((maintenance as any).linked_disposal_case_id) {
-      return this.getCaseById((maintenance as any).linked_disposal_case_id);
-    }
-
     const assetId = maintenance.asset_id;
-    const asset = assetId ? await Asset.findByPk(assetId) : null;
-    const departmentId = (maintenance as any).department_id ?? (asset ? (asset as any).department_id : null);
+    if (!assetId) throw new NotFoundError('Đề nghị sửa chữa chưa gắn tài sản');
+    const asset = await Asset.findByPk(assetId);
+    if (!asset) throw new NotFoundError('Tài sản không tồn tại');
 
     const transaction = await sequelize.transaction();
     try {
-      const year = new Date().getFullYear();
-      const prefix = disposalType === 'destruction' ? 'TH' : 'TL';
-
-      const disposalCase = await AssetDisposalCase.create(
-        {
-          code: 'TEMP',
-          source_type: 'maintenance',
-          source_maintenance_request_id: maintenanceId,
-          disposal_type: disposalType,
-          origin_department_id: departmentId ?? null,
-          status: 'pending',
-          notes: `Chuyển từ đề nghị sửa chữa #${maintenanceId} – chi phí vượt quá giá trị tài sản`,
-          created_by: userId,
-        } as any,
-        { transaction }
-      );
-
-      const code = `${prefix}-${year}-${String(disposalCase.id).padStart(6, '0')}`;
-      await disposalCase.update({ code }, { transaction });
-
-      // Thêm tài sản vào hồ sơ nếu có
-      if (asset) {
-        await AssetDisposalItem.create(
-          {
-            disposal_case_id: disposalCase.id,
-            asset_id: assetId,
-            moved_at: new Date(),
-            moved_by: userId,
-            reason: `Chi phí sửa chữa vượt quá giá trị tài sản (từ đề nghị #${maintenanceId})`,
-          } as any,
-          { transaction }
-        );
+      if ((asset as any).status !== 'pending_disposal') {
         await AuditLog.create(
           {
             user_id: userId,
@@ -600,17 +562,17 @@ class AssetDisposalService {
         await asset.update({ status: 'pending_disposal' }, { transaction });
       }
 
-      // Cập nhật trạng thái đề nghị sửa chữa
       await maintenance.update(
-        {
-          status: 'rejected_due_to_high_cost',
-          linked_disposal_case_id: disposalCase.id,
-        } as any,
+        { status: 'rejected_due_to_high_cost' } as any,
         { transaction }
       );
 
       await transaction.commit();
-      return this.getCaseById(disposalCase.id);
+      return {
+        maintenance_id: maintenanceId,
+        asset_id: assetId,
+        asset_status: 'pending_disposal',
+      };
     } catch (e) {
       await transaction.rollback();
       throw e;

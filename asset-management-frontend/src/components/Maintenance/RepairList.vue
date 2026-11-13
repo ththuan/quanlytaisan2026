@@ -211,8 +211,16 @@
             >
               Hoàn thành sửa chữa
             </el-button>
+            <el-tag
+              v-if="authStore.isAdmin && row.asset?.status === 'pending_disposal'"
+              size="small"
+              type="info"
+              style="margin-right: 6px;"
+            >
+              Đã chuyển thanh lý
+            </el-tag>
             <el-button
-              v-if="authStore.isAdmin && ['in_progress', 'rejected_by_admin', 'rejected_due_to_high_cost'].includes(row.status) && !row.linked_disposal_case_id"
+              v-if="authStore.isAdmin && ['in_progress', 'rejected_by_admin', 'rejected_due_to_high_cost'].includes(row.status) && !row.linked_disposal_case_id && row.asset?.status !== 'pending_disposal'"
               size="small"
               type="danger"
               :loading="toDisposalLoading"
@@ -714,29 +722,22 @@ const handleCompleteRepair = async (id: number) => {
 
 const handleToDisposal = async (row: any) => {
   try {
-    const result = await ElMessageBox.confirm(
-      `Chuyển yêu cầu sửa chữa này sang xử lý Thanh lý hoặc Tiêu hủy tài sản?\n\nTài sản: ${row.asset?.name || '-'}\nChi phí dự kiến: ${row.estimated_cost ? formatCurrency(Number(row.estimated_cost)) : 'Chưa có'}`,
-      'Chuyển sang Thanh lý / Tiêu hủy',
+    await ElMessageBox.confirm(
+      `Chuyển tài sản này sang danh sách chờ thanh lý/tiêu hủy?\n\nTài sản: ${row.asset?.name || '-'}\nChi phí dự kiến: ${row.estimated_cost ? formatCurrency(Number(row.estimated_cost)) : 'Chưa có'}\n\nHồ sơ thanh lý sẽ được tạo mới khi cần và có thể chọn nhiều tài sản.`,
+      'Chuyển sang danh sách thanh lý/tiêu hủy',
       {
         type: 'warning',
-        showCancelButton: true,
-        distinguishCancelAndClose: true,
-        confirmButtonText: 'Thanh lý',
-        cancelButtonText: 'Tiêu hủy',
-        customClass: 'disposal-choice-dialog',
+        confirmButtonText: 'Chuyển',
+        cancelButtonText: 'Hủy',
       }
-    ).then(() => 'liquidation').catch((action: string) => {
-      if (action === 'cancel') return 'destruction';
-      throw action;
-    });
+    );
     toDisposalLoading.value = true;
-    const res: any = await assetDisposalService.createFromMaintenance(row.id, result as 'liquidation' | 'destruction');
-    const caseId = res?.data?.id;
-    ElMessage.success('Đã tạo hồ sơ Thanh lý/Tiêu hủy. Đang chuyển hướng...');
+    await assetDisposalService.createFromMaintenance(row.id);
+    ElMessage.success('Đã chuyển tài sản sang danh sách chờ thanh lý/tiêu hủy. Chọn tài sản và tạo hồ sơ khi cần.');
     fetchData({}, true);
-    await router.push({ path: '/asset-disposals', query: { openId: String(caseId) } });
+    await router.push({ path: '/asset-disposals', query: { create: '1' } });
   } catch (error: any) {
-    if (error !== 'close') {
+    if (error !== 'cancel' && error !== 'close') {
       ElMessage.error(error.response?.data?.message || error.message || 'Có lỗi xảy ra');
     }
   } finally {
