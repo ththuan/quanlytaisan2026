@@ -332,7 +332,7 @@ class AssetDisposalService {
               moved_from_department_id: a.current_department_id ?? null,
               moved_at: new Date(),
               moved_by: userId,
-              reason: null,
+              reason: (a as any).pending_disposal_note || null,
             } as any,
             { transaction }
           );
@@ -484,7 +484,7 @@ class AssetDisposalService {
             moved_from_department_id: (asset as any).current_department_id ?? null,
             moved_at: new Date(),
             moved_by: userId,
-            reason: payload.notes ?? null,
+            reason: [(asset as any).pending_disposal_note, payload.notes].filter(Boolean).join(' | ') || null,
           } as any,
           { transaction }
         );
@@ -559,8 +559,18 @@ class AssetDisposalService {
           } as any,
           { transaction }
         );
-        await asset.update({ status: 'pending_disposal' }, { transaction });
       }
+      await asset.update(
+        {
+          status: 'pending_disposal',
+          pending_disposal_source: 'repair',
+          pending_disposal_source_id: maintenanceId,
+          pending_disposal_requested_by: userId,
+          pending_disposal_requested_at: new Date(),
+          pending_disposal_note: `Từ sửa chữa - Yêu cầu #${maintenanceId}`,
+        } as any,
+        { transaction }
+      );
 
       await maintenance.update(
         { status: 'rejected_due_to_high_cost' } as any,

@@ -55,6 +55,11 @@ export interface AssetAttributes {
   assigned_user_id?: number | null;
   assigned_at?: Date | null;
   status: AssetStatus;
+  pending_disposal_source?: 'repair' | 'inventory' | 'manual' | null;
+  pending_disposal_source_id?: number | null;
+  pending_disposal_requested_by?: number | null;
+  pending_disposal_requested_at?: Date | null;
+  pending_disposal_note?: string | null;
   location?: string;
   discrepancy_reason?: string;
   responsibility?: string;
@@ -117,6 +122,11 @@ class Asset extends Model<AssetAttributes, AssetCreationAttributes> implements A
   public assigned_user_id?: number | null;
   public assigned_at?: Date | null;
   public status!: AssetStatus;
+  public pending_disposal_source?: 'repair' | 'inventory' | 'manual' | null;
+  public pending_disposal_source_id?: number | null;
+  public pending_disposal_requested_by?: number | null;
+  public pending_disposal_requested_at?: Date | null;
+  public pending_disposal_note?: string | null;
   public location?: string;
   public discrepancy_reason?: string;
   public responsibility?: string;
@@ -328,6 +338,29 @@ Asset.init(
       type: DataTypes.ENUM('active', 'inactive', 'damaged', 'lost', 'disposed', 'pending_disposal', 'pending_repair'),
       allowNull: false,
       defaultValue: 'active',
+    },
+    pending_disposal_source: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      comment: 'Nguồn chờ thanh lý: repair | inventory | manual',
+    },
+    pending_disposal_source_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    pending_disposal_requested_by: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: { model: 'users', key: 'id' },
+      onDelete: 'SET NULL',
+    },
+    pending_disposal_requested_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    pending_disposal_note: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
     },
     location: {
       type: DataTypes.STRING(255),

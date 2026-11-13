@@ -242,8 +242,32 @@
                   <el-table-column
                     prop="name"
                     label="Tên tài sản"
-                    min-width="220"
-                  />
+                    min-width="280"
+                  >
+                    <template #default="{ row }">
+                      <div>{{ row.name }}</div>
+                      <div class="asset-source-line">
+                        <el-tag
+                          size="small"
+                          :type="sourceTagType(row)"
+                        >
+                          {{ sourceLabel(row) }}
+                        </el-tag>
+                        <span
+                          v-if="sourceRequester(row)"
+                          class="asset-source-meta"
+                        >
+                          · {{ sourceRequester(row) }}<span v-if="sourceDate(row)"> · {{ sourceDate(row) }}</span>
+                        </span>
+                      </div>
+                      <div
+                        v-if="row.pending_disposal_note"
+                        class="asset-source-note"
+                      >
+                        {{ row.pending_disposal_note }}
+                      </div>
+                    </template>
+                  </el-table-column>
                   <el-table-column
                     label="Nguyên giá (đồng)"
                     width="170"
@@ -711,6 +735,30 @@ const resetForm = () => {
   formRef.value?.clearValidate();
 };
 
+const sourceLabel = (asset: any) => {
+  if (asset?.pending_disposal_source === 'repair') return 'Từ sửa chữa';
+  if (asset?.pending_disposal_source === 'inventory') return 'Từ kiểm kê';
+  return 'Khác';
+};
+
+const sourceTagType = (asset: any) => {
+  if (asset?.pending_disposal_source === 'repair') return 'warning';
+  if (asset?.pending_disposal_source === 'inventory') return 'primary';
+  return 'info';
+};
+
+const sourceRequester = (asset: any) =>
+  asset?.pending_disposal_requester?.fullname
+  || asset?.pending_disposal_requester?.username
+  || '';
+
+const sourceDate = (asset: any) => {
+  const value = asset?.pending_disposal_requested_at;
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('vi-VN');
+};
+
 const formatVND = (v: any) =>
   v ? Number(v).toLocaleString('vi-VN') : '—';
 </script>
@@ -789,5 +837,23 @@ const formatVND = (v: any) =>
   color: #606266;
   margin-bottom: 4px;
   font-weight: 500;
+}
+.asset-source-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.asset-source-meta {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.asset-source-note {
+  margin-top: 2px;
+  font-size: 11px;
+  color: #94a3b8;
 }
 </style>

@@ -1437,7 +1437,7 @@ class InventoryService {
     const details = await InventoryReportDetail.findAll({
       where: { inventory_report_id: reportId },
       transaction,
-      include: [{ model: InventoryReport, as: 'inventory_report', attributes: ['id', 'department_id', 'created_by'] }],
+      include: [{ model: InventoryReport, as: 'inventory_report', attributes: ['id', 'department_id', 'created_by', 'report_code'] }],
     });
 
     // KHÔNG tự tạo hồ sơ thanh lý khi duyệt kiểm kê.
@@ -1504,6 +1504,24 @@ class InventoryService {
 
       const asset = assetById.get(Number(detail.asset_id));
       if (!asset) continue;
+
+      if (updateData.status === 'pending_disposal') {
+        // Giữ nguồn sửa chữa đã có; chỉ ghi nguồn kiểm kê khi tài sản chưa có lưu vết.
+        if (!asset.pending_disposal_source) {
+          const report = detail.inventory_report;
+          updateData.pending_disposal_source = 'inventory';
+          updateData.pending_disposal_source_id = reportId;
+          updateData.pending_disposal_requested_by = report?.created_by ?? null;
+          updateData.pending_disposal_requested_at = inventoryDate;
+          updateData.pending_disposal_note = `Từ kiểm kê - Báo cáo ${report?.report_code || '#' + reportId}`;
+        }
+      } else {
+        updateData.pending_disposal_source = null;
+        updateData.pending_disposal_source_id = null;
+        updateData.pending_disposal_requested_by = null;
+        updateData.pending_disposal_requested_at = null;
+        updateData.pending_disposal_note = null;
+      }
 
       // Bỏ qua tài sản đã được điều chuyển sang đơn vị khác trong lúc kiểm kê:
       // không cập nhật trạng thái theo kết quả của đơn vị cũ.

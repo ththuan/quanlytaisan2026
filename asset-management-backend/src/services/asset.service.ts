@@ -878,7 +878,6 @@ class AssetService {
   }
 
   async getPendingDisposalGrouped(departmentId?: number): Promise<any[]> {
-    // Tìm tất cả asset_id đã có trong hồ sơ đang chờ xử lý (pending), để loại trừ
     const { AssetDisposalCase } = await import('../models');
     const activeCaseItems = await AssetDisposalItem.findAll({
       include: [
@@ -908,12 +907,108 @@ class AssetService {
         { model: Department, as: 'current_department', attributes: ['id', 'name'] },
       ],
       order: [['current_department_id', 'ASC'], ['asset_code', 'ASC']],
-      attributes: ['id', 'asset_code', 'name', 'purchase_price', 'current_value', 'status', 'current_department_id'],
+      attributes: [
+        'id', 'asset_code', 'name', 'purchase_price', 'current_value', 'status', 'current_department_id',
+        'pending_disposal_source', 'pending_disposal_source_id', 'pending_disposal_requested_by',
+        'pending_disposal_requested_at', 'pending_disposal_note',
+      ],
     });
+
+    // Tài sản cũ có thể chưa có lưu vết nguồn: suy ra từ yêu cầu sửa chữa / báo cáo kiểm kê gần nhất.
+    const unknownIds = assets
+      .filter((a: any) => !a.pending_disposal_source)
+      .map((a: any) => Number(a.id))
+      .filter((id) => Number.isFinite(id));
+    const inferred = new Map<number, any>();
+
+    if (unknownIds.length > 0) {
+      const repairRows = await MaintenanceRequest.findAll({
+        where: {
+          asset_id: { [Op.in]: unknownIds },
+          request_type: 'repair',
+          status: 'rejected_due_to_high_cost',
+        },
+        order: [['updated_at', 'DESC']],
+        attributes: ['id', 'asset_id', 'requested_by', 'updated_at'],
+      });
+      const repairByAsset = new Map<number, any>();
+      for (const row of repairRows as any[]) {
+        const assetId = Number(row.asset_id);
+        if (!repairByAsset.has(assetId)) repairByAsset.set(assetId, row);
+      }
+
+      const inventoryRows = await InventoryReportDetail.findAll({
+        where: {
+          asset_id: { [Op.in]: unknownIds },
+          [Op.or]: [{ suggest_disposal: true }, { suggest_repair: true }],
+        },
+        include: [
+          {
+            model: InventoryReport,
+            as: 'inventory_report',
+            required: true,
+            where: { status: 'completed' },
+            attributes: ['id', 'created_by', 'completed_at', 'report_code'],
+          },
+        ],
+        order: [['updated_at', 'DESC']],
+        attributes: ['id', 'asset_id', 'inventory_report_id', 'updated_at'],
+      });
+      const inventoryByAsset = new Map<number, any>();
+      for (const row of inventoryRows as any[]) {
+        const assetId = Number(row.asset_id);
+        if (!inventoryByAsset.has(assetId)) inventoryByAsset.set(assetId, row);
+      }
+
+      for (const asset of assets as any[]) {
+        const assetId = Number(asset.id);
+        if (asset.pending_disposal_source || !unknownIds.includes(assetId)) continue;
+        const repair = repairByAsset.get(assetId);
+        const inventory = inventoryByAsset.get(assetId);
+        const repairDate = repair?.updated_at ? new Date(repair.updated_at).getTime() : 0;
+        const inventoryDate = inventory?.inventory_report?.completed_at
+          ? new Date(inventory.inventory_report.completed_at).getTime()
+          : new Date(inventory?.updated_at || 0).getTime();
+
+        if (repair && (!inventory || repairDate >= inventoryDate)) {
+          inferred.set(assetId, {
+            source: 'repair',
+            source_id: repair.id,
+            requested_by: repair.requested_by,
+            requested_at: repair.updated_at,
+            note: `Từ sửa chữa - Yêu cầu #${repair.id}`,
+          });
+        } else if (inventory) {
+          inferred.set(assetId, {
+            source: 'inventory',
+            source_id: inventory.inventory_report_id,
+            requested_by: inventory.inventory_report?.created_by,
+            requested_at: inventory.inventory_report?.completed_at || inventory.updated_at,
+            note: `Từ kiểm kê - Báo cáo ${inventory.inventory_report?.report_code || '#' + inventory.inventory_report_id}`,
+          });
+        }
+      }
+    }
+
+    const requesterIds = new Set<number>();
+    for (const asset of assets as any[]) {
+      const requestedBy = Number(asset.pending_disposal_requested_by || inferred.get(Number(asset.id))?.requested_by);
+      if (Number.isFinite(requestedBy) && requestedBy > 0) requesterIds.add(requestedBy);
+    }
+    const requesters = requesterIds.size > 0
+      ? await User.findAll({
+          where: { id: { [Op.in]: [...requesterIds] } },
+          attributes: ['id', 'fullname', 'username'],
+        })
+      : [];
+    const requesterById = new Map<number, any>(requesters.map((user: any) => [Number(user.id), user]));
 
     const grouped: Record<string, { department_id: number | null; department_name: string; assets: any[] }> = {};
     for (const a of assets) {
       const json = a.toJSON() as any;
+      const inferredSource = inferred.get(Number(json.id));
+      const requestedBy = Number(json.pending_disposal_requested_by || inferredSource?.requested_by || 0);
+      const requester = requestedBy > 0 ? requesterById.get(requestedBy) : null;
       const deptId = json.current_department_id ?? 0;
       const deptName = json.current_department?.name || 'Chưa phân bổ';
       const key = String(deptId);
@@ -926,12 +1021,19 @@ class AssetService {
         name: json.name,
         purchase_price: json.purchase_price,
         current_value: json.current_value,
+        pending_disposal_source: json.pending_disposal_source || inferredSource?.source || null,
+        pending_disposal_source_id: json.pending_disposal_source_id || inferredSource?.source_id || null,
+        pending_disposal_requested_by: requestedBy > 0 ? requestedBy : null,
+        pending_disposal_requested_at: json.pending_disposal_requested_at || inferredSource?.requested_at || null,
+        pending_disposal_note: json.pending_disposal_note || inferredSource?.note || null,
+        pending_disposal_requester: requester
+          ? { id: requester.id, fullname: requester.fullname, username: requester.username }
+          : null,
       });
     }
 
     return Object.values(grouped);
   }
-
   /**
    * Danh sách tài sản mất / hư hỏng kèm thông tin xử lý thừa/thiếu (bồi thường)
    * từ kết quả kiểm kê gần nhất. Tách khỏi hồ sơ thanh lý.
