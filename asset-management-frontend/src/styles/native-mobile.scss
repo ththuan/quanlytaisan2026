@@ -1,0 +1,499 @@
+/* ═══════════════════════════════════════════════════════════
+   NATIVE MOBILE / TABLET LAYER
+   Áp các luật "native app" (Appllama/HIG) cho PWA:
+   - Token màu, bo góc, chuyển động thống nhất
+   - Bottom sheet có drag handle, safe area
+   - Tabbar phản hồi chạm, ẩn khi bàn phím mở
+   - Chặn zoom iOS, chặn hover dính trên cảm ứng
+   Chỉ tác động khi html.app-overlay (mobile/tablet) — desktop giữ nguyên.
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  --app-accent: #2563eb;
+  --app-accent-soft: rgba(37, 99, 235, 0.12);
+  --app-accent-pressed: #1d4ed8;
+  --app-label: #0f172a;
+  --app-label-secondary: #64748b;
+  --app-separator: rgba(15, 23, 42, 0.08);
+  --app-surface: #f8fafc;
+  --app-surface-raised: #ffffff;
+
+  --app-radius-control: 10px;
+  --app-radius-card: 14px;
+  --app-radius-sheet: 22px;
+  --app-radius-pill: 999px;
+
+  --app-motion-fast: 120ms;
+  --app-motion-base: 220ms;
+  --app-motion-sheet: 320ms;
+  --app-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --app-ease-in: cubic-bezier(0.4, 0, 1, 1);
+}
+
+html.app-overlay {
+  /* Một accent duy nhất cho toàn bộ app (mobile/tablet) */
+  --el-color-primary: var(--app-accent);
+  --el-color-primary-rgb: 37, 99, 235;
+  --el-color-primary-light-3: #6692f1;
+  --el-color-primary-light-5: #92b1f5;
+  --el-color-primary-light-7: #bed0f9;
+  --el-color-primary-light-8: #d3dffb;
+  --el-color-primary-light-9: #e9effd;
+  --el-color-primary-dark-2: #1e4fbc;
+  --el-border-radius-base: var(--app-radius-control);
+  -webkit-tap-highlight-color: transparent;
+  /* Trên thiết bị cảm ứng, scrollbar là của hệ điều hành —
+     ẩn scrollbar web để không chiếm chỗ và không lệch layout. */
+  scrollbar-gutter: auto !important;
+  scrollbar-width: none;
+}
+
+html.app-overlay *,
+html.app-overlay *::before,
+html.app-overlay *::after {
+  scrollbar-width: none;
+}
+
+html.app-overlay *::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* ─────────────────────────────────────────────────────────
+   TYPOGRAPHY / TAP FEEDBACK
+   ───────────────────────────────────────────────────────── */
+
+@media (max-width: 1367px) {
+  html.app-overlay .el-dropdown-menu__item {
+    min-height: 44px;
+  }
+}
+
+html.app-overlay .el-dropdown-menu__item .el-icon {
+  margin-right: 8px;
+  font-size: 16px;
+  vertical-align: middle;
+}
+
+@media (hover: none) {
+  html.app-overlay .el-button:not(.is-disabled),
+  html.app-overlay .el-dropdown-menu__item,
+  html.app-overlay .mobile-tabbar__item,
+  html.app-overlay .el-menu-item {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html.app-overlay .el-button:not(.is-disabled) {
+    transition:
+      transform var(--app-motion-fast) var(--app-ease-out),
+      background-color var(--app-motion-fast) var(--app-ease-out),
+      border-color var(--app-motion-fast) var(--app-ease-out);
+  }
+
+  html.app-overlay .el-button:not(.is-disabled):active {
+    transform: scale(0.97);
+  }
+
+  html.app-overlay .el-dropdown-menu__item:active,
+  html.app-overlay .el-menu-item:active {
+    transform: scale(0.98);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   BOTTOM SHEET (điện thoại)
+   Dialog coi như một sheet trượt từ đáy, có tay nắm và safe area.
+   ───────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  html.app-overlay .el-overlay-dialog {
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    scrollbar-width: none;
+  }
+
+  html.app-overlay .el-overlay-dialog::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+
+  html.app-overlay .el-dialog:not(.is-fullscreen) {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: var(--app-radius-sheet) var(--app-radius-sheet) 0 0 !important;
+    max-height: 92vh !important;
+    max-height: 92dvh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    animation: app-sheet-in var(--app-motion-sheet) var(--app-ease-out);
+    will-change: transform;
+  }
+
+  /* Tay nắm sheet */
+  html.app-overlay .el-dialog:not(.is-fullscreen)::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 36px;
+    height: 5px;
+    margin-left: -18px;
+    border-radius: var(--app-radius-pill);
+    background: #cbd5e1;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  html.app-overlay .el-dialog:not(.is-fullscreen):not(:has(.el-dialog__header)) {
+    padding-top: 20px !important;
+  }
+
+  html.app-overlay .el-dialog__header {
+    padding: 22px 16px 10px !important;
+    flex-shrink: 0;
+    touch-action: none;
+    cursor: grab;
+  }
+
+  html.app-overlay .el-dialog__header:active {
+    cursor: grabbing;
+  }
+
+  html.app-overlay .el-dialog__title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--app-label);
+  }
+
+  html.app-overlay .el-dialog__headerbtn {
+    top: 15px;
+    right: 14px;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--app-radius-pill);
+    background: rgba(15, 23, 42, 0.06);
+    color: #475569;
+    touch-action: manipulation;
+  }
+
+  /* Vùng chạm 44px quanh nút đóng 32px */
+  html.app-overlay .el-dialog__headerbtn::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: var(--app-radius-pill);
+  }
+
+  html.app-overlay .el-dialog__headerbtn:active {
+    background: rgba(15, 23, 42, 0.12);
+  }
+
+  html.app-overlay .el-dialog__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 6px 16px 16px !important;
+    scrollbar-width: none;
+  }
+
+  html.app-overlay .el-dialog__body::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+
+  html.app-overlay .el-dialog__footer {
+    flex-shrink: 0;
+    display: flex;
+    gap: 8px;
+    justify-content: stretch;
+    padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+    border-top: 0.5px solid var(--app-separator);
+    background: rgba(255, 255, 255, 0.96);
+  }
+
+  /* Footer thường bọc buttons trong một div (.dialog-footer) */
+  html.app-overlay .el-dialog__footer > div {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+
+  html.app-overlay .el-dialog__footer .el-button {
+    flex: 1;
+    min-height: 44px;
+    margin: 0 !important;
+  }
+
+  html.app-overlay .el-dialog:not(:has(.el-dialog__footer)) .el-dialog__body {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* Form trong sheet: label lên trên, input full chiều ngang */
+  html.app-overlay .el-dialog .el-row .el-col {
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+  }
+
+  html.app-overlay .el-dialog .el-form-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    margin-bottom: 16px;
+  }
+
+  html.app-overlay .el-dialog .el-form-item__label {
+    width: auto !important;
+    text-align: left !important;
+    padding-right: 0 !important;
+    margin-bottom: 4px;
+    line-height: 1.4;
+    font-size: 13px;
+  }
+
+  html.app-overlay .el-dialog .el-form-item__content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  html.app-overlay .el-dialog .el-table-wrapper,
+  html.app-overlay .el-dialog .el-scrollbar {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* MessageBox → action sheet chuẩn native */
+  html.app-overlay .el-overlay-message-box {
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    padding: 0 !important;
+  }
+
+  html.app-overlay .el-message-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: var(--app-radius-sheet) var(--app-radius-sheet) 0 0 !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    animation: app-sheet-in var(--app-motion-sheet) var(--app-ease-out);
+  }
+
+  html.app-overlay .el-message-box__btns {
+    display: flex;
+    gap: 8px;
+    padding: 8px 16px 12px;
+  }
+
+  html.app-overlay .el-message-box__btns .el-button {
+    flex: 1;
+    min-height: 44px;
+    margin: 0 !important;
+  }
+}
+
+@keyframes app-sheet-in {
+  from {
+    transform: translate3d(0, 100%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   HEADER / TABBAR: chất liệu mờ kiểu native
+   ───────────────────────────────────────────────────────── */
+
+html.app-overlay .el-header {
+  border-bottom: 0.5px solid var(--app-separator) !important;
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html.app-overlay .el-header {
+    background-color: rgba(255, 255, 255, 0.82) !important;
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+  }
+
+  html.app-overlay .mobile-tabbar {
+    background-color: rgba(255, 255, 255, 0.86);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   BÀN PHÍM ẢO: ẩn tabbar, trả lại diện tích nội dung
+   ───────────────────────────────────────────────────────── */
+
+html.keyboard-open .mobile-tabbar {
+  transform: translateY(calc(100% + 24px));
+  pointer-events: none;
+}
+
+html.keyboard-open .has-mobile-tabbar .el-main {
+  padding-bottom: 12px !important;
+}
+
+/* Prompt cài PWA nằm trên tabbar, không đè điều hướng */
+html.app-overlay .pwa-install-prompt {
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  max-width: calc(100% - 24px);
+}
+
+/* Một accent duy nhất: hành động phụ trong page header dùng neutral */
+@media (max-width: 1367px) {
+  html.app-overlay .page-header .header-right .el-button--warning,
+  html.app-overlay .page-header .header-right .el-button--success,
+  html.app-overlay .page-header .header-right .el-button--info {
+    --el-button-bg-color: #ffffff;
+    --el-button-border-color: #e2e8f0;
+    --el-button-text-color: #334155;
+    --el-button-hover-bg-color: #f8fafc;
+    --el-button-hover-border-color: #cbd5e1;
+    --el-button-hover-text-color: #0f172a;
+    --el-button-active-bg-color: #f1f5f9;
+    --el-button-active-border-color: #cbd5e1;
+    --el-button-active-text-color: #0f172a;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   CUỘN: hành vi giống app (không kéo cả trang, không chain)
+   ───────────────────────────────────────────────────────── */
+
+html.app-overlay .el-main {
+  overscroll-behavior-y: contain;
+}
+
+/* ─────────────────────────────────────────────────────────
+   TABLET: tabbar nổi kiểu iPadOS thay vì kéo dài hết chiều ngang
+   ───────────────────────────────────────────────────────── */
+
+@media (min-width: 769px) and (max-width: 1367px) {
+  html.app-overlay .mobile-tabbar {
+    left: 50%;
+    right: auto;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    width: min(520px, calc(100vw - 48px));
+    transform: translateX(-50%);
+    border: 0.5px solid var(--app-separator);
+    border-radius: var(--app-radius-pill);
+    padding-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    overflow: hidden;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+  }
+
+  html.app-overlay.keyboard-open .mobile-tabbar {
+    transform: translate(-50%, calc(100% + 24px));
+  }
+
+  /* iPad: form-sheet căn giữa, không kéo full chiều ngang */
+  html.app-overlay .el-overlay-dialog {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 72px 24px 80px !important;
+    overflow: hidden !important;
+  }
+
+  html.app-overlay .el-dialog:not(.is-fullscreen) {
+    width: min(680px, calc(100vw - 48px)) !important;
+    max-width: 680px !important;
+    max-height: calc(100vh - 152px) !important;
+    max-height: calc(100dvh - 152px) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: var(--app-radius-sheet) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  html.app-overlay .el-dialog__header {
+    padding: 20px 20px 12px !important;
+    flex-shrink: 0;
+  }
+
+  html.app-overlay .el-dialog__title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--app-label);
+  }
+
+  html.app-overlay .el-dialog__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 8px 20px 16px !important;
+  }
+
+  html.app-overlay .el-dialog__footer {
+    flex-shrink: 0;
+    padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* Form sheet iPad: một cột, label phía trên — tránh cột hẹp bị cắt chữ */
+  html.app-overlay .el-dialog .el-form .el-row > .el-col {
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+  }
+
+  html.app-overlay .el-dialog .el-form-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    margin-bottom: 16px;
+  }
+
+  html.app-overlay .el-dialog .el-form-item__label {
+    width: auto !important;
+    text-align: left !important;
+    padding-right: 0 !important;
+    margin-bottom: 4px;
+    line-height: 1.4;
+    font-size: 13px;
+  }
+
+  html.app-overlay .el-dialog .el-form-item__content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
+   GIẢM HIỆU ỨNG
+   ───────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  html.app-overlay .el-dialog:not(.is-fullscreen),
+  html.app-overlay .el-message-box {
+    animation: none !important;
+  }
+
+  html.app-overlay .el-button:not(.is-disabled),
+  html.app-overlay .el-dropdown-menu__item,
+  html.app-overlay .el-menu-item,
+  html.app-overlay .mobile-tabbar,
+  html.app-overlay .mobile-tabbar__item {
+    transition: none !important;
+    animation: none !important;
+  }
+}

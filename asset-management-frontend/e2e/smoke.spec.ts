@@ -74,7 +74,7 @@ test.describe('Xác thực', () => {
   test('chưa đăng nhập thì bị chuyển về trang login', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page).toHaveURL(/\/login$/);
+    await expect(page).toHaveURL(/\/login(?:\?.*)?$/);
     await expect(page.locator('#login-form')).toBeVisible();
     await expect(page.locator('#f-username')).toBeVisible();
     await expect(page.locator('#f-password')).toBeVisible();

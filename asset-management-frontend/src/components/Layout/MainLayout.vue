@@ -194,11 +194,11 @@
                   </el-icon>
                 </span>
                 <button
-                  v-if="isOverlay && $route.path !== '/'"
+                  v-if="isOverlay && !isTabRootPath($route.path)"
                   type="button"
                   class="mobile-back-btn"
                   aria-label="Quay lại"
-                  @click="router.back()"
+                  @click="goBack"
                 >
                   <el-icon><ArrowLeft /></el-icon>
                 </button>
@@ -228,13 +228,15 @@
                       <span style="color: #909399">{{ authStore.user?.department?.name || 'Chưa phân đơn vị' }}</span>
                     </el-dropdown-item>
                     <el-dropdown-item @click="showChangePasswordDialog = true">
-                      🔑 Đổi mật khẩu
+                      <el-icon><Key /></el-icon>
+                      Đổi mật khẩu
                     </el-dropdown-item>
                     <el-dropdown-item
                       v-if="FEATURES.twoFactor"
                       @click="showTotpDialog = true"
                     >
-                      🔐 Xác thực 2 bước
+                      <el-icon><Lock /></el-icon>
+                      Xác thực 2 bước
                     </el-dropdown-item>
                     <el-dropdown-item
                       v-if="canUsePush"
@@ -242,7 +244,11 @@
                       divided
                       @click="togglePushNotifications"
                     >
-                      {{ pushEnabled ? '🔕 Tắt thông báo đẩy' : '🔔 Bật thông báo đẩy' }}
+                      <el-icon>
+                        <MuteNotification v-if="pushEnabled" />
+                        <Bell v-else />
+                      </el-icon>
+                      {{ pushEnabled ? 'Tắt thông báo đẩy' : 'Bật thông báo đẩy' }}
                     </el-dropdown-item>
                     <el-dropdown-item
                       divided
@@ -265,7 +271,7 @@
           Không có kết nối mạng — một số dữ liệu có thể chưa cập nhật.
         </div>
 
-        <el-main>
+        <el-main ref="mainRef">
           <!-- Không dùng transition out-in: mỗi lần chuyển menu phải chờ
                trang cũ leave rồi trang mới enter, gây cảm giác chậm. -->
           <router-view />
@@ -290,8 +296,9 @@
       <button
         type="button"
         class="mobile-tabbar__item"
-        :class="{ active: $route.path === '/' }"
-        @click="router.push('/')"
+        :class="{ active: isTabActive('/') }"
+        :aria-current="isTabActive('/') ? 'page' : undefined"
+        @click="navigateTab('/')"
       >
         <el-icon><House /></el-icon>
         <span>Trang chủ</span>
@@ -299,8 +306,9 @@
       <button
         type="button"
         class="mobile-tabbar__item"
-        :class="{ active: $route.path.startsWith('/assets') }"
-        @click="router.push('/assets')"
+        :class="{ active: isTabActive('/assets') }"
+        :aria-current="isTabActive('/assets') ? 'page' : undefined"
+        @click="navigateTab('/assets')"
       >
         <el-icon><Box /></el-icon>
         <span>Tài sản</span>
@@ -308,8 +316,9 @@
       <button
         type="button"
         class="mobile-tabbar__item"
-        :class="{ active: $route.path.startsWith('/inventory') }"
-        @click="router.push('/inventory')"
+        :class="{ active: isTabActive('/inventory') }"
+        :aria-current="isTabActive('/inventory') ? 'page' : undefined"
+        @click="navigateTab('/inventory')"
       >
         <el-icon><Notebook /></el-icon>
         <span>Kiểm kê</span>
@@ -318,6 +327,7 @@
         type="button"
         class="mobile-tabbar__item"
         :class="{ active: !isHidden }"
+        :aria-expanded="!isHidden"
         @click="toggleSidebar"
       >
         <el-icon><Menu /></el-icon>
@@ -334,7 +344,7 @@
 import { computed, nextTick, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
-import { House, HomeFilled, Box, User, ArrowDown, ArrowLeft, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, Warning, Menu } from '@element-plus/icons-vue';
+import { House, HomeFilled, Box, User, ArrowDown, ArrowLeft, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, Warning, Menu, Key, Lock, Bell, MuteNotification } from '@element-plus/icons-vue';
 import NotificationBell from '@/components/Notifications/NotificationBell.vue';
 import TotpSetupDialog from '@/components/Auth/TotpSetupDialog.vue';
 import ChangePasswordDialog from '@/components/Auth/ChangePasswordDialog.vue';
@@ -373,6 +383,49 @@ const handleLogout = async () => {
   }
   await authStore.logout();
   router.push('/login');
+};
+
+const goBack = () => {
+  const historyState = window.history.state as { back?: string | null } | null;
+  if (historyState?.back) {
+    router.back();
+    return;
+  }
+  router.push('/');
+};
+
+const mainRef = ref<{ $el?: HTMLElement } | null>(null);
+const scrollPositions = new Map<string, number>();
+let lastPath = router.currentRoute.value.path;
+
+const getMainElement = (): HTMLElement | null => {
+  const el = mainRef.value?.$el;
+  return el instanceof HTMLElement ? el : null;
+};
+
+const scrollMainToTop = (smooth = false) => {
+  const el = getMainElement();
+  if (!el) return;
+  el.scrollTo({ top: 0, behavior: smooth ? 'smooth' : 'auto' });
+};
+
+const TAB_ROOT_PATHS = new Set(['/', '/assets', '/inventory']);
+
+const isTabRootPath = (path: string): boolean => TAB_ROOT_PATHS.has(path);
+
+const isTabActive = (path: string): boolean => {
+  const current = router.currentRoute.value.path;
+  if (path === '/') return current === '/';
+  return current === path || current.startsWith(`${path}/`);
+};
+
+const navigateTab = (path: string) => {
+  const current = router.currentRoute.value.path;
+  if (current !== path) {
+    router.push(path);
+    return;
+  }
+  scrollMainToTop(true);
 };
 
 const MOBILE_BREAKPOINT = 768;
@@ -520,7 +573,18 @@ onMounted(() => {
 
 watch(
   () => router.currentRoute.value.path,
-  () => nextTick(updateMenuHighlight),
+  (path) => {
+    const mainEl = getMainElement();
+    if (mainEl) {
+      scrollPositions.set(lastPath, mainEl.scrollTop);
+      const restoreTo = scrollPositions.get(path) ?? 0;
+      nextTick(() => {
+        mainEl.scrollTop = restoreTo;
+      });
+    }
+    lastPath = path;
+    nextTick(updateMenuHighlight);
+  },
 );
 
 watch([isHidden, isOverlay], () => nextTick(updateMenuHighlight));
@@ -531,6 +595,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('offline', handleOffline);
   stopMobileTableCards();
   cancelAnimationFrame(highlightFrame);
+  document.documentElement.classList.remove('app-overlay', 'keyboard-open');
 });
 
 const handleMenuSelect = () => {
@@ -619,8 +684,8 @@ const toggleSidebar = () => {
   top: 0;
   left: 0;
   border-radius: 10px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.38);
+  background: #2563eb;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.24);
   pointer-events: none;
   z-index: 0;
   opacity: 0;
@@ -694,6 +759,11 @@ const toggleSidebar = () => {
 @media (prefers-reduced-motion: reduce) {
   .menu-highlight {
     transition: opacity 0.01ms !important;
+  }
+
+  .mobile-tabbar,
+  .mobile-tabbar__item .el-icon {
+    transition: none !important;
   }
 }
 
@@ -863,21 +933,22 @@ const toggleSidebar = () => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #ecfdf5;
-  color: #059669;
-  border: 1px solid #bbf7d0;
-  transition: all 0.2s ease;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .breadcrumb-home-chip .el-icon {
   font-size: 18px;
 }
 
-.breadcrumb-home-chip:hover {
-  background: #dcfce7;
-  color: #047857;
-  border-color: #86efac;
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .breadcrumb-home-chip:hover {
+    background: #dbeafe;
+    color: #1d4ed8;
+    border-color: #93c5fd;
+  }
 }
 
 @media (max-width: 768px) {
@@ -967,20 +1038,24 @@ const toggleSidebar = () => {
   display: flex;
   align-items: stretch;
   background: rgba(255, 255, 255, 0.98);
-  border-top: 1px solid #e2e8f0;
-  box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08);
+  border-top: 0.5px solid rgba(15, 23, 42, 0.1);
+  box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.06);
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .mobile-tabbar__item {
   flex: 1;
   min-width: 0;
+  min-height: 52px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 3px;
-  padding: 8px 2px 7px;
+  padding: 6px 2px 7px;
   border: none;
   background: transparent;
   color: #64748b;
@@ -990,18 +1065,37 @@ const toggleSidebar = () => {
   line-height: 1.2;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .mobile-tabbar__item .el-icon {
+  width: 44px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
   font-size: 21px;
+  transition:
+    transform 120ms cubic-bezier(0.23, 1, 0.32, 1),
+    background-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .mobile-tabbar__item.active {
   color: #2563eb;
+  font-weight: 700;
+}
+
+.mobile-tabbar__item.active .el-icon {
+  background: rgba(37, 99, 235, 0.12);
+}
+
+.mobile-tabbar__item:active .el-icon {
+  transform: scale(0.9);
 }
 
 .has-mobile-tabbar .el-main {
-  padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px)) !important;
+  padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
 }
 
 .offline-banner {
@@ -1019,22 +1113,27 @@ const toggleSidebar = () => {
 }
 
 .mobile-back-btn {
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #f1f5f9;
   color: #334155;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.mobile-back-btn:active {
+  background: #e2e8f0;
 }
 
 .mobile-back-btn .el-icon {
-  font-size: 18px;
+  font-size: 20px;
 }
 
 @media (max-width: 1367px) {
@@ -1044,8 +1143,9 @@ const toggleSidebar = () => {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 700;
+    letter-spacing: -0.01em;
     color: #0f172a;
   }
 }

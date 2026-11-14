@@ -8,6 +8,11 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount } from 'vue';
 import PWAUpdatePrompt from '@/components/PWAUpdatePrompt.vue';
+import { useVisualKeyboard } from '@/composables/useVisualKeyboard';
+import { useMobileSheetDrag } from '@/composables/useMobileSheetDrag';
+
+useVisualKeyboard();
+useMobileSheetDrag();
 
 // Global dialog close optimization - fixes flash on ALL dialogs
 let dialogCloseHandler: ((e: Event) => void) | null = null;

@@ -6,6 +6,7 @@ import './styles/responsive.scss';
 import './styles/page-layout.scss';
 import './styles/dialog-optimization.scss';
 import './styles/dialog-close-fix.scss';
+import './styles/native-mobile.scss';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import App from './App.vue';
 import router from './router';
