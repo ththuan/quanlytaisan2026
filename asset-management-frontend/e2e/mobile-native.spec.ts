@@ -130,6 +130,117 @@ test('mobile: tabbar native, bottom sheet và drag-to-dismiss', async ({ page })
   await expect(dialog).toBeHidden({ timeout: 3000 });
 });
 
+const REPAIR_ASSET = {
+  id: 1,
+  asset_code: 'TS001',
+  name: 'Máy tính xách tay Dell Latitude 5440',
+  status: 'damaged',
+  purchase_price: 25000000,
+  current_value: 12500000,
+  serial_number: 'SN-DELL-5440-001',
+  year_of_use: 2023,
+  unit: 'Cái',
+  quantity: 1,
+};
+
+const REPAIR_ITEM = {
+  id: 1,
+  request_type: 'repair',
+  status: 'rejected_by_admin',
+  urgency: 'high',
+  estimated_cost: 9000000,
+  justification: 'Máy tính không lên nguồn, màn hình chập chờn, cần kiểm tra bo mạch và thay pin.',
+  created_at: '2026-11-10T08:00:00.000Z',
+  requested_by: 1,
+  requester: { id: 1, fullname: 'Nguyễn Văn A', username: 'admin' },
+  department: { id: 1, name: 'Phòng Hành chính - Quản trị' },
+  asset: REPAIR_ASSET,
+  asset_id: REPAIR_ASSET.id,
+  damage_images: null,
+};
+
+test('mobile: chi tiết sửa chữa không tràn ngang, trạng thái tiếng Việt', async ({ page }) => {
+  await mockAuthenticated(page);
+  await page.route('**/api/maintenance?**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        data: [REPAIR_ITEM],
+        pagination: { page: 1, limit: 20, total: 1, totalPages: 1 },
+      }),
+    }),
+  );
+  await page.route('**/api/maintenance/1', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        data: { ...REPAIR_ITEM, status: 'rejected_due_to_high_cost' },
+      }),
+    }),
+  );
+  await page.route('**/api/maintenance/1/approval-history', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: [] }),
+    }),
+  );
+  await page.route('**/api/assets?**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        data: [REPAIR_ASSET],
+        pagination: { page: 1, limit: 100, total: 1, totalPages: 1 },
+      }),
+    }),
+  );
+
+  await page.goto('/maintenance');
+  const viewButton = page.getByRole('button', { name: 'Xem', exact: true }).first();
+  await expect(viewButton).toBeVisible();
+  await viewButton.click();
+
+  const detailDialog = page.locator('.el-dialog').first();
+  await expect(detailDialog).toBeVisible();
+  await page.waitForTimeout(900);
+
+  await expect(detailDialog.getByText('Từ chối do chi phí cao')).toBeVisible();
+
+  const detailOverflow = await detailDialog.evaluate((el) => {
+    const body = el.querySelector('.el-dialog__body') as HTMLElement;
+    return body.scrollWidth - body.clientWidth;
+  });
+  expect(detailOverflow).toBeLessThanOrEqual(1);
+
+  await detailDialog.locator('.el-dialog__headerbtn').click();
+  await expect(detailDialog).toBeHidden();
+
+  const editButton = page.getByRole('button', { name: 'Sửa', exact: true }).first();
+  await expect(editButton).toBeVisible();
+  await editButton.click();
+
+  const formDialog = page.locator('.el-dialog').first();
+  await expect(formDialog).toBeVisible();
+  await page.waitForTimeout(900);
+
+  await expect(formDialog.locator('.el-dialog__footer')).toContainText(
+    'Trạng thái: Quản trị viên từ chối',
+  );
+  await expect(formDialog.locator('.el-dialog__footer')).not.toContainText('rejected_by_admin');
+
+  const formOverflow = await formDialog.evaluate((el) => {
+    const body = el.querySelector('.el-dialog__body') as HTMLElement;
+    return body.scrollWidth - body.clientWidth;
+  });
+  expect(formOverflow).toBeLessThanOrEqual(1);
+});
+
 test('tablet: tabbar nổi và form-sheet căn giữa', async ({ page }) => {
   await mockAuthenticated(page);
   await page.setViewportSize({ width: 1024, height: 768 });

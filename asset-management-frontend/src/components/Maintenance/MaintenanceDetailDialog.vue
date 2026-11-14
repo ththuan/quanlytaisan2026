@@ -2,6 +2,7 @@
   <el-dialog
     :model-value="visible"
     width="900px"
+    append-to-body
     :close-on-click-modal="false"
     @update:model-value="$emit('update:visible', $event)"
   >
@@ -572,6 +573,14 @@ import procurementService from '@/services/procurement.service';
 import assetDisposalService from '@/services/assetDisposal.service';
 import SignaturePad from '@/components/Common/SignaturePad.vue';
 import { useRouter } from 'vue-router';
+import {
+  assetStatusText,
+  assetStatusType,
+  maintenanceStatusText,
+  maintenanceStatusType,
+  urgencyText,
+  urgencyType,
+} from '@/utils/maintenanceLabels';
 
 const props = defineProps<{
   visible: boolean;
@@ -1027,89 +1036,17 @@ const handleComplete = async () => {
   }
 };
 
-const getStatusType = (status: string) => {
-  const types: Record<string, string> = {
-    draft: 'info',
-    new: 'info',
-    pending: 'warning',
-    approved: 'primary',
-    approved_by_head: 'primary',
-    approved_by_admin: 'primary',
-    approved_by_director: 'success',
-    in_progress: 'warning',
-    repair_completed: 'info',
-    repair_approved: 'success',
-    done: 'success',
-    completed: 'success',
-    rejected: 'danger',
-    rejected_by_head: 'danger',
-    rejected_by_admin: 'danger',
-    rejected_by_director: 'danger',
-  };
-  return types[status] || 'info'; // Default to 'info' instead of empty string to fix ElTag validation error
-};
+const getStatusType = (status: string) => maintenanceStatusType(status);
 
-const getStatusText = (status: string) => {
-  const statusMap: Record<string, string> = {
-    draft: 'Nháp',
-    new: t('maintenance.status.new'),
-    pending: 'Chờ phê duyệt',
-    approved: t('maintenance.status.approved'),
-    approved_by_head: 'Trưởng Đơn vị đã duyệt',
-    approved_by_admin: 'Quản trị viên đã duyệt',
-    approved_by_director: 'Giám hiệu đã duyệt',
-    in_progress: t('maintenance.status.in_progress'),
-    repair_completed: 'Đã hoàn thành sửa chữa (chờ duyệt)',
-    repair_approved: 'Đã duyệt hoàn thành sửa chữa',
-    done: t('maintenance.status.done'),
-    completed: 'Hoàn tất',
-    rejected: t('maintenance.status.rejected'),
-    rejected_by_head: 'Trưởng Đơn vị từ chối',
-    rejected_by_admin: 'Quản trị viên từ chối',
-    rejected_by_director: 'Giám hiệu từ chối',
-  };
-  return statusMap[status] || t(`maintenance.status.${status}`) || status;
-};
+const getStatusText = (status: string) => maintenanceStatusText(status);
 
-const getUrgencyType = (urgency: string) => {
-  const types: Record<string, string> = {
-    low: 'info',
-    normal: 'info', // Changed from '' to 'info' to fix ElTag validation error
-    high: 'warning',
-    critical: 'danger',
-  };
-  return types[urgency] || 'info'; // Default to 'info' instead of empty string
-};
+const getUrgencyType = (urgency: string) => urgencyType(urgency);
 
-const getUrgencyText = (urgency: string) => {
-  return t(`maintenance.urgency_level.${urgency}`);
-};
+const getUrgencyText = (urgency: string) => urgencyText(urgency);
 
-const getAssetStatusType = (status: string) => {
-  const types: Record<string, string> = {
-    active: 'success',
-    inactive: 'info',
-    damaged: 'danger',
-    pending_repair: 'warning',
-    pending_disposal: 'danger',
-    disposed: 'info',
-    lost: 'danger',
-  };
-  return types[status] || 'info';
-};
+const getAssetStatusType = (status: string) => assetStatusType(status);
 
-const getAssetStatusText = (status: string) => {
-  const statusMap: Record<string, string> = {
-    active: 'Đang sử dụng',
-    inactive: 'Không sử dụng',
-    damaged: 'Hư hỏng',
-    pending_repair: 'Chờ sửa chữa',
-    pending_disposal: 'Chờ thanh lý',
-    disposed: 'Đã thanh lý',
-    lost: 'Mất',
-  };
-  return statusMap[status] || status;
-};
+const getAssetStatusText = (status: string) => assetStatusText(status);
 
 const formatDate = (date: string | Date | null | undefined) => {
   if (!date) return '-';

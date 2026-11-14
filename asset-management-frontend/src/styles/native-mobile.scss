@@ -222,17 +222,31 @@ html.app-overlay .el-dropdown-menu__item .el-icon {
     background: rgba(255, 255, 255, 0.96);
   }
 
-  /* Footer thường bọc buttons trong một div (.dialog-footer) */
+  /* Footer: hỗ trợ cả cấu trúc phẳng và bọc div lồng nhau */
   html.app-overlay .el-dialog__footer > div {
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  html.app-overlay .el-dialog__footer > div > div {
+    display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     width: 100%;
   }
 
   html.app-overlay .el-dialog__footer .el-button {
-    flex: 1;
+    flex: 1 1 calc(50% - 4px);
     min-height: 44px;
     margin: 0 !important;
+    white-space: normal;
+  }
+
+  html.app-overlay .el-dialog__footer .el-button:only-child {
+    flex-basis: 100%;
   }
 
   html.app-overlay .el-dialog:not(:has(.el-dialog__footer)) .el-dialog__body {
@@ -270,6 +284,47 @@ html.app-overlay .el-dropdown-menu__item .el-icon {
   html.app-overlay .el-dialog .el-scrollbar {
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch;
+  }
+
+  /* Descriptions: label ở trên, giá trị ở dưới — không tràn ngang trên iPhone */
+  html.app-overlay .el-dialog .el-descriptions__body {
+    padding: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  html.app-overlay .el-dialog .el-descriptions__table,
+  html.app-overlay .el-dialog .el-descriptions__table tbody,
+  html.app-overlay .el-dialog .el-descriptions__row {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  html.app-overlay .el-dialog .el-descriptions__cell {
+    display: block !important;
+    width: 100% !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+
+  html.app-overlay .el-dialog .el-descriptions__label {
+    display: block !important;
+    width: auto !important;
+    padding: 10px 0 2px !important;
+    border: none !important;
+    background: transparent !important;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--app-label-secondary);
+  }
+
+  html.app-overlay .el-dialog .el-descriptions__content {
+    display: block !important;
+    width: auto !important;
+    padding: 0 0 10px !important;
+    border: none !important;
+    border-bottom: 0.5px solid var(--app-separator) !important;
+    color: var(--app-label);
+    overflow-wrap: anywhere;
   }
 
   /* MessageBox → action sheet chuẩn native */

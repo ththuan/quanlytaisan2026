@@ -3,6 +3,7 @@
     :model-value="visible"
     title="Hoàn tất mua sắm & tạo tài sản"
     width="900px"
+    append-to-body
     @close="emit('update:visible', false)"
   >
     <div v-if="!request">
@@ -18,7 +19,7 @@
       >
         <div>
           <div><b>Đề nghị:</b> {{ request.device_name }} (SL: {{ request.quantity }})</div>
-          <div><b>Trạng thái:</b> {{ request.status }}</div>
+          <div><b>Trạng thái:</b> {{ maintenanceStatusText(request.status) }}</div>
         </div>
       </el-alert>
 
@@ -181,6 +182,7 @@ import { ElMessage } from 'element-plus';
 import api from '@/services/api';
 import { useDepartmentStore } from '@/stores/department.store';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
+import { maintenanceStatusText } from '@/utils/maintenanceLabels';
 
 const props = defineProps<{
   visible: boolean;

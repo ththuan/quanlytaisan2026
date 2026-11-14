@@ -241,6 +241,7 @@ import MaintenanceDetailDialog from './MaintenanceDetailDialog.vue';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 import api from '@/services/api';
 import procurementService from '@/services/procurement.service';
+import { maintenanceStatusText, maintenanceStatusType } from '@/utils/maintenanceLabels';
 
 const { t } = useI18n();
 const authStore = useAuthStore();
@@ -494,44 +495,9 @@ const handleFormSuccess = () => {
   fetchData({}, true);
 };
 
-const getStatusType = (status: string) => {
-  const types: Record<string, string> = {
-    draft: 'info',
-    new: 'info',
-    pending: 'warning',
-    approved_by_head: 'primary',
-    approved_by_admin: 'primary',
-    approved_by_director: 'success',
-    in_progress: 'warning',
-    done: 'success',
-    completed: 'success',
-    rejected: 'danger',
-    rejected_by_head: 'danger',
-    rejected_by_admin: 'danger',
-    rejected_by_director: 'danger',
-  };
-  return types[status] || '';
-};
+const getStatusType = (status: string) => maintenanceStatusType(status);
 
-const getStatusText = (status: string) => {
-  const statusMap: Record<string, string> = {
-    draft: 'Nháp',
-    new: t('maintenance.status.new'),
-    pending: 'Chờ phê duyệt',
-    approved: t('maintenance.status.approved'),
-    approved_by_head: 'Trưởng Đơn vị đã duyệt',
-    approved_by_admin: 'Quản trị viên đã duyệt',
-    approved_by_director: 'Giám hiệu đã duyệt',
-    in_progress: t('maintenance.status.in_progress'),
-    done: t('maintenance.status.done'),
-    completed: 'Hoàn tất',
-    rejected: t('maintenance.status.rejected'),
-    rejected_by_head: 'Trưởng Đơn vị từ chối',
-    rejected_by_admin: 'Quản trị viên từ chối',
-    rejected_by_director: 'Giám hiệu từ chối',
-  };
-  return statusMap[status] || t(`maintenance.status.${status}`) || status;
-};
+const getStatusText = (status: string) => maintenanceStatusText(status);
 
 const formatCurrency = (value: number) => {
   if (!value) return '-';

@@ -3,6 +3,7 @@
     :model-value="visible"
     :title="isEdit ? 'Sửa đề nghị sửa chữa' : 'Tạo đề nghị sửa chữa'"
     width="90%"
+    append-to-body
     :close-on-click-modal="false"
     destroy-on-close
     top="5vh"
@@ -93,7 +94,7 @@
             >
               <div style="display: flex; justify-content: space-between;">
                 <span>{{ asset.asset_code }} - {{ asset.name }}</span>
-                <span style="color: #909399; font-size: 12px;">{{ asset.status }}</span>
+                <span style="color: #909399; font-size: 12px;">{{ getAssetStatusText(asset.status) }}</span>
               </div>
             </el-option>
             <el-option
@@ -308,6 +309,7 @@
     <el-dialog
       v-model="previewVisible"
       title="Xem trước hình ảnh"
+      append-to-body
     >
       <img
         :src="previewImageUrl"
@@ -333,6 +335,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus, Document, Promotion, Check } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules, UploadFile } from '@/types/element-plus';
 import { fileToDataUrl, prepareImageForUpload } from '@/utils/image';
+import { assetStatusText, assetStatusType, maintenanceStatusText } from '@/utils/maintenanceLabels';
 import api from '@/services/api';
 
 interface Asset {
@@ -987,40 +990,11 @@ const convertAllImagesToBase64 = async (): Promise<void> => {
   }
 };
 
-const getStatusText = (status: string) => {
-  const statusMap: Record<string, string> = {
-    draft: 'Nháp',
-    new: 'Mới',
-    pending: 'Chờ phê duyệt',
-    approved_by_head: 'Trưởng Đơn vị đã duyệt',
-    approved_by_admin: 'Quản trị viên đã duyệt',
-    approved_by_director: 'Giám hiệu đã duyệt',
-    rejected_by_head: 'Trưởng Đơn vị từ chối',
-    rejected_by_admin: 'Quản trị viên từ chối',
-    rejected_by_director: 'Giám hiệu từ chối',
-  };
-  return statusMap[status] || status;
-};
+const getStatusText = (status: string) => maintenanceStatusText(status);
 
-const getAssetStatusType = (status: string) => {
-  const types: Record<string, string> = {
-    active: 'success',
-    inactive: 'info',
-    damaged: 'danger',
-    pending_repair: 'warning',
-  };
-  return types[status] || 'info';
-};
+const getAssetStatusType = (status: string) => assetStatusType(status);
 
-const getAssetStatusText = (status: string) => {
-  const statusMap: Record<string, string> = {
-    active: 'Đang sử dụng',
-    inactive: 'Không sử dụng',
-    damaged: 'Hư hỏng',
-    pending_repair: 'Chờ sửa chữa',
-  };
-  return statusMap[status] || status;
-};
+const getAssetStatusText = (status: string) => assetStatusText(status);
 
 const formatCurrency = (value?: number | string | null) => {
   if (value === null || value === undefined) return '-';

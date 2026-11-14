@@ -3,6 +3,7 @@
     :model-value="visible"
     :title="isEdit ? $t('maintenance.editRequest') : $t('maintenance.createRequest')"
     width="650px"
+    append-to-body
     :close-on-click-modal="false"
     destroy-on-close
     @update:model-value="$emit('update:visible', $event)"

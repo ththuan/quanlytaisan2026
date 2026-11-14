@@ -272,6 +272,7 @@
       v-model="adminApprovalVisible"
       title="Phê duyệt sửa chữa"
       width="480px"
+      append-to-body
       :close-on-click-modal="false"
     >
       <div v-if="adminApprovalRow">
@@ -385,6 +386,7 @@ import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.
 import api from '@/services/api';
 import assetDisposalService from '@/services/assetDisposal.service';
 import SignaturePad from '@/components/Common/SignaturePad.vue';
+import { maintenanceStatusText, maintenanceStatusType } from '@/utils/maintenanceLabels';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -792,47 +794,9 @@ const handleFormSuccess = async () => {
   fetchData({}, true);
 };
 
-const getStatusType = (status: string) => {
-  const types: Record<string, string> = {
-    draft: 'info',
-    new: 'info',
-    pending: 'warning',
-    approved_by_head: 'primary',
-    approved_by_admin: 'primary',
-    approved_by_director: 'success',
-    in_progress: 'warning',
-    repair_completed: 'primary',
-    repair_approved: 'success',
-    completed: 'success',
-    rejected: 'danger',
-    rejected_by_head: 'danger',
-    rejected_by_admin: 'danger',
-    rejected_by_director: 'danger',
-    rejected_due_to_high_cost: 'danger',
-  };
-  return types[status] || '';
-};
+const getStatusType = (status: string) => maintenanceStatusType(status);
 
-const getStatusText = (status: string) => {
-  const statusMap: Record<string, string> = {
-    draft: 'Nháp',
-    new: 'Chờ phê duyệt',
-    pending: 'Chờ phê duyệt',
-    approved_by_head: 'Trưởng Đơn vị đã duyệt',
-    approved_by_admin: 'Quản trị viên đã duyệt',
-    approved_by_director: 'Giám hiệu đã duyệt',
-    in_progress: 'Đang sửa chữa',
-    repair_completed: 'Đã sửa - Chờ xác nhận',
-    repair_approved: 'Xác nhận hoàn thành',
-    completed: 'Hoàn thành',
-    rejected: t('maintenance.status.rejected'),
-    rejected_by_head: 'Trưởng Đơn vị từ chối',
-    rejected_by_admin: 'Quản trị viên từ chối',
-    rejected_by_director: 'Giám hiệu từ chối',
-    rejected_due_to_high_cost: 'Từ chối - chi phí cao',
-  };
-  return statusMap[status] || status;
-};
+const getStatusText = (status: string) => maintenanceStatusText(status);
 
 const formatCurrency = (value: number) => {
   if (!value) return '-';

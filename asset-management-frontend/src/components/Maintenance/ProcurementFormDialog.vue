@@ -3,6 +3,7 @@
     :model-value="visible"
     :title="isEdit ? $t('maintenance.procurement.editRequest') : $t('maintenance.procurement.createRequest')"
     width="95%"
+    append-to-body
     :close-on-click-modal="false"
     destroy-on-close
     top="5vh"
@@ -405,6 +406,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus, Delete, Link, Picture, Check, Document, Promotion } from '@element-plus/icons-vue';
 import type { FormInstance, FormRules } from '@/types/element-plus';
 import api from '@/services/api';
+import { maintenanceStatusText } from '@/utils/maintenanceLabels';
 
 interface ProcurementItem {
   device_name: string;
@@ -834,20 +836,7 @@ const handleSaveRequest = async (status: string) => {
   }
 };
 
-const getStatusText = (status: string) => {
-  const statusMap: Record<string, string> = {
-    draft: 'Nháp',
-    new: 'Mới',
-    pending: 'Chờ phê duyệt',
-    approved_by_head: 'Trưởng Đơn vị đã duyệt',
-    approved_by_admin: 'Quản trị viên đã duyệt',
-    approved_by_director: 'Giám hiệu đã duyệt',
-    rejected_by_head: 'Trưởng Đơn vị từ chối',
-    rejected_by_admin: 'Quản trị viên từ chối',
-    rejected_by_director: 'Giám hiệu từ chối',
-  };
-  return statusMap[status] || status;
-};
+const getStatusText = (status: string) => maintenanceStatusText(status);
 
 const formatCurrency = (value: number) => {
   if (!value) return '0';
