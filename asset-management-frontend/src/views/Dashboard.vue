@@ -1285,42 +1285,32 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
 @media (min-width: 1366px) {
   .stats-row { margin-bottom: 30px; }
 
-  .stats-row .stat-card { min-height: 104px; }
+  .stats-row .stat-card { min-height: 84px; }
 
   .stats-row .stat-card :deep(.el-card__body) {
-    padding: 22px 26px;
-    gap: 18px;
+    padding: 16px 18px;
+    gap: 12px;
   }
 
   .stats-row .stat-icon {
-    width: 52px;
-    height: 52px;
-    border-radius: 14px;
+    width: 48px;
+    height: 48px;
   }
 
-  .stats-row .stat-icon :deep(.el-icon) { font-size: 28px !important; }
-  .stats-row .stat-value { font-size: 1.7rem; }
+  .stats-row .stat-icon :deep(.el-icon) { font-size: 23px !important; }
+  .stats-row .stat-value { font-size: 1.45rem; }
   .stats-row .stat-label { font-size: 13px; letter-spacing: 0; }
   .dept-chart { height: min(62vh, 720px); }
 }
 
 @media (min-width: 1920px) {
-  /* Tự giãn theo bề rộng: 2K (2560), 4K (3840) vẫn giữ tỉ lệ hài hoà. */
-  .stats-row .stat-card { min-height: clamp(118px, 6vw, 176px); }
+  .stats-row .stat-card { min-height: 96px; }
 
   .stats-row .stat-card :deep(.el-card__body) {
-    padding: clamp(26px, 1.4vw, 44px) clamp(30px, 1.8vw, 56px);
-    gap: clamp(20px, 1.1vw, 34px);
+    padding: 18px 20px;
+    gap: 14px;
   }
 
-  .stats-row .stat-icon {
-    width: clamp(60px, 3.1vw, 104px);
-    height: clamp(60px, 3.1vw, 104px);
-  }
-
-  .stats-row .stat-icon :deep(.el-icon) { font-size: clamp(32px, 1.7vw, 56px) !important; }
-  .stats-row .stat-value { font-size: clamp(2rem, 1.5vw, 2.8rem); }
-  .stats-row .stat-label { font-size: clamp(14px, 0.7vw, 18px); }
   .dept-chart { height: min(66vh, 900px); }
 }
 
