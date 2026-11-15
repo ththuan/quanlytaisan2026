@@ -364,6 +364,9 @@ import type { FormInstance, FormRules } from '@/types/element-plus';
 import { Plus, Refresh, Search, Edit, Delete } from '@element-plus/icons-vue';
 import { assetCategoryService } from '@/services/assetCategory.service';
 import type { AssetCategory } from '@/services/assetCategory.service';
+import { useAuthStore } from '@/stores/auth.store';
+
+const authStore = useAuthStore();
 
 const loading = ref(false);
 const saving = ref(false);

@@ -366,8 +366,10 @@ const fetchLogs = async () => {
     if (filters.value.user_id) params.user_id = filters.value.user_id;
 
     const res: any = await getAuditLogs(params);
-    logs.value = res?.data || res?.logs || [];
-    total.value = res?.total || logs.value.length;
+    const payload = res?.data ?? res;
+    const rows = Array.isArray(payload) ? payload : payload?.data || payload?.logs || [];
+    logs.value = Array.isArray(rows) ? rows : [];
+    total.value = payload?.pagination?.total ?? payload?.total ?? logs.value.length;
   } catch (e) {
     logs.value = [];
   } finally {
