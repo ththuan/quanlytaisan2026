@@ -99,7 +99,12 @@ const isIOSDevice = () =>
  * duyệt — đặc biệt là Safari trên iPad — chặn popup. Toàn bộ nội dung in được
  * đặt trong một lớp phủ riêng và chỉ lớp này hiển thị khi in.
  */
-export function openPrintWindow(title: string, bodyHtml: string, extraStyles = ''): boolean {
+export function openPrintWindow(
+  title: string,
+  bodyHtml: string,
+  extraStyles = '',
+  pageOrientation: 'portrait' | 'landscape' = 'portrait',
+): boolean {
   document.getElementById('app-print-root')?.remove();
 
   const root = document.createElement('div');
@@ -128,7 +133,7 @@ export function openPrintWindow(title: string, bodyHtml: string, extraStyles = '
         body > *:not(#app-print-root) { display: none !important; }
         #app-print-root { position: static !important; overflow: visible !important; }
         #app-print-root .toolbar { display: none !important; }
-        @page { size: A4 portrait; margin: 12mm; }
+        @page { size: A4 ${pageOrientation}; margin: 12mm; }
       }
     </style>
     <div class="toolbar">

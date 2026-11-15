@@ -118,6 +118,90 @@ test.describe('Xác thực', () => {
   });
 });
 
+test.describe('Layout desktop', () => {
+  test('cửa sổ Chrome hẹp vẫn dùng layout desktop, không bị thu nhỏ như iPad', async ({ page }) => {
+    await mockAuthenticatedAs(page, 'admin');
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/');
+
+    await expect(page.locator('.sidebar')).toBeVisible();
+    await expect(page.locator('.mobile-tabbar')).toHaveCount(0);
+
+    const htmlClass = (await page.locator('html').getAttribute('class')) ?? '';
+    expect(htmlClass).not.toContain('app-overlay');
+  });
+});
+
+test.describe('In danh sách tài sản', () => {
+  const PRINT_ASSET = {
+    id: 1,
+    asset_code: 'TS001',
+    name: 'Máy tính xách tay Dell Latitude',
+    category: 'Máy tính',
+    unit: 'Cái',
+    quantity: 1,
+    year_in_use: 2024,
+    purchase_price: 25000000,
+    residual_value: 15000000,
+    status: 'active',
+    assigned_user: { id: 1, fullname: 'Nguyễn Văn A', username: 'nva' },
+    current_department: { id: 1, name: 'Phòng Hành chính' },
+    assetCategory: { id: 1, name: 'Máy tính' },
+  };
+
+  const mockAssetList = async (page: Page): Promise<void> => {
+    await page.route(/\/api\/assets(?:\?.*)?$/, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [PRINT_ASSET],
+          pagination: { page: 1, limit: 1000, total: 1, totalPages: 1 },
+        }),
+      }),
+    );
+  };
+
+  test('admin mở dialog chọn đơn vị và tạo bản in có ngày xuất in', async ({ page }) => {
+    await mockAuthenticatedAs(page, 'admin');
+    await page.addInitScript(() => {
+      window.print = () => undefined;
+    });
+    await mockAssetList(page);
+
+    await page.goto('/assets');
+    await page.getByRole('button', { name: 'In danh sách' }).click();
+
+    const dialog = page.locator('.el-dialog').filter({ hasText: 'In danh sách tài sản' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText('Chọn đơn vị cần in');
+
+    await dialog.getByRole('button', { name: 'In danh sách' }).click();
+
+    const printRoot = page.locator('#app-print-root');
+    await expect(printRoot).toBeVisible();
+    await expect(printRoot.locator('.doc-title')).toHaveText('DANH SÁCH TÀI SẢN');
+    await expect(printRoot).toContainText('Ngày xuất in:');
+    await expect(printRoot).toContainText('Máy tính xách tay Dell Latitude');
+  });
+
+  test('staff in trực tiếp danh sách đơn vị mình', async ({ page }) => {
+    await mockAuthenticatedAs(page, 'staff');
+    await page.addInitScript(() => {
+      window.print = () => undefined;
+    });
+    await mockAssetList(page);
+
+    await page.goto('/assets');
+    await page.getByRole('button', { name: 'In danh sách' }).click();
+
+    await expect(page.locator('#app-print-root')).toBeVisible();
+    await expect(page.locator('#app-print-root')).toContainText('DANH SÁCH TÀI SẢN');
+    await expect(page.locator('#app-print-root')).toContainText('Ngày xuất in:');
+  });
+});
+
 test.describe('Phân quyền theo vai trò', () => {
   test('staff bị chặn khỏi trang quản lý người dùng', async ({ page }) => {
     await mockAuthenticatedAs(page, 'staff');

@@ -16,6 +16,16 @@
         </div>
         <div class="header-right">
           <el-button
+            type="primary"
+            plain
+            :icon="Document"
+            size="default"
+            :loading="printingAssets"
+            @click="handlePrintList"
+          >
+            In danh sách
+          </el-button>
+          <el-button
             type="warning"
             :icon="Download"
             size="default"
@@ -792,6 +802,63 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- Print asset list dialog (admin/director chọn đơn vị) -->
+    <el-dialog
+      v-model="showPrintListDialog"
+      title="In danh sách tài sản"
+      :width="windowWidth <= 640 ? '95vw' : '520px'"
+      :close-on-click-modal="false"
+    >
+      <el-form
+        label-width="90px"
+        style="margin-top: 8px"
+      >
+        <el-form-item label="Đơn vị">
+          <el-select
+            v-model="printListDeptIds"
+            multiple
+            filterable
+            clearable
+            collapse-tags
+            collapse-tags-tooltip
+            placeholder="Chọn đơn vị cần in (bỏ trống = tất cả)"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="dept in departments"
+              :key="dept.id"
+              :label="dept.name"
+              :value="dept.id"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+      >
+        <template #default>
+          <div style="font-size: 13px; line-height: 1.6">
+            Danh sách in theo bộ lọc hiện tại. Mỗi đơn vị in thành một mục riêng, có ngày lập và ngày xuất in.
+            Bỏ trống để in tất cả đơn vị.
+          </div>
+        </template>
+      </el-alert>
+      <template #footer>
+        <el-button @click="showPrintListDialog = false">
+          Hủy
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="printingAssets"
+          @click="handlePrintListConfirm"
+        >
+          In danh sách
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -803,12 +870,13 @@ import { useI18n } from 'vue-i18n';
 import { useAssetStore } from '@/stores/asset.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useDepartments } from '@/composables/useDepartments';
-import { Plus, Search, Delete, Box, CircleCheck, Refresh, Upload, Download, CircleClose, QuestionFilled, DeleteFilled, Printer, Warning, User } from '@element-plus/icons-vue';
+import { Plus, Search, Delete, Box, CircleCheck, Refresh, Upload, Download, CircleClose, QuestionFilled, DeleteFilled, Printer, Warning, User, Document } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import AssetFormDialog from '@/components/Assets/AssetFormDialog.vue';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 import importService, { type ImportResult } from '@/services/import.service';
 import exportService from '@/services/export.service';
+import { openPrintWindow } from '@/utils/print';
 import { assetService, type AssetQueryParams } from '@/services/asset.service';
 import { CAMPUS_OPTIONS, campusLabel } from '@/constants/campuses';
 
@@ -859,6 +927,11 @@ const importResult = ref<ImportResult | null>(null);
 // Export
 const exporting = ref(false);
 const generatingQR = ref(false);
+
+// Print asset list
+const printingAssets = ref(false);
+const showPrintListDialog = ref(false);
+const printListDeptIds = ref<number[]>([]);
 
 // Responsive dialog widths
 const windowWidth = ref(window.innerWidth);
@@ -1192,6 +1265,243 @@ const escapeHtml = (value: unknown): string => {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+};
+
+interface PrintAssetGroup {
+  name: string;
+  assets: any[];
+}
+
+const ASSET_LIST_PRINT_STYLES = `
+  .doc { max-width: none; width: 100%; }
+  .print-section--break { page-break-before: always; }
+  .org-head { text-align: center; margin-bottom: 4px; }
+  .org-name { font-size: 13px; font-weight: bold; text-transform: uppercase; }
+  .org-unit { font-size: 13px; margin-top: 2px; }
+  .doc-title { margin-top: 4px; }
+  .print-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    font-size: 13px;
+    font-style: italic;
+    margin: 4px 0 8px;
+  }
+  table.data { font-size: 11px; }
+  table.data th, table.data td { padding: 3px 5px; }
+  table.data th { white-space: nowrap; }
+  table.data td.n { text-align: center; }
+  table.data td.r { text-align: right; white-space: nowrap; }
+  .summary { margin-top: 8px; }
+  .signatures { margin-top: 24px; }
+  .sig-space { height: 56px; }
+  @media print {
+    table.data thead { display: table-header-group; }
+    table.data tr { page-break-inside: avoid; }
+  }
+`;
+
+const pad2 = (value: number): string => String(value).padStart(2, '0');
+
+const fetchAllAssetsForPrint = async (params: AssetQueryParams): Promise<any[]> => {
+  const PAGE_SIZE = 1000;
+  const all: any[] = [];
+  let page = 1;
+  let totalPages = 1;
+
+  do {
+    const response: any = await assetService.getAssets({
+      sortBy: 'asset_code',
+      sortOrder: 'ASC',
+      ...params,
+      page,
+      limit: PAGE_SIZE,
+    });
+    if (!response?.success) break;
+    all.push(...(response.data || []));
+    totalPages = Number(response.pagination?.totalPages) || 1;
+    page += 1;
+  } while (page <= totalPages);
+
+  return all;
+};
+
+const groupAssetsByDepartment = (assets: any[]): PrintAssetGroup[] => {
+  const groups = new Map<string, PrintAssetGroup>();
+
+  assets.forEach((asset) => {
+    const key = String(asset.current_department?.id ?? 'none');
+    if (!groups.has(key)) {
+      groups.set(key, {
+        name: asset.current_department?.name || 'Chưa phân đơn vị',
+        assets: [],
+      });
+    }
+    groups.get(key)!.assets.push(asset);
+  });
+
+  return Array.from(groups.values()).sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+};
+
+const buildAssetListPrintHtml = (groups: PrintAssetGroup[]): string => {
+  const now = new Date();
+  const dateLine = `Cần Thơ, ngày ${pad2(now.getDate())} tháng ${pad2(now.getMonth() + 1)} năm ${now.getFullYear()}`;
+  const printedAt = `${pad2(now.getDate())}/${pad2(now.getMonth() + 1)}/${now.getFullYear()} ${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+
+  return groups.map((group, groupIndex) => {
+    const totalOriginal = group.assets.reduce(
+      (sum, asset) => sum + (Number(asset.purchase_price) || 0),
+      0,
+    );
+
+    const rows = group.assets.map((asset, index) => {
+      const category = asset.assetCategory?.name || asset.category || '-';
+      const quantity = asset.quantity || 1;
+      const unit = asset.unit || 'Cái';
+      const assignedUser = asset.assigned_user?.fullname || asset.assigned_user?.username || 'Dùng chung';
+
+      return `<tr>
+        <td class="n">${index + 1}</td>
+        <td>${escapeHtml(asset.asset_code || '-')}</td>
+        <td>${escapeHtml(asset.name || '-')}</td>
+        <td>${escapeHtml(category)}</td>
+        <td class="n">${escapeHtml(unit)}</td>
+        <td class="n">${escapeHtml(quantity)}</td>
+        <td class="n">${escapeHtml(asset.year_in_use || '-')}</td>
+        <td class="r">${escapeHtml(formatCurrencyDisplay(asset.purchase_price))}</td>
+        <td class="r">${escapeHtml(formatCurrencyDisplay(asset.residual_value ?? asset.current_value))}</td>
+        <td>${escapeHtml(getStatusText(asset.status))}</td>
+        <td>${escapeHtml(assignedUser)}</td>
+      </tr>`;
+    }).join('');
+
+    return `<section class="print-section${groupIndex > 0 ? ' print-section--break' : ''}">
+      <div class="org-head">
+        <div class="org-name">TRƯỜNG CAO ĐẲNG KINH TẾ - KỸ THUẬT CẦN THƠ</div>
+        <div class="org-unit">ĐƠN VỊ: ${escapeHtml(group.name)}</div>
+      </div>
+      <div class="doc-title">DANH SÁCH TÀI SẢN</div>
+      <div class="print-meta">
+        <span>${dateLine}</span>
+        <span>Ngày xuất in: ${printedAt}</span>
+      </div>
+      <table class="data">
+        <thead>
+          <tr>
+            <th style="width:32px">STT</th>
+            <th style="width:82px">Mã tài sản</th>
+            <th>Tên tài sản</th>
+            <th style="width:110px">Danh mục</th>
+            <th style="width:46px">ĐVT</th>
+            <th style="width:38px">SL</th>
+            <th style="width:54px">Năm SD</th>
+            <th style="width:92px">Nguyên giá</th>
+            <th style="width:92px">Giá trị còn lại</th>
+            <th style="width:88px">Tình trạng</th>
+            <th style="width:110px">Người sử dụng</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="summary">
+        Tổng số: <b>${group.assets.length}</b> tài sản.
+        Tổng nguyên giá: <b>${escapeHtml(formatCurrencyDisplay(totalOriginal))}</b> đồng.
+      </div>
+      <div class="signatures">
+        <div class="sig-cell">
+          <div class="sig-label">NGƯỜI LẬP DANH SÁCH</div>
+          <div class="sig-space"></div>
+        </div>
+        <div class="sig-cell">
+          <div class="sig-label">TRƯỞNG ĐƠN VỊ</div>
+          <div class="sig-space"></div>
+        </div>
+      </div>
+    </section>`;
+  }).join('');
+};
+
+const doPrintAssetList = async (deptIds: number[]): Promise<void> => {
+  printingAssets.value = true;
+
+  try {
+    const baseParams: AssetQueryParams = {
+      search: searchQuery.value || undefined,
+      category_code: filterCategory.value || undefined,
+      status: filterStatus.value || undefined,
+      campus: filterCampus.value || undefined,
+    };
+    const groups: PrintAssetGroup[] = [];
+
+    if (canFilterAllDepartments.value) {
+      if (deptIds.length > 0) {
+        for (const deptId of deptIds) {
+          const assets = await fetchAllAssetsForPrint({
+            ...baseParams,
+            current_department_id: deptId,
+          });
+          if (assets.length > 0) {
+            const dept = departments.value.find((item: any) => item.id === deptId);
+            groups.push({
+              name: dept?.name || `Đơn vị ${deptId}`,
+              assets,
+            });
+          }
+        }
+      } else {
+        const assets = await fetchAllAssetsForPrint(baseParams);
+        groups.push(...groupAssetsByDepartment(assets));
+      }
+    } else {
+      const assets = await fetchAllAssetsForPrint({
+        ...baseParams,
+        current_department_id: authStore.userDepartmentId ?? undefined,
+      });
+      if (assets.length > 0) {
+        groups.push({
+          name: currentDepartmentName.value || 'Đơn vị của tôi',
+          assets,
+        });
+      }
+    }
+
+    if (groups.length === 0) {
+      ElMessage.warning('Không có tài sản nào để in với bộ lọc hiện tại.');
+      return;
+    }
+
+    openPrintWindow(
+      'Danh sách tài sản',
+      buildAssetListPrintHtml(groups),
+      ASSET_LIST_PRINT_STYLES,
+      'landscape',
+    );
+  } catch (error: any) {
+    console.error('Print asset list error:', error);
+    ElMessage.error(error?.response?.data?.message || error?.message || 'Không thể tạo danh sách để in.');
+  } finally {
+    printingAssets.value = false;
+  }
+};
+
+const handlePrintList = (): void => {
+  if (canFilterAllDepartments.value) {
+    printListDeptIds.value = filterDepartment.value ? [filterDepartment.value] : [];
+    showPrintListDialog.value = true;
+    return;
+  }
+
+  if (!authStore.userDepartmentId) {
+    ElMessage.warning('Tài khoản chưa được gắn đơn vị nên không thể in danh sách.');
+    return;
+  }
+
+  void doPrintAssetList([]);
+};
+
+const handlePrintListConfirm = async (): Promise<void> => {
+  showPrintListDialog.value = false;
+  await doPrintAssetList(printListDeptIds.value);
 };
 
 const buildPrintHTML = (items: Array<{ asset_code: string; name: string; quantity: number; unit: string; year_in_use?: number | null; qr_image: string }>, deptName: string): string => {

@@ -22,11 +22,15 @@ export function useVisualKeyboard(): void {
         0,
         window.innerHeight - viewport.height - viewport.offsetTop,
       );
+      const overlayViewport =
+        window.innerWidth < 768 ||
+        (window.innerWidth <= 1367 &&
+          window.matchMedia('(hover: none) and (pointer: coarse)').matches);
       const open =
         covered > 140 &&
         viewport.scale <= 1.01 &&
         isEditableFocused() &&
-        window.innerWidth <= 1367;
+        overlayViewport;
 
       document.documentElement.classList.toggle('keyboard-open', open);
     });

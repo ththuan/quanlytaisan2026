@@ -8,7 +8,10 @@ let resizeHandler: (() => void) | null = null;
 let timer = 0;
 let started = false;
 
-const isOverlayViewport = () => window.matchMedia('(max-width: 1367px)').matches;
+const isOverlayViewport = () =>
+  window.matchMedia('(max-width: 767px)').matches ||
+  (window.matchMedia('(max-width: 1367px)').matches &&
+    window.matchMedia('(hover: none) and (pointer: coarse)').matches);
 
 const clearMobileCards = () => {
   document.querySelectorAll('.mobile-card-table').forEach((el) => {

@@ -429,8 +429,13 @@ const navigateTab = (path: string) => {
 };
 
 const MOBILE_BREAKPOINT = 768;
-// Bao gồm cả iPad Pro 12.9" landscape (1366px) để giao diện dùng bottom nav như app.
+// Chỉ coi là tablet (overlay) khi thiết bị cảm ứng; desktop Chrome cửa sổ hẹp
+// vẫn giữ layout desktop thay vì bị thu nhỏ icon/nav như iPhone/iPad.
 const TABLET_BREAKPOINT = 1367;
+
+const hasCoarsePointer = (): boolean =>
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 
 const isMobile = ref(false);
 const isTablet = ref(false);
@@ -528,7 +533,10 @@ const updateMenuHighlight = () => {
 const updateIsMobile = () => {
   const prevOverlay = isOverlay.value;
   isMobile.value = window.innerWidth < MOBILE_BREAKPOINT;
-  isTablet.value = window.innerWidth >= MOBILE_BREAKPOINT && window.innerWidth < TABLET_BREAKPOINT;
+  isTablet.value =
+    window.innerWidth >= MOBILE_BREAKPOINT &&
+    window.innerWidth < TABLET_BREAKPOINT &&
+    hasCoarsePointer();
   document.documentElement.classList.toggle('app-overlay', isMobile.value || isTablet.value);
 
   // Chuyển sang overlay mode → ẩn sidebar
