@@ -9,8 +9,8 @@
 #   curl -fsSL https://raw.githubusercontent.com/ththuan/quanlytaisan2026/main/setup.sh -o setup.sh
 #   sudo bash setup.sh
 #
-# Sau khi chạy xong, server đã sẵn sàng. Mọi thay đổi code về sau chỉ cần
-# push lên GitHub là tự deploy (nếu đã cài self-hosted runner ở bước cuối).
+# Sau khi chạy xong, server đã sẵn sàng. Deploy production thực hiện thủ công
+# bằng ./deploy.sh trên server (không auto-deploy khi push GitHub).
 # ============================================================
 
 set -euo pipefail
@@ -18,7 +18,7 @@ set -euo pipefail
 # ---------- Cấu hình mặc định (có thể ghi đè bằng biến môi trường) ----------
 REPO_URL="${REPO_URL:-https://github.com/ththuan/quanlytaisan2026.git}"
 APP_DIR="${APP_DIR:-/root/quanlytaisan2026}"
-DOMAIN="${DOMAIN:-quanlytaisanctec.dpdns.org}"
+DOMAIN="${DOMAIN:-quanlytaisanctec.io.vn}"
 COMPOSE_FILE="docker-compose.prod.yml"
 
 # Secrets (để trống sẽ tự sinh ngẫu nhiên — trừ ADMIN_PASSWORD luôn cố định Admin@123)
@@ -107,6 +107,12 @@ LOG_LEVEL=info
 
 CORS_ORIGIN=https://${DOMAIN}
 FRONTEND_URL=https://${DOMAIN}
+VAPID_SUBJECT=mailto:admin@${DOMAIN}
+
+QR_REQUIRE_SIGNATURE=true
+QR_ALLOW_LEGACY_NO_TOKEN=false
+ALLOW_PUBLIC_REGISTRATION=false
+SWAGGER_ENABLED=false
 
 CF_TUNNEL_TOKEN=${CF_TUNNEL_TOKEN}
 EOF
@@ -155,8 +161,8 @@ start_services() {
 # ---------- 9. Gợi ý cài self-hosted runner ----------
 offer_runner() {
     echo ""
-    warn "Chưa cài GitHub self-hosted runner => chưa auto-deploy."
-    echo "Muốn 'push code là tự deploy' không cần SSH thủ công, hãy cài runner:"
+    warn "Deploy production chạy thủ công bằng ./deploy.sh (không auto-deploy)."
+    echo "GitHub self-hosted runner chỉ cần nếu muốn chạy CI/Actions từ server:"
     echo "  1) GitHub repo -> Settings -> Actions -> Runners -> New self-hosted runner (Linux x64)"
     echo "  2) Copy TOKEN, rồi chạy:"
     echo "     RUNNER_TOKEN=<TOKEN> bash $APP_DIR/scripts/setup-github-runner.sh"

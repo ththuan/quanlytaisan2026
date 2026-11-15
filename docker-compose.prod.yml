@@ -141,7 +141,7 @@ services:
     networks:
       - asset-management-network
 
-  # Cloudflare Tunnel - public ra internet qua domain (vd: quanlytaisanctec.dpdns.org)
+  # Cloudflare Tunnel - public ra internet qua domain (vd: quanlytaisanctec.io.vn)
   # Khong can mo port tren router/firewall. Chi khoi dong khi chay voi --profile cloudflare
   cloudflared:
     image: cloudflare/cloudflared:latest
