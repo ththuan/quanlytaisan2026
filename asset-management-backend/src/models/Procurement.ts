@@ -5,6 +5,7 @@ export type ProcurementStatus = 'draft' | 'fulfilled' | 'cancelled';
 
 export interface ProcurementAttributes {
   id: number;
+  version: number;
   code: string;
   title: string;
   description?: string;
@@ -27,11 +28,12 @@ export interface ProcurementAttributes {
 interface ProcurementCreationAttributes
   extends Optional<
     ProcurementAttributes,
-    'id' | 'status' | 'description' | 'purchase_date' | 'supplier_name' | 'contract_no' | 'invoice_no' | 'order_code' | 'fulfilled_by' | 'fulfilled_at' | 'created_asset_ids' | 'maintenance_request_id'
+    'id' | 'version' | 'status' | 'description' | 'purchase_date' | 'supplier_name' | 'contract_no' | 'invoice_no' | 'order_code' | 'fulfilled_by' | 'fulfilled_at' | 'created_asset_ids' | 'maintenance_request_id'
   > {}
 
 class Procurement extends Model<ProcurementAttributes, ProcurementCreationAttributes> implements ProcurementAttributes {
   public id!: number;
+  public version!: number;
   public code!: string;
   public title!: string;
   public description?: string;
@@ -98,6 +100,12 @@ Procurement.init(
     order_code: {
       type: DataTypes.STRING(100),
       allowNull: true,
+    },
+    version: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      comment: 'Phiên bản hồ sơ, dùng cho optimistic locking',
     },
     status: {
       type: DataTypes.ENUM('draft', 'fulfilled', 'cancelled'),

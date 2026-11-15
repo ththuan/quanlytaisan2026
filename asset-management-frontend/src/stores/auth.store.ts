@@ -22,6 +22,38 @@ export const useAuthStore = defineStore('auth', () => {
   // For backward compatibility - department_head can manage their department
   const isManager = computed(() => isDepartmentHead.value || isAdmin.value);
   const userDepartmentId = computed(() => user.value?.department_id);
+  const hasCustomPermissions = computed(() => Boolean(user.value?.permissions_customized));
+  const permissionMap = computed(
+    () => new Map((user.value?.permissions || []).map((grant) => [grant.code, grant.scope])),
+  );
+
+  const legacyScopeForRole = (role?: string): 'own' | 'department' | 'all' => {
+    if (role === 'admin' || role === 'director') return 'all';
+    if (role === 'department_head') return 'department';
+    return 'own';
+  };
+
+  /** Kiểm tra quyền chức năng. User chưa được cấu hình quyền thì fallback theo role cũ. */
+  function can(code: string, legacyRoles: string[] = ['admin']): boolean {
+    const currentUser = user.value;
+    if (!currentUser) return false;
+    if (currentUser.role === 'admin') return true;
+    if (currentUser.permissions_customized) {
+      return permissionMap.value.has(code);
+    }
+    return legacyRoles.includes(currentUser.role);
+  }
+
+  function permissionScope(code: string, legacyRoles: string[] = ['admin']): 'own' | 'department' | 'all' | null {
+    const currentUser = user.value;
+    if (!currentUser) return null;
+    if (currentUser.role === 'admin') return 'all';
+    if (currentUser.permissions_customized) {
+      return permissionMap.value.get(code) ?? null;
+    }
+    if (!legacyRoles.includes(currentUser.role)) return null;
+    return legacyScopeForRole(currentUser.role);
+  }
 
   async function login(username: string, password: string): Promise<true | '2fa_required' | false> {
     loading.value = true;
@@ -183,10 +215,15 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function _applyAuthResponse(data: AuthResponse) {
-    user.value = data.user;
+    const mergedUser: User = {
+      ...data.user,
+      permissions: data.permissions ?? data.user.permissions,
+      permissions_customized: data.permissions_customized ?? data.user.permissions_customized,
+    };
+    user.value = mergedUser;
     accessToken.value = data.accessToken;
     setAccessToken(data.accessToken);
-    localStorage.setItem('user', JSON.stringify(data.user));
+    localStorage.setItem('user', JSON.stringify(mergedUser));
 
     setTimeout(() => {
       let redirect = '/';
@@ -216,6 +253,9 @@ export const useAuthStore = defineStore('auth', () => {
     isManager,
     isStaff,
     userDepartmentId,
+    hasCustomPermissions,
+    can,
+    permissionScope,
     login,
     verify2FA,
     logout,

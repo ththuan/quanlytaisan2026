@@ -232,6 +232,7 @@ const form = reactive<any>({
   contract_no: '',
   order_code: '',
   items: [] as any[],
+  version: 0,
 });
 
 
@@ -250,6 +251,7 @@ const reset = async () => {
     form.contract_no = '';
     form.order_code = '';
     form.items = [];
+    form.version = 0;
     sourceRequest.value = null;
 
     // Open the inline asset form immediately for a new procurement
@@ -269,6 +271,7 @@ const reset = async () => {
   form.invoice_no = item.invoice_no || '';
   form.contract_no = item.contract_no || '';
   form.order_code = item.order_code || '';
+  form.version = Number(item.version || 0);
   form.items = (item.items || []).map((it: any) => ({
     asset_code_prefix: it.asset_code_prefix || '',
     name: it.name,
@@ -506,6 +509,7 @@ const submit = async () => {
 
     let saved: any = null;
     if (props.editId) {
+      payload.version = form.version;
       const res: any = await procurementService.update(props.editId, payload as any);
       saved = res?.data || null;
     } else {

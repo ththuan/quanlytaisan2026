@@ -1,6 +1,6 @@
 import axios from 'axios';
 import api from './api';
-import type { User, ApiResponse } from '@/types/models';
+import type { User, UserPermissionGrant, ApiResponse } from '@/types/models';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
@@ -18,6 +18,8 @@ export interface RegisterData {
 export interface AuthResponse {
   user: User;
   accessToken: string;
+  permissions?: UserPermissionGrant[];
+  permissions_customized?: boolean;
 }
 
 export interface TotpPendingResponse {

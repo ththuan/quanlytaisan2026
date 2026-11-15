@@ -1,3 +1,8 @@
+export interface UserPermissionGrant {
+  code: string;
+  scope: 'own' | 'department' | 'all';
+}
+
 export interface User {
   id: number;
   username: string;
@@ -11,6 +16,8 @@ export interface User {
   last_login?: string;
   created_at?: string;
   updated_at?: string;
+  permissions?: UserPermissionGrant[];
+  permissions_customized?: boolean;
 }
 
 export interface Department {

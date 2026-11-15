@@ -16,7 +16,7 @@
         </div>
         <div class="header-right">
           <el-button
-            v-if="isAdmin"
+            v-if="authStore.can('inventory.round.manage', ['admin'])"
             type="primary"
             :icon="Plus"
             @click="showCreateRoundDialog = true"
@@ -248,9 +248,9 @@
                 >
                   Chi tiết
                 </el-button>
-                <el-button 
-                  v-if="isAdmin && row.status === 'in_progress'" 
-                  type="success" 
+                <el-button
+                  v-if="authStore.can('inventory.round.manage', ['admin']) && row.status === 'in_progress'"
+                  type="success"
                   link
                   @click="completeRound(row)"
                 >
@@ -1079,16 +1079,15 @@ const editReport = (report: InventoryReport) => {
 };
 
 const canApprove = (report: InventoryReport) => {
-  const user = authStore.user;
-  if (!user) return false;
-  
-  // Department head can approve pending reports
-  if (user.role === 'department_head' && report.status === 'pending') {
-    return true;
+  if (!authStore.can('inventory.approve', ['admin', 'department_head'])) return false;
+  const scope = authStore.permissionScope('inventory.approve', ['admin', 'department_head']);
+
+  if (scope === 'all') {
+    return ['pending', 'approved_by_head'].includes(report.status);
   }
-  // Admin can approve approved_by_head reports
-  if (user.role === 'admin' && report.status === 'approved_by_head') {
-    return true;
+  if (report.status !== 'pending') return false;
+  if (scope === 'department') {
+    return Number(report.department_id) === Number(authStore.userDepartmentId);
   }
   return false;
 };

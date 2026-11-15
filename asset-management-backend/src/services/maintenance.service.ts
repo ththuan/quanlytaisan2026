@@ -1,6 +1,6 @@
 import { Op, QueryTypes } from 'sequelize';
 import sequelize from '../config/database';
-import { MaintenanceRequest, MaintenanceDamageImage, Asset, Department, User, RequestApproval, AssetCategory, Procurement, AssetDisposalCase, AssetDisposalItem, AuditLog, InventoryReport, InventoryRound } from '../models';
+import { MaintenanceRequest, MaintenanceDamageImage, Asset, Department, User, RequestApproval, AssetCategory, Procurement, AssetDisposalCase, AuditLog, InventoryReport, InventoryRound } from '../models';
 import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errorHandler';
 import { getPaginationParams, buildPaginationResult, getOffset, PaginationResult } from '../utils/pagination';
 import { MaintenanceStatus } from '../models/MaintenanceRequest';
@@ -85,6 +85,7 @@ export interface ApproverInfo {
   role: UserRole;
   fullname?: string;
   department_id?: number;
+  permission_scope?: 'own' | 'department' | 'all';
 }
 
 class MaintenanceService {
@@ -517,8 +518,8 @@ class MaintenanceService {
     if (!['approved_by_admin', 'approved_by_director'].includes(maintenance.status)) {
       throw new ConflictError('Yêu cầu phải được Admin phê duyệt mới có thể bắt đầu sửa chữa');
     }
-    if (user.role !== 'admin') {
-      throw new ForbiddenError('Chỉ Admin mới có thể bắt đầu thực hiện sửa chữa');
+    if (user.role !== 'admin' && !user.permission_scope) {
+      throw new ForbiddenError('Chỉ Admin hoặc người được cấp quyền mới được bắt đầu sửa chữa');
     }
 
     await maintenance.update({ status: 'in_progress', start_date: new Date() });
@@ -551,8 +552,8 @@ class MaintenanceService {
     if (maintenance.status !== 'in_progress') {
       throw new ConflictError('Yêu cầu phải ở trạng thái "Đang thực hiện" mới có thể đánh dấu hoàn thành');
     }
-    if (user.role !== 'admin') {
-      throw new ForbiddenError('Chỉ Admin mới có thể xác nhận hoàn thành sửa chữa');
+    if (user.role !== 'admin' && !user.permission_scope) {
+      throw new ForbiddenError('Chỉ Admin hoặc người được cấp quyền mới được xác nhận hoàn thành sửa chữa');
     }
 
     await maintenance.update({
@@ -1170,8 +1171,15 @@ class MaintenanceService {
       throw new ForbiddenError('Bạn không có quyền sửa yêu cầu');
     }
     
-    if (user && user.role !== 'admin' && maintenance.requested_by !== user.id) {
+    const canManageOthers =
+      user?.permission_scope === 'department' || user?.permission_scope === 'all';
+    if (user && user.role !== 'admin' && !canManageOthers && maintenance.requested_by !== user.id) {
       throw new ForbiddenError('Bạn chỉ có thể sửa yêu cầu do chính mình tạo');
+    }
+
+    const expectedVersion = (data as any).version;
+    if (expectedVersion !== undefined && Number(expectedVersion) !== Number(maintenance.version)) {
+      throw new ConflictError('Yêu cầu đã được người khác cập nhật. Vui lòng tải lại dữ liệu.');
     }
 
     // Check if assignee exists
@@ -1263,12 +1271,13 @@ class MaintenanceService {
       // Copy all fields from data (EXCEPT damage_images - we handle it separately)
       const updateData: any = {};
       Object.keys(data).forEach(key => {
-        // Skip damage_images and custom admin tracking fields
-        if (key === 'damage_images') {
+        // Skip damage_images and version (handled separately)
+        if (key === 'damage_images' || key === 'version') {
           return;
         }
         updateData[key] = data[key as keyof UpdateMaintenanceInput];
       });
+      updateData.version = Number(maintenance.version || 0) + 1;
 
     // Use transaction to ensure atomicity
     const transaction = await sequelize.transaction();
@@ -1447,7 +1456,7 @@ class MaintenanceService {
 
     // Cho phép admin/director submit thay cho user
     const isOwner = requestedById === userId;
-    const isAdminOrDirector = approverInfo?.role === 'admin';
+    const isAdminOrDirector = approverInfo?.role === 'admin' || Boolean(approverInfo?.permission_scope);
 
     console.log('🔍 submitForApproval - Permission check:', {
       isOwner,
@@ -1568,8 +1577,12 @@ class MaintenanceService {
     // Admin và Director không thấy được draft/new nên không cần quyền xóa
     if (user) {
       const isCreator = maintenance.requested_by === user.id;
+      const canManageOthers =
+        user.role === 'admin' ||
+        user.permission_scope === 'department' ||
+        user.permission_scope === 'all';
 
-      if (!isCreator) {
+      if (!isCreator && !canManageOthers) {
         throw new ForbiddenError('Bạn chỉ có thể xóa yêu cầu do chính mình tạo');
       }
     } else {
@@ -1599,8 +1612,8 @@ class MaintenanceService {
       throw new ConflictError('Lý do từ chối là bắt buộc');
     }
 
-    if (approver.role !== 'admin') {
-      throw new ForbiddenError('Chỉ Admin có quyền phê duyệt đề nghị mua sắm/sửa chữa');
+    if (approver.role !== 'admin' && !approver.permission_scope) {
+      throw new ForbiddenError('Chỉ Admin hoặc người được cấp quyền mới được duyệt yêu cầu');
     }
 
     // Hỗ trợ cả trạng thái mới và trạng thái phân cấp cũ còn tồn đọng.
@@ -1774,12 +1787,18 @@ class MaintenanceService {
 
     const where: any = {};
 
-    // Apply role-based filtering
-    if (user.role === 'admin') {
-      // Admin quản lý tập trung và phải thấy cả nháp, mới, chờ duyệt và đã hoàn tất.
+    // Ưu tiên phạm vi quyền chức năng (admin cấp cho user).
+    if (user.permission_scope === 'own') {
+      where.requested_by = user.id;
+    } else if (user.permission_scope === 'department') {
+      where.department_id = user.department_id;
+    } else if (user.permission_scope === 'all') {
+      // Toàn trường: không giới hạn theo đơn vị.
+    } else if (user.role === 'admin') {
+      // Admin qu?n ly t?p trung v� ph?i th?y c? nh�p, m?i, ch? duy?t v� da ho�n t?t.
       if (query.status) where.status = query.status;
     } else if (user.role === 'director') {
-      // Giữ nhánh đọc tương thích cho dữ liệu/tài khoản cũ; route hiện tại đã khóa admin-only.
+      // Gi? nh�nh d?c tuong th�ch cho d? li?u/t�i kho?n cu; route hi?n t?i da kh�a admin-only.
       if (query.status) where.status = query.status;
     } else if (user.role === 'department_head') {
       // Department head can see requests from their department
@@ -1803,8 +1822,11 @@ class MaintenanceService {
       where.urgency = query.urgency;
     }
 
-    // Filter by department - Admin and Director can filter by any department
-    if (query.department_id && (user.role === 'admin' || user.role === 'director')) {
+    // Filter by department - chỉ admin/director hoặc quyền scope=all được lọc tự do.
+    if (
+      query.department_id &&
+      (user.permission_scope === 'all' || (!user.permission_scope && (user.role === 'admin' || user.role === 'director')))
+    ) {
       where.department_id = query.department_id;
     }
 

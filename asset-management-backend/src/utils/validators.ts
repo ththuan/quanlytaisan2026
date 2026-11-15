@@ -165,6 +165,7 @@ export const createMaintenanceSchema = Joi.object({
 }).or('description', 'justification', 'device_name'); // At least one of these must be provided
 
 export const updateMaintenanceSchema = Joi.object({
+  version: Joi.number().integer().min(0).optional(),
   description: Joi.string().allow('', null).optional(),
   urgency: Joi.string().valid('low', 'normal', 'high', 'critical').optional(),
   status: Joi.string().valid(
@@ -340,6 +341,7 @@ export const createProcurementSchema = Joi.object({
 });
 
 export const updateProcurementSchema = Joi.object({
+  version: Joi.number().integer().min(0).optional(),
   title: Joi.string().max(255).optional(),
   description: Joi.string().allow('', null).optional(),
   receiving_department_id: Joi.number().integer().positive().optional(),

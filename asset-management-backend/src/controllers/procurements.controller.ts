@@ -1,30 +1,64 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import procurementService from '../services/procurement.service';
 import procurementExportService from '../services/procurementExport.service';
 import { AuthRequest } from '../middleware/auth.middleware';
+import { Procurement } from '../models';
+import { ForbiddenError, NotFoundError } from '../utils/errorHandler';
+
+const applyProcurementScope = (req: AuthRequest, query: any) => {
+  const scoped = { ...query };
+  if (req.permissionScope === 'department') {
+    scoped.receiving_department_id = req.user?.department_id;
+  } else if (req.permissionScope === 'own') {
+    scoped.created_by = req.user?.id;
+  }
+  return scoped;
+};
+
+const assertProcurementScope = async (req: AuthRequest, id: number): Promise<void> => {
+  const procurement = await Procurement.findByPk(id, {
+    attributes: ['id', 'receiving_department_id', 'created_by'],
+  });
+  if (!procurement) throw new NotFoundError('Không tìm thấy phiếu mua sắm');
+
+  if (req.user?.role === 'admin' || !req.permissionScope || req.permissionScope === 'all') {
+    return;
+  }
+  if (
+    req.permissionScope === 'department' &&
+    Number(procurement.receiving_department_id) !== Number(req.user?.department_id)
+  ) {
+    throw new ForbiddenError('Chỉ được thao tác trên phiếu thuộc đơn vị của mình');
+  }
+  if (req.permissionScope === 'own' && procurement.created_by !== req.user?.id) {
+    throw new ForbiddenError('Chỉ được thao tác trên phiếu do mình tạo');
+  }
+};
 
 class ProcurementsController {
-  async getAll(req: Request, res: Response, next: NextFunction) {
+  async getAll(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const result = await procurementService.getAll(req.query);
+      const result = await procurementService.getAll(applyProcurementScope(req, req.query));
       return res.json({ success: true, data: result.data, pagination: result.pagination });
     } catch (e) {
       next(e);
     }
   }
 
-  async getYearlySummary(req: Request, res: Response, next: NextFunction) {
+  async getYearlySummary(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const data = await procurementService.getYearlySummary(req.query);
+      const data = await procurementService.getYearlySummary(applyProcurementScope(req, req.query));
       return res.json({ success: true, data });
     } catch (e) {
       next(e);
     }
   }
 
-  async exportExcel(req: Request, res: Response, next: NextFunction) {
+  async exportExcel(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const buffer = await procurementExportService.exportProcurementsToExcel(req.query);
+      const buffer = await procurementExportService.exportProcurementsToExcel(
+        applyProcurementScope(req, req.query),
+      );
       
       const filename = `Tong_Hop_Mua_Sam_${req.query.year || 'All'}.xlsx`;
       
@@ -37,9 +71,10 @@ class ProcurementsController {
     }
   }
 
-  async getById(req: Request, res: Response, next: NextFunction) {
+  async getById(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const id = parseInt(req.params.id);
+      await assertProcurementScope(req, id);
       const data = await procurementService.getById(id);
       return res.json({ success: true, data });
     } catch (e) {
@@ -50,16 +85,24 @@ class ProcurementsController {
   async create(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id;
-      const data = await procurementService.create(req.body, userId);
+      const payload = { ...req.body };
+      if (
+        (req.permissionScope === 'department' || req.permissionScope === 'own') &&
+        req.user?.department_id
+      ) {
+        payload.receiving_department_id = req.user.department_id;
+      }
+      const data = await procurementService.create(payload, userId);
       return res.status(201).json({ success: true, message: 'Tạo phiếu mua sắm/cấp phát thành công', data });
     } catch (e) {
       next(e);
     }
   }
 
-  async update(req: Request, res: Response, next: NextFunction) {
+  async update(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const id = parseInt(req.params.id);
+      await assertProcurementScope(req, id);
       const data = await procurementService.update(id, req.body);
       return res.json({ success: true, message: 'Cập nhật phiếu mua sắm/cấp phát thành công', data });
     } catch (e) {
@@ -67,9 +110,10 @@ class ProcurementsController {
     }
   }
 
-  async delete(req: Request, res: Response, next: NextFunction) {
+  async delete(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const id = parseInt(req.params.id);
+      await assertProcurementScope(req, id);
       await procurementService.delete(id);
       return res.json({ success: true, message: 'Xóa phiếu thành công' });
     } catch (e) {
@@ -80,6 +124,7 @@ class ProcurementsController {
   async fulfill(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const id = parseInt(req.params.id);
+      await assertProcurementScope(req, id);
       const userId = req.user!.id;
       const result = await procurementService.fulfill(id, userId, req.body);
       return res.json({

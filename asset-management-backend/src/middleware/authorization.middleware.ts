@@ -1,12 +1,127 @@
 import { Request, Response, NextFunction } from 'express';
 import { ForbiddenError, UnauthorizedError, NotFoundError } from '../utils/errorHandler';
 import { MaintenanceRequest, AssetTransfer } from '../models';
+import { getPermissionState } from '../services/permission.service';
+import type { PermissionScope } from '../constants/permissions';
 
 type UserPayload = { id: number; role: string; department_id?: number };
 
-type RequestWithUser = Request & { user?: UserPayload };
+type RequestWithUser = Request & {
+  user?: UserPayload;
+  permissionCode?: string;
+  permissionScope?: PermissionScope;
+  permissionCustomized?: boolean;
+};
 
 export type UserRole = 'admin' | 'director' | 'department_head' | 'staff';
+export type { PermissionScope };
+
+const ALL_ROLES: UserRole[] = ['admin', 'director', 'department_head', 'staff'];
+
+const legacyScopeForRole = (role: string): PermissionScope => {
+  if (role === 'admin' || role === 'director') return 'all';
+  if (role === 'department_head') return 'department';
+  return 'own';
+};
+
+/**
+ * Kiểm tra quyền chức năng.
+ * - Admin luôn được phép.
+ * - User đã được admin cấu hình quyền riêng: phải có đúng mã quyền.
+ * - User chưa cấu hình: giữ hành vi cũ theo danh sách legacyRoles.
+ */
+export const requirePermission = (
+  code: string,
+  legacyRoles: UserRole[] = ['admin'],
+) => {
+  return async (req: RequestWithUser, _res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user;
+      if (!user) {
+        throw new UnauthorizedError('User not authenticated');
+      }
+
+      if (user.role === 'admin') {
+        req.permissionCode = code;
+        req.permissionScope = 'all';
+        req.permissionCustomized = false;
+        return next();
+      }
+
+      const state = await getPermissionState(user.id);
+
+      if (state.customized) {
+        const scope = state.permissions.get(code);
+        if (!scope) {
+          throw new ForbiddenError('Bạn không có quyền thực hiện chức năng này');
+        }
+        req.permissionCode = code;
+        req.permissionScope = scope;
+        req.permissionCustomized = true;
+        return next();
+      }
+
+      if (!legacyRoles.includes(user.role as UserRole)) {
+        throw new ForbiddenError('Bạn không có quyền thực hiện chức năng này');
+      }
+
+      req.permissionCode = code;
+      req.permissionScope = legacyScopeForRole(user.role);
+      req.permissionCustomized = false;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+};
+
+/** Cho phép nếu có một trong các quyền (dùng cho màn hình có nhiều hành động). */
+export const requireAnyPermission = (
+  codes: string[],
+  legacyRoles: UserRole[] = ['admin'],
+) => {
+  return async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    const user = req.user;
+    if (!user) {
+      next(new UnauthorizedError('User not authenticated'));
+      return;
+    }
+    if (user.role === 'admin') {
+      req.permissionScope = 'all';
+      req.permissionCustomized = false;
+      next();
+      return;
+    }
+
+    try {
+      const state = await getPermissionState(user.id);
+      if (state.customized) {
+        const match = codes.find((code) => state.permissions.has(code));
+        if (!match) {
+          throw new ForbiddenError('Bạn không có quyền thực hiện chức năng này');
+        }
+        req.permissionCode = match;
+        req.permissionScope = state.permissions.get(match);
+        req.permissionCustomized = true;
+        next();
+        return;
+      }
+
+      if (!legacyRoles.includes(user.role as UserRole)) {
+        throw new ForbiddenError('Bạn không có quyền thực hiện chức năng này');
+      }
+      req.permissionScope = legacyScopeForRole(user.role);
+      req.permissionCustomized = false;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+};
+
+export const allAuthenticatedRoles = ALL_ROLES;
+export const adminOnlyRoles: UserRole[] = ['admin'];
+export const departmentHeadOrAdminRoles: UserRole[] = ['department_head', 'admin'];
 
 export const authorize = (...allowedRoles: UserRole[]) => {
   return (req: RequestWithUser, res: Response, next: NextFunction): void => {
@@ -61,13 +176,30 @@ export const canApproveMaintenanceRequest = async (req: RequestWithUser, res: Re
 
     // Mua sắm/sửa chữa chỉ còn một cấp duyệt bởi admin.
     // Chấp nhận các trạng thái phân cấp cũ để admin xử lý nốt hồ sơ tồn đọng.
-    if (user.role === 'admin' && [
+    const canApproveByPermission =
+      user.role === 'admin' ||
+      (req.permissionCode === 'maintenance.approve' && user.role !== 'admin');
+
+    if (canApproveByPermission && [
       'new',
       'pending',
       'approved_by_head',
       'approved_by_admin',
       'repair_completed',
-    ].includes(maintenance.status)) return next();
+    ].includes(maintenance.status)) {
+      if (user.role !== 'admin') {
+        if (
+          req.permissionScope === 'department' &&
+          Number(user.department_id) !== Number(maintenance.department_id)
+        ) {
+          throw new ForbiddenError('Chỉ được duyệt yêu cầu thuộc đơn vị của mình');
+        }
+        if (req.permissionScope === 'own' && user.id !== maintenance.requested_by) {
+          throw new ForbiddenError('Chỉ được duyệt yêu cầu do mình tạo');
+        }
+      }
+      return next();
+    }
 
     throw new ForbiddenError('Không có quyền duyệt yêu cầu này hoặc chưa đến lượt duyệt');
   } catch (error) {

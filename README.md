@@ -180,6 +180,37 @@ Các cải tiến giao diện theo chuẩn native app (áp dụng khi `html.app-
 - Thông báo trong hệ thống (notification bell).
 - Sau khi đổi domain, người dùng cần cài lại PWA và bật lại thông báo đẩy.
 
+### 2.15 Phân quyền chức năng và chống xung đột
+
+- Admin có thể cấp quyền theo từng người dùng tại **Người dùng → Sửa → Phân quyền chức năng**.
+- Mỗi module có thể cấp cho **không giới hạn số người**; mỗi quyền có phạm vi:
+  - `own`: chỉ dữ liệu do mình tạo
+  - `department`: đơn vị của mình
+  - `all`: toàn trường
+- Có mẫu cấp nhanh: **Quản lý sửa chữa**, **Quản lý tăng tài sản**, **Quản lý kiểm kê**, **Chỉ xem**.
+- Danh mục hiện có khoảng 16 nhóm module và hơn 60 quyền thao tác (xem, tạo, sửa, xóa, duyệt, hoàn thành, export...).
+- User chưa được cấu hình quyền riêng tiếp tục dùng quyền mặc định theo vai trò cũ (tương thích ngược).
+- Quyền được chặn ở backend; frontend chỉ ẩn/hiện menu và nút theo quyền.
+- Phân quyền thay đổi có hiệu lực sau tối đa 30 giây (cache quyền); backend luôn kiểm tra lại.
+- Mọi thay đổi quyền được ghi vào **Nhật ký hoạt động** với giá trị trước/sau.
+
+Chống xung đột khi nhiều người cùng xử lý:
+
+- **Khóa mềm theo hồ sơ** (`record_locks`): người mở form sửa sẽ giữ khóa 10 phút; người khác mở cùng hồ sơ nhận thông báo đang được xử lý.
+- **Heartbeat** tự gia hạn khóa khi còn thao tác; khóa hết hạn tự giải phóng.
+- **Optimistic locking** bằng cột `version` cho `maintenance_requests`, `procurements`, `inventory_reports`; lưu bằng dữ liệu cũ trả **409 Conflict**.
+- **Chuyển trạng thái một chiều**: chỉ trạng thái hợp lệ mới được duyệt/hoàn thành; người thứ hai không ghi đè.
+- **Tách nhiệm vụ**: không tự duyệt hồ sơ do mình tạo; chỉ một quyết định cuối có hiệu lực.
+- Admin xem được toàn bộ thao tác của mọi user tại **Nhật ký hoạt động**, lọc theo user, module, hành động, thời gian.
+
+API phân quyền/khóa:
+
+- `GET /api/permissions/catalog`
+- `GET /api/permissions/users/:id`
+- `PUT /api/permissions/users/:id`
+- `DELETE /api/permissions/users/:id` (quay về quyền mặc định theo vai trò)
+- `POST /api/locks/claim`, `POST /api/locks/release`, `POST /api/locks/heartbeat`, `GET /api/locks/:entityType/:entityId`
+
 ---
 
 ## 3. Kiến trúc và công nghệ
@@ -243,7 +274,7 @@ quanlytaisan2026/
 │   │   └── mobile-native.spec.ts
 │   ├── src/
 │   │   ├── components/      # layout, dialog, animate components
-│   │   ├── composables/     # useMobileSheetDrag, useVisualKeyboard
+│   │   ├── composables/     # useMobileSheetDrag, useVisualKeyboard, useRecordLock
 │   │   ├── directives/      # stagger, tilt, ripple, reveal, tabs
 │   │   ├── i18n/
 │   │   ├── router/
@@ -792,7 +823,14 @@ docker compose -f docker-compose.prod.yml exec backend npm run reset:business
 
 ### Migration
 
-Production tự chạy migration khi backend khởi động:
+Production tự chạy migration khi backend khởi động. Các migration mới phục vụ phân quyền/chống xung đột:
+
+- `20261115000001-add-user-permissions.js`: `users.permissions_customized`, bảng `user_permissions`.
+- `20261115000002-create-record-locks.js`: bảng `record_locks`.
+- `20261115000003-add-business-version-columns.js`: cột `version` cho các bảng nghiệp vụ.
+- `20261115000004-add-permission-audit-action.js`: thêm hành động `permission` vào audit log.
+
+Chạy migration thủ công nếu cần:
 
 ```bash
 docker compose -f docker-compose.prod.yml exec backend npm run migrate
@@ -891,7 +929,9 @@ Sau đó dùng chức năng **In QR hàng loạt** để in tem mới.
 - TOTP chống phát lại mã, giới hạn số lần thử.
 - Khóa tài khoản sau nhiều lần sai mật khẩu.
 - Thu hồi phiên khi đổi mật khẩu, đổi 2FA, đăng xuất.
-- Phân quyền theo vai trò và phạm vi đơn vị; fail-closed khi thiếu đơn vị.
+- Phân quyền theo vai trò, quyền chức năng theo user và phạm vi đơn vị; fail-closed khi thiếu đơn vị hoặc thiếu quyền.
+- Khóa mềm theo hồ sơ, optimistic locking bằng `version`, chặn ghi đè khi nhiều người xử lý cùng lúc.
+- Nhật ký phân quyền, giao việc, khóa/mở khóa và mọi thao tác ghi.
 - Kiểm tra quyền truy cập tài sản, chứng từ, chữ ký, kiểm kê, điều chuyển.
 - File nội bộ trong `/storage` yêu cầu đăng nhập; ảnh tài sản công khai được tách riêng.
 - Upload giới hạn MIME/extension; chặn HTML/SVG độc hại.
@@ -960,12 +1000,13 @@ npm run lint:ci
 npm run test:e2e        # build + Playwright smoke tests (mock API, không cần backend/DB)
 ```
 
-E2E hiện có 15 test, gồm:
+E2E hiện có 20 test, gồm:
 
 - Đăng nhập, phân quyền, tra cứu QR công khai, PWA/robots/404.
 - Mobile: tabbar native, bottom sheet, drag-to-dismiss.
 - Mobile: chi tiết sửa chữa không tràn ngang, trạng thái tiếng Việt.
 - Tablet: tabbar nổi và form-sheet căn giữa.
+- Admin: mở được ma trận phân quyền của user.
 
 CI: `.github/workflows/ci.yml` chạy thủ công (`workflow_dispatch`):
 
@@ -996,6 +1037,7 @@ CI: `.github/workflows/ci.yml` chạy thủ công (`workflow_dispatch`):
   - `/api/dashboard`
   - `/api/notifications`
   - `/api/system-admin`
+  - `/api/permissions`, `/api/locks`
   - `/api/public`, `/scan`
 
 Kiểm tra nhanh production:
@@ -1201,6 +1243,41 @@ echo | openssl s_client -connect quanlytaisanctec.io.vn:443 \
 - Các thư mục nội bộ yêu cầu đăng nhập và đúng quyền.
 - Đăng nhập lại để nhận cookie storage mới.
 - Ảnh tài sản công khai vẫn nằm dưới `/storage/assets/...`.
+
+---
+
+### 16.6 Phân quyền và xung đột
+
+**User được phân quyền nhưng không thấy menu**
+
+- Kiểm tra user đã được lưu quyền chưa (Người dùng → cột Phân quyền → Tùy chỉnh).
+- Backend cache quyền tối đa 30 giây; tải lại trang sau khi admin lưu quyền.
+- Kiểm tra quyền có đúng module/action không (ví dụ `maintenance.view`).
+- Nếu user chưa được cấu hình quyền, hệ thống dùng quyền mặc định theo vai trò cũ.
+
+**API trả 403 dù đã cấp quyền**
+
+- Quyền phải khớp chính xác mã; xem `GET /api/permissions/catalog`.
+- Kiểm tra scope: user scope `own` chỉ thao tác dữ liệu của mình; `department` chỉ trong đơn vị.
+- Admin luôn có toàn quyền; user thường không được cấp quyền `adminOnly`.
+
+**409 Conflict khi lưu/duyệt**
+
+- Hồ sơ đang bị người khác giữ khóa, hoặc dữ liệu đã thay đổi (version cũ).
+- Tải lại hồ sơ rồi thao tác lại; không dùng tab cũ.
+- Khóa tự hết hạn sau 10 phút nếu người giữ không còn heartbeat.
+- Admin có thể giải phóng khóa qua `POST /api/locks/release` với `force=true`.
+
+**Hai người cùng duyệt**
+
+- Người bấm trước thắng; người sau nhận lỗi trạng thái/version.
+- Không có chuyện ghi đè quyết định đã lưu; kiểm tra Nhật ký hoạt động để biết ai đã duyệt.
+
+**Migration phân quyền lỗi**
+
+- Chạy `npm run migrate` trong container backend và xem log.
+- Kiểm tra bảng `user_permissions`, `record_locks`, cột `version`, `permissions_customized`.
+- Sao lưu database trước khi chạy migration trên production.
 
 ---
 

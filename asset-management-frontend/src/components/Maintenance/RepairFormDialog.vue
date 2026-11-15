@@ -830,6 +830,9 @@ const handleSaveRequest = async (status: string) => {
     urgency: formData.urgency || 'normal',
     status: status,
   };
+  if (isEdit.value && props.item?.version !== undefined) {
+    payload.version = props.item.version;
+  }
   
   // Luôn có description để pass validation (.or('description', 'justification', 'device_name'))
   payload.description = description;

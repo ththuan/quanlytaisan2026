@@ -1,4 +1,6 @@
 import User from './User';
+import UserPermission from './UserPermission';
+import RecordLock from './RecordLock';
 import Department from './Department';
 import Asset, { AssetCondition } from './Asset';
 import AssetTransfer from './AssetTransfer';
@@ -56,6 +58,13 @@ Department.hasMany(User, {
 
 AuthSession.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 User.hasMany(AuthSession, { foreignKey: 'user_id', as: 'auth_sessions' });
+
+UserPermission.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+User.hasMany(UserPermission, { foreignKey: 'user_id', as: 'permissions' });
+UserPermission.belongsTo(User, { foreignKey: 'granted_by', as: 'grantedBy' });
+
+RecordLock.belongsTo(User, { foreignKey: 'locked_by', as: 'lockedBy' });
+User.hasMany(RecordLock, { foreignKey: 'locked_by', as: 'record_locks' });
 
 Department.belongsTo(User, {
   foreignKey: 'manager_id',
@@ -549,6 +558,8 @@ NormWarning.belongsTo(User, {
 
 export {
   User,
+  UserPermission,
+  RecordLock,
   Department,
   Asset,
   AssetTransfer,
@@ -583,6 +594,8 @@ export {
 
 export default {
   User,
+  UserPermission,
+  RecordLock,
   Department,
   Asset,
   AssetTransfer,

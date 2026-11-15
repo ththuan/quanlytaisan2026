@@ -14,6 +14,7 @@ export interface UserAttributes {
   role: UserRole;
   department_id?: number;
   is_active: boolean;
+  permissions_customized: boolean;
   last_login?: Date;
   totp_secret?: string | null;
   totp_enabled: boolean;
@@ -35,6 +36,7 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   public role!: UserRole;
   public department_id?: number;
   public is_active!: boolean;
+  public permissions_customized!: boolean;
   public last_login?: Date;
   public totp_secret!: string | null;
   public totp_enabled!: boolean;
@@ -109,6 +111,12 @@ User.init(
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: true,
+    },
+    permissions_customized: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Đã được admin cấu hình quyền chức năng riêng (không dùng quyền mặc định theo role)',
     },
     last_login: {
       type: DataTypes.DATE,

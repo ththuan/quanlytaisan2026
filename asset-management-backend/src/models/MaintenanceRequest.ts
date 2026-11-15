@@ -22,6 +22,7 @@ export type MaintenanceStatus =
 
 export interface MaintenanceRequestAttributes {
   id: number;
+  version: number;
   request_type: RequestType;
   asset_id?: number;
   department_id?: number;
@@ -91,10 +92,11 @@ export interface MaintenanceRequestAttributes {
   updated_at?: Date;
 }
 
-interface MaintenanceRequestCreationAttributes extends Optional<MaintenanceRequestAttributes, 'id' | 'urgency' | 'status' | 'request_type' | 'current_approval_level'> {}
+interface MaintenanceRequestCreationAttributes extends Optional<MaintenanceRequestAttributes, 'id' | 'version' | 'urgency' | 'status' | 'request_type' | 'current_approval_level'> {}
 
 class MaintenanceRequest extends Model<MaintenanceRequestAttributes, MaintenanceRequestCreationAttributes> implements MaintenanceRequestAttributes {
   public id!: number;
+  public version!: number;
   public request_type!: RequestType;
   public asset_id?: number;
   public department_id?: number;
@@ -239,6 +241,12 @@ MaintenanceRequest.init(
         key: 'id',
       },
     },
+    version: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      comment: 'Phiên bản hồ sơ, dùng cho optimistic locking',
+    },
     status: {
       type: DataTypes.ENUM(
         'draft', 'new', 'pending', 'approved', 
@@ -249,7 +257,7 @@ MaintenanceRequest.init(
         'rejected_due_to_high_cost'
       ),
       allowNull: false,
-      defaultValue: 'draft', // Mặc định là draft để người dùng có thể chỉnh sửa trước khi gửi
+      defaultValue: 'draft', // M?c ??nh l� draft ?? ng??i d�ng c� th? ch?nh s?a tr??c khi g?i
     },
     cost: {
       type: DataTypes.DECIMAL(10, 2),

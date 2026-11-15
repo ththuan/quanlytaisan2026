@@ -5,6 +5,9 @@ import { AuthSession, User } from '../models';
 
 export interface AuthRequest extends Request {
   user?: JWTPayload;
+  permissionCode?: string;
+  permissionScope?: 'own' | 'department' | 'all';
+  permissionCustomized?: boolean;
 }
 
 export const authMiddleware = async (

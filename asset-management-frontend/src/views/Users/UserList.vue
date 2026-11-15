@@ -149,6 +149,34 @@
             </template>
           </el-table-column>
           <el-table-column
+            label="Phân quyền"
+            width="130"
+          >
+            <template #default="{ row }">
+              <el-tag
+                v-if="row.role === 'admin'"
+                type="success"
+                size="small"
+              >
+                Toàn quyền
+              </el-tag>
+              <el-tag
+                v-else-if="row.permissions_customized"
+                type="warning"
+                size="small"
+              >
+                Tùy chỉnh
+              </el-tag>
+              <el-tag
+                v-else
+                type="info"
+                size="small"
+              >
+                Theo vai trò
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
             :label="$t('common.status')"
             width="120"
           >

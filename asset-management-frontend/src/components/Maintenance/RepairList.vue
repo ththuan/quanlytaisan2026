@@ -4,7 +4,7 @@
     <div class="list-header">
       <h4>Đề nghị sửa chữa</h4>
       <el-button
-        v-if="authStore.isAdmin"
+        v-if="authStore.can('maintenance.create', ['admin'])"
         type="primary"
         :icon="Plus"
         @click="handleCreate"
@@ -387,6 +387,7 @@ import api from '@/services/api';
 import assetDisposalService from '@/services/assetDisposal.service';
 import SignaturePad from '@/components/Common/SignaturePad.vue';
 import { maintenanceStatusText, maintenanceStatusType } from '@/utils/maintenanceLabels';
+import { useRecordLock } from '@/composables/useRecordLock';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -503,15 +504,24 @@ const handlePageChange = (page: number) => {
   fetchData({ page });
 };
 
+const formLock = useRecordLock('maintenance');
+
 const handleCreate = () => {
+  void formLock.release();
   currentItem.value = null;
   formDialogVisible.value = true;
 };
 
-const handleEdit = (item: any) => {
+const handleEdit = async (item: any) => {
+  const claimed = await formLock.claim(item.id);
+  if (!claimed) return;
   currentItem.value = item;
   formDialogVisible.value = true;
 };
+
+watch(formDialogVisible, (open) => {
+  if (!open) void formLock.release();
+});
 
 const handleView = async (item: any) => {
   try {
@@ -538,18 +548,30 @@ const handleView = async (item: any) => {
 
 const canEdit = (item: any) => {
   const editableStatuses = ['draft', 'new', 'rejected', 'rejected_by_head', 'rejected_by_admin', 'rejected_by_director'];
-  const isEditable = editableStatuses.includes(item.status);
-  
-  if (['draft', 'rejected', 'rejected_by_head', 'rejected_by_admin', 'rejected_by_director'].includes(item.status)) {
-    return isEditable && item.requested_by === authStore.user?.id;
+  if (!editableStatuses.includes(item.status)) return false;
+  if (!authStore.can('maintenance.update', ['admin'])) return false;
+
+  const scope = authStore.permissionScope('maintenance.update', ['admin']);
+  if (scope === 'department') {
+    return Number(item.department_id) === Number(authStore.userDepartmentId);
   }
-  
-  return isEditable && (authStore.isManager || item.requested_by === authStore.user?.id);
+  if (scope === 'own') {
+    return item.requested_by === authStore.user?.id;
+  }
+  return true;
 };
 
 const canDelete = (item: any) => {
-  const deletableStatuses = ['draft', 'new'];
-  return deletableStatuses.includes(item.status) && item.requested_by === authStore.user?.id;
+  if (!['draft', 'new'].includes(item.status)) return false;
+  if (!authStore.can('maintenance.delete', ['admin'])) return false;
+  const scope = authStore.permissionScope('maintenance.delete', ['admin']);
+  if (scope === 'department') {
+    return Number(item.department_id) === Number(authStore.userDepartmentId);
+  }
+  if (scope === 'own') {
+    return item.requested_by === authStore.user?.id;
+  }
+  return true;
 };
 
 const handleSubmitForApproval = async (item: any) => {
@@ -578,29 +600,39 @@ const handleSubmitForApproval = async (item: any) => {
   }
 };
 
+const matchesMaintenanceScope = (row: any, code: string): boolean => {
+  const scope = authStore.permissionScope(code, ['admin']);
+  if (!scope || scope === 'all') return true;
+  if (scope === 'department') {
+    return Number(row.department_id) === Number(authStore.userDepartmentId);
+  }
+  return row.requested_by === authStore.user?.id;
+};
+
 const canApproveAtCurrentLevel = (row: any) => {
   if (!authStore.user) return false;
   const status = row.status;
-  const userRole = authStore.user.role;
 
-  if (userRole === 'admin' && ['pending', 'new', 'approved_by_head', 'approved_by_admin'].includes(status)) return true;
+  if (authStore.can('maintenance.approve', ['admin']) && ['pending', 'new', 'approved_by_head', 'approved_by_admin'].includes(status) && matchesMaintenanceScope(row, 'maintenance.approve')) return true;
   // Admin xác nhận hoàn thành sửa chữa
-  if (userRole === 'admin' && status === 'repair_completed') return true;
+  if (authStore.can('maintenance.execute', ['admin']) && status === 'repair_completed' && matchesMaintenanceScope(row, 'maintenance.execute')) return true;
 
   return false;
 };
 
 const canRejectRepair = (row: any) => {
   if (!authStore.user) return false;
-  return authStore.user.role === 'admin'
-    && ['pending', 'new', 'approved_by_head', 'approved_by_admin'].includes(row.status);
+  return authStore.can('maintenance.approve', ['admin'])
+    && ['pending', 'new', 'approved_by_head', 'approved_by_admin'].includes(row.status)
+    && matchesMaintenanceScope(row, 'maintenance.approve');
 };
 
 const canCompleteRepair = (row: any) => {
   if (!authStore.user) return false;
   return (
     row.status === 'in_progress' &&
-    authStore.user.role === 'admin'
+    authStore.can('maintenance.execute', ['admin']) &&
+    matchesMaintenanceScope(row, 'maintenance.execute')
   );
 };
 

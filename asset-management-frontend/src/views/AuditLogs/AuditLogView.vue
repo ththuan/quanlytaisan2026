@@ -65,6 +65,10 @@
               label="Đăng xuất"
               value="logout"
             />
+            <el-option
+              label="Phân quyền"
+              value="permission"
+            />
           </el-select>
         </el-col>
         <el-col
@@ -108,6 +112,10 @@
             <el-option
               label="Mua sắm"
               value="procurements"
+            />
+            <el-option
+              label="Phân quyền"
+              value="user_permissions"
             />
           </el-select>
         </el-col>

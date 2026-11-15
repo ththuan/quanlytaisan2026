@@ -7,6 +7,7 @@ import { User, Department, AuditLog, AuthSession } from '../models';
 import { UnauthorizedError, ConflictError, NotFoundError, ValidationError } from '../utils/errorHandler';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken, JWTPayload } from '../utils/jwt.utils';
 import jwtConfig from '../config/jwt';
+import { getPermissionPayload, PermissionPayload } from './permission.service';
 
 // Short-lived token issued after password verification when 2FA is enabled.
 const TEMP_TOKEN_EXPIRY = '5m';
@@ -27,7 +28,7 @@ export interface LoginInput {
   password: string;
 }
 
-export interface AuthResponse {
+export interface AuthResponse extends PermissionPayload {
   user: Partial<User>;
   accessToken: string;
   refreshToken: string;
@@ -175,7 +176,7 @@ class AuthService {
     return await this._issueTokens(user, ipAddress, userAgent);
   }
 
-  async getCurrentUser(userId: number): Promise<Partial<User>> {
+  async getCurrentUser(userId: number): Promise<Partial<User> & PermissionPayload> {
     const user = await User.findByPk(userId, {
       attributes: { exclude: ['password_hash'] },
       include: [{ model: Department, as: 'department', attributes: ['id', 'name', 'type'] }],
@@ -185,7 +186,8 @@ class AuthService {
       throw new NotFoundError('User not found');
     }
 
-    return user.toJSON();
+    const permissions = await getPermissionPayload(userId);
+    return { ...user.toJSON(), ...permissions };
   }
 
   async changePassword(
@@ -406,8 +408,11 @@ class AuthService {
       user_agent: userAgent || null,
     });
 
+    const permissions = await getPermissionPayload(user.id);
+
     return {
       user: user.toJSON(),
+      ...permissions,
       accessToken,
       refreshToken,
     };

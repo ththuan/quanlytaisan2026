@@ -6,6 +6,8 @@ declare module 'vue-router' {
     requiresAdmin?: boolean;
     requiresAdminOrDirector?: boolean;
     requiresSystemAdmin?: boolean;
+    permission?: string;
+    legacyRoles?: string[];
     titleKey?: string;
     breadcrumbParent?: { path: string; titleKey: string };
   }

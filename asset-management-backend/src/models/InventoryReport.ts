@@ -7,6 +7,7 @@ export type InventoryReportStatus =
 
 export interface InventoryReportAttributes {
   id: number;
+  version: number;
   report_code: string;
   inventory_round_id: number;
   created_by: number;
@@ -31,13 +32,14 @@ export interface InventoryReportAttributes {
   updated_at?: Date;
 }
 
-interface InventoryReportCreationAttributes extends Optional<InventoryReportAttributes, 
-  'id' | 'total_assigned_quantity' | 'total_actual_quantity' | 'total_discrepancy' | 
+interface InventoryReportCreationAttributes extends Optional<InventoryReportAttributes,
+  'id' | 'version' | 'total_assigned_quantity' | 'total_actual_quantity' | 'total_discrepancy' |
   'total_disposal_suggestions' | 'status'> {}
 
 class InventoryReport extends Model<InventoryReportAttributes, InventoryReportCreationAttributes> 
   implements InventoryReportAttributes {
   public id!: number;
+  public version!: number;
   public report_code!: string;
   public inventory_round_id!: number;
   public created_by!: number;
@@ -132,6 +134,12 @@ InventoryReport.init(
       defaultValue: [],
       comment: 'Danh sách URL ảnh tổng thể đơn vị khi kiểm kê',
     },
+    version: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      comment: 'Phiên bản hồ sơ, dùng cho optimistic locking',
+    },
     status: {
       type: DataTypes.ENUM(
         'draft', 'pending', 'approved_by_head', 'rejected_by_head',
@@ -139,7 +147,7 @@ InventoryReport.init(
       ),
       allowNull: false,
       defaultValue: 'draft',
-      comment: 'Trạng thái duyệt',
+      comment: 'Tr?ng th�i duy?t',
     },
     head_approved_by: {
       type: DataTypes.INTEGER,

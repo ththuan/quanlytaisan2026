@@ -2,7 +2,7 @@
   <div>
     <div class="header-actions">
       <el-button
-        v-if="!authStore.isDirector"
+        v-if="authStore.can('procurement.create', ['admin'])"
         type="primary"
         @click="openCreate"
       >
@@ -196,14 +196,14 @@
               </el-button>
               <template v-if="!authStore.isDirector">
                 <el-button
-                  v-if="scope.row.status === 'draft'"
+                  v-if="scope.row.status === 'draft' && authStore.can('procurement.update', ['admin'])"
                   size="small"
                   @click="openEdit(scope.row.id)"
                 >
                   Sửa
                 </el-button>
                 <el-button
-                  v-if="scope.row.status === 'draft'"
+                  v-if="scope.row.status === 'draft' && authStore.can('procurement.delete', ['admin'])"
                   size="small"
                   type="danger"
                   plain
@@ -254,6 +254,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import procurementService from '@/services/procurement.service';
 import ProcurementFormDialog from '@/components/Procurements/ProcurementFormDialog.vue';
 import ProcurementDetailDialog from '@/components/Procurements/ProcurementDetailDialog.vue';
+import { useRecordLock } from '@/composables/useRecordLock';
 
 const authStore = useAuthStore();
 const years = Array.from({ length: 15 }).map((_, i) => new Date().getFullYear() - i);
@@ -375,7 +376,10 @@ const exportSummaryExcel = async () => {
 
 const formVisible = ref(false);
 const editId = ref<number | null>(null);
+const formLock = useRecordLock('procurement');
+
 const openCreate = () => {
+  void formLock.release();
   editId.value = null;
   formVisible.value = true;
 };
@@ -403,10 +407,16 @@ const handleSaved = () => {
   loadSummary();
 };
 
-const openEdit = (id: number) => {
+const openEdit = async (id: number) => {
+  const claimed = await formLock.claim(id);
+  if (!claimed) return;
   editId.value = id;
   formVisible.value = true;
 };
+
+watch(formVisible, (open) => {
+  if (!open) void formLock.release();
+});
 
 const confirmDelete = async (id: number) => {
   try {

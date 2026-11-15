@@ -53,7 +53,10 @@
               <span>{{ isStaffOrHead ? 'Đề nghị điều chuyển' : $t('menu.transfers') }}</span>
             </el-menu-item>
 
-            <el-menu-item index="/inventory">
+            <el-menu-item
+              v-if="authStore.can('inventory.view', ['admin', 'director', 'department_head', 'staff'])"
+              index="/inventory"
+            >
               <el-icon><Notebook /></el-icon>
               <span>{{ $t('inventory.title') }}</span>
             </el-menu-item>
@@ -82,7 +85,7 @@
             </el-menu-item>
 
             <el-menu-item
-              v-if="FEATURES.repairModule && authStore.user?.role === 'admin'"
+              v-if="FEATURES.repairModule && authStore.can('maintenance.view', ['admin'])"
               index="/maintenance"
             >
               <el-icon><Tools /></el-icon>
@@ -90,7 +93,7 @@
             </el-menu-item>
 
             <el-menu-item
-              v-if="authStore.user?.role === 'admin'"
+              v-if="authStore.can('procurement.view', ['admin'])"
               index="/procurements"
             >
               <el-icon><Document /></el-icon>
@@ -113,7 +116,7 @@
             <!-- Các module phụ trợ (Sửa chữa, Mua sắm): tạm ẩn theo phạm vi hiện tại.
                Bật lại bằng FEATURES.auxiliaryModules = true trong src/constants/features.ts -->
             <el-menu-item
-              v-if="FEATURES.auxiliaryModules && authStore.user?.role === 'admin'"
+              v-if="FEATURES.auxiliaryModules && authStore.can('procurement.view', ['admin'])"
               index="/purchase-requests"
             >
               <el-icon><ShoppingCart /></el-icon>
@@ -150,6 +153,14 @@
             >
               <el-icon><Grid /></el-icon>
               <span>{{ $t('menu.assetCategories') }}</span>
+            </el-menu-item>
+
+            <el-menu-item
+              v-if="authStore.can('audit.view_all', ['admin'])"
+              index="/audit-logs"
+            >
+              <el-icon><Tickets /></el-icon>
+              <span>Nhật ký hoạt động</span>
             </el-menu-item>
 
             <el-menu-item
@@ -314,6 +325,7 @@
         <span>Tài sản</span>
       </button>
       <button
+        v-if="authStore.can('inventory.view', ['admin', 'director', 'department_head', 'staff'])"
         type="button"
         class="mobile-tabbar__item"
         :class="{ active: isTabActive('/inventory') }"
@@ -344,7 +356,7 @@
 import { computed, nextTick, ref, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
-import { House, HomeFilled, Box, User, ArrowDown, ArrowLeft, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, Warning, Menu, Key, Lock, Bell, MuteNotification } from '@element-plus/icons-vue';
+import { House, HomeFilled, Box, User, ArrowDown, ArrowLeft, OfficeBuilding, UserFilled, Switch, Tools, Document, Notebook, Fold, Expand, DeleteFilled, DataAnalysis, ShoppingCart, Setting, Grid, Warning, Menu, Key, Lock, Bell, MuteNotification, Tickets } from '@element-plus/icons-vue';
 import NotificationBell from '@/components/Notifications/NotificationBell.vue';
 import TotpSetupDialog from '@/components/Auth/TotpSetupDialog.vue';
 import ChangePasswordDialog from '@/components/Auth/ChangePasswordDialog.vue';

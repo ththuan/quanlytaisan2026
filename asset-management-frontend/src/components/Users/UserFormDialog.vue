@@ -146,6 +146,99 @@
           </el-form-item>
         </el-col>
       </el-row>
+
+      <el-divider content-position="left">
+        Phân quyền chức năng
+      </el-divider>
+
+      <div
+        v-if="formData.role === 'admin'"
+        class="permission-hint"
+      >
+        Tài khoản admin mặc định có toàn bộ quyền, không cần phân quyền riêng.
+      </div>
+
+      <div
+        v-else
+        v-loading="permissionLoading"
+        class="permission-block"
+      >
+        <div class="permission-toggle">
+          <el-switch
+            v-model="permissionCustomized"
+            active-text="Dùng quyền tùy chỉnh"
+            @change="permissionChanged = true"
+          />
+          <span class="permission-hint">
+            Tắt: dùng quyền mặc định theo vai trò
+          </span>
+        </div>
+
+        <template v-if="permissionCustomized">
+          <div class="preset-row">
+            <el-button
+              v-for="preset in permissionPresets"
+              :key="preset.code"
+              size="small"
+              @click="applyPreset(preset)"
+            >
+              {{ preset.label }}
+            </el-button>
+            <el-button
+              size="small"
+              @click="clearPermissionSelection"
+            >
+              Bỏ chọn
+            </el-button>
+          </div>
+
+          <el-collapse class="permission-collapse">
+            <el-collapse-item
+              v-for="module in permissionModules"
+              :key="module.module"
+              :name="module.module"
+            >
+              <template #title>
+                <span class="permission-module-title">{{ module.moduleLabel }}</span>
+                <el-tag
+                  size="small"
+                  type="info"
+                  class="permission-count"
+                >
+                  {{ countModuleSelected(module) }}/{{ selectablePermissions(module).length }}
+                </el-tag>
+              </template>
+
+              <div
+                v-for="perm in selectablePermissions(module)"
+                :key="perm.code"
+                class="permission-row"
+              >
+                <el-checkbox
+                  :model-value="isPermissionSelected(perm.code)"
+                  @update:model-value="togglePermission(perm.code, Boolean($event))"
+                >
+                  {{ perm.label }}
+                </el-checkbox>
+                <el-select
+                  v-if="isPermissionSelected(perm.code)"
+                  :model-value="permissionSelection[perm.code]"
+                  size="small"
+                  class="scope-select"
+                  @update:model-value="setPermissionScope(perm.code, $event)"
+                >
+                  <el-option
+                    v-for="scope in scopeOptions(perm)"
+                    :key="scope.value"
+                    :label="scope.label"
+                    :value="scope.value"
+                  />
+                </el-select>
+              </div>
+            </el-collapse-item>
+          </el-collapse>
+        </template>
+      </div>
     </el-form>
 
     <template #footer>
@@ -173,6 +266,13 @@ import { ElMessage } from 'element-plus';
 import api from '@/services/api';
 import { useDepartmentStore } from '@/stores/department.store';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
+import {
+  permissionService,
+  type PermissionDefinition,
+  type PermissionModule,
+  type PermissionPreset,
+  type PermissionScope,
+} from '@/services/permission.service';
 
 interface User {
   id: number;
@@ -182,6 +282,7 @@ interface User {
   role: string;
   department_id?: number;
   is_active: boolean;
+  permissions_customized?: boolean;
 }
 
 const props = defineProps<{
@@ -198,6 +299,108 @@ const { t } = useI18n();
 const departmentStore = useDepartmentStore();
 const formRef = ref<FormInstance>();
 const loading = ref(false);
+
+const permissionLoading = ref(false);
+const permissionCustomized = ref(false);
+const permissionChanged = ref(false);
+const permissionModules = ref<PermissionModule[]>([]);
+const permissionPresets = ref<PermissionPreset[]>([]);
+const permissionScopeOptions = ref<Array<{ value: PermissionScope; label: string }>>([]);
+const permissionSelection = reactive<Record<string, PermissionScope>>({});
+
+const findPermission = (code: string): PermissionDefinition | undefined =>
+  permissionModules.value.flatMap((module) => module.permissions).find((perm) => perm.code === code);
+
+const selectablePermissions = (module: PermissionModule): PermissionDefinition[] =>
+  module.permissions.filter((perm) => !perm.adminOnly);
+
+const scopeOptions = (perm: PermissionDefinition) =>
+  permissionScopeOptions.value.filter((scope) => perm.scopes.includes(scope.value));
+
+const isPermissionSelected = (code: string): boolean =>
+  Object.prototype.hasOwnProperty.call(permissionSelection, code);
+
+const defaultScopeForPermission = (perm: PermissionDefinition): PermissionScope => {
+  const options = scopeOptions(perm);
+  return options.find((scope) => scope.value === 'department')?.value
+    ?? options[0]?.value
+    ?? 'all';
+};
+
+const togglePermission = (code: string, checked: boolean) => {
+  if (checked) {
+    const perm = findPermission(code);
+    if (!perm) return;
+    permissionSelection[code] = defaultScopeForPermission(perm);
+  } else {
+    delete permissionSelection[code];
+  }
+  permissionChanged.value = true;
+};
+
+const setPermissionScope = (code: string, scope: PermissionScope) => {
+  permissionSelection[code] = scope;
+  permissionChanged.value = true;
+};
+
+const countModuleSelected = (module: PermissionModule): number =>
+  selectablePermissions(module).filter((perm) => isPermissionSelected(perm.code)).length;
+
+const clearPermissionSelection = () => {
+  Object.keys(permissionSelection).forEach((code) => delete permissionSelection[code]);
+  permissionChanged.value = true;
+};
+
+const applyPreset = (preset: PermissionPreset) => {
+  Object.keys(permissionSelection).forEach((code) => delete permissionSelection[code]);
+  preset.permissions.forEach((grant) => {
+    permissionSelection[grant.code] = grant.scope;
+  });
+  permissionCustomized.value = true;
+  permissionChanged.value = true;
+};
+
+const loadPermissionCatalog = async () => {
+  if (permissionModules.value.length) return;
+  const response = await permissionService.getCatalog();
+  permissionModules.value = response.data.modules;
+  permissionPresets.value = response.data.presets;
+  permissionScopeOptions.value = response.data.scopes;
+};
+
+const loadPermissionData = async () => {
+  permissionLoading.value = true;
+  try {
+    await loadPermissionCatalog();
+    Object.keys(permissionSelection).forEach((code) => delete permissionSelection[code]);
+    permissionCustomized.value = false;
+    permissionChanged.value = false;
+
+    if (props.user && props.user.role !== 'admin') {
+      const response = await permissionService.getUserPermissions(props.user.id);
+      permissionCustomized.value = Boolean(response.data.permissions_customized);
+      response.data.permissions.forEach((grant) => {
+        permissionSelection[grant.code] = grant.scope;
+      });
+    }
+  } catch (error: any) {
+    ElMessage.error(error.response?.data?.message || 'Không tải được danh mục quyền');
+  } finally {
+    permissionLoading.value = false;
+  }
+};
+
+const savePermissionsForUser = async (userId: number, role: string) => {
+  if (role === 'admin') return;
+  if (permissionCustomized.value) {
+    const grants = Object.entries(permissionSelection).map(([code, scope]) => ({ code, scope }));
+    await permissionService.updateUserPermissions(userId, grants);
+    return;
+  }
+  if (permissionChanged.value || props.user?.permissions_customized) {
+    await permissionService.resetUserPermissions(userId);
+  }
+};
 
 const jobTitleSuggestions = ref<string[]>([]);
 
@@ -312,6 +515,8 @@ const handleSubmit = async () => {
 
     loading.value = true;
     try {
+      let savedUserId: number | null = null;
+
       if (isEdit.value && props.user) {
         const updateData: any = {
           fullname: formData.fullname,
@@ -322,7 +527,8 @@ const handleSubmit = async () => {
         if (formData.department_id) {
           updateData.department_id = formData.department_id;
         }
-        await api.put(`/users/${props.user.id}`, updateData);
+        const response: any = await api.put(`/users/${props.user.id}`, updateData);
+        savedUserId = Number(response?.data?.id || props.user.id);
         ElMessage.success(t('users.updateSuccess'));
       } else {
         const createData: any = {
@@ -338,8 +544,20 @@ const handleSubmit = async () => {
         if (formData.department_id) {
           createData.department_id = formData.department_id;
         }
-        await api.post('/users', createData);
+        const response: any = await api.post('/users', createData);
+        savedUserId = Number(response?.data?.id);
         ElMessage.success(t('users.createSuccess'));
+      }
+
+      if (savedUserId) {
+        try {
+          await savePermissionsForUser(savedUserId, formData.role);
+        } catch (permissionError: any) {
+          ElMessage.warning(
+            permissionError.response?.data?.message
+              || 'Đã lưu người dùng nhưng cập nhật quyền thất bại. Vui lòng thử lại.',
+          );
+        }
       }
 
       emit('success');
@@ -370,6 +588,7 @@ watch(() => props.visible, async (newVal) => {
     } else {
       resetForm();
     }
+    await loadPermissionData();
   }
 });
 </script>
@@ -381,10 +600,81 @@ watch(() => props.visible, async (newVal) => {
   gap: 10px;
 }
 
+:deep(.el-dialog__body) {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.permission-block {
+  margin-top: 4px;
+}
+
+.permission-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.permission-hint {
+  color: #909399;
+  font-size: 12px;
+}
+
+.preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.permission-collapse {
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.permission-module-title {
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.permission-count {
+  margin-left: 4px;
+}
+
+.permission-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px dashed #f0f2f5;
+}
+
+.permission-row:last-child {
+  border-bottom: none;
+}
+
+.scope-select {
+  width: 132px;
+  flex-shrink: 0;
+}
+
 @media (max-width: 768px) {
   :deep(.el-col) {
     width: 100% !important;
     max-width: 100% !important;
+  }
+
+  .permission-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .scope-select {
+    width: 100%;
   }
 }
 </style>

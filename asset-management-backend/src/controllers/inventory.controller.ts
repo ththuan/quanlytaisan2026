@@ -14,22 +14,33 @@ type InventoryUser = NonNullable<AuthRequest['user']>;
 
 /** Admin/director hoặc cán bộ/trưởng đơn vị thuộc đúng đơn vị của báo cáo. */
 const canEditInventoryReport = (
-  report: { department_id?: number | null } | null,
-  user: InventoryUser
+  report: { department_id?: number | null; created_by?: number | null } | null,
+  user: InventoryUser,
+  permissionScope?: 'own' | 'department' | 'all',
+  userId?: number,
 ): boolean => {
   if (!report) return false;
+  if (permissionScope === 'all') return true;
   if (user.role === 'admin' || user.role === 'director') return true;
+  if (permissionScope === 'department') {
+    return Number(user.department_id) === Number(report.department_id);
+  }
+  if (permissionScope === 'own') {
+    return Number(report.created_by) === Number(userId ?? user.id);
+  }
   if (!['staff', 'department_head'].includes(user.role)) return false;
   return Number(user.department_id) === Number(report.department_id);
 };
 
 const assertCanEditInventoryReport = (
-  report: { department_id?: number | null } | null,
-  user: InventoryUser
+  report: { department_id?: number | null; created_by?: number | null } | null,
+  user: InventoryUser,
+  permissionScope?: 'own' | 'department' | 'all',
+  userId?: number,
 ): void => {
   if (!report) throw new ForbiddenError('Báo cáo không tồn tại');
-  if (!canEditInventoryReport(report, user)) {
-    throw new ForbiddenError('Bạn không có quyền thao tác trên báo cáo kiểm kê của đơn vị này');
+  if (!canEditInventoryReport(report, user, permissionScope, userId)) {
+    throw new ForbiddenError('Bạn không có quyền thao tác trên báo cáo kiểm kê này');
   }
 };
 
@@ -165,7 +176,8 @@ export const getInventoryReports = async (req: AuthRequest, res: Response, next:
       req.user!.id,
       req.user!.role,
       req.user!.department_id!,
-      req.query
+      req.query,
+      req.permissionCustomized ? req.permissionScope : undefined,
     );
     res.json({
       success: true,
@@ -186,10 +198,24 @@ export const getInventoryReportById = async (req: AuthRequest, res: Response, ne
     const report: any = await InventoryService.getInventoryReportById(reportId);
 
     // Phân quyền xem chi tiết báo cáo:
-    // - Admin & Giám hiệu (director): xem tất cả
-    // - Trưởng đơn vị cha: xem báo cáo của đơn vị mình và các đơn vị con
-    // - Cán bộ: xem báo cáo của đơn vị mình (báo cáo dùng chung theo đơn vị)
-    if (user.role !== 'admin' && user.role !== 'director') {
+    // - Quyền chức năng: all/department/own
+    // - Legacy: admin/director xem tất cả; trưởng đơn vị xem đơn vị mình + con; cán bộ xem đơn vị mình
+    if (
+      req.permissionCustomized &&
+      req.permissionScope === 'department' &&
+      Number(report.department_id) !== Number(user.department_id)
+    ) {
+      throw new ForbiddenError('Chỉ được xem báo cáo kiểm kê thuộc đơn vị của mình');
+    }
+    if (
+      req.permissionCustomized &&
+      req.permissionScope === 'own' &&
+      Number(report.created_by) !== Number(user.id)
+    ) {
+      throw new ForbiddenError('Chỉ được xem báo cáo kiểm kê do mình tạo');
+    }
+
+    if (!req.permissionCustomized && user.role !== 'admin' && user.role !== 'director') {
       if (user.role === 'department_head') {
         if (Number(report.department_id) !== Number(user.department_id)) {
           // Trưởng đơn vị xem được báo cáo của toàn bộ đơn vị con/cháu trong cây.
@@ -222,7 +248,7 @@ export const addInventoryDetail = async (req: AuthRequest, res: Response, next: 
     const { asset_id, ...detailData } = req.body;
 
     const report = await InventoryService.getInventoryReportMeta(reportId);
-    assertCanEditInventoryReport(report, user);
+    assertCanEditInventoryReport(report, user, req.permissionCustomized ? req.permissionScope : undefined, user.id);
 
     const detail = await InventoryService.addInventoryDetail(reportId, asset_id, detailData);
     res.status(201).json({
@@ -253,7 +279,7 @@ export const addInventoryDetailsBulk = async (req: AuthRequest, res: Response, n
     }
 
     const report = await InventoryService.getInventoryReportMeta(reportId);
-    assertCanEditInventoryReport(report, user);
+    assertCanEditInventoryReport(report, user, req.permissionCustomized ? req.permissionScope : undefined, user.id);
 
     const details = await InventoryService.addInventoryDetailsBulk(reportId, items);
     res.status(201).json({
@@ -281,7 +307,7 @@ export const resetBatchGroupDetails = async (req: AuthRequest, res: Response, ne
     }
 
     const report = await InventoryService.getInventoryReportMeta(reportId);
-    assertCanEditInventoryReport(report, user);
+    assertCanEditInventoryReport(report, user, req.permissionCustomized ? req.permissionScope : undefined, user.id);
 
     const deleted = await InventoryService.resetBatchGroupDetails(reportId, categoryId);
     res.json({
@@ -304,7 +330,7 @@ export const updateInventoryDetail = async (req: AuthRequest, res: Response, nex
     const reportId = parseInt(req.params.id);
 
     const report = await InventoryService.getInventoryReportMeta(reportId);
-    assertCanEditInventoryReport(report, user);
+    assertCanEditInventoryReport(report, user, req.permissionCustomized ? req.permissionScope : undefined, user.id);
 
     const detail = await InventoryService.updateInventoryDetail(detailId, reportId, req.body);
     res.json({
@@ -326,7 +352,7 @@ export const submitInventoryReport = async (req: AuthRequest, res: Response, nex
     const reportId = parseInt(req.params.id);
 
     const report = await InventoryService.getInventoryReportMeta(reportId);
-    assertCanEditInventoryReport(report, user);
+    assertCanEditInventoryReport(report, user, req.permissionCustomized ? req.permissionScope : undefined, user.id);
 
     // Bắt buộc chữ ký sống của người nộp
     const signatureImage = assertSignature(req.body?.signature);
@@ -379,10 +405,16 @@ export const processInventoryApproval = async (req: AuthRequest, res: Response, 
     // Bắt buộc chữ ký sống của người duyệt (cả duyệt và từ chối)
     const signatureImage = assertSignature(req.body?.signature);
 
+    const effectiveRole = !req.permissionCustomized
+      ? req.user!.role
+      : req.permissionScope === 'all'
+        ? 'admin'
+        : 'department_head';
+
     const report = await InventoryService.processInventoryApproval(
       reportId,
       req.user!.id,
-      req.user!.role,
+      effectiveRole,
       decision,
       reason,
       notes,
@@ -518,7 +550,7 @@ export const updateReportImages = async (req: AuthRequest, res: Response, next: 
     const reportId = parseInt(req.params.id);
 
     const report = await InventoryService.getInventoryReportMeta(reportId);
-    assertCanEditInventoryReport(report, user);
+    assertCanEditInventoryReport(report, user, req.permissionCustomized ? req.permissionScope : undefined, user.id);
 
     const result = await InventoryService.updateReportImages(reportId, req.body?.image_urls);
     res.json({ success: true, data: result });

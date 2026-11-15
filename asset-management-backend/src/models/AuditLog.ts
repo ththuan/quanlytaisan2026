@@ -4,7 +4,7 @@ import sequelize from '../config/database';
 export interface AuditLogAttributes {
   id: number;
   user_id?: number;
-  action: 'create' | 'update' | 'delete' | 'login' | 'logout' | 'approve';
+  action: 'create' | 'update' | 'delete' | 'login' | 'logout' | 'approve' | 'permission';
   table_name?: string;
   record_id?: number;
   old_value?: Record<string, any>;
@@ -20,7 +20,7 @@ interface AuditLogCreationAttributes extends Optional<AuditLogAttributes, 'id'> 
 class AuditLog extends Model<AuditLogAttributes, AuditLogCreationAttributes> implements AuditLogAttributes {
   public id!: number;
   public user_id?: number;
-  public action!: 'create' | 'update' | 'delete' | 'login' | 'logout' | 'approve';
+  public action!: 'create' | 'update' | 'delete' | 'login' | 'logout' | 'approve' | 'permission';
   public table_name?: string;
   public record_id?: number;
   public old_value?: Record<string, any>;
@@ -47,7 +47,7 @@ AuditLog.init(
       },
     },
     action: {
-      type: DataTypes.ENUM('create', 'update', 'delete', 'login', 'logout', 'approve'),
+      type: DataTypes.ENUM('create', 'update', 'delete', 'login', 'logout', 'approve', 'permission'),
       allowNull: false,
     },
     table_name: {

@@ -91,19 +91,31 @@ const routes: RouteRecordRaw[] = [
         path: '/procurements',
         name: 'Procurements',
         component: () => import('@/views/Procurements/ProcurementList.vue'),
-        meta: { requiresAdmin: true, titleKey: 'menu.procurements' },
+        meta: {
+          permission: 'procurement.view',
+          legacyRoles: ['admin'],
+          titleKey: 'menu.procurements',
+        },
       },
       {
         path: '/purchase-requests',
         name: 'PurchaseRequests',
         component: () => import('@/views/Maintenance/PurchaseRequestView.vue'),
-        meta: { requiresAdmin: true, titleKey: 'menu.purchaseRequests' },
+        meta: {
+          permission: 'procurement.view',
+          legacyRoles: ['admin'],
+          titleKey: 'menu.purchaseRequests',
+        },
       },
       {
         path: '/maintenance',
         name: 'Maintenance',
         component: () => import('@/views/Maintenance/RepairRequestView.vue'),
-        meta: { requiresAdmin: true, titleKey: 'menu.repairTracking' },
+        meta: {
+          permission: 'maintenance.view',
+          legacyRoles: ['admin'],
+          titleKey: 'menu.repairTracking',
+        },
       },
       {
         path: '/stock',
@@ -121,25 +133,43 @@ const routes: RouteRecordRaw[] = [
         path: '/inventory',
         name: 'Inventory',
         component: () => import('@/views/Inventory/InventoryList.vue'),
-        meta: { titleKey: 'inventory.title' },
+        meta: {
+          permission: 'inventory.view',
+          legacyRoles: ['admin', 'director', 'department_head', 'staff'],
+          titleKey: 'inventory.title',
+        },
       },
       {
         path: '/inventory/rounds/:id',
         name: 'InventoryRoundDetail',
         component: () => import('@/views/Inventory/InventoryRoundDetail.vue'),
-        meta: { titleKey: 'inventory.roundDetail', breadcrumbParent: { path: '/inventory', titleKey: 'inventory.title' } },
+        meta: {
+          permission: 'inventory.view',
+          legacyRoles: ['admin', 'director', 'department_head', 'staff'],
+          titleKey: 'inventory.roundDetail',
+          breadcrumbParent: { path: '/inventory', titleKey: 'inventory.title' },
+        },
       },
       {
         path: '/inventory/conduct',
         name: 'InventoryConduct',
         component: () => import('@/views/Inventory/InventoryConduct.vue'),
-        meta: { titleKey: 'inventory.conduct' },
+        meta: {
+          permission: 'inventory.count',
+          legacyRoles: ['admin', 'director', 'department_head', 'staff'],
+          titleKey: 'inventory.conduct',
+        },
       },
       {
         path: '/inventory/reports/:id',
         name: 'InventoryReportDetail',
         component: () => import('@/views/Inventory/InventoryReportDetail.vue'),
-        meta: { titleKey: 'inventory.reportDetail', breadcrumbParent: { path: '/inventory', titleKey: 'inventory.title' } },
+        meta: {
+          permission: 'inventory.view',
+          legacyRoles: ['admin', 'director', 'department_head', 'staff'],
+          titleKey: 'inventory.reportDetail',
+          breadcrumbParent: { path: '/inventory', titleKey: 'inventory.title' },
+        },
       },
       {
         path: '/asset-disposals',
@@ -157,7 +187,11 @@ const routes: RouteRecordRaw[] = [
         path: '/audit-logs',
         name: 'AuditLogs',
         component: () => import('@/views/AuditLogs/AuditLogView.vue'),
-        meta: { requiresAdmin: true, titleKey: 'menu.auditLogs' },
+        meta: {
+          permission: 'audit.view_all',
+          legacyRoles: ['admin'],
+          titleKey: 'menu.auditLogs',
+        },
       },
       {
         path: '/notifications',
@@ -225,6 +259,13 @@ router.beforeEach((to, _from, next) => {
   }
 
   // Kiểm tra quyền admin cho các route có meta.requiresAdmin
+  if (to.meta.permission) {
+    const legacyRoles = to.meta.legacyRoles || ['admin'];
+    if (!authStore.can(to.meta.permission, legacyRoles)) {
+      return next(getLandingPathByRole());
+    }
+  }
+
   if (to.meta.requiresAdmin && userRole !== 'admin') {
     return next(getLandingPathByRole());
   }

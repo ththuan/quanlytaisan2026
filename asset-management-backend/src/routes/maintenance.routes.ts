@@ -1,14 +1,17 @@
-import { Router } from 'express';
+﻿import { Router } from 'express';
 import maintenanceController from '../controllers/maintenance.controller';
 import { authenticateToken } from '../middleware/auth.middleware';
 import {
-  requireRole,
+  requirePermission,
+  allAuthenticatedRoles,
+  adminOnlyRoles,
   canApproveMaintenanceRequest,
 } from '../middleware/authorization.middleware';
 import { validateRequest } from '../middleware/validation';
 import { createMaintenanceSchema, updateMaintenanceSchema, processApprovalSchema } from '../utils/validators';
 import { fulfillProcurementSchema } from '../utils/validators';
 import { auditLog } from '../middleware/logging';
+import { requireUnlockedRecord } from '../middleware/recordLock.middleware';
 
 const router = Router();
 
@@ -16,30 +19,31 @@ const router = Router();
 router.use(authenticateToken);
 
 // Quick damage report - any authenticated user can report damage for their unit
-router.post('/report-damage', auditLog('create'), maintenanceController.reportDamage);
+router.post('/report-damage', requirePermission('maintenance.create', allAuthenticatedRoles), auditLog('create'), maintenanceController.reportDamage);
 
 // Get pending counts - admin only
-router.get('/pending-counts', requireRole('admin'), maintenanceController.getPendingCounts);
+router.get('/pending-counts', requirePermission('maintenance.view', adminOnlyRoles), maintenanceController.getPendingCounts);
 
-// List - admin only (ẩn khỏi director, sau này cần bật lại → mở lại requireRole)
-router.get('/', requireRole('admin'), maintenanceController.getAllMaintenance);
-router.post('/', requireRole('admin'), validateRequest(createMaintenanceSchema), auditLog('create'), maintenanceController.createMaintenance);
-router.get('/:id', requireRole('admin'), maintenanceController.getMaintenanceById);
+// Danh sách yêu cầu sửa chữa (phân quyền theo chức năng)
+router.get('/', requirePermission('maintenance.view', adminOnlyRoles), maintenanceController.getAllMaintenance);
+router.post('/', requirePermission('maintenance.create', adminOnlyRoles), validateRequest(createMaintenanceSchema), auditLog('create'), maintenanceController.createMaintenance);
+router.get('/:id', requirePermission('maintenance.view', adminOnlyRoles), maintenanceController.getMaintenanceById);
 
 // Get approval history for a request
-router.get('/:id/approval-history', requireRole('admin'), maintenanceController.getApprovalHistory);
+router.get('/:id/approval-history', requirePermission('maintenance.view', adminOnlyRoles), maintenanceController.getApprovalHistory);
 
 // Submit for approval - all authenticated users
-router.post('/:id/submit', requireRole('admin'), auditLog('approve'), maintenanceController.submitForApproval);
+router.post('/:id/submit', requirePermission('maintenance.submit', adminOnlyRoles), auditLog('approve'), maintenanceController.submitForApproval);
 
 // Update/delete - all authenticated users (controller checks ownership/permission)
-router.put('/:id', requireRole('admin'), validateRequest(updateMaintenanceSchema), auditLog('update'), maintenanceController.updateMaintenance);
-router.delete('/:id', requireRole('admin'), auditLog('delete'), maintenanceController.deleteMaintenance);
+router.put('/:id', requirePermission('maintenance.update', adminOnlyRoles), requireUnlockedRecord('maintenance'), validateRequest(updateMaintenanceSchema), auditLog('update'), maintenanceController.updateMaintenance);
+router.delete('/:id', requirePermission('maintenance.delete', adminOnlyRoles), requireUnlockedRecord('maintenance'), auditLog('delete'), maintenanceController.deleteMaintenance);
 
 // Admin starts repair: approved_by_director -> in_progress
 router.post(
   '/:id/start-repair',
-  requireRole('admin'),
+  requirePermission('maintenance.execute', adminOnlyRoles),
+  requireUnlockedRecord('maintenance'),
   auditLog('approve'),
   maintenanceController.startRepair
 );
@@ -47,7 +51,8 @@ router.post(
 // Admin confirms repair completion: in_progress -> repair_completed
 router.post(
   '/:id/complete-repair',
-  requireRole('admin'),
+  requirePermission('maintenance.execute', adminOnlyRoles),
+  requireUnlockedRecord('maintenance'),
   auditLog('approve'),
   maintenanceController.completeRepair
 );
@@ -55,7 +60,8 @@ router.post(
 // Fulfill procurement (create assets & allocate) - Admin/Director only
 router.post(
   '/:id/fulfill-procurement',
-  requireRole('admin'),
+  requirePermission('procurement.fulfill', adminOnlyRoles),
+  requireUnlockedRecord('maintenance'),
   validateRequest(fulfillProcurementSchema),
   auditLog('approve'),
   maintenanceController.fulfillProcurement
@@ -64,6 +70,8 @@ router.post(
 // Multi-level approval - admin, director, and department_head (via canApproveMaintenanceRequest)
 router.post(
   '/:id/process-approval',
+  requirePermission('maintenance.approve', adminOnlyRoles),
+  requireUnlockedRecord('maintenance'),
   canApproveMaintenanceRequest,
   validateRequest(processApprovalSchema),
   auditLog('approve'),
@@ -73,6 +81,8 @@ router.post(
 // PUT route for approval (multi-level workflow)
 router.put(
   '/:id/approve',
+  requirePermission('maintenance.approve', adminOnlyRoles),
+  requireUnlockedRecord('maintenance'),
   canApproveMaintenanceRequest,
   auditLog('approve'),
   maintenanceController.approveMaintenancePut
@@ -81,6 +91,8 @@ router.put(
 // PUT alias for process-approval (frontend reject action)
 router.put(
   '/:id/process-approval',
+  requirePermission('maintenance.approve', adminOnlyRoles),
+  requireUnlockedRecord('maintenance'),
   canApproveMaintenanceRequest,
   validateRequest(processApprovalSchema),
   auditLog('approve'),
@@ -90,6 +102,8 @@ router.put(
 // Legacy approve/reject routes
 router.post(
   '/:id/approve',
+  requirePermission('maintenance.approve', adminOnlyRoles),
+  requireUnlockedRecord('maintenance'),
   canApproveMaintenanceRequest,
   auditLog('approve'),
   maintenanceController.approveMaintenance
@@ -97,6 +111,8 @@ router.post(
 
 router.post(
   '/:id/reject',
+  requirePermission('maintenance.approve', adminOnlyRoles),
+  requireUnlockedRecord('maintenance'),
   canApproveMaintenanceRequest,
   auditLog('approve'),
   maintenanceController.rejectMaintenance

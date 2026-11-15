@@ -665,7 +665,13 @@ class InventoryService {
     return reportData;
   }
 
-  async getInventoryReportsByRole(userId: number, role: string, departmentId: number, query: any) {
+  async getInventoryReportsByRole(
+    userId: number,
+    role: string,
+    departmentId: number,
+    query: any,
+    permissionScope?: 'own' | 'department' | 'all',
+  ) {
     const { page, limit } = getPaginationParams(query);
     const offset = getOffset(page, limit);
 
@@ -679,7 +685,13 @@ class InventoryService {
       where.status = query.status;
     }
 
-    if (role === 'admin' || role === 'director') {
+    if (permissionScope === 'all') {
+      // Quyền chức năng toàn trường.
+    } else if (permissionScope === 'department') {
+      if (departmentId) where.department_id = departmentId;
+    } else if (permissionScope === 'own') {
+      where.created_by = userId;
+    } else if (role === 'admin' || role === 'director') {
       // all
     } else if (role === 'department_head') {
       // Trưởng đơn vị thấy báo cáo của đơn vị mình và toàn bộ đơn vị con/cháu.

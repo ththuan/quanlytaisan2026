@@ -75,6 +75,7 @@ class ProcurementService {
     }
     if (query.status) where.status = query.status;
     if (query.receiving_department_id) where.receiving_department_id = query.receiving_department_id;
+    if (query.created_by) where.created_by = query.created_by;
 
     const include: any[] = [
       { model: Department, as: 'receiving_department', attributes: ['id', 'name', 'type'] },
@@ -281,6 +282,11 @@ class ProcurementService {
       throw new ConflictError('Không thể sửa phiếu đã hoàn tất');
     }
 
+    const expectedVersion = (data as any).version;
+    if (expectedVersion !== undefined && Number(expectedVersion) !== Number(procurement.version)) {
+      throw new ConflictError('Phiếu đã được người khác cập nhật. Vui lòng tải lại dữ liệu.');
+    }
+
     const transaction = await sequelize.transaction();
     try {
       await procurement.update(
@@ -294,6 +300,7 @@ class ProcurementService {
           invoice_no: (data as any).invoice_no ?? (procurement as any).invoice_no,
           order_code: (data as any).order_code ?? (procurement as any).order_code,
           status: (data.status as any) ?? procurement.status,
+          version: Number(procurement.version || 0) + 1,
         } as any,
         { transaction }
       );

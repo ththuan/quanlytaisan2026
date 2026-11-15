@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+﻿import { Request, Response, NextFunction } from 'express';
 import { Op } from 'sequelize';
 import maintenanceService from '../services/maintenance.service';
 import { AuthRequest } from '../middleware/auth.middleware';
@@ -21,6 +21,32 @@ const recordMaintenanceSignature = async (req: AuthRequest, maintenanceId: numbe
   });
 };
 
+const assertMaintenanceScope = async (req: AuthRequest, id: number): Promise<void> => {
+  const maintenance = await MaintenanceRequest.findByPk(id, {
+    attributes: ['id', 'department_id', 'requested_by'],
+  });
+  if (!maintenance) {
+    const { NotFoundError } = await import('../utils/errorHandler');
+    throw new NotFoundError('Không tìm thấy yêu cầu sửa chữa');
+  }
+
+  const user = req.user!;
+  if (user.role === 'admin' || !req.permissionScope || req.permissionScope === 'all') {
+    return;
+  }
+  if (
+    req.permissionScope === 'department' &&
+    Number(maintenance.department_id) !== Number(user.department_id)
+  ) {
+    const { ForbiddenError } = await import('../utils/errorHandler');
+    throw new ForbiddenError('Chỉ được thao tác trên yêu cầu thuộc đơn vị của mình');
+  }
+  if (req.permissionScope === 'own' && maintenance.requested_by !== user.id) {
+    const { ForbiddenError } = await import('../utils/errorHandler');
+    throw new ForbiddenError('Chỉ được thao tác trên yêu cầu do mình tạo');
+  }
+};
+
 const requiresRepairSignature = async (maintenanceId: number): Promise<boolean> => {
   const request = await MaintenanceRequest.findByPk(maintenanceId, { attributes: ['id', 'request_type'] });
   return request?.request_type === 'repair';
@@ -35,6 +61,7 @@ class MaintenanceController {
         role: user.role as any,
         department_id: user.department_id,
         fullname: user.fullname,
+        permission_scope: req.permissionScope,
       });
 
       return res.json({
@@ -47,9 +74,10 @@ class MaintenanceController {
     }
   }
 
-  async getMaintenanceById(req: Request, res: Response, next: NextFunction) {
+  async getMaintenanceById(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const id = parseInt(req.params.id);
+      await assertMaintenanceScope(req, id);
       const maintenance = await maintenanceService.getMaintenanceById(id);
 
       // Convert to plain object - damageImages relationship is already loaded
@@ -72,18 +100,18 @@ class MaintenanceController {
 
       // Admin manages procurement centrally and chooses the receiving unit in
       // the request form. Other roles must still belong to a department.
-      if (user.role === 'admin') {
+      if (user.role === 'admin' || req.permissionScope === 'all') {
         if (!requestedDepartmentId) {
           return res.status(400).json({
             success: false,
-            message: 'Vui lòng chọn đơn vị sử dụng trực tiếp.',
+            message: 'Vui lÃ²ng chá»n Ä‘Æ¡n vá»‹ sá»­ dá»¥ng trá»±c tiáº¿p.',
           });
         }
         req.body.department_id = requestedDepartmentId;
       } else if (!user.department_id) {
         return res.status(400).json({
           success: false,
-          message: 'Bạn chưa được phân công vào đơn vị nào.',
+          message: 'Báº¡n chÆ°a Ä‘Æ°á»£c phÃ¢n cÃ´ng vÃ o Ä‘Æ¡n vá»‹ nÃ o.',
         });
       } else {
         // Prevent non-admin users from creating requests for another unit.
@@ -102,7 +130,7 @@ class MaintenanceController {
         isArray: Array.isArray(damageImagesInBody),
       };
       
-      logger.info('📝 [Controller] Creating maintenance request', {
+      logger.info('ðŸ“ [Controller] Creating maintenance request', {
         userId,
         userRole: user.role,
         requestType: req.body.request_type,
@@ -113,9 +141,9 @@ class MaintenanceController {
       if (damageImagesInBody && typeof damageImagesInBody === 'string' && damageImagesInBody.startsWith('[')) {
         try {
           const parsed = JSON.parse(damageImagesInBody);
-          logger.info(`✅ [Controller] Successfully parsed damage_images JSON. Count: ${Array.isArray(parsed) ? parsed.length : 'not an array'}`);
+          logger.info(`âœ… [Controller] Successfully parsed damage_images JSON. Count: ${Array.isArray(parsed) ? parsed.length : 'not an array'}`);
         } catch (e) {
-          logger.error('❌ [Controller] Failed to parse damage_images JSON string despite starting with [');
+          logger.error('âŒ [Controller] Failed to parse damage_images JSON string despite starting with [');
         }
       }
       
@@ -130,7 +158,7 @@ class MaintenanceController {
         data: maintenanceData,
       });
     } catch (error: any) {
-      logger.error('❌ Error creating maintenance', {
+      logger.error('âŒ Error creating maintenance', {
         message: error.message,
         stack: error.stack,
         name: error.name,
@@ -143,11 +171,12 @@ class MaintenanceController {
     try {
       const user = req.user!;
       const id = parseInt(req.params.id);
+      await assertMaintenanceScope(req, id);
 
       if (user.role !== 'admin' && !user.department_id) {
         return res.status(400).json({
           success: false,
-          message: 'Bạn chưa được phân công vào đơn vị nào.',
+          message: 'Báº¡n chÆ°a Ä‘Æ°á»£c phÃ¢n cÃ´ng vÃ o Ä‘Æ¡n vá»‹ nÃ o.',
         });
       }
 
@@ -155,6 +184,7 @@ class MaintenanceController {
         id: user.id,
         role: user.role as any,
         fullname: user.fullname,
+        permission_scope: req.permissionScope,
         department_id: user.department_id,
       });
 
@@ -211,6 +241,7 @@ class MaintenanceController {
           id: user.id,
           role: user.role as any,
           fullname: user.fullname,
+        permission_scope: req.permissionScope,
           department_id: user.department_id,
         },
         { decision: 'approved', notes, assigned_to, estimated_cost }
@@ -220,7 +251,7 @@ class MaintenanceController {
 
       return res.json({
         success: true,
-        message: 'Yêu cầu đã được phê duyệt thành công',
+        message: 'YÃªu cáº§u Ä‘Ã£ Ä‘Æ°á»£c phÃª duyá»‡t thÃ nh cÃ´ng',
         data: maintenance,
       });
     } catch (error) {
@@ -267,6 +298,7 @@ class MaintenanceController {
           id: user.id,
           role: user.role as any,
           fullname: user.fullname,
+        permission_scope: req.permissionScope,
           department_id: user.department_id,
         },
         { decision, reason, notes, assigned_to }
@@ -277,8 +309,8 @@ class MaintenanceController {
       }
 
       const message = decision === 'approved'
-        ? 'Yêu cầu đã được phê duyệt thành công'
-        : 'Yêu cầu đã bị từ chối';
+        ? 'YÃªu cáº§u Ä‘Ã£ Ä‘Æ°á»£c phÃª duyá»‡t thÃ nh cÃ´ng'
+        : 'YÃªu cáº§u Ä‘Ã£ bá»‹ tá»« chá»‘i';
 
       return res.json({
         success: true,
@@ -294,9 +326,10 @@ class MaintenanceController {
    * Get approval history (audit trail) for a maintenance request
    * GET /maintenance/:id/approval-history
    */
-  async getApprovalHistory(req: Request, res: Response, next: NextFunction) {
+  async getApprovalHistory(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const id = parseInt(req.params.id);
+      await assertMaintenanceScope(req, id);
       const history = await maintenanceService.getApprovalHistory(id);
 
       return res.json({
@@ -328,17 +361,18 @@ class MaintenanceController {
   /**
    * Submit maintenance request for approval
    * POST /maintenance/:id/submit
-   * Chuyển từ draft/new sang pending để gửi lên trưởng phòng phê duyệt
+   * Chuyá»ƒn tá»« draft/new sang pending Ä‘á»ƒ gá»­i lÃªn trÆ°á»Ÿng phÃ²ng phÃª duyá»‡t
    */
   async submitForApproval(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const id = parseInt(req.params.id);
+      await assertMaintenanceScope(req, id);
       const user = req.user!;
       const userId = user.id;
       const requiresSignature = await requiresRepairSignature(id);
       const signatureImage = requiresSignature ? assertSignature(req.body?.signature) : '';
 
-      console.log('📤 Submitting maintenance request for approval:', {
+      console.log('ðŸ“¤ Submitting maintenance request for approval:', {
         requestId: id,
         userId,
         userRole: user.role,
@@ -352,24 +386,25 @@ class MaintenanceController {
           id: user.id,
           role: user.role as any,
           fullname: user.fullname,
+        permission_scope: req.permissionScope,
           department_id: user.department_id,
         }
       );
 
       if (requiresSignature) await recordMaintenanceSignature(req, id, 'submit', signatureImage);
 
-      console.log('✅ Successfully submitted for approval:', {
+      console.log('âœ… Successfully submitted for approval:', {
         requestId: id,
         newStatus: maintenance.status,
       });
 
       return res.json({
         success: true,
-        message: 'Yêu cầu đã được gửi phê duyệt thành công',
+        message: 'YÃªu cáº§u Ä‘Ã£ Ä‘Æ°á»£c gá»­i phÃª duyá»‡t thÃ nh cÃ´ng',
         data: maintenance,
       });
     } catch (error: any) {
-      console.error('❌ Error submitting for approval:', {
+      console.error('âŒ Error submitting for approval:', {
         requestId: req.params.id,
         userId: req.user?.id,
         error: error.message,
@@ -382,13 +417,11 @@ class MaintenanceController {
     }
   }
 
-  /**
-   * Hoàn tất mua sắm/cấp phát: tạo tài sản tự động và gán về đơn vị nhận
-   * POST /maintenance/:id/fulfill-procurement
-   */
+  /* Tạo tài sản từ yêu cầu mua sắm đã duyệt. */
   async fulfillProcurement(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const id = parseInt(req.params.id);
+      await assertMaintenanceScope(req, id);
       const user = req.user!;
 
       const result = await maintenanceService.fulfillProcurement(
@@ -397,6 +430,7 @@ class MaintenanceController {
           id: user.id,
           role: user.role as any,
           fullname: user.fullname,
+        permission_scope: req.permissionScope,
           department_id: user.department_id,
         },
         req.body
@@ -404,7 +438,7 @@ class MaintenanceController {
 
       return res.json({
         success: true,
-        message: 'Đã hoàn tất mua sắm và tạo tài sản thành công',
+        message: 'ÄÃ£ hoÃ n táº¥t mua sáº¯m vÃ  táº¡o tÃ i sáº£n thÃ nh cÃ´ng',
         data: {
           maintenance: result.maintenance,
           created_assets: result.created_assets,
@@ -419,11 +453,12 @@ class MaintenanceController {
     try {
       const user = req.user!;
       const id = parseInt(req.params.id);
+      await assertMaintenanceScope(req, id);
 
       if (user.role !== 'admin' && !user.department_id) {
         return res.status(400).json({
           success: false,
-          message: 'Bạn chưa được phân công vào đơn vị nào.',
+          message: 'Báº¡n chÆ°a Ä‘Æ°á»£c phÃ¢n cÃ´ng vÃ o Ä‘Æ¡n vá»‹ nÃ o.',
         });
       }
 
@@ -431,12 +466,13 @@ class MaintenanceController {
         id: user.id,
         role: user.role as any,
         fullname: user.fullname,
+        permission_scope: req.permissionScope,
         department_id: user.department_id,
       });
 
       return res.json({
         success: true,
-        message: 'Yêu cầu đã được xóa thành công',
+        message: 'YÃªu cáº§u Ä‘Ã£ Ä‘Æ°á»£c xÃ³a thÃ nh cÃ´ng',
       });
     } catch (error) {
       next(error);
@@ -445,21 +481,23 @@ class MaintenanceController {
 
   /**
    * POST /maintenance/:id/start-repair
-   * Admin bắt đầu thực hiện sửa chữa: approved_by_director → in_progress
+   * Admin báº¯t Ä‘áº§u thá»±c hiá»‡n sá»­a chá»¯a: approved_by_director â†’ in_progress
    */
   async startRepair(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const id = parseInt(req.params.id);
+      await assertMaintenanceScope(req, id);
       const user = req.user!;
       const maintenance = await maintenanceService.startRepair(id, {
         id: user.id,
         role: user.role as any,
         fullname: user.fullname,
+        permission_scope: req.permissionScope,
         department_id: user.department_id,
       });
       return res.json({
         success: true,
-        message: 'Đã bắt đầu thực hiện sửa chữa',
+        message: 'ÄÃ£ báº¯t Ä‘áº§u thá»±c hiá»‡n sá»­a chá»¯a',
         data: maintenance,
       });
     } catch (error) {
@@ -467,24 +505,23 @@ class MaintenanceController {
     }
   }
 
-  /**
-   * POST /maintenance/:id/complete-repair
-   * Admin xác nhận hoàn thành sửa chữa: in_progress → repair_completed
-   */
+  /* Xác nhận hoàn thành sửa chữa. */
   async completeRepair(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const id = parseInt(req.params.id);
+      await assertMaintenanceScope(req, id);
       const user = req.user!;
       const { notes } = req.body;
       const maintenance = await maintenanceService.completeRepair(id, {
         id: user.id,
         role: user.role as any,
         fullname: user.fullname,
+        permission_scope: req.permissionScope,
         department_id: user.department_id,
       }, notes);
       return res.json({
         success: true,
-        message: 'Đã đánh dấu hoàn thành sửa chữa. Chờ Admin xác nhận.',
+        message: 'ÄÃ£ Ä‘Ã¡nh dáº¥u hoÃ n thÃ nh sá»­a chá»¯a. Chá» Admin xÃ¡c nháº­n.',
         data: maintenance,
       });
     } catch (error) {
@@ -492,10 +529,7 @@ class MaintenanceController {
     }
   }
 
-  /**
-   * POST /maintenance/report-damage
-   * Người dùng gửi nhanh báo hỏng tài sản; yêu cầu vào trạng thái chờ Admin duyệt.
-   */
+  /* Báo hỏng tài sản nhanh. */
   async reportDamage(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const user = req.user!;
@@ -509,14 +543,14 @@ class MaintenanceController {
       if (!assetId || !description) {
         return res.status(400).json({
           success: false,
-          message: 'Vui lòng chọn tài sản và mô tả tình trạng hỏng',
+          message: 'Vui lÃ²ng chá»n tÃ i sáº£n vÃ  mÃ´ táº£ tÃ¬nh tráº¡ng há»ng',
         });
       }
 
       if (description.length < 5) {
         return res.status(400).json({
           success: false,
-          message: 'Mô tả tình trạng cần chi tiết hơn',
+          message: 'MÃ´ táº£ tÃ¬nh tráº¡ng cáº§n chi tiáº¿t hÆ¡n',
         });
       }
 
@@ -524,21 +558,21 @@ class MaintenanceController {
       if (!asset) {
         return res.status(404).json({
           success: false,
-          message: 'Không tìm thấy tài sản',
+          message: 'KhÃ´ng tÃ¬m tháº¥y tÃ i sáº£n',
         });
       }
 
       if ((asset as any).status !== 'active') {
         return res.status(409).json({
           success: false,
-          message: 'Tài sản không ở trạng thái đang sử dụng, không thể gửi báo hỏng',
+          message: 'TÃ i sáº£n khÃ´ng á»Ÿ tráº¡ng thÃ¡i Ä‘ang sá»­ dá»¥ng, khÃ´ng thá»ƒ gá»­i bÃ¡o há»ng',
         });
       }
 
       if (user.role === 'director') {
         return res.status(403).json({
           success: false,
-          message: 'Giám hiệu chỉ có quyền xem, không thực hiện báo hỏng',
+          message: 'GiÃ¡m hiá»‡u chá»‰ cÃ³ quyá»n xem, khÃ´ng thá»±c hiá»‡n bÃ¡o há»ng',
         });
       }
 
@@ -547,7 +581,7 @@ class MaintenanceController {
         if (!user.department_id || assetDepartmentId !== Number(user.department_id)) {
           return res.status(403).json({
             success: false,
-            message: 'Chỉ được báo hỏng tài sản thuộc đơn vị của bạn',
+            message: 'Chá»‰ Ä‘Æ°á»£c bÃ¡o há»ng tÃ i sáº£n thuá»™c Ä‘Æ¡n vá»‹ cá»§a báº¡n',
           });
         }
       }
@@ -565,7 +599,7 @@ class MaintenanceController {
       if (existing) {
         return res.status(409).json({
           success: false,
-          message: 'Tài sản đang có yêu cầu sửa chữa chờ xử lý',
+          message: 'TÃ i sáº£n Ä‘ang cÃ³ yÃªu cáº§u sá»­a chá»¯a chá» xá»­ lÃ½',
         });
       }
 
@@ -587,7 +621,7 @@ class MaintenanceController {
 
       return res.status(201).json({
         success: true,
-        message: 'Đã gửi báo hỏng. Quản trị viên sẽ xem xét và phê duyệt.',
+        message: 'ÄÃ£ gá»­i bÃ¡o há»ng. Quáº£n trá»‹ viÃªn sáº½ xem xÃ©t vÃ  phÃª duyá»‡t.',
         data: maintenance,
       });
     } catch (error) {
