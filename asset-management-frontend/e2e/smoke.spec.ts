@@ -130,6 +130,37 @@ test.describe('Layout desktop', () => {
     const htmlClass = (await page.locator('html').getAttribute('class')) ?? '';
     expect(htmlClass).not.toContain('app-overlay');
   });
+
+  test('dashboard desktop hiển thị thẻ tổng quan kích thước lớn', async ({ page }) => {
+    await mockAuthenticatedAs(page, 'admin');
+    await page.setViewportSize({ width: 1600, height: 900 });
+    await page.goto('/');
+
+    const card = page.locator('.stats-row .stat-card').first();
+    await expect(card).toBeVisible();
+
+    const cardBox = await card.boundingBox();
+    expect(cardBox?.height ?? 0).toBeGreaterThanOrEqual(100);
+
+    const iconBox = await card.locator('.stat-icon').boundingBox();
+    expect(Math.round(iconBox?.width ?? 0)).toBe(52);
+
+    const labelFontSize = await card
+      .locator('.stat-label')
+      .evaluate((el) => getComputedStyle(el).fontSize);
+    expect(labelFontSize).toBe('13px');
+
+    // 2K (2560) và 4K (3840): thẻ/icon phải tiếp tục tăng kích thước.
+    await page.setViewportSize({ width: 2560, height: 1440 });
+    await expect
+      .poll(async () => Math.round((await card.locator('.stat-icon').boundingBox())?.width ?? 0))
+      .toBeGreaterThan(70);
+
+    await page.setViewportSize({ width: 3840, height: 2160 });
+    await expect
+      .poll(async () => Math.round((await card.locator('.stat-icon').boundingBox())?.width ?? 0))
+      .toBeGreaterThanOrEqual(100);
+  });
 });
 
 test.describe('In danh sách tài sản', () => {

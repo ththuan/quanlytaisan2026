@@ -1061,24 +1061,27 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
   flex: 1;
 }
 
-.stats-row .stat-card :deep(.el-card__body) {
-  padding: 12px 14px;
-  gap: 10px;
-}
+/* Bản gọn cho tablet/mobile; desktop rộng dùng kích thước lớn bên dưới. */
+@media (max-width: 1365px) {
+  .stats-row .stat-card :deep(.el-card__body) {
+    padding: 12px 14px;
+    gap: 10px;
+  }
 
-.stats-row .stat-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 9px;
-}
+  .stats-row .stat-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+  }
 
-.stats-row .stat-value {
-  font-size: 1.15rem;
-}
+  .stats-row .stat-value {
+    font-size: 1.15rem;
+  }
 
-.stats-row .stat-label {
-  font-size: 10px;
-  letter-spacing: 0.3px;
+  .stats-row .stat-label {
+    font-size: 10px;
+    letter-spacing: 0.3px;
+  }
 }
 
 .stat-icon {
@@ -1282,27 +1285,42 @@ const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'i
 @media (min-width: 1366px) {
   .stats-row { margin-bottom: 30px; }
 
-  .stat-card :deep(.el-card__body) { padding: 22px 26px; }
+  .stats-row .stat-card { min-height: 104px; }
 
-  .stat-icon {
-    width: 50px;
-    height: 50px;
+  .stats-row .stat-card :deep(.el-card__body) {
+    padding: 22px 26px;
+    gap: 18px;
   }
 
-  .stat-value { font-size: 1.55rem; }
-  .stat-label { font-size: 13px; }
+  .stats-row .stat-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+  }
+
+  .stats-row .stat-icon :deep(.el-icon) { font-size: 28px !important; }
+  .stats-row .stat-value { font-size: 1.7rem; }
+  .stats-row .stat-label { font-size: 13px; letter-spacing: 0; }
   .dept-chart { height: min(62vh, 720px); }
 }
 
 @media (min-width: 1920px) {
-  .stat-card :deep(.el-card__body) { padding: 26px 30px; }
+  /* Tự giãn theo bề rộng: 2K (2560), 4K (3840) vẫn giữ tỉ lệ hài hoà. */
+  .stats-row .stat-card { min-height: clamp(118px, 6vw, 176px); }
 
-  .stat-icon {
-    width: 56px;
-    height: 56px;
+  .stats-row .stat-card :deep(.el-card__body) {
+    padding: clamp(26px, 1.4vw, 44px) clamp(30px, 1.8vw, 56px);
+    gap: clamp(20px, 1.1vw, 34px);
   }
 
-  .stat-value { font-size: 1.75rem; }
+  .stats-row .stat-icon {
+    width: clamp(60px, 3.1vw, 104px);
+    height: clamp(60px, 3.1vw, 104px);
+  }
+
+  .stats-row .stat-icon :deep(.el-icon) { font-size: clamp(32px, 1.7vw, 56px) !important; }
+  .stats-row .stat-value { font-size: clamp(2rem, 1.5vw, 2.8rem); }
+  .stats-row .stat-label { font-size: clamp(14px, 0.7vw, 18px); }
   .dept-chart { height: min(66vh, 900px); }
 }
 
