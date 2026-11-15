@@ -6,6 +6,24 @@ import {
   heartbeatRecord,
   releaseRecord,
 } from '../services/recordLock.service';
+import { getPermissionState } from '../services/permission.service';
+import { ForbiddenError } from '../utils/errorHandler';
+
+const LOCK_PERMISSIONS: Record<string, string[]> = {
+  maintenance: ['maintenance.update', 'maintenance.approve', 'maintenance.execute'],
+  procurement: ['procurement.update', 'procurement.fulfill'],
+  inventory_report: ['inventory.count', 'inventory.approve'],
+};
+
+const assertCanUseLock = async (req: AuthRequest, entityType: string) => {
+  if (req.user?.role === 'admin') return;
+  const required = LOCK_PERMISSIONS[entityType] || [];
+  const state = await getPermissionState(req.user!.id);
+  if (!state.customized) return;
+  if (!required.some((code) => state.permissions.has(code))) {
+    throw new ForbiddenError('Bạn không có quyền giữ khóa hồ sơ này');
+  }
+};
 
 const readEntity = (req: AuthRequest) => ({
   entityType: String(req.body?.entity_type || req.query?.entity_type || ''),
@@ -15,6 +33,7 @@ const readEntity = (req: AuthRequest) => ({
 export const claim = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { entityType, entityId } = readEntity(req);
+    await assertCanUseLock(req, entityType);
     const data = await claimRecord(entityType, entityId, req.user!.id);
     res.json({ success: true, data });
   } catch (error) {

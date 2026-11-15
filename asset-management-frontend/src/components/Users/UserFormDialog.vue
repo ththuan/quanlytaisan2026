@@ -151,6 +151,14 @@
         Phân quyền chức năng
       </el-divider>
 
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        title="Đang áp dụng cho Sửa chữa, Tăng tài sản và Kiểm kê. Các module còn lại sẽ mở rộng ở giai đoạn tiếp theo."
+        class="permission-note"
+      />
+
       <div
         v-if="formData.role === 'admin'"
         class="permission-hint"
@@ -603,6 +611,10 @@ watch(() => props.visible, async (newVal) => {
 :deep(.el-dialog__body) {
   max-height: 70vh;
   overflow-y: auto;
+}
+
+.permission-note {
+  margin-bottom: 12px;
 }
 
 .permission-block {

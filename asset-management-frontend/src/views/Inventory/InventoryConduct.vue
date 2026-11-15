@@ -1883,6 +1883,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { ArrowLeft, ArrowRight, DocumentCopy, MoreFilled, Select, Search, InfoFilled, Camera, Calendar, Timer, OfficeBuilding, Warning, Box } from '@element-plus/icons-vue';
 import { useAuthStore } from '@/stores/auth.store';
 import inventoryService, { type InventoryRound, type InventoryReport } from '@/services/inventory.service';
+import { useRecordLock } from '@/composables/useRecordLock';
 import { assetService } from '@/services/asset.service';
 import { assetCategoryService } from '@/services/assetCategory.service';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
@@ -1941,6 +1942,7 @@ const bulkMissingForm = ref({
 
 const round = ref<InventoryRound | null>(null);
 const report = ref<InventoryReport | null>(null);
+const conductLock = useRecordLock('inventory_report');
 const assets = ref<any[]>([]);
 const hasChanges = ref(false);
 
@@ -2820,6 +2822,15 @@ const fetchData = async () => {
       }
       if (!report.value) {
         ElMessage.warning('Chưa có báo cáo kiểm kê. Vui lòng thử lại.');
+      }
+    }
+
+    if (navigator.onLine && report.value?.id && authStore.user?.role !== 'admin') {
+      await conductLock.release();
+      const claimed = await conductLock.claim(report.value.id);
+      if (!claimed) {
+        router.push('/inventory');
+        return;
       }
     }
   } catch (error: any) {

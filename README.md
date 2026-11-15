@@ -189,6 +189,7 @@ Các cải tiến giao diện theo chuẩn native app (áp dụng khi `html.app-
   - `all`: toàn trường
 - Có mẫu cấp nhanh: **Quản lý sửa chữa**, **Quản lý tăng tài sản**, **Quản lý kiểm kê**, **Chỉ xem**.
 - Danh mục hiện có khoảng 16 nhóm module và hơn 60 quyền thao tác (xem, tạo, sửa, xóa, duyệt, hoàn thành, export...).
+- **Đã áp dụng backend + giao diện cho 3 module lõi: Sửa chữa, Tăng tài sản, Kiểm kê.** Các module còn lại trong danh mục đang được mở rộng dần; hiện vẫn dùng quyền theo vai trò cũ.
 - User chưa được cấu hình quyền riêng tiếp tục dùng quyền mặc định theo vai trò cũ (tương thích ngược).
 - Quyền được chặn ở backend; frontend chỉ ẩn/hiện menu và nút theo quyền.
 - Phân quyền thay đổi có hiệu lực sau tối đa 30 giây (cache quyền); backend luôn kiểm tra lại.
