@@ -15,14 +15,14 @@
         </div>
         <div class="header-right">
           <el-button
-            v-if="authStore.isAdmin"
+            v-if="authStore.can('stock.import', ['admin'])"
             type="primary"
             @click="openReceipt"
           >
             Nhập kho
           </el-button>
           <el-button
-            v-if="authStore.isAdmin"
+            v-if="authStore.can('stock.export', ['admin'])"
             type="warning"
             @click="openIssue"
           >

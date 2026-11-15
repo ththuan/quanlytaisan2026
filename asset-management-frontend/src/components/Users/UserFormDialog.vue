@@ -155,7 +155,7 @@
         type="info"
         :closable="false"
         show-icon
-        title="Đang áp dụng cho Sửa chữa, Tăng tài sản và Kiểm kê. Các module còn lại sẽ mở rộng ở giai đoạn tiếp theo."
+        title="Admin có thể cấp quyền theo module và phạm vi. Quyền quản trị hệ thống vẫn chỉ dành cho admin."
         class="permission-note"
       />
 

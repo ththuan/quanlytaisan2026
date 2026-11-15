@@ -364,7 +364,7 @@ import normService, { type EquipmentNorm, type NormWarning } from '@/services/no
 import { useAuthStore } from '@/stores/auth.store';
 
 const authStore = useAuthStore();
-const canEditNorms = computed(() => authStore.isAdmin);
+const canEditNorms = computed(() => authStore.can('norms.update', ['admin']) || authStore.can('norms.create', ['admin']));
 
 const activeTab = ref<'norms' | 'warnings'>('norms');
 

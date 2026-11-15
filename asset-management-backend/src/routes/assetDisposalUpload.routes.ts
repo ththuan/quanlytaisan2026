@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { authenticateToken, requireRoles } from '../middleware/auth.middleware';
+import { authenticateToken } from '../middleware/auth.middleware';
+import { requirePermission, adminOnlyRoles } from '../middleware/authorization.middleware';
 import assetDisposalUploadController from '../controllers/assetDisposalUpload.controller';
 
 const router = Router();
@@ -38,7 +39,7 @@ const upload = multer({
 router.post(
   '/:id/decision-file',
   authenticateToken,
-  requireRoles(['admin']),
+  requirePermission('disposal.update', adminOnlyRoles),
   upload.single('file'),
   (req, res, next) => assetDisposalUploadController.uploadDecisionFile(req as any, res, next)
 );

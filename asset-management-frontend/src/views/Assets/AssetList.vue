@@ -26,6 +26,7 @@
             In danh sách
           </el-button>
           <el-button
+            v-if="authStore.can('assets.export', ['admin', 'director', 'department_head', 'staff'])"
             type="warning"
             :icon="Download"
             size="default"
@@ -36,7 +37,7 @@
             Xuất Excel
           </el-button>
           <el-button
-            v-if="authStore.isAdmin"
+            v-if="authStore.can('assets.import', ['admin'])"
             type="success"
             :icon="Upload"
             size="default"
@@ -46,7 +47,7 @@
             Import Excel
           </el-button>
           <el-button
-            v-if="authStore.isAdmin"
+            v-if="authStore.can('assets.qr', ['admin'])"
             type="info"
             :icon="Printer"
             size="default"
@@ -884,7 +885,9 @@ const router = useRouter();
 const route = useRoute();
 const assetStore = useAssetStore();
 const authStore = useAuthStore();
-const canManageAssets = computed(() => authStore.isAdmin);
+const canManageAssets = computed(
+  () => authStore.can('assets.create', ['admin']) || authStore.can('assets.update', ['admin']),
+);
 const canFilterAllDepartments = computed(() => authStore.isAdmin || authStore.isDirector);
 const { t } = useI18n();
 

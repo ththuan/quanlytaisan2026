@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import transfersController from '../controllers/transfers.controller';
 import { authenticateToken } from '../middleware/auth.middleware';
-import { 
-  requireRole,
+import {
+  requirePermission,
+  allAuthenticatedRoles,
+  adminOnlyRoles,
   canApproveTransfer,
-  canViewTransfer 
+  canViewTransfer,
 } from '../middleware/authorization.middleware';
 import { validateRequest } from '../middleware/validation';
 import { createTransferSchema } from '../utils/validators';
@@ -15,16 +17,17 @@ const router = Router();
 router.use(authenticateToken);
 
 // All authenticated users can view transfers (filtered by role)
-router.get('/', transfersController.getAllTransfers);
-router.get('/:id', canViewTransfer, transfersController.getTransferById);
-router.get('/asset/:assetId/history', transfersController.getTransferHistory);
+router.get('/', requirePermission('transfers.view', allAuthenticatedRoles), transfersController.getAllTransfers);
+router.get('/:id', requirePermission('transfers.view', allAuthenticatedRoles), canViewTransfer, transfersController.getTransferById);
+router.get('/asset/:assetId/history', requirePermission('transfers.view', allAuthenticatedRoles), transfersController.getTransferHistory);
 
 // Get approval history for a transfer
-router.get('/:id/approval-history', canViewTransfer, transfersController.getApprovalHistory);
+router.get('/:id/approval-history', requirePermission('transfers.view', allAuthenticatedRoles), canViewTransfer, transfersController.getApprovalHistory);
 
 // Create transfer request (Staff, Department Head can create)
 router.post(
   '/',
+  requirePermission('transfers.create', allAuthenticatedRoles),
   validateRequest(createTransferSchema),
   transfersController.createTransfer
 );
@@ -32,6 +35,7 @@ router.post(
 // Multi-level approval (Department Head or Admin)
 router.post(
   '/:id/process-approval',
+  requirePermission('transfers.approve', allAuthenticatedRoles),
   canApproveTransfer,
   transfersController.processApproval
 );
@@ -39,13 +43,13 @@ router.post(
 // Legacy approve/reject routes (for backward compatibility)
 router.post(
   '/:id/approve',
-  requireRole('admin'),
+  requirePermission('transfers.approve', adminOnlyRoles),
   transfersController.approveTransfer
 );
 
 router.post(
   '/:id/reject',
-  requireRole('admin'),
+  requirePermission('transfers.approve', adminOnlyRoles),
   transfersController.rejectTransfer
 );
 

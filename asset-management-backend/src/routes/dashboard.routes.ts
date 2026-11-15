@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticateToken, requireDepartmentScope } from '../middleware/auth.middleware';
-import { requireRole } from '../middleware/authorization.middleware';
+import { requireAnyPermission } from '../middleware/authorization.middleware';
 import * as dashboardController from '../controllers/dashboard.controller';
 import { cacheResponse } from '../middleware/redisCache';
 
@@ -17,8 +17,8 @@ router.get('/departments', cacheResponse(15), dashboardController.getDepartmentS
 router.get('/procurements', cacheResponse(15), dashboardController.getProcurementStats);
 router.get('/stock', cacheResponse(15), dashboardController.getStockStats);
 router.get('/categories', cacheResponse(15), dashboardController.getCategoryBreakdown);
-router.get('/audit-logs', requireRole('admin'), cacheResponse(15), dashboardController.getAuditLogs);
-router.get('/maintenance', requireRole('admin'), cacheResponse(15), dashboardController.getMaintenanceStats);
+router.get('/audit-logs', requireAnyPermission(['audit.view_all', 'audit.view_department'], ['admin']), cacheResponse(15), dashboardController.getAuditLogs);
+router.get('/maintenance', requireAnyPermission(['maintenance.view'], ['admin']), cacheResponse(15), dashboardController.getMaintenanceStats);
 router.get('/hierarchy', cacheResponse(15), dashboardController.getHierarchyStats);
 
 export default router;

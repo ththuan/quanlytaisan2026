@@ -22,7 +22,7 @@
             Xuất Excel
           </el-button>
           <el-button
-            v-if="authStore.isAdmin"
+            v-if="authStore.can('reports.create', ['admin'])"
             type="primary"
             :icon="Plus"
             @click="handleCreate"
@@ -388,7 +388,7 @@ const handleView = async (report: any) => {
 
 const reportDepartmentName = (report: any) => report?.department?.name || '—';
 
-const canEdit = (_report: any) => authStore.isAdmin;
+const canEdit = (_report: any) => authStore.can('reports.update', ['admin']);
 
 function listQueryParams(page?: number) {
   return {

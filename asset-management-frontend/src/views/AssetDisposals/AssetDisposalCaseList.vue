@@ -15,7 +15,7 @@
         </div>
         <div class="header-right">
           <el-button
-            v-if="authStore.isAdmin"
+            v-if="authStore.can('disposal.create', ['admin'])"
             type="danger"
             :icon="Delete"
             @click="destructionVisible = true"

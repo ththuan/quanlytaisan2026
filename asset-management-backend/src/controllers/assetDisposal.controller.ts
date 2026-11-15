@@ -1,14 +1,34 @@
 import { Request, Response } from 'express';
 import assetDisposalService from '../services/assetDisposal.service';
 import { assertSignature, recordSignature } from '../services/signature.service';
+import { ForbiddenError } from '../utils/errorHandler';
+
+const assertDisposalScope = async (req: Request, id: number) => {
+  const user = (req as any).user;
+  const permissionScope = (req as any).permissionScope;
+  const customized = (req as any).permissionCustomized;
+  if (!customized || !permissionScope || permissionScope === 'all' || user?.role === 'admin') {
+    return;
+  }
+  const result: any = await assetDisposalService.getCaseById(id);
+  if (
+    (permissionScope === 'department' || permissionScope === 'own') &&
+    Number(result.origin_department_id) !== Number(user?.department_id)
+  ) {
+    throw new ForbiddenError('Chỉ được thao tác hồ sơ thanh lý thuộc đơn vị của mình');
+  }
+};
 
 class AssetDisposalController {
   async listCases(req: Request, res: Response) {
     const user = (req as any).user;
     const query = { ...req.query };
 
-    // Staff/Head chỉ xem hồ sơ của phòng mình
-    if (['staff', 'department_head'].includes(user?.role)) {
+    if ((req as any).permissionCustomized) {
+      if ((req as any).permissionScope !== 'all') {
+        query.origin_department_id = user?.department_id;
+      }
+    } else if (['staff', 'department_head'].includes(user?.role)) {
       query.origin_department_id = user?.department_id;
     }
 
@@ -23,7 +43,15 @@ class AssetDisposalController {
       const result = await assetDisposalService.getCaseById(id);
 
       // Check permission
-      if (['staff', 'department_head'].includes(user?.role) && result.origin_department_id !== user?.department_id) {
+      if ((req as any).permissionCustomized) {
+        const scope = (req as any).permissionScope;
+        if (
+          (scope === 'department' || scope === 'own') &&
+          Number(result.origin_department_id) !== Number(user?.department_id)
+        ) {
+          return res.status(403).json({ success: false, message: 'Bạn không có quyền xem hồ sơ này' });
+        }
+      } else if (['staff', 'department_head'].includes(user?.role) && result.origin_department_id !== user?.department_id) {
         return res.status(403).json({ success: false, message: 'Bạn không có quyền xem hồ sơ này' });
       }
 
@@ -37,6 +65,7 @@ class AssetDisposalController {
   async updateCase(req: Request, res: Response) {
     try {
       const id = parseInt(req.params.id, 10);
+      await assertDisposalScope(req, id);
       const userId = (req as any).user?.id;
       const result = await assetDisposalService.updatePendingCase(id, userId, req.body || {});
       res.json({ success: true, data: result });
@@ -49,6 +78,7 @@ class AssetDisposalController {
   async deleteCase(req: Request, res: Response) {
     try {
       const id = parseInt(req.params.id, 10);
+      await assertDisposalScope(req, id);
       const userId = (req as any).user?.id;
       await assetDisposalService.deletePendingCase(id, userId);
       res.json({ success: true, message: 'Đã xóa hồ sơ' });
@@ -59,6 +89,7 @@ class AssetDisposalController {
 
   async completeCase(req: Request, res: Response) {    try {
       const id = parseInt(req.params.id, 10);
+      await assertDisposalScope(req, id);
       const user = (req as any).user;
       const userId = user?.id;
 

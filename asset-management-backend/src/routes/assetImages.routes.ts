@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { authenticateToken, requireRoles } from '../middleware/auth.middleware';
+import { authenticateToken } from '../middleware/auth.middleware';
+import { requirePermission, adminOnlyRoles } from '../middleware/authorization.middleware';
 import assetImagesController from '../controllers/assetImages.controller';
 import { ALLOWED_IMAGE_MIME_TYPES } from '../constants/imageMime';
 
@@ -25,7 +26,7 @@ const upload = multer({
 router.post(
   '/:id/image',
   authenticateToken,
-  requireRoles(['admin']),
+  requirePermission('assets.update', adminOnlyRoles),
   upload.single('image'),
   (req, res, next) => assetImagesController.uploadAssetImage(req as any, res, next)
 );
@@ -34,7 +35,7 @@ router.post(
 router.delete(
   '/:id/image',
   authenticateToken,
-  requireRoles(['admin']),
+  requirePermission('assets.update', adminOnlyRoles),
   (req, res, next) => assetImagesController.deleteAssetImage(req as any, res, next)
 );
 

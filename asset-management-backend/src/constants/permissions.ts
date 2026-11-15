@@ -60,7 +60,7 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     moduleLabel: 'Tài sản',
     action: 'import',
     label: 'Import Excel tài sản',
-    scopes: ALL_SCOPES,
+    scopes: ['all'],
   },
   {
     code: 'assets.export',
@@ -76,7 +76,7 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     moduleLabel: 'Tài sản',
     action: 'qr',
     label: 'Tạo/in QR tài sản',
-    scopes: ALL_SCOPES,
+    scopes: ['all'],
   },
   {
     code: 'asset_categories.view',
@@ -463,13 +463,44 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     scopes: ALL_SCOPES,
   },
   {
+    code: 'reports.create',
+    module: 'reports',
+    moduleLabel: 'Báo cáo',
+    action: 'create',
+    label: 'Tạo báo cáo',
+    scopes: ALL_SCOPES,
+  },
+  {
+    code: 'reports.update',
+    module: 'reports',
+    moduleLabel: 'Báo cáo',
+    action: 'update',
+    label: 'Cập nhật/gửi báo cáo',
+    scopes: ALL_SCOPES,
+  },
+  {
+    code: 'reports.approve',
+    module: 'reports',
+    moduleLabel: 'Báo cáo',
+    action: 'approve',
+    label: 'Duyệt/từ chối báo cáo',
+    scopes: ALL_SCOPES,
+  },
+  {
+    code: 'reports.delete',
+    module: 'reports',
+    moduleLabel: 'Báo cáo',
+    action: 'delete',
+    label: 'Xóa báo cáo',
+    scopes: ALL_SCOPES,
+  },
+  {
     code: 'departments.view',
     module: 'departments',
     moduleLabel: 'Đơn vị',
     action: 'view',
     label: 'Xem đơn vị',
     scopes: ['all'],
-    adminOnly: true,
   },
   {
     code: 'departments.create',
@@ -478,7 +509,6 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     action: 'create',
     label: 'Tạo đơn vị',
     scopes: ['all'],
-    adminOnly: true,
   },
   {
     code: 'departments.update',
@@ -487,7 +517,6 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     action: 'update',
     label: 'Cập nhật đơn vị',
     scopes: ['all'],
-    adminOnly: true,
   },
   {
     code: 'departments.delete',
@@ -496,7 +525,6 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     action: 'delete',
     label: 'Xóa đơn vị',
     scopes: ['all'],
-    adminOnly: true,
   },
   {
     code: 'users.view',
@@ -505,7 +533,6 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     action: 'view',
     label: 'Xem người dùng',
     scopes: ['all'],
-    adminOnly: true,
   },
   {
     code: 'users.create',
@@ -514,7 +541,6 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     action: 'create',
     label: 'Tạo người dùng',
     scopes: ['all'],
-    adminOnly: true,
   },
   {
     code: 'users.update',
@@ -523,7 +549,6 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     action: 'update',
     label: 'Cập nhật người dùng',
     scopes: ['all'],
-    adminOnly: true,
   },
   {
     code: 'users.delete',
@@ -532,7 +557,6 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     action: 'delete',
     label: 'Xóa người dùng',
     scopes: ['all'],
-    adminOnly: true,
   },
   {
     code: 'users.reset',
@@ -541,7 +565,6 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     action: 'reset',
     label: 'Đặt lại mật khẩu',
     scopes: ['all'],
-    adminOnly: true,
   },
   {
     code: 'audit.view_all',
@@ -550,7 +573,6 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     action: 'view_all',
     label: 'Xem toàn bộ nhật ký',
     scopes: ['all'],
-    adminOnly: true,
   },
   {
     code: 'audit.view_department',
@@ -610,6 +632,7 @@ export const PERMISSION_PRESETS: Array<{
     description: 'Xem, tạo, duyệt và thực hiện sửa chữa trong phạm vi được giao.',
     permissions: [
       { code: 'assets.view', scope: 'department' },
+      { code: 'asset_categories.view', scope: 'all' },
       { code: 'maintenance.view', scope: 'department' },
       { code: 'maintenance.create', scope: 'department' },
       { code: 'maintenance.update', scope: 'department' },
@@ -625,6 +648,7 @@ export const PERMISSION_PRESETS: Array<{
     description: 'Xem, tạo, duyệt và hoàn tất mua sắm/tăng tài sản.',
     permissions: [
       { code: 'assets.view', scope: 'department' },
+      { code: 'asset_categories.view', scope: 'all' },
       { code: 'procurement.view', scope: 'department' },
       { code: 'procurement.create', scope: 'department' },
       { code: 'procurement.update', scope: 'department' },
@@ -639,6 +663,7 @@ export const PERMISSION_PRESETS: Array<{
     description: 'Xem, tạo đợt, kiểm kê, gửi duyệt và duyệt báo cáo kiểm kê.',
     permissions: [
       { code: 'assets.view', scope: 'department' },
+      { code: 'asset_categories.view', scope: 'all' },
       { code: 'inventory.view', scope: 'department' },
       { code: 'inventory.round.manage', scope: 'department' },
       { code: 'inventory.count', scope: 'department' },

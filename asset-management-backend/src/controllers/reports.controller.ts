@@ -7,7 +7,13 @@ class ReportsController {
   async getAllReports(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const viewer = req.user
-        ? { role: req.user.role, department_id: req.user.department_id }
+        ? {
+            id: req.user.id,
+            role: req.user.role,
+            department_id: req.user.department_id,
+            permission_customized: req.permissionCustomized,
+            permission_scope: req.permissionScope,
+          }
         : undefined;
       const result = await reportService.getAllReports(req.query, viewer);
 
@@ -21,10 +27,22 @@ class ReportsController {
     }
   }
 
-  async getReportById(req: Request, res: Response, next: NextFunction) {
+  async getReportById(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const id = parseInt(req.params.id);
       const data = await reportService.getReportDetailPayload(id);
+      if (req.permissionCustomized) {
+        const report: any = data;
+        if (
+          req.permissionScope === 'department' &&
+          Number(report.department_id) !== Number(req.user?.department_id)
+        ) {
+          return res.status(403).json({ success: false, message: 'Chỉ được xem báo cáo thuộc đơn vị của mình' });
+        }
+        if (req.permissionScope === 'own' && Number(report.created_by) !== Number(req.user?.id)) {
+          return res.status(403).json({ success: false, message: 'Chỉ được xem báo cáo do mình tạo' });
+        }
+      }
 
       return res.json({
         success: true,
@@ -39,6 +57,13 @@ class ReportsController {
     try {
       const user = req.user!;
       const signatureImage = assertSignature(req.body?.signature);
+      if (
+        req.permissionCustomized &&
+        ['department', 'own'].includes(req.permissionScope || '') &&
+        user.department_id
+      ) {
+        req.body.department_id = user.department_id;
+      }
       const report = await reportService.createReport(req.body, user.id);
 
       await recordSignature({

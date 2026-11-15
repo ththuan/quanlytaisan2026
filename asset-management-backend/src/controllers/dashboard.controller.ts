@@ -5,7 +5,11 @@ import dashboardService from '../services/dashboard.service';
 export const getOverviewStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const query = { ...req.query };
-    if (!['admin', 'director'].includes(req.user?.role || '')) {
+    if (req.permissionCustomized) {
+      if (req.permissionScope === 'department' && req.user?.department_id) {
+        query.departmentId = String(req.user.department_id);
+      }
+    } else if (!['admin', 'director'].includes(req.user?.role || '')) {
       const deptId = req.user?.department_id;
       if (deptId) query.departmentId = String(deptId);
     }
@@ -19,7 +23,11 @@ export const getOverviewStats = async (req: AuthRequest, res: Response, next: Ne
 export const getAssetStatusStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const query = { ...req.query };
-    if (!['admin', 'director'].includes(req.user?.role || '')) {
+    if (req.permissionCustomized) {
+      if (req.permissionScope === 'department' && req.user?.department_id) {
+        query.departmentId = String(req.user.department_id);
+      }
+    } else if (!['admin', 'director'].includes(req.user?.role || '')) {
       const deptId = req.user?.department_id;
       if (deptId) query.departmentId = String(deptId);
     }
@@ -48,7 +56,11 @@ export const getDepartmentStats = async (req: AuthRequest, res: Response, next: 
 export const getProcurementStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const query = { ...req.query };
-    if (!['admin', 'director'].includes(req.user?.role || '')) {
+    if (req.permissionCustomized) {
+      if (req.permissionScope === 'department' && req.user?.department_id) {
+        query.departmentId = String(req.user.department_id);
+      }
+    } else if (!['admin', 'director'].includes(req.user?.role || '')) {
       const deptId = req.user?.department_id;
       if (deptId) query.departmentId = String(deptId);
     }
@@ -63,7 +75,11 @@ export const getStockStats = async (req: AuthRequest, res: Response, next: NextF
   try {
     const query = { ...req.query };
     // Nhập/Xuất kho liên quan đến đơn vị
-    if (!['admin', 'director'].includes(req.user?.role || '')) {
+    if (req.permissionCustomized) {
+      if (req.permissionScope === 'department' && req.user?.department_id) {
+        query.departmentId = String(req.user.department_id);
+      }
+    } else if (!['admin', 'director'].includes(req.user?.role || '')) {
       const deptId = req.user?.department_id;
       if (deptId) query.departmentId = String(deptId);
     }
@@ -77,7 +93,11 @@ export const getStockStats = async (req: AuthRequest, res: Response, next: NextF
 export const getCategoryBreakdown = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const query = { ...req.query };
-    if (!['admin', 'director'].includes(req.user?.role || '')) {
+    if (req.permissionCustomized) {
+      if (req.permissionScope === 'department' && req.user?.department_id) {
+        query.departmentId = String(req.user.department_id);
+      }
+    } else if (!['admin', 'director'].includes(req.user?.role || '')) {
       const deptId = req.user?.department_id;
       if (deptId) query.departmentId = String(deptId);
     }
@@ -92,7 +112,11 @@ export const getAuditLogs = async (req: AuthRequest, res: Response, next: NextFu
   try {
     const query = { ...req.query };
     // Với người dùng thường, chỉ xem log liên quan đến đơn vị mình hoặc bản thân
-    if (!['admin', 'director'].includes(req.user?.role || '')) {
+    if (req.permissionCustomized) {
+      if (req.permissionScope === 'department' && req.user?.department_id) {
+        query.departmentId = String(req.user.department_id);
+      }
+    } else if (!['admin', 'director'].includes(req.user?.role || '')) {
       const deptId = req.user?.department_id;
       if (deptId) query.departmentId = String(deptId);
     }
@@ -106,7 +130,11 @@ export const getAuditLogs = async (req: AuthRequest, res: Response, next: NextFu
 export const getMaintenanceStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const query = { ...req.query };
-    if (!['admin', 'director'].includes(req.user?.role || '')) {
+    if (req.permissionCustomized) {
+      if (req.permissionScope === 'department' && req.user?.department_id) {
+        query.departmentId = String(req.user.department_id);
+      }
+    } else if (!['admin', 'director'].includes(req.user?.role || '')) {
       const deptId = req.user?.department_id;
       if (deptId) query.departmentId = String(deptId);
     }
@@ -120,7 +148,11 @@ export const getMaintenanceStats = async (req: AuthRequest, res: Response, next:
 export const getHierarchyStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const query = { ...req.query };
-    if (!['admin', 'director'].includes(req.user?.role || '')) {
+    if (req.permissionCustomized) {
+      if (req.permissionScope === 'department' && req.user?.department_id) {
+        query.departmentId = String(req.user.department_id);
+      }
+    } else if (!['admin', 'director'].includes(req.user?.role || '')) {
       const deptId = req.user?.department_id;
       if (deptId) query.departmentId = String(deptId);
     }

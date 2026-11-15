@@ -43,12 +43,18 @@
               <span>{{ $t('menu.dashboard') }}</span>
             </el-menu-item>
 
-            <el-menu-item index="/assets">
+            <el-menu-item
+              v-if="authStore.can('assets.view', ['admin', 'director', 'department_head', 'staff'])"
+              index="/assets"
+            >
               <el-icon><Box /></el-icon>
               <span>Tài sản{{ isStaffOrHead ? ' đơn vị' : '' }}</span>
             </el-menu-item>
 
-            <el-menu-item index="/transfers">
+            <el-menu-item
+              v-if="authStore.can('transfers.view', ['admin', 'director', 'department_head', 'staff'])"
+              index="/transfers"
+            >
               <el-icon><Switch /></el-icon>
               <span>{{ isStaffOrHead ? 'Đề nghị điều chuyển' : $t('menu.transfers') }}</span>
             </el-menu-item>
@@ -63,7 +69,7 @@
 
             <!-- Thanh lý / Tiêu hủy -->
             <el-menu-item
-              v-if="authStore.user?.role === 'admin'"
+              v-if="authStore.can('disposal.view', ['admin'])"
               index="/asset-disposals"
             >
               <el-icon><DeleteFilled /></el-icon>
@@ -72,14 +78,17 @@
 
             <!-- Báo cáo: admin + director -->
             <el-menu-item
-              v-if="authStore.user?.role === 'admin' || authStore.user?.role === 'director'"
+              v-if="authStore.can('reports.view', ['admin', 'director'])"
               index="/reports"
             >
               <el-icon><DataAnalysis /></el-icon>
               <span>{{ $t('menu.reports') }}</span>
             </el-menu-item>
 
-            <el-menu-item index="/loss-damage">
+            <el-menu-item
+              v-if="authStore.can('assets.view', ['admin', 'director', 'department_head', 'staff'])"
+              index="/loss-damage"
+            >
               <el-icon><Warning /></el-icon>
               <span>Tài sản mất / hư hỏng</span>
             </el-menu-item>
@@ -101,7 +110,7 @@
             </el-menu-item>
 
             <el-menu-item
-              v-if="FEATURES.stockModule && authStore.user?.role === 'admin'"
+              v-if="FEATURES.stockModule && authStore.can('stock.view', ['admin'])"
               index="/stock"
             >
               <el-icon><Box /></el-icon>
@@ -124,7 +133,7 @@
             </el-menu-item>
 
             <el-menu-item
-              v-if="authStore.user?.role === 'admin'"
+              v-if="authStore.can('departments.view', ['admin'])"
               index="/departments"
             >
               <el-icon><OfficeBuilding /></el-icon>
@@ -132,7 +141,7 @@
             </el-menu-item>
 
             <el-menu-item
-              v-if="authStore.user?.role === 'admin'"
+              v-if="authStore.can('users.view', ['admin'])"
               index="/users"
             >
               <el-icon><UserFilled /></el-icon>
@@ -140,7 +149,7 @@
             </el-menu-item>
 
             <el-menu-item
-              v-if="authStore.user?.role === 'admin' || authStore.user?.role === 'director'"
+              v-if="authStore.can('norms.view', ['admin', 'director'])"
               index="/norms"
             >
               <el-icon><DataAnalysis /></el-icon>
@@ -148,7 +157,7 @@
             </el-menu-item>
 
             <el-menu-item
-              v-if="authStore.user?.role === 'admin'"
+              v-if="authStore.can('asset_categories.view', ['admin'])"
               index="/asset-categories"
             >
               <el-icon><Grid /></el-icon>
@@ -156,7 +165,7 @@
             </el-menu-item>
 
             <el-menu-item
-              v-if="authStore.can('audit.view_all', ['admin'])"
+              v-if="authStore.can('audit.view_all', ['admin']) || authStore.can('audit.view_department', ['admin'])"
               index="/audit-logs"
             >
               <el-icon><Tickets /></el-icon>
@@ -315,6 +324,7 @@
         <span>Trang chủ</span>
       </button>
       <button
+        v-if="authStore.can('assets.view', ['admin', 'director', 'department_head', 'staff'])"
         type="button"
         class="mobile-tabbar__item"
         :class="{ active: isTabActive('/assets') }"

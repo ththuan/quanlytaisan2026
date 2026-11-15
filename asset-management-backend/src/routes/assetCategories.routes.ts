@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import assetCategoryController from '../controllers/assetCategories.controller';
 import { authenticate } from '../middleware/auth.middleware';
-import { requireRole } from '../middleware/authorization.middleware';
+import { requirePermission, adminOnlyRoles } from '../middleware/authorization.middleware';
 import { invalidateCache } from '../middleware/caching';
 import { cacheResponse } from '../middleware/redisCache';
 
@@ -26,8 +26,8 @@ router.get('/:id/autofill', cacheCategories, assetCategoryController.getAutoFill
 router.post('/generate-code', authenticate, assetCategoryController.generateCode);
 
 // Admin only routes
-router.post('/', authenticate, requireRole('admin'), invalidateCache('categories'), assetCategoryController.create);
-router.put('/:id', authenticate, requireRole('admin'), invalidateCache('categories'), assetCategoryController.update);
-router.delete('/:id', authenticate, requireRole('admin'), invalidateCache('categories'), assetCategoryController.delete);
+router.post('/', authenticate, requirePermission('asset_categories.create', adminOnlyRoles), invalidateCache('categories'), assetCategoryController.create);
+router.put('/:id', authenticate, requirePermission('asset_categories.update', adminOnlyRoles), invalidateCache('categories'), assetCategoryController.update);
+router.delete('/:id', authenticate, requirePermission('asset_categories.delete', adminOnlyRoles), invalidateCache('categories'), assetCategoryController.delete);
 
 export default router;

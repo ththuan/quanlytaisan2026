@@ -369,7 +369,7 @@
 
           <!-- QR Code Card - CHỈ admin và tài sản không phải nhà cửa công trình -->
           <el-card
-            v-if="authStore.isAdmin && !isBuildingAsset"
+            v-if="authStore.can('assets.qr', ['admin']) && !isBuildingAsset"
             v-reveal
             class="info-card qrcode-card"
             shadow="never"
@@ -868,7 +868,7 @@ const handleCameraImageSelected = async (e: Event) => {
 };
 
 // Computed properties
-const canManageAssets = computed(() => authStore.isAdmin);
+const canManageAssets = computed(() => authStore.can('assets.update', ['admin']) || authStore.can('assets.create', ['admin']));
 
 const canReportDamage = computed(() => (
   Boolean(assetStore.currentAsset) && authStore.user?.role !== 'director'
@@ -883,7 +883,7 @@ const isBuildingAsset = computed(() => {
 
 // QR chỉ dành cho admin (xem/tải/tạo lại)
 const canRegenerateQRCode = computed(() => {
-  return authStore.isAdmin;
+  return authStore.can('assets.qr', ['admin']);
 });
 
 /** Công cụ dụng cụ: hiển thị remainingValue (GTCL), không nhầm với originalValue (nguyên giá). */

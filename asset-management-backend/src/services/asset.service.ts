@@ -113,6 +113,9 @@ class AssetService {
         where.current_department_id = query.current_department_id;
       }
     }
+    if (query.assigned_user_id) {
+      where.assigned_user_id = Number(query.assigned_user_id);
+    }
     if (query.campus) {
       where.campus = String(query.campus);
     }
@@ -122,7 +125,7 @@ class AssetService {
       limit,
       offset,
       order: [[sortBy, sortOrder]],
-      // Bỏ cột nặng (ảnh QR base64, mô tả dài) khỏi danh sách để giảm payload/IO
+      // Bỏ cột nặng (ảnh QR base64, mã tài sản dài) khỏi danh sách để giảm payload/IO
       attributes: { exclude: ['qr_code', 'qr_code_image'] },
       include: [
         {

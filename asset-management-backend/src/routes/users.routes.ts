@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import usersController, { uploadUserImport } from '../controllers/users.controller';
 import { authenticateToken } from '../middleware/auth.middleware';
-import { requireRole } from '../middleware/authorization.middleware';
+import { requirePermission, adminOnlyRoles } from '../middleware/authorization.middleware';
 import { validateRequest } from '../middleware/validation';
 import { createUserSchema, updateUserSchema, updateProfileSchema } from '../utils/validators';
 import { invalidateCache } from '../middleware/caching';
@@ -20,19 +20,19 @@ router.put('/profile', validateRequest(updateProfileSchema), invalidateCache('us
 // Admin xem tất cả; Trưởng đơn vị chỉ xem người thuộc đơn vị mình
 router.get(
   '/',
-  requireRole('admin', 'department_head'),
+  requirePermission('users.view', ['admin', 'department_head']),
   usersController.getAllUsers
 );
 
 // Import người dùng (phải đặt trước /:id)
 router.get(
   '/import/template',
-  requireRole('admin'),
+  requirePermission('users.create', adminOnlyRoles),
   usersController.downloadImportTemplate
 );
 router.post(
   '/import',
-  requireRole('admin'),
+  requirePermission('users.create', adminOnlyRoles),
   uploadUserImport,
   invalidateCache('users'),
   usersController.importUsers
@@ -40,13 +40,13 @@ router.post(
 
 router.get(
   '/:id',
-  requireRole('admin'),
+  requirePermission('users.view', adminOnlyRoles),
   usersController.getUserById
 );
 
 router.post(
   '/',
-  requireRole('admin'),
+  requirePermission('users.create', adminOnlyRoles),
   validateRequest(createUserSchema),
   invalidateCache('users'),
   usersController.createUser
@@ -54,7 +54,7 @@ router.post(
 
 router.put(
   '/:id',
-  requireRole('admin'),
+  requirePermission('users.update', adminOnlyRoles),
   validateRequest(updateUserSchema),
   invalidateCache('users'),
   usersController.updateUser
@@ -62,7 +62,7 @@ router.put(
 
 router.delete(
   '/:id',
-  requireRole('admin'),
+  requirePermission('users.delete', adminOnlyRoles),
   invalidateCache('users'),
   usersController.deleteUser
 );
@@ -70,7 +70,7 @@ router.delete(
 // Reset password to default (Admin only)
 router.post(
   '/:id/reset-password',
-  requireRole('admin'),
+  requirePermission('users.reset', adminOnlyRoles),
   invalidateCache('users'),
   usersController.resetPassword
 );

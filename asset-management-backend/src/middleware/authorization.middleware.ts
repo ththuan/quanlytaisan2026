@@ -265,6 +265,19 @@ export const canApproveTransfer = async (req: RequestWithUser, res: Response, ne
     const status = transfer.status;
     const userDepartmentId = Number(user.department_id);
 
+    if (req.permissionCode === 'transfers.approve' && user.role !== 'admin') {
+      if (req.permissionScope === 'all') {
+        if (['pending', 'approved_by_head', 'approved_by_destination'].includes(status)) return next();
+      } else if (
+        req.permissionScope === 'department' &&
+        ['pending', 'approved_by_head'].includes(status) &&
+        userDepartmentId === Number(transfer.to_department_id)
+      ) {
+        return next();
+      }
+      throw new ForbiddenError('Không có quyền duyệt yêu cầu điều chuyển này');
+    }
+
     // Quản trị viên chỉ ký duyệt cuối, sau khi đơn vị nhận đã ký.
     if (user.role === 'admin') {
       if (status === 'approved_by_destination') {
@@ -303,6 +316,19 @@ export const canViewTransfer = async (req: RequestWithUser, res: Response, next:
       throw new NotFoundError('Transfer request not found');
     }
 
+
+    if (req.permissionCode === 'transfers.view' && req.permissionScope) {
+      if (req.permissionScope === 'all') return next();
+      if (
+        req.permissionScope === 'department' &&
+        (Number(user.department_id) === Number(transfer.from_department_id) ||
+          Number(user.department_id) === Number(transfer.to_department_id))
+      ) {
+        return next();
+      }
+      if (req.permissionScope === 'own' && user.id === transfer.requested_by) return next();
+      throw new ForbiddenError('Không có quyền xem yêu cầu điều chuyển này');
+    }
 
     // Admin and Director can view all transfers
     if (user.role === 'admin' || user.role === 'director') {

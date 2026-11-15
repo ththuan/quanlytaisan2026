@@ -30,6 +30,7 @@ export interface ApproverInfo {
   role: UserRole;
   fullname?: string;
   department_id?: number;
+  permission_scope?: 'own' | 'department' | 'all';
 }
 
 class TransferService {
@@ -149,8 +150,8 @@ class TransferService {
     const fromCampus = (fromDepartment as any)?.campus || (asset as any).campus || 'main';
     const toCampus = (toDepartment as any).campus || 'main';
 
-    // Only allow creating transfer from requester's own department (except admin/director)
-    if (requester.role !== 'admin') {
+    // Only allow creating transfer from requester's own department (except admin/all scope)
+    if (requester.role !== 'admin' && requester.permission_scope !== 'all') {
       if (!requester.department_id) {
         throw new ForbiddenError('Bạn chưa được gán đơn vị, không thể tạo điều chuyển');
       }
@@ -368,7 +369,7 @@ class TransferService {
     }
 
     const approverDept = Number(approver.department_id);
-    const isAdmin = approver.role === 'admin';
+    const isAdmin = approver.role === 'admin' || approver.permission_scope === 'all';
     const receiverRoles = ['staff', 'department_head'];
 
     // Luồng ký: người tạo gửi → đơn vị nhận (viên chức hoặc trưởng đơn vị) → quản trị viên.
@@ -378,7 +379,10 @@ class TransferService {
         throw new ForbiddenError('Quản trị viên chỉ ký duyệt sau khi đơn vị nhận đã ký');
       }
     } else if (transfer.status === 'pending' || transfer.status === 'approved_by_head') {
-      if (!receiverRoles.includes(approver.role) || approverDept !== Number(transfer.to_department_id)) {
+      const isDepartmentApprover =
+        approver.permission_scope === 'department' &&
+        approverDept === Number(transfer.to_department_id);
+      if ((!receiverRoles.includes(approver.role) && !isDepartmentApprover) || approverDept !== Number(transfer.to_department_id)) {
         throw new ForbiddenError('Chỉ viên chức hoặc Trưởng đơn vị nơi nhận được ký bước này');
       }
     } else {
@@ -523,8 +527,17 @@ class TransferService {
 
     const where: any = {};
 
-    // Apply role-based filtering
-    if (user.role === 'admin' || user.role === 'director') {
+    // Apply permission scope first, then legacy role filtering
+    if (user.permission_scope === 'all') {
+      // all
+    } else if (user.permission_scope === 'department') {
+      where[Op.or] = [
+        { from_department_id: user.department_id },
+        { to_department_id: user.department_id },
+      ];
+    } else if (user.permission_scope === 'own') {
+      where.requested_by = user.id;
+    } else if (user.role === 'admin' || user.role === 'director') {
       // Admin and Director can see all transfers
     } else if (user.role === 'department_head') {
       // Department head can see transfers from/to their department

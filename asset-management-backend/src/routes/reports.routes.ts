@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import reportsController from '../controllers/reports.controller';
 import { authenticateToken } from '../middleware/auth.middleware';
-import { requireRole } from '../middleware/authorization.middleware';
+import { requirePermission, adminOnlyRoles } from '../middleware/authorization.middleware';
 import { validateRequest } from '../middleware/validation';
 import { createReportSchema, updateReportSchema } from '../utils/validators';
 
@@ -11,7 +11,7 @@ const router = Router();
 router.use(authenticateToken);
 
 // Giám hiệu được xem/đánh giá toàn bộ báo cáo (chỉ đọc)
-const READ_ROLES = requireRole('admin', 'director');
+const READ_ROLES = requirePermission('reports.view', ['admin', 'director']);
 
 // Statistics
 router.get('/statistics', READ_ROLES, reportsController.getStatistics);
@@ -21,7 +21,7 @@ router.get('/procurement', READ_ROLES, reportsController.getProcurementSummary);
 
 router.post(
   '/bulk-approve',
-  requireRole('admin'),
+  requirePermission('reports.approve', adminOnlyRoles),
   reportsController.bulkApproveReports
 );
 
@@ -32,14 +32,14 @@ router.get('/:id', READ_ROLES, reportsController.getReportById);
 // Create/Update reports (Manager/Admin only)
 router.post(
   '/',
-  requireRole('admin'),
+  requirePermission('reports.create', adminOnlyRoles),
   validateRequest(createReportSchema),
   reportsController.createReport
 );
 
 router.put(
   '/:id',
-  requireRole('admin'),
+  requirePermission('reports.update', adminOnlyRoles),
   validateRequest(updateReportSchema),
   reportsController.updateReport
 );
@@ -47,27 +47,27 @@ router.put(
 // Submit report for approval
 router.post(
   '/:id/submit',
-  requireRole('admin'),
+  requirePermission('reports.update', adminOnlyRoles),
   reportsController.submitReport
 );
 
 // Approve/Reject reports (Admin + Giám hiệu — khớp quyền trên giao diện)
 router.post(
   '/:id/approve',
-  requireRole('admin'),
+  requirePermission('reports.approve', adminOnlyRoles),
   reportsController.approveReport
 );
 
 router.post(
   '/:id/reject',
-  requireRole('admin'),
+  requirePermission('reports.approve', adminOnlyRoles),
   reportsController.rejectReport
 );
 
 // Delete report (Admin only)
 router.delete(
   '/:id',
-  requireRole('admin'),
+  requirePermission('reports.delete', adminOnlyRoles),
   reportsController.deleteReport
 );
 

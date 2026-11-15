@@ -15,6 +15,7 @@ class TransfersController {
         role: user.role as any,
         department_id: user.department_id,
         fullname: user.fullname,
+        permission_scope: req.permissionScope,
       });
 
       return res.json({
@@ -52,6 +53,7 @@ class TransfersController {
         id: user.id,
         role: user.role as any,
         department_id: user.department_id,
+        permission_scope: req.permissionScope,
       });
 
       await recordSignature({
@@ -93,6 +95,7 @@ class TransfersController {
           role: user.role as any,
           fullname: user.fullname,
           department_id: user.department_id,
+          permission_scope: req.permissionScope,
         },
         { decision: 'approved' },
       );
@@ -135,6 +138,7 @@ class TransfersController {
           role: user.role as any,
           fullname: user.fullname,
           department_id: user.department_id,
+          permission_scope: req.permissionScope,
         },
         { decision: 'rejected', reason: notes || reason },
       );
@@ -184,6 +188,7 @@ class TransfersController {
           role: user.role as any,
           fullname: user.fullname,
           department_id: user.department_id,
+          permission_scope: req.permissionScope,
         },
         { decision, reason, notes }
       );

@@ -14,7 +14,7 @@
           </p>
         </div>
         <div
-          v-if="authStore.isAdmin"
+          v-if="authStore.can('departments.create', ['admin'])"
           class="header-right actions"
         >
           <el-button
@@ -183,7 +183,7 @@
                 Xem
               </el-button>
               <el-button
-                v-if="authStore.isAdmin"
+                v-if="authStore.can('departments.update', ['admin']) || authStore.can('departments.delete', ['admin'])"
                 size="small"
                 type="warning"
                 @click="handleEdit(row)"
@@ -191,7 +191,7 @@
                 Sửa
               </el-button>
               <el-button
-                v-if="authStore.isAdmin"
+                v-if="authStore.can('departments.update', ['admin']) || authStore.can('departments.delete', ['admin'])"
                 size="small"
                 type="danger"
                 @click="handleDelete(row.id)"

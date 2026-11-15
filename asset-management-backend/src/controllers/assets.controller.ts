@@ -12,6 +12,7 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import normService from '../services/norm.service';
 import { campusLabel } from '../constants/campuses';
 import { imageExtension } from '../constants/imageMime';
+import { ForbiddenError, NotFoundError } from '../utils/errorHandler';
 
 // Helper: dữ liệu xem chi tiết/lịch sử tài sản được phép cho mọi người dùng
 // đã đăng nhập (chỉ đọc). Việc sửa/xóa vẫn giới hạn theo vai trò và đơn vị.
@@ -24,29 +25,46 @@ async function checkAssetDeptAccess(
   return Boolean(asset);
 }
 
+const assertAssetScope = async (req: AuthRequest, assetId: number) => {
+  const asset: any = await assetService.getAssetById(assetId);
+  if (!asset) throw new NotFoundError('Không tìm thấy tài sản');
+  const user = req.user;
+  if (!user || user.role === 'admin' || !req.permissionCustomized || req.permissionScope === 'all') {
+    return asset;
+  }
+  if (req.permissionScope === 'department') {
+    if (Number(asset.current_department_id) !== Number(user.department_id)) {
+      throw new ForbiddenError('Chỉ được thao tác tài sản thuộc đơn vị của mình');
+    }
+  } else if (req.permissionScope === 'own') {
+    if (Number(asset.assigned_user_id) !== Number(user.id)) {
+      throw new ForbiddenError('Chỉ được thao tác tài sản được giao cho mình');
+    }
+  }
+  return asset;
+};
+
 export const getAllAssets = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const user = req.user!;
     const query = { ...req.query };
 
-    // Phân quyền: admin và giám hiệu xem toàn bộ; cán bộ/trưởng đơn vị chỉ xem đơn vị mình
-    if (user.role !== 'admin' && user.role !== 'director') {
+    if (req.permissionCustomized) {
+      if (req.permissionScope === 'department' && user.department_id) {
+        query.current_department_id = String(user.department_id);
+        query.include_children = 'false';
+      } else if (req.permissionScope === 'own') {
+        query.assigned_user_id = String(user.id);
+      }
+    } else if (user.role !== 'admin' && user.role !== 'director') {
       if (user.department_id) {
         query.current_department_id = String(user.department_id);
-        // Cán bộ/trưởng đơn vị không được tự mở rộng sang đơn vị con.
         query.include_children = 'false';
-        // Không ẩn tài sản đã thanh lý - viên chức/trưởng đơn vị có quyền xem tài sản đã thanh lý của đơn vị mình
       } else {
-        // Nếu user không có department_id, trả về danh sách rỗng
         res.status(200).json({
           success: true,
           data: [],
-          pagination: {
-            page: 1,
-            limit: 10,
-            total: 0,
-            totalPages: 0,
-          },
+          pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
         });
         return;
       }
@@ -66,6 +84,7 @@ export const getAllAssets = async (req: AuthRequest, res: Response, next: NextFu
 
 export const getAssetById = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    await assertAssetScope(req, parseInt(req.params.id));
     const asset = await assetService.getAssetById(parseInt(req.params.id));
 
     if (!asset) {
@@ -91,7 +110,9 @@ export const createAsset = async (req: Request, res: Response, next: NextFunctio
     console.log('📝 Creating asset with data:', JSON.stringify(req.body, null, 2));
 
     const user = (req as any).user;
-    if (user?.role === 'department_head') {
+    if ((req as AuthRequest).permissionCustomized && ['department', 'own'].includes((req as AuthRequest).permissionScope || '') && user?.department_id) {
+      req.body.current_department_id = user.department_id;
+    } else if (user?.role === 'department_head') {
       if (!user.department_id) {
         res.status(403).json({ success: false, message: 'Bạn chưa được gán đơn vị' });
         return;
@@ -125,6 +146,7 @@ export const updateAsset = async (req: Request, res: Response, next: NextFunctio
   try {
     const assetId = parseInt(req.params.id);
     const user = (req as any).user;
+    await assertAssetScope(req as AuthRequest, assetId);
     if (user?.role === 'department_head') {
       const existing: any = await assetService.getAssetById(assetId);
       if (!existing || Number(existing.current_department_id) !== Number(user.department_id)) {
@@ -219,6 +241,7 @@ export const deleteAsset = async (req: Request, res: Response, next: NextFunctio
   try {
     const assetId = parseInt(req.params.id);
     const user = (req as any).user;
+    await assertAssetScope(req as AuthRequest, assetId);
     if (user?.role === 'department_head') {
       const existing: any = await assetService.getAssetById(assetId);
       if (!existing || Number(existing.current_department_id) !== Number(user.department_id)) {

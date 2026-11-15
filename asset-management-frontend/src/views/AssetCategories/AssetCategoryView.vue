@@ -22,6 +22,7 @@
             Làm mới
           </el-button>
           <el-button
+            v-if="authStore.can('asset_categories.create', ['admin'])"
             type="primary"
             :icon="Plus"
             @click="openCreate"
@@ -117,12 +118,14 @@
             </span>
             <span class="tree-actions">
               <el-button
+                v-if="authStore.can('asset_categories.update', ['admin'])"
                 size="small"
                 text
                 :icon="Edit"
                 @click.stop="openEdit(data)"
               />
               <el-button
+                v-if="authStore.can('asset_categories.delete', ['admin'])"
                 size="small"
                 text
                 type="danger"
@@ -210,12 +213,14 @@
           >
             <template #default="{ row }">
               <el-button
+                v-if="authStore.can('asset_categories.update', ['admin'])"
                 size="small"
                 text
                 :icon="Edit"
                 @click="openEdit(row)"
               />
               <el-button
+                v-if="authStore.can('asset_categories.delete', ['admin'])"
                 size="small"
                 text
                 type="danger"

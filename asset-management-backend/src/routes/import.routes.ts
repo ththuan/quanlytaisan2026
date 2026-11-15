@@ -6,14 +6,14 @@
 import { Router } from 'express';
 import importController from '../controllers/import.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
-import { authorize } from '../middleware/authorization.middleware';
+import { requirePermission, adminOnlyRoles } from '../middleware/authorization.middleware';
 import { invalidateCache } from '../middleware/caching';
 
 const router = Router();
 
 // Tất cả routes đều yêu cầu đăng nhập và quyền admin
 router.use(authMiddleware);
-router.use(authorize('admin'));
+router.use(requirePermission('assets.import', adminOnlyRoles));
 
 // Download file mẫu
 router.get('/template', importController.downloadTemplate);

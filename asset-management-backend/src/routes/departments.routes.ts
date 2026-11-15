@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import departmentsController from '../controllers/departments.controller';
 import { authenticateToken } from '../middleware/auth.middleware';
-import { requireRole } from '../middleware/authorization.middleware';
+import { requirePermission, adminOnlyRoles } from '../middleware/authorization.middleware';
 import { validateRequest } from '../middleware/validation';
 import { createDepartmentSchema, updateDepartmentSchema } from '../utils/validators';
 import multer from 'multer';
@@ -44,7 +44,7 @@ router.get('/:id', departmentsController.getDepartmentById);
 // Admin/Manager only routes
 router.post(
   '/',
-  requireRole('admin'),
+  requirePermission('departments.create', adminOnlyRoles),
   validateRequest(createDepartmentSchema),
   invalidateCache('departments'),
   departmentsController.createDepartment
@@ -52,7 +52,7 @@ router.post(
 
 router.put(
   '/:id',
-  requireRole('admin'),
+  requirePermission('departments.update', adminOnlyRoles),
   validateRequest(updateDepartmentSchema),
   invalidateCache('departments'),
   departmentsController.updateDepartment
@@ -60,7 +60,7 @@ router.put(
 
 router.delete(
   '/:id',
-  requireRole('admin'),
+  requirePermission('departments.delete', adminOnlyRoles),
   invalidateCache('departments'),
   departmentsController.deleteDepartment
 );
@@ -68,13 +68,13 @@ router.delete(
 // Import Excel routes (Admin only)
 router.get(
   '/import/template',
-  requireRole('admin'),
+  requirePermission('departments.view', adminOnlyRoles),
   departmentsController.downloadTemplate
 );
 
 router.post(
   '/import',
-  requireRole('admin'),
+  requirePermission('departments.create', adminOnlyRoles),
   uploadMiddleware,
   invalidateCache('departments'),
   departmentsController.importExcel

@@ -30,7 +30,13 @@ export interface UpdateReportInput {
   notes?: string;
 }
 
-type ReportViewer = { role: string; department_id?: number | null };
+type ReportViewer = {
+  id?: number;
+  role: string;
+  department_id?: number | null;
+  permission_customized?: boolean;
+  permission_scope?: 'own' | 'department' | 'all';
+};
 
 class ReportService {
   async getAllReports(query: any, viewer?: ReportViewer): Promise<PaginationResult<AnnualReport>> {
@@ -40,7 +46,13 @@ class ReportService {
     const where: any = {};
 
     const role = viewer?.role || '';
-    if (role === 'department_head' || role === 'staff') {
+    if (viewer?.permission_customized) {
+      if (viewer.permission_scope === 'department' && viewer.department_id != null) {
+        where.department_id = viewer.department_id;
+      } else if (viewer.permission_scope === 'own' && viewer.id) {
+        where.created_by = viewer.id;
+      }
+    } else if (role === 'department_head' || role === 'staff') {
       if (viewer?.department_id != null) {
         where.department_id = viewer.department_id;
       }

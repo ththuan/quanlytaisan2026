@@ -14,7 +14,7 @@
           </p>
         </div>
         <div
-          v-if="authStore.isAdmin"
+          v-if="authStore.can('users.create', ['admin'])"
           class="header-right"
         >
           <el-button
@@ -199,7 +199,7 @@
                 {{ $t('common.view') }}
               </el-button>
               <el-button
-                v-if="authStore.isAdmin"
+                v-if="authStore.can('users.update', ['admin'])"
                 size="small"
                 type="warning"
                 @click="handleEdit(row)"
@@ -207,7 +207,7 @@
                 {{ $t('common.edit') }}
               </el-button>
               <el-button
-                v-if="authStore.isAdmin && row.id !== authStore.user?.id"
+                v-if="authStore.can('users.reset', ['admin']) && row.id !== authStore.user?.id"
                 size="small"
                 type="info"
                 @click="handleResetPassword(row)"
@@ -215,7 +215,7 @@
                 {{ $t('users.resetPassword') }}
               </el-button>
               <el-button
-                v-if="authStore.isAdmin && row.id !== authStore.user?.id"
+                v-if="authStore.can('users.delete', ['admin']) && row.id !== authStore.user?.id"
                 size="small"
                 type="danger"
                 @click="handleDelete(row)"
@@ -223,7 +223,7 @@
                 {{ $t('common.delete') }}
               </el-button>
               <el-button
-                v-if="authStore.isAdmin && row.id !== authStore.user?.id"
+                v-if="authStore.can('users.update', ['admin']) && row.id !== authStore.user?.id"
                 size="small"
                 type="danger"
                 @click="handleToggleStatus(row)"

@@ -15,7 +15,7 @@
         </div>
         <div class="header-right">
           <el-button
-            v-if="!authStore.isDirector"
+            v-if="authStore.can('transfers.create', ['admin', 'director', 'department_head', 'staff'])"
             type="primary"
             :icon="Plus"
             size="default"
@@ -323,6 +323,12 @@ const handleView = (transfer: any) => {
 
 const canApprove = (transfer: any) => {
   const departmentId = Number(authStore.userDepartmentId);
+  const scope = authStore.permissionScope('transfers.approve', ['admin', 'department_head', 'staff']);
+  if (scope === 'all') return transfer.status === 'approved_by_destination';
+  if (scope === 'department') {
+    return ['pending', 'approved_by_head'].includes(transfer.status)
+      && Number(transfer.to_department_id) === departmentId;
+  }
   if (authStore.isAdmin) return transfer.status === 'approved_by_destination';
   if (transfer.status === 'pending' || transfer.status === 'approved_by_head') {
     return ['department_head', 'staff'].includes(authStore.user?.role || '')

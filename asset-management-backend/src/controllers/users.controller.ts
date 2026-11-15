@@ -20,7 +20,11 @@ class UsersController {
   async getAllUsers(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const query: any = { ...req.query };
-      if (req.user?.role === 'department_head') {
+      if (req.permissionCustomized) {
+        if (req.permissionScope !== 'all') {
+          query.department_id = req.user.department_id;
+        }
+      } else if (req.user?.role === 'department_head') {
         query.department_id = req.user.department_id;
       }
       const result = await userService.getAllUsers(query);
@@ -51,6 +55,9 @@ class UsersController {
 
   async createUser(req: AuthRequest, res: Response, next: NextFunction) {
     try {
+      if (req.user?.role !== 'admin' && req.body?.role === 'admin') {
+        return res.status(403).json({ success: false, message: 'Chỉ quản trị viên mới được tạo tài khoản admin' });
+      }
       const user = await userService.createUser(req.body);
 
       return res.status(201).json({
@@ -67,6 +74,9 @@ class UsersController {
     try {
       const userId = parseInt(req.params.id);
       const requestingUserId = req.user!.id;
+      if (req.user?.role !== 'admin' && req.body?.role === 'admin') {
+        return res.status(403).json({ success: false, message: 'Chỉ quản trị viên mới được gán vai trò admin' });
+      }
       const user = await userService.updateUser(userId, req.body, requestingUserId);
 
       return res.json({
