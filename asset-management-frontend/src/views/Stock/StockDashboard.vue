@@ -78,12 +78,12 @@
           <el-table-column
             prop="name"
             label="Tên vật tư"
-            width="300"
+            min-width="320"
           />
           <el-table-column
             prop="category"
             label="Nhóm vật tư"
-            min-width="180"
+            width="180"
           />
           <el-table-column
             prop="unit"

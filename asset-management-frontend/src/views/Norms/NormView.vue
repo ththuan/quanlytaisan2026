@@ -56,7 +56,7 @@
             <el-table-column
               prop="equipment_name"
               label="Máy móc, thiết bị"
-              width="210"
+              min-width="240"
             />
             <el-table-column
               label="Phạm vi"
@@ -69,7 +69,7 @@
             <el-table-column
               prop="position_group"
               label="Nhóm chức danh"
-              min-width="160"
+              width="160"
             />
             <el-table-column
               prop="unit"
@@ -97,7 +97,7 @@
             </el-table-column>
             <el-table-column
               label="Hiệu lực"
-              width="125"
+              width="120"
               align="center"
             >
               <template #default="{ row }">
@@ -112,7 +112,7 @@
             <el-table-column
               v-if="canEditNorms"
               label="Thao tác"
-              width="120"
+              width="115"
               align="center"
             >
               <template #default="{ row }">

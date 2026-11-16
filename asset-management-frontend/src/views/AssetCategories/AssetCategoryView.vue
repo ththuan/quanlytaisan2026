@@ -155,12 +155,12 @@
           <el-table-column
             prop="name"
             label="Tên danh mục"
-            width="230"
+            min-width="260"
           />
           <el-table-column
             prop="category_group"
             label="Nhóm"
-            min-width="130"
+            width="130"
           />
           <el-table-column
             prop="unit"
@@ -208,7 +208,7 @@
           </el-table-column>
           <el-table-column
             label="Thao tác"
-            width="110"
+            width="105"
             fixed="right"
           >
             <template #default="{ row }">

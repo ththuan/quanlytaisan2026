@@ -119,7 +119,7 @@
           <el-table-column
             prop="name"
             :label="$t('departments.departmentName')"
-            width="240"
+            min-width="260"
           >
             <template #default="{ row }">
               <span :style="{ paddingLeft: row.parent_department_id ? '20px' : '0' }">
@@ -153,7 +153,7 @@
           </el-table-column>
           <el-table-column
             :label="$t('departments.parentDepartment')"
-            min-width="180"
+            width="180"
           >
             <template #default="{ row }">
               <span v-if="row.parent_department">{{ row.parent_department.name }}</span>
@@ -166,7 +166,7 @@
           <el-table-column
             prop="description"
             :label="$t('common.description')"
-            min-width="150"
+            width="150"
             show-overflow-tooltip
           />
           <el-table-column
