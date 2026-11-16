@@ -176,7 +176,7 @@ test('admin mở được ma trận phân quyền của user', async ({ page }) 
   const dialog = page.locator('.el-dialog').first();
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText('Phân quyền chức năng')).toBeVisible();
-  await expect(dialog.getByText('Dùng quyền tùy chỉnh')).toBeVisible();
+  await expect(dialog.getByText('Tùy chỉnh quyền riêng')).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Quản lý sửa chữa' })).toBeVisible();
   await dialog.getByText('Sửa chữa', { exact: true }).first().click();
   await expect(dialog.getByText('Xem yêu cầu sửa chữa')).toBeVisible();
