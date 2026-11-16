@@ -75,11 +75,11 @@
         <el-table-column
           type="index"
           width="50"
-          label="TT"
+          label="#"
         />
         <el-table-column
           label="Mã tài sản"
-          width="120"
+          width="105"
         >
           <template #default="{ row }">
             {{ row.asset?.asset_code || '-' }}
@@ -87,7 +87,7 @@
         </el-table-column>
         <el-table-column
           label="Tên tài sản"
-          min-width="200"
+          min-width="150"
         >
           <template #default="{ row }">
             {{ row.asset?.name || '-' }}
@@ -104,7 +104,7 @@
         </el-table-column>
         <el-table-column
           label="Nguyên giá"
-          width="150"
+          width="125"
           align="right"
         >
           <template #default="{ row }">
@@ -113,7 +113,7 @@
         </el-table-column>
         <el-table-column
           label="Chi phí dự kiến"
-          width="150"
+          width="125"
           align="right"
         >
           <template #default="{ row }">
@@ -122,7 +122,7 @@
         </el-table-column>
         <el-table-column
           label="Tỷ lệ"
-          width="100"
+          width="75"
           align="center"
         >
           <template #default="{ row }">
@@ -138,7 +138,7 @@
         <el-table-column
           prop="department.name"
           label="Đơn vị"
-          min-width="150"
+          min-width="110"
         />
         <el-table-column
           prop="status"
@@ -153,89 +153,89 @@
         </el-table-column>
         <el-table-column
           label="Thao tác"
-          min-width="320"
-          fixed="right"
+          width="170"
         >
           <template #default="{ row }">
-            <el-button
-              size="small"
-              @click="handleView(row)"
-            >
-              {{ $t('common.view') }}
-            </el-button>
-            <el-button
-              v-if="canEdit(row)"
-              size="small"
-              type="warning"
-              @click="handleEdit(row)"
-            >
-              {{ $t('common.edit') }}
-            </el-button>
-            <el-button 
-              v-if="canDelete(row)"
-              size="small" 
-              type="danger" 
-              @click="handleDelete(row)"
-            >
-              {{ $t('common.delete') }}
-            </el-button>
-            <el-button 
-              v-if="(row.status === 'draft' || row.status === 'rejected' || row.status?.startsWith('rejected_by')) && row.requested_by === authStore.user?.id"
-              size="small" 
-              type="success" 
-              @click="handleSubmitForApproval(row)"
-            >
-              Gửi phê duyệt
-            </el-button>
-            <el-button 
-              v-if="canApproveAtCurrentLevel(row)"
-              size="small" 
-              type="success" 
-              @click="handleApprove(row)"
-            >
-              {{ getApproveButtonText(row) }}
-            </el-button>
-            <el-button
-              v-if="canRejectRepair(row)"
-              size="small"
-              type="danger"
-              @click="handleRejectRepair(row)"
-            >
-              Từ chối sửa chữa
-            </el-button>
-            <el-button
-              v-if="canCompleteRepair(row)"
-              size="small"
-              type="warning"
-              @click="handleCompleteRepair(row.id)"
-            >
-              Hoàn thành sửa chữa
-            </el-button>
-            <el-tag
-              v-if="authStore.isAdmin && row.asset?.status === 'pending_disposal'"
-              size="small"
-              type="info"
-              style="margin-right: 6px;"
-            >
-              Đã chuyển thanh lý
-            </el-tag>
-            <el-button
-              v-if="authStore.isAdmin && ['in_progress', 'rejected_by_admin', 'rejected_due_to_high_cost'].includes(row.status) && !row.linked_disposal_case_id && row.asset?.status !== 'pending_disposal'"
-              size="small"
-              type="danger"
-              :loading="toDisposalLoading"
-              @click="handleToDisposal(row)"
-            >
-              Chuyển sang Thanh lý/Tiêu hủy
-            </el-button>
-            <el-button
-              v-if="authStore.isAdmin && row.linked_disposal_case_id"
-              size="small"
-              type="warning"
-              @click="router.push({ path: '/asset-disposals', query: { openId: String(row.linked_disposal_case_id) } })"
-            >
-              Xem hồ sơ Thanh lý/Tiêu hủy
-            </el-button>
+            <div class="maintenance-actions">
+              <el-button
+                size="small"
+                @click="handleView(row)"
+              >
+                {{ $t('common.view') }}
+              </el-button>
+              <el-dropdown
+                v-if="hasRowActions(row)"
+                trigger="click"
+                placement="bottom-end"
+                @command="(command: MaintenanceRowCommand) => handleRowCommand(command, row)"
+              >
+                <el-button
+                  size="small"
+                  class="more-actions-button"
+                  :icon="MoreFilled"
+                />
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item
+                      v-if="authStore.isAdmin && row.asset?.status === 'pending_disposal'"
+                      disabled
+                    >
+                      Đã chuyển thanh lý
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="canEdit(row)"
+                      command="edit"
+                    >
+                      {{ $t('common.edit') }}
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="canDelete(row)"
+                      command="delete"
+                    >
+                      {{ $t('common.delete') }}
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="canSubmitRow(row)"
+                      command="submit"
+                    >
+                      Gửi phê duyệt
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="canApproveAtCurrentLevel(row)"
+                      command="approve"
+                    >
+                      {{ getApproveButtonText(row) }}
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="canRejectRepair(row)"
+                      command="reject"
+                    >
+                      Từ chối sửa chữa
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="canCompleteRepair(row)"
+                      command="complete"
+                    >
+                      Hoàn thành sửa chữa
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="canTransferDisposal(row)"
+                      command="disposal"
+                      divided
+                      :disabled="toDisposalLoading"
+                    >
+                      Chuyển sang Thanh lý/Tiêu hủy
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="authStore.isAdmin && row.linked_disposal_case_id"
+                      command="view-disposal"
+                    >
+                      Xem hồ sơ Thanh lý/Tiêu hủy
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -378,7 +378,7 @@ import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
 import { useNotificationStore } from '@/stores/notification.store';
 import { useDepartmentStore } from '@/stores/department.store';
-import { Plus } from '@element-plus/icons-vue';
+import { MoreFilled, Plus } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import RepairFormDialog from './RepairFormDialog.vue';
 import MaintenanceDetailDialog from './MaintenanceDetailDialog.vue';
@@ -636,6 +636,66 @@ const canCompleteRepair = (row: any) => {
   );
 };
 
+const canSubmitRow = (row: any) =>
+  (row.status === 'draft' || row.status === 'rejected' || row.status?.startsWith('rejected_by')) &&
+  row.requested_by === authStore.user?.id;
+
+const canTransferDisposal = (row: any) =>
+  authStore.isAdmin &&
+  ['in_progress', 'rejected_by_admin', 'rejected_due_to_high_cost'].includes(row.status) &&
+  !row.linked_disposal_case_id &&
+  row.asset?.status !== 'pending_disposal';
+
+type MaintenanceRowCommand =
+  | 'edit'
+  | 'delete'
+  | 'submit'
+  | 'approve'
+  | 'reject'
+  | 'complete'
+  | 'disposal'
+  | 'view-disposal';
+
+const hasRowActions = (row: any) =>
+  (authStore.isAdmin && row.asset?.status === 'pending_disposal') ||
+  canEdit(row) ||
+  canDelete(row) ||
+  canSubmitRow(row) ||
+  canApproveAtCurrentLevel(row) ||
+  canRejectRepair(row) ||
+  canCompleteRepair(row) ||
+  canTransferDisposal(row) ||
+  (authStore.isAdmin && Boolean(row.linked_disposal_case_id));
+
+const handleRowCommand = (command: MaintenanceRowCommand, row: any): void => {
+  switch (command) {
+    case 'edit':
+      handleEdit(row);
+      break;
+    case 'delete':
+      handleDelete(row);
+      break;
+    case 'submit':
+      handleSubmitForApproval(row);
+      break;
+    case 'approve':
+      handleApprove(row);
+      break;
+    case 'reject':
+      handleRejectRepair(row);
+      break;
+    case 'complete':
+      handleCompleteRepair(row.id);
+      break;
+    case 'disposal':
+      handleToDisposal(row);
+      break;
+    case 'view-disposal':
+      router.push({ path: '/asset-disposals', query: { openId: String(row.linked_disposal_case_id) } });
+      break;
+  }
+};
+
 const getApproveButtonText = (row: any) => {
   if (!authStore.user) return 'Phê duyệt';
   const { status } = row;
@@ -869,6 +929,22 @@ const formatCurrency = (value: number) => {
 
 .cost-info-table {
   font-size: 13px;
+}
+
+.maintenance-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.maintenance-actions :deep(.el-button + .el-button) {
+  margin-left: 0;
+}
+
+.more-actions-button {
+  width: 32px;
+  padding: 0;
 }
 
 @media (max-width: 768px) {

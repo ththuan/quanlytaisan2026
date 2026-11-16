@@ -93,22 +93,22 @@
         >
           <el-table-column
             type="index"
-            width="50"
+            width="45"
             label="#"
           />
           <el-table-column
             prop="asset.asset_code"
             :label="$t('transfers.assetCode')"
-            width="120"
+            width="95"
           />
           <el-table-column
             prop="asset.name"
             :label="$t('transfers.assetName')"
-            min-width="180"
+            min-width="145"
           />
           <el-table-column
             :label="$t('transfers.fromDepartment')"
-            width="150"
+            width="105"
           >
             <template #default="{ row }">
               {{ row.from_department?.name || '-' }}
@@ -116,7 +116,7 @@
           </el-table-column>
           <el-table-column
             :label="$t('transfers.toDepartment')"
-            width="150"
+            width="105"
           >
             <template #default="{ row }">
               {{ row.to_department?.name || '-' }}
@@ -125,12 +125,12 @@
           <el-table-column
             prop="requester.fullname"
             :label="$t('transfers.requestedBy')"
-            width="140"
+            width="105"
           />
           <el-table-column
             prop="status"
             :label="$t('common.status')"
-            width="120"
+            width="130"
           >
             <template #default="{ row }">
               <el-tag :type="getStatusType(row.status)">
@@ -141,7 +141,7 @@
           <el-table-column
             prop="transfer_date"
             :label="$t('transfers.transferDate')"
-            width="160"
+            width="130"
           >
             <template #default="{ row }">
               {{ formatDate(row.transfer_date) }}
@@ -149,32 +149,43 @@
           </el-table-column>
           <el-table-column
             :label="$t('common.actions')"
-            width="200"
+            width="150"
             fixed="right"
           >
             <template #default="{ row }">
-              <el-button
-                size="small"
-                @click="handleView(row)"
-              >
-                {{ $t('common.view') }}
-              </el-button>
-              <template v-if="canApprove(row)">
+              <div class="transfer-actions">
                 <el-button
                   size="small"
-                  type="success"
-                  @click="handleApprove(row.id)"
+                  @click="handleView(row)"
                 >
-                  {{ $t('transfers.approve') }}
+                  {{ $t('common.view') }}
                 </el-button>
-                <el-button
-                  size="small"
-                  type="danger"
-                  @click="handleReject(row.id)"
+                <el-dropdown
+                  v-if="canApprove(row)"
+                  trigger="click"
+                  placement="bottom-end"
+                  @command="(command: 'approve' | 'reject') => handleTransferCommand(command, row)"
                 >
-                  {{ $t('transfers.reject') }}
-                </el-button>
-              </template>
+                  <el-button
+                    size="small"
+                    class="more-actions-button"
+                    :icon="MoreFilled"
+                  />
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item command="approve">
+                        {{ $t('transfers.approve') }}
+                      </el-dropdown-item>
+                      <el-dropdown-item
+                        command="reject"
+                        divided
+                      >
+                        {{ $t('transfers.reject') }}
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -304,7 +315,7 @@ import { useTransferStore } from '@/stores/transfer.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useNotificationStore } from '@/stores/notification.store';
 import { useDepartments } from '@/composables/useDepartments';
-import { Plus, Sort } from '@element-plus/icons-vue';
+import { MoreFilled, Plus, Sort } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import TransferFormDialog from '@/components/Transfers/TransferFormDialog.vue';
 import TransferDetailDialog from '@/components/Transfers/TransferDetailDialog.vue';
@@ -466,6 +477,14 @@ const handleReject = async (id: number) => {
   }
 };
 
+const handleTransferCommand = (command: 'approve' | 'reject', row: any) => {
+  if (command === 'approve') {
+    handleApprove(row.id);
+    return;
+  }
+  handleReject(row.id);
+};
+
 const handleFormSuccess = () => {
   formDialogVisible.value = false;
   transferStore.fetchTransfers(undefined, true);
@@ -543,5 +562,21 @@ const formatDate = (date: string) => {
   width: 100%;
   position: relative;
   z-index: 1;
+}
+
+.transfer-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.transfer-actions :deep(.el-button + .el-button) {
+  margin-left: 0;
+}
+
+.more-actions-button {
+  width: 32px;
+  padding: 0;
 }
 </style>

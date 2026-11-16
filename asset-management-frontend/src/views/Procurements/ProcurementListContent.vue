@@ -184,16 +184,16 @@
           <el-table-column
             prop="code"
             label="Mã"
-            width="140"
+            width="120"
           />
           <el-table-column
             prop="title"
             label="Nội dung"
-            min-width="240"
+            min-width="200"
           />
           <el-table-column
             label="Cấp phát (đơn vị)"
-            min-width="220"
+            min-width="170"
           >
             <template #default="scope">
               {{ scope.row.receiving_department?.name || '—' }}
@@ -201,7 +201,7 @@
           </el-table-column>
           <el-table-column
             label="Ngày mua"
-            width="140"
+            width="120"
           >
             <template #default="scope">
               {{ formatDate(scope.row.purchase_date) }}
@@ -209,7 +209,7 @@
           </el-table-column>
           <el-table-column
             label="Trạng thái"
-            width="130"
+            width="115"
           >
             <template #default="scope">
               <el-tag :type="statusTagType(scope.row.status)">
@@ -219,7 +219,7 @@
           </el-table-column>
           <el-table-column
             :label="$t('common.actions')"
-            width="220"
+            width="200"
             fixed="right"
           >
             <template #default="scope">

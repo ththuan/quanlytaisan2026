@@ -125,32 +125,38 @@
           <el-table-column
             prop="username"
             :label="$t('users.username')"
-            width="150"
+            width="140"
           />
           <el-table-column
             prop="fullname"
             :label="$t('users.fullname')"
-            min-width="180"
+            min-width="160"
           />
           <el-table-column
             prop="job_title"
             label="Chức danh"
-            min-width="160"
+            min-width="140"
           />
           <el-table-column
             prop="role"
             :label="$t('users.role')"
-            width="120"
+            width="160"
           >
             <template #default="{ row }">
-              <el-tag :type="getRoleColor(row.role) ?? 'info'">
-                {{ getRoleText(row.role) }}
-              </el-tag>
+              <el-tooltip
+                :content="getRoleText(row.role)"
+                placement="top"
+                :show-after="300"
+              >
+                <el-tag :type="getRoleColor(row.role) ?? 'info'">
+                  {{ getRoleTableText(row.role) }}
+                </el-tag>
+              </el-tooltip>
             </template>
           </el-table-column>
           <el-table-column
             label="Phân quyền"
-            width="130"
+            width="120"
           >
             <template #default="{ row }">
               <el-tag
@@ -178,7 +184,7 @@
           </el-table-column>
           <el-table-column
             :label="$t('common.status')"
-            width="120"
+            width="130"
           >
             <template #default="{ row }">
               <el-tag :type="row.is_active === true ? 'success' : 'danger'">
@@ -188,48 +194,64 @@
           </el-table-column>
           <el-table-column
             :label="$t('common.actions')"
-            width="320"
+            width="160"
             fixed="right"
           >
             <template #default="{ row }">
-              <el-button
-                size="small"
-                @click="handleView(row)"
-              >
-                {{ $t('common.view') }}
-              </el-button>
-              <el-button
-                v-if="authStore.can('users.update', ['admin'])"
-                size="small"
-                type="warning"
-                @click="handleEdit(row)"
-              >
-                {{ $t('common.edit') }}
-              </el-button>
-              <el-button
-                v-if="authStore.can('users.reset', ['admin']) && row.id !== authStore.user?.id"
-                size="small"
-                type="info"
-                @click="handleResetPassword(row)"
-              >
-                {{ $t('users.resetPassword') }}
-              </el-button>
-              <el-button
-                v-if="authStore.can('users.delete', ['admin']) && row.id !== authStore.user?.id"
-                size="small"
-                type="danger"
-                @click="handleDelete(row)"
-              >
-                {{ $t('common.delete') }}
-              </el-button>
-              <el-button
-                v-if="authStore.can('users.update', ['admin']) && row.id !== authStore.user?.id"
-                size="small"
-                type="danger"
-                @click="handleToggleStatus(row)"
-              >
-                {{ row.is_active ? $t('users.deactivate') : $t('users.activate') }}
-              </el-button>
+              <div class="user-actions">
+                <el-button
+                  size="small"
+                  @click="handleView(row)"
+                >
+                  {{ $t('common.view') }}
+                </el-button>
+                <el-button
+                  v-if="authStore.can('users.update', ['admin'])"
+                  size="small"
+                  type="warning"
+                  @click="handleEdit(row)"
+                >
+                  {{ $t('common.edit') }}
+                </el-button>
+                <el-dropdown
+                  v-if="canShowMoreActions(row)"
+                  trigger="click"
+                  placement="bottom-end"
+                  @command="(command: UserRowCommand) => handleUserCommand(command, row)"
+                >
+                  <el-button
+                    size="small"
+                    class="more-actions-button"
+                    :icon="MoreFilled"
+                  />
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item
+                        v-if="authStore.can('users.reset', ['admin'])"
+                        command="reset"
+                        :icon="RefreshLeft"
+                      >
+                        {{ $t('users.resetPassword') }}
+                      </el-dropdown-item>
+                      <el-dropdown-item
+                        v-if="authStore.can('users.update', ['admin'])"
+                        command="toggle"
+                        :icon="SwitchButton"
+                      >
+                        {{ row.is_active ? $t('users.deactivate') : $t('users.activate') }}
+                      </el-dropdown-item>
+                      <el-dropdown-item
+                        v-if="authStore.can('users.delete', ['admin'])"
+                        command="delete"
+                        divided
+                        :icon="Delete"
+                      >
+                        {{ $t('common.delete') }}
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -435,7 +457,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/stores/auth.store';
-import { Plus, Search, Upload, Download } from '@element-plus/icons-vue';
+import { Delete, Download, MoreFilled, Plus, RefreshLeft, Search, SwitchButton, Upload } from '@element-plus/icons-vue';
 import { ElMessageBox, ElMessage } from 'element-plus';
 import api from '@/services/api';
 import userService, { type UserImportResult } from '@/services/user.service';
@@ -538,6 +560,28 @@ const handleReset = () => {
 const handleCreate = () => {
   currentUser.value = null;
   formDialogVisible.value = true;
+};
+
+type UserRowCommand = 'reset' | 'delete' | 'toggle';
+
+const canShowMoreActions = (user: User) =>
+  user.id !== authStore.user?.id &&
+  (
+    authStore.can('users.reset', ['admin']) ||
+    authStore.can('users.update', ['admin']) ||
+    authStore.can('users.delete', ['admin'])
+  );
+
+const handleUserCommand = (command: UserRowCommand, user: User) => {
+  if (command === 'reset') {
+    handleResetPassword(user);
+    return;
+  }
+  if (command === 'delete') {
+    handleDelete(user);
+    return;
+  }
+  handleToggleStatus(user);
 };
 
 const handleEdit = (user: User) => {
@@ -700,6 +744,16 @@ const getRoleText = (role: string) => {
   return t(key);
 };
 
+const getRoleTableText = (role: string) => {
+  const shortLabels: Record<string, string> = {
+    admin: 'Quản trị',
+    director: 'Giám hiệu',
+    department_head: 'Trưởng đơn vị',
+    staff: 'Viên chức',
+  };
+  return shortLabels[role] || getRoleText(role);
+};
+
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString('vi-VN', {
     year: 'numeric',
@@ -751,6 +805,22 @@ const formatDate = (date: string) => {
 }
 .text-success { color: var(--el-color-success); }
 .text-danger { color: var(--el-color-danger); }
+
+.user-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
+.user-actions :deep(.el-button + .el-button) {
+  margin-left: 0;
+}
+
+.more-actions-button {
+  width: 32px;
+  padding: 0;
+}
 
 @media (max-width: 768px) {
   .card-header {

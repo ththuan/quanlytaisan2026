@@ -64,6 +64,24 @@ body {
     padding-right: 16px;
   }
 
+  /* Nút thao tác trong bảng giữ kích thước gọn để không xuống dòng/đè cột. */
+  .el-main .el-table .el-button:not(.is-link):not(.is-text) {
+    min-height: 32px;
+    height: 32px;
+    padding: 0 10px;
+    font-size: 13px;
+  }
+
+  .el-main .el-table .el-button + .el-button {
+    margin-left: 6px;
+  }
+
+  .el-main .el-table .el-tag {
+    height: 22px;
+    padding: 0 7px;
+    font-size: 12px;
+  }
+
   .el-input--large,
   .el-select--large { --el-component-size-large: 46px; }
 

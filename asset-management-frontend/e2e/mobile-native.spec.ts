@@ -221,9 +221,10 @@ test('mobile: chi tiết sửa chữa không tràn ngang, trạng thái tiếng 
   await detailDialog.locator('.el-dialog__headerbtn').click();
   await expect(detailDialog).toBeHidden();
 
-  const editButton = page.getByRole('button', { name: 'Sửa', exact: true }).first();
-  await expect(editButton).toBeVisible();
-  await editButton.click();
+  const moreButton = page.locator('.maintenance-actions .more-actions-button').first();
+  await expect(moreButton).toBeVisible();
+  await moreButton.click();
+  await page.locator('.el-dropdown-menu:visible').getByText('Sửa', { exact: true }).click();
 
   const formDialog = page.locator('.el-dialog').first();
   await expect(formDialog).toBeVisible();

@@ -45,7 +45,7 @@
             >
               <el-table-column
                 label="Mã tài sản"
-                width="160"
+                width="130"
               >
                 <template #default="scope">
                   {{ scope.row.asset?.asset_code || '—' }}
@@ -53,7 +53,7 @@
               </el-table-column>
               <el-table-column
                 label="Tên tài sản"
-                min-width="240"
+                min-width="200"
               >
                 <template #default="scope">
                   {{ scope.row.asset?.name || '—' }}
@@ -61,7 +61,7 @@
               </el-table-column>
               <el-table-column
                 label="Lý do"
-                min-width="220"
+                min-width="180"
               >
                 <template #default="scope">
                   {{ scope.row.reason || scope.row.inventory_detail?.disposal_reason || '—' }}
@@ -69,7 +69,7 @@
               </el-table-column>
               <el-table-column
                 label="Từ đơn vị"
-                width="180"
+                width="130"
               >
                 <template #default="scope">
                   {{ scope.row.moved_from_department?.name || '—' }}
@@ -77,7 +77,7 @@
               </el-table-column>
               <el-table-column
                 label="Chuyển lúc"
-                width="170"
+                width="130"
               >
                 <template #default="scope">
                   {{ formatDateTime(scope.row.moved_at) }}
