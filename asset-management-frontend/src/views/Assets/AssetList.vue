@@ -421,9 +421,18 @@
                 <span class="asset-name">{{ row.name }}</span>
                 <span class="asset-code">
                   {{ row.asset_code || row.category_code || '-' }}
-                  · {{ row.category || row.assetCategory?.name || '-' }}
-                  · {{ row.current_department?.name || '-' }}
                 </span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Đơn vị / Cơ sở"
+            min-width="220"
+          >
+            <template #default="{ row }">
+              <div class="asset-dept-cell">
+                <span>{{ row.current_department?.name || '-' }}</span>
+                <small>{{ campusLabel(row.campus || row.current_department?.campus) }}</small>
               </div>
             </template>
           </el-table-column>
@@ -954,7 +963,7 @@ import importService, { type ImportResult } from '@/services/import.service';
 import exportService from '@/services/export.service';
 import { openPrintWindow } from '@/utils/print';
 import { assetService, type AssetQueryParams } from '@/services/asset.service';
-import { CAMPUS_OPTIONS } from '@/constants/campuses';
+import { CAMPUS_OPTIONS, campusLabel } from '@/constants/campuses';
 
 const router = useRouter();
 const route = useRoute();
