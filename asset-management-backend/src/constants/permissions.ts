@@ -573,6 +573,7 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     action: 'view_all',
     label: 'Xem toàn bộ nhật ký',
     scopes: ['all'],
+    adminOnly: true,
   },
   {
     code: 'audit.view_department',
@@ -581,6 +582,7 @@ export const PERMISSION_DEFINITIONS: PermissionDefinition[] = [
     action: 'view_department',
     label: 'Xem nhật ký theo đơn vị',
     scopes: ['department'],
+    adminOnly: true,
   },
   {
     code: 'system.manage',

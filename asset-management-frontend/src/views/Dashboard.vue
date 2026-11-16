@@ -393,107 +393,6 @@
       </el-tab-pane>
       
       <!-- Tab: Hoạt động gần đây -->
-      <el-tab-pane
-        v-if="authStore.isAdmin"
-        name="activity"
-        lazy
-      >
-        <template #label>
-          <span>Hoạt động</span>
-        </template>
-        
-        <el-row
-          :gutter="16"
-          class="charts-row"
-        >
-          <el-col
-            :xs="24"
-            :md="24"
-          >
-            <el-card
-              class="chart-card"
-              shadow="hover"
-            >
-              <template #header>
-                <div class="card-header">
-                  <span class="card-title">Lịch sử thao tác gần đây</span>
-                </div>
-              </template>
-
-              <div
-                class="responsive-table"
-              >
-                <el-table
-                  v-loading="loading"
-                  :data="auditLogs"
-                  size="small"
-                  style="min-width: 600px"
-                >
-                  <el-table-column
-                    label="Thời gian"
-                    width="150"
-                  >
-                    <template #default="{ row }">
-                      {{ formatDateTime(row.created_at) }}
-                    </template>
-                  </el-table-column>
-                  <el-table-column
-                    label="Người dùng"
-                    min-width="120"
-                  >
-                    <template #default="{ row }">
-                      {{ getUserDisplayName(row) }}
-                    </template>
-                  </el-table-column>
-                  <el-table-column
-                    label="Vai trò"
-                    width="120"
-                  >
-                    <template #default="{ row }">
-                      <el-tag
-                        :type="getRoleTagType(row.user?.role)"
-                        size="small"
-                      >
-                        {{ getRoleText(row.user?.role) }}
-                      </el-tag>
-                    </template>
-                  </el-table-column>
-                  <el-table-column
-                    label="Hành động"
-                    width="110"
-                  >
-                    <template #default="{ row }">
-                      <el-tag
-                        :type="getActionTagType(row.action)"
-                        size="small"
-                        effect="plain"
-                      >
-                        {{ getActionText(row.action) }}
-                      </el-tag>
-                    </template>
-                  </el-table-column>
-                  <el-table-column
-                    label="Đối tượng"
-                    min-width="160"
-                  >
-                    <template #default="{ row }">
-                      {{ getTargetText(row) }}
-                    </template>
-                  </el-table-column>
-                  <el-table-column
-                    label="Địa chỉ IP"
-                    width="120"
-                  >
-                    <template #default="{ row }">
-                      <span class="ip-text">{{ row.ip_address ? row.ip_address.replace(/^::ffff:/, '') : '-' }}</span>
-                    </template>
-                  </el-table-column>
-                </el-table>
-              </div>
-            </el-card>
-          </el-col>
-        </el-row>
-      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
@@ -564,16 +463,6 @@ const handleLossDamageClick = () => {
   router.push('/loss-damage');
 };
 
-const auditLogs = ref<any[]>([]);
-const auditPagination = ref({
-  total: 0,
-  page: 1,
-  limit: 10,
-  totalPages: 0,
-  hasNext: false,
-  hasPrev: false,
-});
-
 onMounted(async () => {
   await loadDashboardData();
 });
@@ -591,15 +480,12 @@ watch(() => authStore.user?.id, () => {
 const loadDashboardData = async () => {
   loading.value = true;
   try {
-    const [overviewRes, statusRes, deptRes, stockRes, catRes, auditRes, maintRes, inventoryRes, hierarchyRes, lossDamageRes] = await Promise.all([
+    const [overviewRes, statusRes, deptRes, stockRes, catRes, maintRes, inventoryRes, hierarchyRes, lossDamageRes] = await Promise.all([
       dashboardService.getOverviewStats({}),
       dashboardService.getAssetStatusStats({}),
       dashboardService.getDepartmentStats(),
       dashboardService.getStockStats({}),
       dashboardService.getCategoryBreakdown({ limit: 8 }),
-      authStore.isAdmin
-        ? dashboardService.getAuditLogs({ limit: 10, page: 1 })
-        : Promise.resolve({ data: { data: [], pagination: auditPagination.value } }),
       authStore.isAdmin ? dashboardService.getMaintenanceStats({}) : Promise.resolve({ data: [] }),
       inventoryService.getPendingReportsCount(),
       dashboardService.getHierarchyStats({}),
@@ -612,7 +498,6 @@ const loadDashboardData = async () => {
     const departments = (deptRes as any)?.data || [];
     const stock = (stockRes as any)?.data || {};
     const categories = (catRes as any)?.data || [];
-    const auditResult = (auditRes as any)?.data || {};
     const hierarchy = (hierarchyRes as any)?.data || [];
 
     const maintenance = (maintRes as any)?.data || [];
@@ -652,13 +537,6 @@ const loadDashboardData = async () => {
 
     assetsByCategory.value = Array.isArray(categories) ? categories : [];
 
-    if (Array.isArray(auditResult.data)) {
-      auditLogs.value = auditResult.data;
-      auditPagination.value = auditResult.pagination || auditPagination.value;
-    } else {
-      auditLogs.value = [];
-    }
-
     maintenanceByStatus.value = Array.isArray(maintenance) ? maintenance : [];
   } catch (error) {
     console.error('Error loading dashboard data:', error);
@@ -681,51 +559,6 @@ const getStatusColor = (status: string) => {
 const getStatusText = (status: string) => {
   const key = `assets.status.${status}` as const;
   return t(key);
-};
-
-const formatDateTime = (value: string | Date | undefined | null) => {
-  if (!value) return '';
-  const d = typeof value === 'string' || value instanceof String ? new Date(value as string) : (value as Date);
-  if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleString('vi-VN');
-};
-
-const getActionText = (action: string) => {
-  const map: Record<string, string> = {
-    create: 'Tạo mới',
-    update: 'Cập nhật',
-    delete: 'Xóa',
-    approve: 'Duyệt',
-    login: 'Đăng nhập',
-    logout: 'Đăng xuất',
-  };
-  return map[action] || action;
-};
-
-const getUserDisplayName = (row: any) => {
-  return row?.user?.fullname || row?.user?.username || 'Hệ thống';
-};
-
-const getTargetText = (row: any) => {
-  const tableMap: Record<string, string> = {
-    assets: 'Tài sản',
-    users: 'Người dùng',
-    departments: 'Đơn vị',
-    asset_transfers: 'Điều chuyển tài sản',
-    maintenance_requests: 'Yêu cầu sửa chữa',
-    procurements: 'Yêu cầu mua sắm',
-    inventory_rounds: 'Đợt kiểm kê',
-  };
-  const typeName = tableMap[row?.table_name] || row?.table_name || 'Khác';
-  // Ưu tiên hiển thị tên bản ghi (Ví dụ: tên tài sản, tên người dùng)
-  if (row?.record_name) {
-    return `${typeName}: ${row.record_name}`;
-  }
-  // Nếu không có tên, hiển thị ID (Ví dụ: Tài sản #342)
-  if (row?.record_id) {
-    return `${typeName} #${row.record_id}`;
-  }
-  return typeName;
 };
 
 const formatNumber = (num: number) => {
@@ -914,31 +747,6 @@ const onGraphClick = (params: any) => {
   }
 };
 
-const getRoleTagType = (role: string | undefined): 'success' | 'warning' | 'danger' | 'info' => {
-  if (role === 'admin') return 'danger';
-  if (role === 'director') return 'warning';
-  if (role === 'manager') return 'info';
-  return 'info';
-};
-
-const getRoleText = (role: string | undefined) => {
-  const map: Record<string, string> = {
-    admin: 'Quản trị viên',
-    director: 'Giám hiệu',
-    manager: 'Trưởng phòng',
-    department_head: 'Trưởng đơn vị',
-    staff: 'Nhân viên',
-  };
-  return map[role || ''] || role || '-';
-};
-
-const getActionTagType = (action: string): 'success' | 'warning' | 'danger' | 'info' => {
-  if (action === 'create') return 'success';
-  if (action === 'delete') return 'danger';
-  if (action === 'approve') return 'warning';
-  if (action === 'login' || action === 'logout') return 'info';
-  return 'info';
-};
 </script>
 
 <style scoped>

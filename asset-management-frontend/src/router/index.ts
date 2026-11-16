@@ -187,11 +187,7 @@ const routes: RouteRecordRaw[] = [
         path: '/audit-logs',
         name: 'AuditLogs',
         component: () => import('@/views/AuditLogs/AuditLogView.vue'),
-        meta: {
-          permission: 'audit.view_all',
-          legacyRoles: ['admin'],
-          titleKey: 'menu.auditLogs',
-        },
+        meta: { requiresAdmin: true, titleKey: 'menu.auditLogs' },
       },
       {
         path: '/notifications',

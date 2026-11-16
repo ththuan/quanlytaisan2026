@@ -165,7 +165,7 @@
             </el-menu-item>
 
             <el-menu-item
-              v-if="authStore.can('audit.view_all', ['admin']) || authStore.can('audit.view_department', ['admin'])"
+              v-if="authStore.isAdmin"
               index="/audit-logs"
             >
               <el-icon><Tickets /></el-icon>
