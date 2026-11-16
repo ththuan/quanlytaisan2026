@@ -74,7 +74,7 @@
         </div>
       </div>
 
-      <div class="responsive-table">
+      <div class="responsive-table app-desktop-table">
         <el-table
           v-loading="loading"
           :data="rows"
@@ -166,11 +166,85 @@
         </el-table>
       </div>
 
-      <div
-        v-if="!rows.length && !loading"
-        style="margin-top: 16px;"
-      >
-        <el-empty description="Chưa có lịch sử nhập/xuất kho" />
+      <div class="app-mobile-list stock-history-mobile">
+        <article
+          v-for="row in rows"
+          :key="`${row.type}-${row.id}`"
+          class="app-mobile-card"
+        >
+          <div class="app-mobile-card__head">
+            <div class="app-mobile-card__heading">
+              <span class="app-mobile-card__title">{{ row.item?.name || '-' }}</span>
+              <span class="app-mobile-card__subtitle">{{ row.item?.code || '-' }}</span>
+            </div>
+            <el-tag
+              :type="row.type === 'in' ? 'success' : 'warning'"
+              size="small"
+              class="app-mobile-card__status"
+            >
+              {{ row.type === 'in' ? 'Nhập' : 'Xuất' }}
+            </el-tag>
+          </div>
+
+          <div class="app-mobile-card__meta">
+            <span class="app-mobile-card__code">{{ row.code }}</span>
+            <span>{{ row.date }}</span>
+          </div>
+
+          <div class="app-mobile-card__grid">
+            <div class="app-mobile-card__field">
+              <span class="app-mobile-card__field-label">Số lượng</span>
+              <span class="app-mobile-card__field-value app-mobile-card__field-value--strong">{{ row.quantity }}</span>
+            </div>
+            <div class="app-mobile-card__field">
+              <span class="app-mobile-card__field-label">Đơn vị</span>
+              <span class="app-mobile-card__field-value">{{ row.item?.unit || '-' }}</span>
+            </div>
+            <template v-if="row.type === 'in'">
+              <div class="app-mobile-card__field">
+                <span class="app-mobile-card__field-label">Đơn giá</span>
+                <span class="app-mobile-card__field-value">{{ formatCurrency(row.unit_price) }}</span>
+              </div>
+              <div class="app-mobile-card__field">
+                <span class="app-mobile-card__field-label">Thành tiền</span>
+                <span class="app-mobile-card__field-value app-mobile-card__field-value--strong">{{ formatCurrency(row.amount) }}</span>
+              </div>
+              <div class="app-mobile-card__field app-mobile-card__field--wide">
+                <span class="app-mobile-card__field-label">Vận đơn / Nhà cung cấp / Hóa đơn</span>
+                <span class="app-mobile-card__field-value">
+                  {{ row.shopee_waybill || '-' }} · {{ row.supplier_name || '-' }} · {{ row.invoice_no || '-' }}
+                </span>
+              </div>
+            </template>
+            <template v-else>
+              <div class="app-mobile-card__field app-mobile-card__field--wide">
+                <span class="app-mobile-card__field-label">Đơn vị nhận</span>
+                <span class="app-mobile-card__field-value">{{ row.department_name || '-' }}</span>
+              </div>
+              <div class="app-mobile-card__field">
+                <span class="app-mobile-card__field-label">Nơi sử dụng</span>
+                <span class="app-mobile-card__field-value">{{ row.location || '-' }}</span>
+              </div>
+              <div class="app-mobile-card__field">
+                <span class="app-mobile-card__field-label">Vào việc</span>
+                <span class="app-mobile-card__field-value">{{ row.purpose || '-' }}</span>
+              </div>
+            </template>
+            <div
+              v-if="row.notes"
+              class="app-mobile-card__field app-mobile-card__field--wide"
+            >
+              <span class="app-mobile-card__field-label">Ghi chú</span>
+              <span class="app-mobile-card__field-value">{{ row.notes }}</span>
+            </div>
+          </div>
+        </article>
+
+        <el-empty
+          v-if="!rows.length && !loading"
+          description="Chưa có lịch sử nhập/xuất kho"
+          :image-size="80"
+        />
       </div>
     </el-card>
   </div>

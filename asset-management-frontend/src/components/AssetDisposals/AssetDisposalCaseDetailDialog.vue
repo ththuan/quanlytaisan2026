@@ -37,52 +37,83 @@
         </el-descriptions>
 
         <div style="margin-top: 14px">
-          <el-table
-            :data="data.items || []"
-            style="width: 100%"
-            height="320"
-          >
-            <el-table-column
-              label="Mã tài sản"
-              width="160"
+          <div class="app-desktop-table">
+            <el-table
+              :data="data.items || []"
+              style="width: 100%"
+              height="320"
             >
-              <template #default="scope">
-                {{ scope.row.asset?.asset_code || '—' }}
-              </template>
-            </el-table-column>
-            <el-table-column
-              label="Tên tài sản"
-              min-width="240"
+              <el-table-column
+                label="Mã tài sản"
+                width="160"
+              >
+                <template #default="scope">
+                  {{ scope.row.asset?.asset_code || '—' }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                label="Tên tài sản"
+                min-width="240"
+              >
+                <template #default="scope">
+                  {{ scope.row.asset?.name || '—' }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                label="Lý do"
+                min-width="220"
+              >
+                <template #default="scope">
+                  {{ scope.row.reason || scope.row.inventory_detail?.disposal_reason || '—' }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                label="Từ đơn vị"
+                width="180"
+              >
+                <template #default="scope">
+                  {{ scope.row.moved_from_department?.name || '—' }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                label="Chuyển lúc"
+                width="170"
+              >
+                <template #default="scope">
+                  {{ formatDateTime(scope.row.moved_at) }}
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+
+          <div class="app-mobile-list disposal-detail-list">
+            <article
+              v-for="row in data.items || []"
+              :key="row.id"
+              class="app-mobile-card"
             >
-              <template #default="scope">
-                {{ scope.row.asset?.name || '—' }}
-              </template>
-            </el-table-column>
-            <el-table-column
-              label="Lý do"
-              min-width="220"
-            >
-              <template #default="scope">
-                {{ scope.row.reason || scope.row.inventory_detail?.disposal_reason || '—' }}
-              </template>
-            </el-table-column>
-            <el-table-column
-              label="Từ đơn vị"
-              width="180"
-            >
-              <template #default="scope">
-                {{ scope.row.moved_from_department?.name || '—' }}
-              </template>
-            </el-table-column>
-            <el-table-column
-              label="Chuyển lúc"
-              width="170"
-            >
-              <template #default="scope">
-                {{ formatDateTime(scope.row.moved_at) }}
-              </template>
-            </el-table-column>
-          </el-table>
+              <div class="app-mobile-card__head">
+                <div class="app-mobile-card__heading">
+                  <span class="app-mobile-card__title">{{ row.asset?.name || '-' }}</span>
+                  <span class="app-mobile-card__subtitle">{{ row.asset?.asset_code || '-' }}</span>
+                </div>
+              </div>
+              <div class="app-mobile-card__grid">
+                <div class="app-mobile-card__field app-mobile-card__field--wide">
+                  <span class="app-mobile-card__field-label">Lý do</span>
+                  <span class="app-mobile-card__field-value">{{ row.reason || row.inventory_detail?.disposal_reason || '-' }}</span>
+                </div>
+                <div class="app-mobile-card__field">
+                  <span class="app-mobile-card__field-label">Từ đơn vị</span>
+                  <span class="app-mobile-card__field-value">{{ row.moved_from_department?.name || '-' }}</span>
+                </div>
+                <div class="app-mobile-card__field">
+                  <span class="app-mobile-card__field-label">Chuyển lúc</span>
+                  <span class="app-mobile-card__field-value">{{ formatDateTime(row.moved_at) }}</span>
+                </div>
+              </div>
+            </article>
+          </div>
         </div>
 
         <el-divider />
@@ -878,5 +909,11 @@ const complete = async () => {
   font-size: 12px;
   color: #909399;
   margin-top: 7px;
+}
+
+@media (max-width: 1367px) {
+  html.app-overlay .disposal-detail-list {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
 }
 </style>

@@ -47,7 +47,7 @@
       </div>
 
 
-      <div class="responsive-table">
+      <div class="responsive-table app-desktop-table">
         <el-table
           v-loading="summaryLoading"
           :data="summaryRows"
@@ -88,6 +88,41 @@
             </template>
           </el-table-column>
         </el-table>
+      </div>
+
+      <div class="app-mobile-list procurement-summary-mobile">
+        <article
+          v-for="(row, index) in summaryRows"
+          :key="`${row.category_code}-${row.name}-${index}`"
+          class="app-mobile-card"
+        >
+          <div class="app-mobile-card__head">
+            <div class="app-mobile-card__heading">
+              <span class="app-mobile-card__title">{{ row.name || row.category || '-' }}</span>
+              <span class="app-mobile-card__subtitle">{{ row.category_code || '-' }} · {{ row.category || '-' }}</span>
+            </div>
+          </div>
+          <div class="app-mobile-card__grid">
+            <div class="app-mobile-card__field">
+              <span class="app-mobile-card__field-label">Tổng SL</span>
+              <span class="app-mobile-card__field-value app-mobile-card__field-value--strong">{{ row.total_quantity }}</span>
+            </div>
+            <div class="app-mobile-card__field">
+              <span class="app-mobile-card__field-label">Đơn vị</span>
+              <span class="app-mobile-card__field-value">{{ row.unit || '-' }}</span>
+            </div>
+            <div class="app-mobile-card__field app-mobile-card__field--wide">
+              <span class="app-mobile-card__field-label">Tổng tiền</span>
+              <span class="app-mobile-card__field-value app-mobile-card__field-value--strong">{{ formatMoney(row.total_amount) }}</span>
+            </div>
+          </div>
+        </article>
+
+        <el-empty
+          v-if="!summaryLoading && summaryRows.length === 0"
+          description="Chưa có dữ liệu tổng hợp"
+          :image-size="72"
+        />
       </div>
     </el-card>
 
@@ -140,7 +175,7 @@
         </el-button>
       </div>
 
-      <div class="responsive-table">
+      <div class="responsive-table app-desktop-table">
         <el-table
           v-loading="loading"
           :data="rows"
@@ -215,6 +250,76 @@
             </template>
           </el-table-column>
         </el-table>
+      </div>
+
+      <div class="app-mobile-list procurement-mobile-list">
+        <article
+          v-for="row in rows"
+          :key="row.id"
+          class="app-mobile-card app-mobile-card--interactive"
+          @click="openDetail(row.id)"
+        >
+          <div class="app-mobile-card__head">
+            <div class="app-mobile-card__heading">
+              <span class="app-mobile-card__title">{{ row.title || '-' }}</span>
+              <span class="app-mobile-card__subtitle">{{ row.code || '-' }}</span>
+            </div>
+            <el-tag
+              :type="statusTagType(row.status)"
+              size="small"
+              class="app-mobile-card__status"
+            >
+              {{ statusLabel(row.status) }}
+            </el-tag>
+          </div>
+
+          <div class="app-mobile-card__grid">
+            <div class="app-mobile-card__field app-mobile-card__field--wide">
+              <span class="app-mobile-card__field-label">Cấp phát (đơn vị)</span>
+              <span class="app-mobile-card__field-value">{{ row.receiving_department?.name || '-' }}</span>
+            </div>
+            <div class="app-mobile-card__field">
+              <span class="app-mobile-card__field-label">Ngày mua</span>
+              <span class="app-mobile-card__field-value">{{ formatDate(row.purchase_date) }}</span>
+            </div>
+          </div>
+
+          <div
+            class="app-mobile-card__actions"
+            @click.stop
+          >
+            <el-button
+              size="small"
+              @click="openDetail(row.id)"
+            >
+              {{ $t('common.view') }}
+            </el-button>
+            <template v-if="!authStore.isDirector">
+              <el-button
+                v-if="row.status === 'draft' && authStore.can('procurement.update', ['admin'])"
+                size="small"
+                @click="openEdit(row.id)"
+              >
+                Sửa
+              </el-button>
+              <el-button
+                v-if="row.status === 'draft' && authStore.can('procurement.delete', ['admin'])"
+                size="small"
+                type="danger"
+                plain
+                @click="confirmDelete(row.id)"
+              >
+                Xóa
+              </el-button>
+            </template>
+          </div>
+        </article>
+
+        <el-empty
+          v-if="!loading && rows.length === 0"
+          description="Chưa có phiếu tăng tài sản"
+          :image-size="80"
+        />
       </div>
 
       <div class="pager">
@@ -572,6 +677,35 @@ onMounted(() => {
   .summary-filters .el-select,
   .summary-filters .el-button {
     width: 100%;
+  }
+}
+
+@media (max-width: 1367px) {
+  html.app-overlay .header-actions {
+    justify-content: stretch;
+  }
+
+  html.app-overlay .header-actions .el-button {
+    width: 100%;
+  }
+
+  html.app-overlay .filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  html.app-overlay .filters > .el-input,
+  html.app-overlay .filters > .el-select,
+  html.app-overlay .filters > .el-button {
+    width: 100% !important;
+    max-width: none !important;
+    grid-column: 1 / -1;
+  }
+
+  html.app-overlay .pager {
+    justify-content: center;
   }
 }
 </style>

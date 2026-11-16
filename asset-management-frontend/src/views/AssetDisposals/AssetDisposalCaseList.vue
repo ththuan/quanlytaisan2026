@@ -63,7 +63,7 @@
         </el-button>
       </div>
 
-      <div class="responsive-table">
+      <div class="responsive-table app-desktop-table">
         <el-table
           v-loading="loading"
           :data="rows"
@@ -109,6 +109,54 @@
             </template>
           </el-table-column>
         </el-table>
+      </div>
+
+      <div class="app-mobile-list disposal-mobile-list">
+        <article
+          v-for="row in rows"
+          :key="row.id"
+          class="app-mobile-card app-mobile-card--interactive"
+          @click="openDetail(row.id)"
+        >
+          <div class="app-mobile-card__head">
+            <div class="app-mobile-card__heading">
+              <span class="app-mobile-card__title">{{ row.code }}</span>
+              <span class="app-mobile-card__subtitle">{{ $t('assetDisposals.caseCode') }}</span>
+            </div>
+            <el-tag
+              :type="statusTagType(row.status)"
+              size="small"
+              class="app-mobile-card__status"
+            >
+              {{ statusLabel(row.status) }}
+            </el-tag>
+          </div>
+
+          <div class="app-mobile-card__grid">
+            <div class="app-mobile-card__field app-mobile-card__field--wide">
+              <span class="app-mobile-card__field-label">{{ $t('common.createdAt') }}</span>
+              <span class="app-mobile-card__field-value">{{ formatDateTime(row.created_at || row.createdAt) }}</span>
+            </div>
+          </div>
+
+          <div
+            class="app-mobile-card__actions"
+            @click.stop
+          >
+            <el-button
+              size="small"
+              @click="openDetail(row.id)"
+            >
+              {{ $t('common.view') }}
+            </el-button>
+          </div>
+        </article>
+
+        <el-empty
+          v-if="!loading && rows.length === 0"
+          description="Chưa có hồ sơ thanh lý"
+          :image-size="80"
+        />
       </div>
 
       <div class="pager">
@@ -309,6 +357,26 @@ onMounted(() => {
 .disposal-table :deep(td.el-table__cell) {
   padding-left: 12px;
   padding-right: 12px;
+}
+
+@media (max-width: 1367px) {
+  html.app-overlay .filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  html.app-overlay .filters > .el-input,
+  html.app-overlay .filters > .el-select,
+  html.app-overlay .filters > .el-button {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  html.app-overlay .filters > .el-button {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (min-width: 1366px) {

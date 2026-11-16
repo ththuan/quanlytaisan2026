@@ -436,6 +436,19 @@ html.app-overlay .el-main {
    TABLET: tabbar nổi kiểu iPadOS thay vì kéo dài hết chiều ngang
    ───────────────────────────────────────────────────────── */
 
+/* Modal phải nằm trên tabbar/sidebar. Element Plus overlay không có
+   z-index trong theme hiện tại nên tabbar (z-index 900) đè lên footer
+   dialog trên iPhone/iPad. */
+html.app-overlay .el-overlay {
+  z-index: 3000 !important;
+}
+
+/* Element Plus khóa scroll body khi có modal; ẩn tabbar để modal/footer
+   không bị tabbar đè hoặc chiếm vùng bấm. */
+html.app-overlay body.el-popup-parent--hidden .mobile-tabbar {
+  display: none !important;
+}
+
 @media (min-width: 769px) and (max-width: 1367px) {
   html.app-overlay .mobile-tabbar {
     left: 50%;

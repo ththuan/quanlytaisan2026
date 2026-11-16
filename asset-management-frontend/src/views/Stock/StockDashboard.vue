@@ -62,7 +62,7 @@
         </div>
       </div>
 
-      <div class="responsive-table">
+      <div class="responsive-table app-desktop-table">
         <el-table
           v-loading="loading"
           :data="items"
@@ -124,11 +124,62 @@
         </el-table>
       </div>
 
-      <div
-        v-if="!items.length && !loading"
-        style="margin-top: 16px;"
-      >
-        <el-empty description="Chưa có vật tư trong kho. Bạn hãy Nhập kho để bắt đầu." />
+      <div class="app-mobile-list stock-mobile-list">
+        <article
+          v-for="item in items"
+          :key="item.id"
+          class="app-mobile-card"
+        >
+          <div class="app-mobile-card__head">
+            <div class="app-mobile-card__heading">
+              <span class="app-mobile-card__title">{{ item.name }}</span>
+              <span class="app-mobile-card__subtitle">{{ item.code }}</span>
+            </div>
+            <el-tag
+              v-if="Number(item.on_hand) === 0"
+              type="danger"
+              effect="light"
+              size="small"
+              class="app-mobile-card__status"
+            >
+              Hết hàng
+            </el-tag>
+            <el-tag
+              v-else-if="item.is_low"
+              type="warning"
+              effect="light"
+              size="small"
+              class="app-mobile-card__status"
+            >
+              Sắp hết
+            </el-tag>
+          </div>
+
+          <div class="app-mobile-card__grid">
+            <div class="app-mobile-card__field">
+              <span class="app-mobile-card__field-label">Nhóm vật tư</span>
+              <span class="app-mobile-card__field-value">{{ item.category || '-' }}</span>
+            </div>
+            <div class="app-mobile-card__field">
+              <span class="app-mobile-card__field-label">Đơn vị</span>
+              <span class="app-mobile-card__field-value">{{ item.unit || '-' }}</span>
+            </div>
+            <div class="app-mobile-card__field">
+              <span class="app-mobile-card__field-label">Tồn kho</span>
+              <span class="app-mobile-card__field-value app-mobile-card__field-value--strong">{{ item.on_hand }}</span>
+            </div>
+            <div class="app-mobile-card__field">
+              <span class="app-mobile-card__field-label">Tồn tối thiểu</span>
+              <span class="app-mobile-card__field-value">{{ item.min_stock ?? 0 }}</span>
+            </div>
+          </div>
+        </article>
+
+        <el-empty
+          v-if="!items.length && !loading"
+          description="Chưa có vật tư trong kho. Bạn hãy Nhập kho để bắt đầu."
+          :image-size="80"
+        />
       </div>
     </el-card>
 
@@ -194,18 +245,142 @@
           </div>
         </div>
 
-        <el-table
-          :data="receiptForm.lines"
-          border
-          stripe
-          size="small"
-        >
-          <!-- Cột Vật tư: dùng autocomplete để tìm có sẵn HOẶC tạo mới -->
-          <el-table-column
-            label="Tên vật tư"
-            min-width="280"
+        <div class="app-desktop-table">
+          <el-table
+            :data="receiptForm.lines"
+            border
+            stripe
+            size="small"
           >
-            <template #default="{ row }">
+            <!-- Cột Vật tư: dùng autocomplete để tìm có sẵn HOẶC tạo mới -->
+            <el-table-column
+              label="Tên vật tư"
+              min-width="280"
+            >
+              <template #default="{ row }">
+                <el-autocomplete
+                  v-model="row.item_search_text"
+                  :fetch-suggestions="(q: string, cb: (s: any[]) => void) => suggestReceiptItems(q, cb)"
+                  placeholder="Gõ để tìm hoặc nhập tên vật tư mới"
+                  style="width:100%"
+                  clearable
+                  @select="(s: any) => onReceiptItemSelect(row, s)"
+                  @change="(v: string) => onReceiptItemTextChange(row, v)"
+                >
+                  <template #default="{ item }">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px">
+                      <span><b>{{ item.code }}</b> — {{ item.name }}</span>
+                      <el-tag
+                        size="small"
+                        :type="Number(item.on_hand) > 0 ? 'success' : 'info'"
+                      >
+                        Tồn: {{ item.on_hand }}
+                      </el-tag>
+                    </div>
+                  </template>
+                </el-autocomplete>
+                <div style="margin-top:3px; font-size:11px; line-height:1.4">
+                  <span
+                    v-if="row.item_id"
+                    style="color:#409eff"
+                  >↩ Nhập thêm vào kho (đã có trong danh mục)</span>
+                  <span
+                    v-else-if="row.item_search_text?.trim()"
+                    style="color:#67c23a"
+                  >✚ Sẽ tạo mới vật tư "{{ row.item_search_text.trim() }}" vào danh mục</span>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="ĐVT"
+              width="100"
+            >
+              <template #default="{ row }">
+                <el-input
+                  v-model="row.unit"
+                  placeholder="Cái"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="SL"
+              width="110"
+              align="center"
+            >
+              <template #default="{ row }">
+                <el-input-number
+                  v-model="row.quantity"
+                  :min="1"
+                  :max="100000"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Đơn giá (đ)"
+              width="150"
+              align="right"
+            >
+              <template #default="{ row }">
+                <el-input-number
+                  v-model="row.unit_price"
+                  :min="0"
+                  :precision="0"
+                  :controls="false"
+                  style="width:100%"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="Thành tiền"
+              width="130"
+              align="right"
+            >
+              <template #default="{ row }">
+                <span style="color:#e6a23c; font-weight:500">
+                  {{ formatCurrency(row.quantity * row.unit_price) }}
+                </span>
+              </template>
+            </el-table-column>
+            <el-table-column
+              width="60"
+              align="center"
+            >
+              <template #default="{ $index }">
+                <el-button
+                  type="danger"
+                  link
+                  @click="receiptForm.lines.splice($index, 1)"
+                >
+                  Xóa
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+
+        <div class="app-mobile-list stock-line-list">
+          <article
+            v-for="(row, index) in receiptForm.lines"
+            :key="index"
+            class="app-mobile-card stock-line-card"
+          >
+            <div class="app-mobile-card__head">
+              <div class="app-mobile-card__heading">
+                <span class="app-mobile-card__title">Dòng {{ Number(index) + 1 }}</span>
+                <span class="app-mobile-card__subtitle">{{ row.item_id ? 'Vật tư có sẵn' : 'Vật tư mới / tự do' }}</span>
+              </div>
+              <el-button
+                type="danger"
+                link
+                size="small"
+                @click="receiptForm.lines.splice(index, 1)"
+              >
+                Xóa
+              </el-button>
+            </div>
+
+            <div class="app-mobile-card__field app-mobile-card__field--wide">
+              <span class="app-mobile-card__field-label">Tên vật tư</span>
               <el-autocomplete
                 v-model="row.item_search_text"
                 :fetch-suggestions="(q: string, cb: (s: any[]) => void) => suggestReceiptItems(q, cb)"
@@ -227,83 +402,43 @@
                   </div>
                 </template>
               </el-autocomplete>
-              <div style="margin-top:3px; font-size:11px; line-height:1.4">
-                <span
-                  v-if="row.item_id"
-                  style="color:#409eff"
-                >↩ Nhập thêm vào kho (đã có trong danh mục)</span>
-                <span
-                  v-else-if="row.item_search_text?.trim()"
-                  style="color:#67c23a"
-                >✚ Sẽ tạo mới vật tư "{{ row.item_search_text.trim() }}" vào danh mục</span>
+            </div>
+
+            <div class="app-mobile-card__grid">
+              <div class="app-mobile-card__field">
+                <span class="app-mobile-card__field-label">ĐVT</span>
+                <el-input
+                  v-model="row.unit"
+                  placeholder="Cái"
+                />
               </div>
-            </template>
-          </el-table-column>
-          <el-table-column
-            label="ĐVT"
-            width="100"
-          >
-            <template #default="{ row }">
-              <el-input
-                v-model="row.unit"
-                placeholder="Cái"
-              />
-            </template>
-          </el-table-column>
-          <el-table-column
-            label="SL"
-            width="110"
-            align="center"
-          >
-            <template #default="{ row }">
-              <el-input-number
-                v-model="row.quantity"
-                :min="1"
-                :max="100000"
-              />
-            </template>
-          </el-table-column>
-          <el-table-column
-            label="Đơn giá (đ)"
-            width="150"
-            align="right"
-          >
-            <template #default="{ row }">
-              <el-input-number
-                v-model="row.unit_price"
-                :min="0"
-                :precision="0"
-                :controls="false"
-                style="width:100%"
-              />
-            </template>
-          </el-table-column>
-          <el-table-column
-            label="Thành tiền"
-            width="130"
-            align="right"
-          >
-            <template #default="{ row }">
-              <span style="color:#e6a23c; font-weight:500">
-                {{ formatCurrency(row.quantity * row.unit_price) }}
-              </span>
-            </template>
-          </el-table-column>
-          <el-table-column
-            width="60"
-            align="center"
-          >
-            <template #default="{ $index }">
-              <el-button
-                type="danger"
-                link
-                @click="receiptForm.lines.splice($index, 1)"
-              >
-                Xóa
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+              <div class="app-mobile-card__field">
+                <span class="app-mobile-card__field-label">Số lượng</span>
+                <el-input-number
+                  v-model="row.quantity"
+                  :min="1"
+                  :max="100000"
+                />
+              </div>
+              <div class="app-mobile-card__field">
+                <span class="app-mobile-card__field-label">Đơn giá (đ)</span>
+                <el-input-number
+                  v-model="row.unit_price"
+                  :min="0"
+                  :precision="0"
+                  :controls="false"
+                  style="width:100%"
+                />
+              </div>
+              <div class="app-mobile-card__field">
+                <span class="app-mobile-card__field-label">Thành tiền</span>
+                <span class="app-mobile-card__field-value app-mobile-card__field-value--strong">
+                  {{ formatCurrency(row.quantity * row.unit_price) }}
+                </span>
+              </div>
+            </div>
+          </article>
+        </div>
       </el-form>
 
       <template #footer>
@@ -386,17 +521,119 @@
           </el-button>
         </div>
 
-        <el-table
-          :data="issueForm.lines"
-          border
-          stripe
-          size="small"
-        >
-          <el-table-column
-            label="Vật tư"
-            min-width="320"
+        <div class="app-desktop-table">
+          <el-table
+            :data="issueForm.lines"
+            border
+            stripe
+            size="small"
           >
-            <template #default="{ row }">
+            <el-table-column
+              label="Vật tư"
+              min-width="320"
+            >
+              <template #default="{ row }">
+                <el-select
+                  v-model="row.item_id"
+                  filterable
+                  placeholder="Chọn vật tư cần xuất"
+                  style="width:100%"
+                  @change="() => onIssueItemChange(row)"
+                >
+                  <el-option
+                    v-for="it in items"
+                    :key="it.id"
+                    :label="`${it.code} - ${it.name}`"
+                    :value="it.id"
+                    :disabled="Number(it.on_hand) <= 0"
+                  >
+                    <div style="display:flex; justify-content:space-between; align-items:center">
+                      <span>{{ it.code }} — {{ it.name }}</span>
+                      <el-tag
+                        size="small"
+                        :type="Number(it.on_hand) > 0 ? 'success' : 'danger'"
+                      >
+                        Tồn: {{ it.on_hand }} {{ it.unit }}
+                      </el-tag>
+                    </div>
+                  </el-option>
+                </el-select>
+                <div
+                  v-if="row.item_id !== null"
+                  style="margin-top:3px; font-size:11px; color:#606266;"
+                >
+                  <span v-if="row.max_qty > 0">
+                    Hiện tồn kho: <b style="color:#67c23a">{{ row.max_qty }}</b>
+                    {{ items.find(i => i.id === row.item_id)?.unit || '' }}
+                    — có thể xuất tối đa {{ row.max_qty }}
+                  </span>
+                  <span
+                    v-else
+                    style="color:#f56c6c"
+                  >⚠ Vật tư này đã hết hàng trong kho</span>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="SL xuất"
+              width="130"
+              align="center"
+            >
+              <template #default="{ row }">
+                <el-input-number
+                  v-model="row.quantity"
+                  :min="1"
+                  :max="row.max_qty || 100000"
+                  :disabled="row.item_id !== null && row.max_qty === 0"
+                />
+                <div
+                  v-if="row.item_id !== null && row.max_qty > 0 && row.quantity > row.max_qty"
+                  style="color:#f56c6c; font-size:11px; margin-top:2px"
+                >
+                  Vượt tồn kho!
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column
+              width="60"
+              align="center"
+            >
+              <template #default="{ $index }">
+                <el-button
+                  type="danger"
+                  link
+                  @click="issueForm.lines.splice($index, 1)"
+                >
+                  Xóa
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+
+        <div class="app-mobile-list stock-line-list">
+          <article
+            v-for="(row, index) in issueForm.lines"
+            :key="index"
+            class="app-mobile-card stock-line-card"
+          >
+            <div class="app-mobile-card__head">
+              <div class="app-mobile-card__heading">
+                <span class="app-mobile-card__title">Dòng {{ Number(index) + 1 }}</span>
+                <span class="app-mobile-card__subtitle">Vật tư xuất kho</span>
+              </div>
+              <el-button
+                type="danger"
+                link
+                size="small"
+                @click="issueForm.lines.splice(index, 1)"
+              >
+                Xóa
+              </el-button>
+            </div>
+
+            <div class="app-mobile-card__field app-mobile-card__field--wide">
+              <span class="app-mobile-card__field-label">Vật tư</span>
               <el-select
                 v-model="row.item_id"
                 filterable
@@ -422,57 +659,31 @@
                   </div>
                 </el-option>
               </el-select>
-              <div
-                v-if="row.item_id !== null"
-                style="margin-top:3px; font-size:11px; color:#606266;"
-              >
-                <span v-if="row.max_qty > 0">
-                  Hiện tồn kho: <b style="color:#67c23a">{{ row.max_qty }}</b>
-                  {{ items.find(i => i.id === row.item_id)?.unit || '' }}
-                  — có thể xuất tối đa {{ row.max_qty }}
-                </span>
-                <span
-                  v-else
-                  style="color:#f56c6c"
-                >⚠ Vật tư này đã hết hàng trong kho</span>
+            </div>
+
+            <div class="app-mobile-card__grid">
+              <div class="app-mobile-card__field">
+                <span class="app-mobile-card__field-label">SL xuất</span>
+                <el-input-number
+                  v-model="row.quantity"
+                  :min="1"
+                  :max="row.max_qty || 100000"
+                  :disabled="row.item_id !== null && row.max_qty === 0"
+                />
               </div>
-            </template>
-          </el-table-column>
-          <el-table-column
-            label="SL xuất"
-            width="130"
-            align="center"
-          >
-            <template #default="{ row }">
-              <el-input-number
-                v-model="row.quantity"
-                :min="1"
-                :max="row.max_qty || 100000"
-                :disabled="row.item_id !== null && row.max_qty === 0"
-              />
-              <div
-                v-if="row.item_id !== null && row.max_qty > 0 && row.quantity > row.max_qty"
-                style="color:#f56c6c; font-size:11px; margin-top:2px"
-              >
-                Vượt tồn kho!
+              <div class="app-mobile-card__field">
+                <span class="app-mobile-card__field-label">Tồn khả dụng</span>
+                <span class="app-mobile-card__field-value">{{ row.item_id !== null ? row.max_qty : '-' }}</span>
               </div>
-            </template>
-          </el-table-column>
-          <el-table-column
-            width="60"
-            align="center"
-          >
-            <template #default="{ $index }">
-              <el-button
-                type="danger"
-                link
-                @click="issueForm.lines.splice($index, 1)"
-              >
-                Xóa
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+            </div>
+            <div
+              v-if="row.item_id !== null && row.max_qty > 0 && row.quantity > row.max_qty"
+              class="stock-line-warning"
+            >
+              Vượt tồn kho!
+            </div>
+          </article>
+        </div>
       </el-form>
 
       <template #footer>
@@ -758,6 +969,11 @@ const submitIssue = async () => {
   max-height: 280px;
 }
 
+.stock-line-warning {
+  color: #f56c6c;
+  font-size: 11px;
+}
+
 @media (max-width: 768px) {
   .stock-header {
     flex-direction: column;
@@ -772,6 +988,16 @@ const submitIssue = async () => {
 
   .stock-header .actions .el-button {
     flex: 1 1 calc(50% - 4px);
+  }
+}
+
+@media (max-width: 1367px) {
+  html.app-overlay .stock-line-list {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html.app-overlay .stock-line-card :deep(.el-input-number) {
+    width: 100%;
   }
 }
 </style>

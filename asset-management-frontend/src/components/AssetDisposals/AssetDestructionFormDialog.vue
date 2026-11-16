@@ -216,77 +216,128 @@
                   </div>
                 </template>
 
-                <el-table
-                  :data="group.assets"
-                  size="small"
-                  border
-                  style="width:100%"
-                  max-height="250"
-                >
-                  <el-table-column
-                    width="45"
-                    align="center"
+                <div class="app-desktop-table">
+                  <el-table
+                    :data="group.assets"
+                    size="small"
+                    border
+                    style="width:100%"
+                    max-height="250"
                   >
-                    <template #default="{ row }">
+                    <el-table-column
+                      width="45"
+                      align="center"
+                    >
+                      <template #default="{ row }">
+                        <el-checkbox
+                          :model-value="selectedAssetIds.has(row.id)"
+                          @change="toggleAsset(row)"
+                        />
+                      </template>
+                    </el-table-column>
+                    <el-table-column
+                      prop="asset_code"
+                      label="Mã TS"
+                      width="130"
+                    />
+                    <el-table-column
+                      prop="name"
+                      label="Tên tài sản"
+                      min-width="280"
+                    >
+                      <template #default="{ row }">
+                        <div>{{ row.name }}</div>
+                        <div class="asset-source-line">
+                          <el-tag
+                            size="small"
+                            :type="sourceTagType(row)"
+                          >
+                            {{ sourceLabel(row) }}
+                          </el-tag>
+                          <span
+                            v-if="sourceRequester(row)"
+                            class="asset-source-meta"
+                          >
+                            · {{ sourceRequester(row) }}<span v-if="sourceDate(row)"> · {{ sourceDate(row) }}</span>
+                          </span>
+                        </div>
+                        <div
+                          v-if="row.pending_disposal_note"
+                          class="asset-source-note"
+                        >
+                          {{ row.pending_disposal_note }}
+                        </div>
+                      </template>
+                    </el-table-column>
+                    <el-table-column
+                      label="Nguyên giá (đồng)"
+                      width="170"
+                      align="right"
+                    >
+                      <template #default="{ row }">
+                        {{ formatVND(row.purchase_price) }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column
+                      label="Giá trị còn lại (đồng)"
+                      width="180"
+                      align="right"
+                    >
+                      <template #default="{ row }">
+                        {{ formatVND(row.current_value) }}
+                      </template>
+                    </el-table-column>
+                  </el-table>
+                </div>
+
+                <div class="app-mobile-list disposal-asset-list">
+                  <article
+                    v-for="row in group.assets"
+                    :key="row.id"
+                    class="app-mobile-card disposal-asset-card"
+                  >
+                    <div class="app-mobile-card__head">
+                      <div class="app-mobile-card__heading">
+                        <span class="app-mobile-card__title">{{ row.name }}</span>
+                        <span class="app-mobile-card__subtitle">{{ row.asset_code }}</span>
+                      </div>
                       <el-checkbox
                         :model-value="selectedAssetIds.has(row.id)"
                         @change="toggleAsset(row)"
                       />
-                    </template>
-                  </el-table-column>
-                  <el-table-column
-                    prop="asset_code"
-                    label="Mã TS"
-                    width="130"
-                  />
-                  <el-table-column
-                    prop="name"
-                    label="Tên tài sản"
-                    min-width="280"
-                  >
-                    <template #default="{ row }">
-                      <div>{{ row.name }}</div>
-                      <div class="asset-source-line">
-                        <el-tag
-                          size="small"
-                          :type="sourceTagType(row)"
-                        >
-                          {{ sourceLabel(row) }}
-                        </el-tag>
-                        <span
-                          v-if="sourceRequester(row)"
-                          class="asset-source-meta"
-                        >
-                          · {{ sourceRequester(row) }}<span v-if="sourceDate(row)"> · {{ sourceDate(row) }}</span>
-                        </span>
-                      </div>
-                      <div
-                        v-if="row.pending_disposal_note"
-                        class="asset-source-note"
+                    </div>
+
+                    <div class="app-mobile-card__meta">
+                      <el-tag
+                        size="small"
+                        :type="sourceTagType(row)"
                       >
-                        {{ row.pending_disposal_note }}
+                        {{ sourceLabel(row) }}
+                      </el-tag>
+                      <span v-if="sourceRequester(row)">
+                        {{ sourceRequester(row) }}<span v-if="sourceDate(row)"> · {{ sourceDate(row) }}</span>
+                      </span>
+                    </div>
+
+                    <div
+                      v-if="row.pending_disposal_note"
+                      class="asset-source-note"
+                    >
+                      {{ row.pending_disposal_note }}
+                    </div>
+
+                    <div class="app-mobile-card__grid">
+                      <div class="app-mobile-card__field">
+                        <span class="app-mobile-card__field-label">Nguyên giá</span>
+                        <span class="app-mobile-card__field-value">{{ formatVND(row.purchase_price) }}</span>
                       </div>
-                    </template>
-                  </el-table-column>
-                  <el-table-column
-                    label="Nguyên giá (đồng)"
-                    width="170"
-                    align="right"
-                  >
-                    <template #default="{ row }">
-                      {{ formatVND(row.purchase_price) }}
-                    </template>
-                  </el-table-column>
-                  <el-table-column
-                    label="Giá trị còn lại (đồng)"
-                    width="180"
-                    align="right"
-                  >
-                    <template #default="{ row }">
-                      {{ formatVND(row.current_value) }}
-                    </template>
-                  </el-table-column>
-                </el-table>
+                      <div class="app-mobile-card__field">
+                        <span class="app-mobile-card__field-label">Giá trị còn lại</span>
+                        <span class="app-mobile-card__field-value app-mobile-card__field-value--strong">{{ formatVND(row.current_value) }}</span>
+                      </div>
+                    </div>
+                  </article>
+                </div>
               </el-collapse-item>
             </el-collapse>
           </div>
@@ -335,45 +386,69 @@
             <div class="manual-label">
               Tài sản thêm thủ công:
             </div>
-            <el-table
-              :data="manualAssets"
-              size="small"
-              border
-              style="width:100%"
-              max-height="150"
-            >
-              <el-table-column
-                prop="asset_code"
-                label="Mã TS"
-                width="130"
-              />
-              <el-table-column
-                prop="name"
-                label="Tên tài sản"
-                min-width="200"
-              />
-              <el-table-column
-                label="Đơn vị"
-                width="160"
+            <div class="app-desktop-table">
+              <el-table
+                :data="manualAssets"
+                size="small"
+                border
+                style="width:100%"
+                max-height="150"
               >
-                <template #default="{ row }">
-                  {{ row._dept_name || '—' }}
-                </template>
-              </el-table-column>
-              <el-table-column
-                label="Nguyên giá (đồng)"
-                width="160"
-                align="right"
+                <el-table-column
+                  prop="asset_code"
+                  label="Mã TS"
+                  width="130"
+                />
+                <el-table-column
+                  prop="name"
+                  label="Tên tài sản"
+                  min-width="200"
+                />
+                <el-table-column
+                  label="Đơn vị"
+                  width="160"
+                >
+                  <template #default="{ row }">
+                    {{ row._dept_name || '—' }}
+                  </template>
+                </el-table-column>
+                <el-table-column
+                  label="Nguyên giá (đồng)"
+                  width="160"
+                  align="right"
+                >
+                  <template #default="{ row }">
+                    {{ formatVND(row.purchase_price) }}
+                  </template>
+                </el-table-column>
+                <el-table-column
+                  label=""
+                  width="50"
+                >
+                  <template #default="{ row }">
+                    <el-button
+                      size="small"
+                      type="danger"
+                      text
+                      :icon="Delete"
+                      @click="removeManualAsset(row.id)"
+                    />
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+
+            <div class="app-mobile-list disposal-asset-list">
+              <article
+                v-for="row in manualAssets"
+                :key="row.id"
+                class="app-mobile-card"
               >
-                <template #default="{ row }">
-                  {{ formatVND(row.purchase_price) }}
-                </template>
-              </el-table-column>
-              <el-table-column
-                label=""
-                width="50"
-              >
-                <template #default="{ row }">
+                <div class="app-mobile-card__head">
+                  <div class="app-mobile-card__heading">
+                    <span class="app-mobile-card__title">{{ row.name }}</span>
+                    <span class="app-mobile-card__subtitle">{{ row.asset_code }}</span>
+                  </div>
                   <el-button
                     size="small"
                     type="danger"
@@ -381,9 +456,19 @@
                     :icon="Delete"
                     @click="removeManualAsset(row.id)"
                   />
-                </template>
-              </el-table-column>
-            </el-table>
+                </div>
+                <div class="app-mobile-card__grid">
+                  <div class="app-mobile-card__field">
+                    <span class="app-mobile-card__field-label">Đơn vị</span>
+                    <span class="app-mobile-card__field-value">{{ row._dept_name || '-' }}</span>
+                  </div>
+                  <div class="app-mobile-card__field">
+                    <span class="app-mobile-card__field-label">Nguyên giá</span>
+                    <span class="app-mobile-card__field-value">{{ formatVND(row.purchase_price) }}</span>
+                  </div>
+                </div>
+              </article>
+            </div>
           </div>
         </div>
       </el-form-item>
@@ -855,5 +940,30 @@ const formatVND = (v: any) =>
   margin-top: 2px;
   font-size: 11px;
   color: #94a3b8;
+}
+
+@media (max-width: 1367px) {
+  html.app-overlay .disposal-asset-list {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html.app-overlay .asset-summary-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  html.app-overlay .search-item {
+    flex-wrap: wrap;
+    gap: 2px 8px;
+  }
+
+  html.app-overlay .search-item .name {
+    flex-basis: 100%;
+    order: 2;
+  }
+
+  html.app-overlay .search-item .dept {
+    min-width: 0;
+  }
 }
 </style>

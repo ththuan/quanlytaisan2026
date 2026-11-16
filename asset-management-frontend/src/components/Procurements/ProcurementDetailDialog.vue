@@ -91,50 +91,87 @@
         </div>
       </div>
 
-      <el-table
-        v-loading="documentsLoading"
-        :data="documents"
-        border
-        stripe
-        size="small"
-        empty-text="Chưa có chứng từ"
-      >
-        <el-table-column
-          prop="file_name"
-          label="Tên file"
-          min-width="280"
-        />
-        <el-table-column
-          prop="size_bytes"
-          label="Dung lượng"
-          width="120"
-          align="right"
+      <div class="app-desktop-table">
+        <el-table
+          v-loading="documentsLoading"
+          :data="documents"
+          border
+          stripe
+          size="small"
+          empty-text="Chưa có chứng từ"
         >
-          <template #default="{ row }">
-            {{ formatFileSize(row.size_bytes) }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="created_at"
-          label="Ngày upload"
-          width="160"
+          <el-table-column
+            prop="file_name"
+            label="Tên file"
+            min-width="280"
+          />
+          <el-table-column
+            prop="size_bytes"
+            label="Dung lượng"
+            width="120"
+            align="right"
+          >
+            <template #default="{ row }">
+              {{ formatFileSize(row.size_bytes) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="created_at"
+            label="Ngày upload"
+            width="160"
+          >
+            <template #default="{ row }">
+              {{ formatDate(row.created_at) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="Thao tác"
+            width="180"
+            fixed="right"
+          >
+            <template #default="{ row }">
+              <el-button
+                size="small"
+                type="primary"
+                plain
+                :loading="openingDocId === row.id"
+                @click="openPdf(row)"
+              >
+                Xem
+              </el-button>
+              <el-button
+                size="small"
+                type="danger"
+                plain
+                :loading="deletingId === row.id"
+                @click="confirmDelete(row)"
+              >
+                Xóa
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+
+      <div class="app-mobile-list procurement-detail-list">
+        <article
+          v-for="doc in documents"
+          :key="doc.id"
+          class="app-mobile-card"
         >
-          <template #default="{ row }">
-            {{ formatDate(row.created_at) }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="Thao tác"
-          width="180"
-          fixed="right"
-        >
-          <template #default="{ row }">
+          <div class="app-mobile-card__head">
+            <div class="app-mobile-card__heading">
+              <span class="app-mobile-card__title">{{ doc.file_name }}</span>
+              <span class="app-mobile-card__subtitle">{{ formatDate(doc.created_at) }} · {{ formatFileSize(doc.size_bytes) }}</span>
+            </div>
+          </div>
+          <div class="app-mobile-card__actions">
             <el-button
               size="small"
               type="primary"
               plain
-              :loading="openingDocId === row.id"
-              @click="openPdf(row)"
+              :loading="openingDocId === doc.id"
+              @click="openPdf(doc)"
             >
               Xem
             </el-button>
@@ -142,19 +179,25 @@
               size="small"
               type="danger"
               plain
-              :loading="deletingId === row.id"
-              @click="confirmDelete(row)"
+              :loading="deletingId === doc.id"
+              @click="confirmDelete(doc)"
             >
               Xóa
             </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+          </div>
+        </article>
+
+        <el-empty
+          v-if="!documentsLoading && documents.length === 0"
+          description="Chưa có chứng từ"
+          :image-size="72"
+        />
+      </div>
 
       <el-divider content-position="left">
         Danh sách dòng
       </el-divider>
-      <div class="responsive-table">
+      <div class="responsive-table app-desktop-table">
         <el-table
           :data="item.items || []"
           border
@@ -222,6 +265,46 @@
             min-width="180"
           />
         </el-table>
+      </div>
+
+      <div class="app-mobile-list procurement-detail-list">
+        <article
+          v-for="row in item.items || []"
+          :key="row.id"
+          class="app-mobile-card"
+        >
+          <div class="app-mobile-card__head">
+            <div class="app-mobile-card__heading">
+              <span class="app-mobile-card__title">{{ row.name || '-' }}</span>
+              <span class="app-mobile-card__subtitle">{{ row.asset_code_prefix || '-' }}</span>
+            </div>
+          </div>
+          <div class="app-mobile-card__meta">
+            <span>{{ row.category_code || '-' }}<template v-if="row.category"> · {{ row.category }}</template></span>
+          </div>
+          <div class="app-mobile-card__grid">
+            <div class="app-mobile-card__field">
+              <span class="app-mobile-card__field-label">Số lượng</span>
+              <span class="app-mobile-card__field-value">{{ row.quantity }} {{ row.unit || '' }}</span>
+            </div>
+            <div class="app-mobile-card__field">
+              <span class="app-mobile-card__field-label">Đơn giá</span>
+              <span class="app-mobile-card__field-value">{{ formatCurrency(row.purchase_price) }}</span>
+            </div>
+            <div class="app-mobile-card__field">
+              <span class="app-mobile-card__field-label">Thành tiền</span>
+              <span class="app-mobile-card__field-value app-mobile-card__field-value--strong">{{ formatCurrency(Number(row.quantity || 0) * Number(row.purchase_price || 0)) }}</span>
+            </div>
+            <div class="app-mobile-card__field">
+              <span class="app-mobile-card__field-label">Serial</span>
+              <span class="app-mobile-card__field-value">{{ row.serial_number || '-' }}</span>
+            </div>
+            <div class="app-mobile-card__field app-mobile-card__field--wide">
+              <span class="app-mobile-card__field-label">Vị trí</span>
+              <span class="app-mobile-card__field-value">{{ row.location || '-' }}</span>
+            </div>
+          </div>
+        </article>
       </div>
 
       <el-divider content-position="left">
@@ -490,5 +573,11 @@ const handleFulfill = async () => {
 .responsive-table {
   width: 100%;
   overflow-x: auto;
+}
+
+@media (max-width: 1367px) {
+  html.app-overlay .procurement-detail-list {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
 }
 </style>

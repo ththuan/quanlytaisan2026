@@ -82,7 +82,7 @@
         </div>
       </div>
 
-      <div class="transfer-table-wrapper responsive-table">
+      <div class="transfer-table-wrapper responsive-table app-desktop-table">
         <el-table
           v-loading="transferStore.loading"
           :data="transferStore.transfers"
@@ -180,6 +180,82 @@
         </el-table>
       </div>
 
+      <div class="app-mobile-list transfer-mobile-list">
+        <article
+          v-for="transfer in mobileTransfers"
+          :key="transfer.id"
+          class="app-mobile-card app-mobile-card--interactive"
+          @click="handleView(transfer)"
+        >
+          <div class="app-mobile-card__head">
+            <div class="app-mobile-card__heading">
+              <span class="app-mobile-card__title">{{ transfer.asset?.name || '-' }}</span>
+              <span class="app-mobile-card__subtitle">{{ transfer.asset?.asset_code || '-' }}</span>
+            </div>
+            <el-tag
+              :type="getStatusType(transfer.status)"
+              size="small"
+              class="app-mobile-card__status"
+            >
+              {{ getStatusText(transfer.status) }}
+            </el-tag>
+          </div>
+
+          <div class="app-mobile-card__grid">
+            <div class="app-mobile-card__field">
+              <span class="app-mobile-card__field-label">{{ $t('transfers.fromDepartment') }}</span>
+              <span class="app-mobile-card__field-value">{{ transfer.from_department?.name || '-' }}</span>
+            </div>
+            <div class="app-mobile-card__field">
+              <span class="app-mobile-card__field-label">{{ $t('transfers.toDepartment') }}</span>
+              <span class="app-mobile-card__field-value">{{ transfer.to_department?.name || '-' }}</span>
+            </div>
+            <div class="app-mobile-card__field">
+              <span class="app-mobile-card__field-label">{{ $t('transfers.requestedBy') }}</span>
+              <span class="app-mobile-card__field-value">{{ transfer.requester?.fullname || '-' }}</span>
+            </div>
+            <div class="app-mobile-card__field">
+              <span class="app-mobile-card__field-label">{{ $t('transfers.transferDate') }}</span>
+              <span class="app-mobile-card__field-value">{{ formatDate(transfer.transfer_date) }}</span>
+            </div>
+          </div>
+
+          <div
+            class="app-mobile-card__actions"
+            @click.stop
+          >
+            <el-button
+              size="small"
+              @click="handleView(transfer)"
+            >
+              {{ $t('common.view') }}
+            </el-button>
+            <template v-if="canApprove(transfer)">
+              <el-button
+                size="small"
+                type="success"
+                @click="handleApprove(transfer.id)"
+              >
+                {{ $t('transfers.approve') }}
+              </el-button>
+              <el-button
+                size="small"
+                type="danger"
+                @click="handleReject(transfer.id)"
+              >
+                {{ $t('transfers.reject') }}
+              </el-button>
+            </template>
+          </div>
+        </article>
+
+        <el-empty
+          v-if="!transferStore.loading && transferStore.transfers.length === 0"
+          description="Chưa có phiếu điều chuyển"
+          :image-size="80"
+        />
+      </div>
+
       <div class="list-pagination">
         <div class="pagination-info">
           Hiển thị <strong>{{ transferStore.transfers.length }}</strong> trong tổng số
@@ -259,6 +335,8 @@ const filterDepartment = ref<number | null>(null);
 const formDialogVisible = ref(false);
 const detailDialogVisible = ref(false);
 const currentTransfer = ref<any>(null);
+
+const mobileTransfers = computed<any[]>(() => transferStore.transfers as any[]);
 
 const statuses = computed(() => [
   { value: 'pending', label: t('transfers.status.pending') },
@@ -450,6 +528,14 @@ const formatDate = (date: string) => {
   .filter-actions {
     justify-content: flex-start;
     width: 100%;
+  }
+}
+
+@media (max-width: 1367px) {
+  html.app-overlay .transfer-list {
+    min-height: 0;
+    padding: 0;
+    background: transparent;
   }
 }
 
