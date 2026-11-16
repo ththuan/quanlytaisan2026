@@ -189,6 +189,37 @@ body {
     white-space: nowrap !important;
   }
 
+  .el-main .el-table .el-table__row {
+    transition: background-color 150ms ease;
+  }
+
+  .el-main .el-table .el-table__row:hover > td.el-table__cell {
+    background: #f8fafc !important;
+  }
+
+  .el-main .el-table .el-button:focus-visible,
+  .el-main .el-table a:focus-visible {
+    outline: 2px solid #1e40af;
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .el-main .el-table .el-table__row {
+      transition: none;
+    }
+  }
+
+  .el-main .el-table.table-density-compact .el-table__row > td.el-table__cell {
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+  }
+
+  .el-main .el-table.table-density-compact .el-table__header th.el-table__cell {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+
   /* Tag hiển thị đủ nội dung, không bị cắt "..."; hàng tự cao lên. */
   .el-main .el-table .el-tag {
     max-width: none !important;

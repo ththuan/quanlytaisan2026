@@ -448,9 +448,10 @@ test('desktop: chỉnh và khóa bố cục cột tài sản dùng chung', async
   await page.goto('/assets');
   await page.waitForTimeout(500);
 
-  const editLayoutButton = page.getByRole('button', { name: 'Chỉnh bố cục cột' });
-  await expect(editLayoutButton).toBeVisible();
-  await editLayoutButton.click();
+  const layoutButton = page.getByRole('button', { name: 'Bố cục bảng' });
+  await expect(layoutButton).toBeVisible();
+  await layoutButton.click();
+  await page.getByRole('button', { name: 'Chỉnh độ rộng cột' }).click();
 
   const nameHeader = page.locator('.el-table__header th').filter({ hasText: 'Tên tài sản' }).first();
   const headerBox = await nameHeader.boundingBox();
@@ -465,7 +466,7 @@ test('desktop: chỉnh và khóa bố cục cột tài sản dùng chung', async
   await page.mouse.up();
 
   await page.getByRole('button', { name: 'Lưu & khóa' }).click();
-  await expect(page.getByText('Bố cục cột đã khóa cho tất cả tài khoản')).toBeVisible();
+  await expect(page.getByText('Bố cục cột đã khóa cho tất cả tài khoản')).toHaveCount(0);
   await page.waitForTimeout(250);
   const lockedWidth = Math.round((await nameHeader.boundingBox())?.width || 0);
 
@@ -474,7 +475,8 @@ test('desktop: chỉnh và khóa bố cục cột tài sản dùng chung', async
 
   await page.reload();
   await page.waitForTimeout(700);
-  await expect(page.getByText('Bố cục cột đã khóa cho tất cả tài khoản')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Bố cục bảng' })).toBeVisible();
+  await expect(page.getByText('Bố cục cột đã khóa cho tất cả tài khoản')).toHaveCount(0);
   const reloadedWidth = Math.round(
     (await page.locator('.el-table__header th').filter({ hasText: 'Tên tài sản' }).first().boundingBox())?.width || 0,
   );

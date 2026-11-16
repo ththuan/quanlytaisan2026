@@ -18,6 +18,8 @@ export const TABLE_LAYOUT_VERSION = 1;
 
 const MIN_COLUMN_WIDTH = 40;
 const LEGACY_STORAGE_PREFIX = 'qlts:table-layout:v1:';
+const DISPLAY_STORAGE_PREFIX = 'qlts:table-display:v1:';
+type TableDensity = 'comfortable' | 'compact';
 
 type ColumnLike = {
   property?: string;
@@ -47,6 +49,7 @@ export function useTableColumnLayout(
   const isLoading = ref(true);
   const isSaving = ref(false);
   const savedLayout = ref<TableLayoutData | null>(null);
+  const density = ref<TableDensity>('comfortable');
   const originalWidths = new Map<string, number>();
   let resizeObserver: ResizeObserver | null = null;
   let lastContainerWidth = 0;
@@ -67,6 +70,43 @@ export function useTableColumnLayout(
     getColumns().forEach((column) => {
       column.resizable = resizable;
     });
+  };
+
+  const loadDisplayPreferences = () => {
+    try {
+      const raw = localStorage.getItem(`${DISPLAY_STORAGE_PREFIX}${tableKey}`);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed?.density === 'compact' || parsed?.density === 'comfortable') {
+        density.value = parsed.density;
+      }
+    } catch {
+      // Dùng mặc định.
+    }
+  };
+
+  const saveDisplayPreferences = () => {
+    try {
+      localStorage.setItem(
+        `${DISPLAY_STORAGE_PREFIX}${tableKey}`,
+        JSON.stringify({ density: density.value }),
+      );
+    } catch {
+      // Không chặn UI nếu trình duyệt không cho lưu.
+    }
+  };
+
+  const applyDisplayClasses = () => {
+    const el = getTableElement();
+    if (!el) return;
+    el.classList.toggle('table-density-compact', density.value === 'compact');
+  };
+
+  const setDensity = (value: TableDensity) => {
+    density.value = value;
+    applyDisplayClasses();
+    saveDisplayPreferences();
+    requestAnimationFrame(() => tableRef.value?.doLayout?.());
   };
 
   const updateDesktopState = () => {
@@ -176,6 +216,7 @@ export function useTableColumnLayout(
       savedLayout.value = null;
     } finally {
       isLoading.value = false;
+      applyDisplayClasses();
       await applySavedLayout();
     }
   };
@@ -275,6 +316,8 @@ export function useTableColumnLayout(
   onMounted(async () => {
     await nextTick();
     updateDesktopState();
+    loadDisplayPreferences();
+    applyDisplayClasses();
     setColumnsResizable(false);
     await loadLayout();
     window.addEventListener('resize', onWindowResize);
@@ -305,6 +348,8 @@ export function useTableColumnLayout(
     isLoading,
     isSaving,
     canManage,
+    density,
+    setDensity,
     startEditing,
     cancelEditing,
     saveAndLock,

@@ -1,9 +1,12 @@
 <template>
   <div
-    v-if="controller.isDesktop.value && controller.canManage.value"
+    v-if="controller.isDesktop.value"
     class="table-layout-toolbar"
   >
-    <template v-if="controller.isEditing.value">
+    <div
+      v-if="controller.isEditing.value"
+      class="table-layout-toolbar__edit"
+    >
       <span class="table-layout-toolbar__hint">
         Kéo vạch phân cách trên header để chỉnh cột
       </span>
@@ -22,30 +25,66 @@
       >
         Lưu &amp; khóa
       </el-button>
-    </template>
-
-    <div
-      v-else-if="controller.isLocked.value"
-      class="table-layout-toolbar__locked"
-    >
-      <el-icon><Lock /></el-icon>
-      <span>Bố cục cột đã khóa cho tất cả tài khoản</span>
     </div>
 
-    <el-button
+    <el-popover
       v-else
-      size="small"
-      :icon="Grid"
-      :loading="controller.isLoading.value"
-      @click="controller.startEditing"
+      placement="bottom-end"
+      :width="300"
+      trigger="click"
+      popper-class="table-layout-popover"
     >
-      Chỉnh bố cục cột
-    </el-button>
+      <template #reference>
+        <el-button
+          circle
+          size="small"
+          :icon="Setting"
+          :loading="controller.isLoading.value"
+          title="Bố cục bảng"
+          aria-label="Bố cục bảng"
+        />
+      </template>
+
+      <div class="table-layout-settings">
+        <div class="table-layout-settings__title">
+          Bố cục bảng
+        </div>
+
+        <div class="table-layout-settings__row">
+          <span>Mật độ hiển thị</span>
+          <el-radio-group
+            size="small"
+            :model-value="controller.density.value"
+            @change="(value: string | number | boolean) => controller.setDensity(value as 'comfortable' | 'compact')"
+          >
+            <el-radio-button value="comfortable">
+              Thoáng
+            </el-radio-button>
+            <el-radio-button value="compact">
+              Gọn
+            </el-radio-button>
+          </el-radio-group>
+        </div>
+
+        <template v-if="controller.canManage.value && !controller.isLocked.value">
+          <el-divider />
+          <el-button
+            class="table-layout-settings__edit"
+            type="primary"
+            plain
+            size="small"
+            @click="controller.startEditing"
+          >
+            Chỉnh độ rộng cột
+          </el-button>
+        </template>
+      </div>
+    </el-popover>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Grid, Lock } from '@element-plus/icons-vue';
+import { Setting } from '@element-plus/icons-vue';
 
 defineProps<{
   controller: {
@@ -55,6 +94,8 @@ defineProps<{
     isLoading: { value: boolean };
     isSaving: { value: boolean };
     canManage: { value: boolean };
+    density: { value: 'comfortable' | 'compact' };
+    setDensity: (value: 'comfortable' | 'compact') => void;
     startEditing: () => void | Promise<void>;
     cancelEditing: () => void | Promise<void>;
     saveAndLock: () => void | Promise<void>;
@@ -67,22 +108,45 @@ defineProps<{
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
   min-height: 28px;
   margin: 0 0 8px;
   color: #64748b;
   font-size: 12px;
 }
 
+.table-layout-toolbar__edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
 .table-layout-toolbar__hint {
   margin-right: auto;
 }
 
-.table-layout-toolbar__locked {
-  display: inline-flex;
+.table-layout-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.table-layout-settings__title {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.table-layout-settings__row {
+  display: flex;
   align-items: center;
-  gap: 5px;
-  color: #94a3b8;
-  font-size: 12px;
+  justify-content: space-between;
+  gap: 12px;
+  color: #475569;
+  font-size: 13px;
+}
+
+.table-layout-settings__edit {
+  width: 100%;
 }
 </style>
