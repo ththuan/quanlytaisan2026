@@ -17,6 +17,7 @@ import tableLayoutService, { type TableLayoutData } from '@/services/tableLayout
 export const TABLE_LAYOUT_VERSION = 1;
 
 const MIN_COLUMN_WIDTH = 40;
+const LEGACY_STORAGE_PREFIX = 'qlts:table-layout:v1:';
 
 type ColumnLike = {
   property?: string;
@@ -115,6 +116,26 @@ export function useTableColumnLayout(
     }, 60);
   };
 
+  const readLegacyLayout = (): SavedLayout | null => {
+    try {
+      const raw = localStorage.getItem(`${LEGACY_STORAGE_PREFIX}${tableKey}`);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return null;
+
+      const columns: SavedLayout = {};
+      Object.entries(parsed as Record<string, unknown>).forEach(([key, value]) => {
+        const ratio = Number(value);
+        if (key && Number.isFinite(ratio) && ratio > 0 && ratio <= 1) {
+          columns[key] = ratio;
+        }
+      });
+      return Object.keys(columns).length ? columns : null;
+    } catch {
+      return null;
+    }
+  };
+
   const loadLayout = async (): Promise<void> => {
     isLoading.value = true;
     try {
@@ -127,6 +148,29 @@ export function useTableColumnLayout(
         savedLayout.value = data as TableLayoutData;
       } else {
         savedLayout.value = null;
+      }
+
+      // Chuyển bố cục cũ đang lưu trên trình duyệt của admin lên hệ thống
+      // để không phải kéo lại, sau đó bỏ bản localStorage cũ.
+      if (!savedLayout.value && canManage.value) {
+        const legacyColumns = readLegacyLayout();
+        if (legacyColumns) {
+          try {
+            const migrated: any = await tableLayoutService.save(tableKey, {
+              columns: legacyColumns,
+              layout_version: TABLE_LAYOUT_VERSION,
+            });
+            savedLayout.value = migrated?.data || {
+              table_key: tableKey,
+              columns: legacyColumns,
+              layout_version: TABLE_LAYOUT_VERSION,
+            };
+            localStorage.removeItem(`${LEGACY_STORAGE_PREFIX}${tableKey}`);
+            ElMessage.success('Đã chuyển bố cục cột cũ lên hệ thống');
+          } catch {
+            // Giữ localStorage để lần sau thử lại.
+          }
+        }
       }
     } catch {
       savedLayout.value = null;
