@@ -170,6 +170,7 @@
             type="index"
             width="45"
             label="#"
+            class-name="app-index-cell"
           />
           <el-table-column
             label="Thời gian"

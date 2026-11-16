@@ -204,12 +204,13 @@
             <el-table-column
               type="index"
               label="STT"
-              width="60"
+              width="55"
               align="center"
+              class-name="app-index-cell inventory-index-cell"
             />
             <el-table-column
               label="Đơn vị"
-              min-width="200"
+              min-width="190"
             >
               <template #default="scope">
                 {{ scope.row.department?.name || '—' }}
@@ -253,7 +254,7 @@
             </el-table-column>
             <el-table-column
               label="Hỏng/Thanh lý"
-              width="120"
+              width="110"
               align="center"
             >
               <template #default="scope">
@@ -262,7 +263,7 @@
             </el-table-column>
             <el-table-column
               label="Trạng thái"
-              width="150"
+              width="140"
               align="center"
             >
               <template #default="scope">
@@ -763,6 +764,10 @@ onMounted(() => {
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+:deep(.inventory-index-cell .cell) {
+  white-space: nowrap;
 }
 
 .responsive-table .el-table {

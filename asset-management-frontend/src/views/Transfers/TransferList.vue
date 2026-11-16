@@ -95,6 +95,7 @@
             type="index"
             width="45"
             label="#"
+            class-name="app-index-cell"
           />
           <el-table-column
             prop="asset.asset_code"

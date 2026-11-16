@@ -314,13 +314,14 @@
             <el-table-column
               type="index"
               label="STT"
-              width="60"
+              width="75"
               align="center"
+              class-name="app-index-cell inventory-index-cell"
               :index="detailIndexMethod"
             />
             <el-table-column
               label="Tài sản"
-              min-width="240"
+              min-width="200"
             >
               <template #default="{ row }">
                 <div class="detail-asset-cell">
@@ -333,7 +334,7 @@
             </el-table-column>
             <el-table-column
               label="Số lượng"
-              width="140"
+              width="130"
               align="center"
             >
               <template #default="{ row }">
@@ -346,7 +347,7 @@
             </el-table-column>
             <el-table-column
               label="Giá trị"
-              width="170"
+              width="150"
               align="right"
             >
               <template #default="{ row }">
@@ -358,7 +359,7 @@
             </el-table-column>
             <el-table-column
               label="Tình trạng"
-              width="150"
+              width="130"
               align="center"
             >
               <template #default="{ row }">
@@ -386,7 +387,7 @@
             </el-table-column>
             <el-table-column
               label="Ảnh"
-              width="100"
+              width="85"
               align="center"
             >
               <template #default="{ row }">
@@ -416,7 +417,7 @@
             </el-table-column>
             <el-table-column
               label="Ghi chú"
-              min-width="150"
+              min-width="135"
             >
               <template #default="{ row }">
                 <span v-if="row.notes">{{ row.notes }}</span>
@@ -1485,5 +1486,9 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   padding: 12px 4px 0;
+}
+
+:deep(.inventory-index-cell .cell) {
+  white-space: nowrap;
 }
 </style>

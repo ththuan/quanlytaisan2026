@@ -136,6 +136,7 @@
           label="TT"
           width="55"
           align="center"
+          class-name="app-index-cell"
         />
         
         <el-table-column min-width="200">

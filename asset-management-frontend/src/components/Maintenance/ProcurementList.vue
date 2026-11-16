@@ -76,6 +76,7 @@
           type="index"
           width="50"
           label="TT"
+          class-name="app-index-cell"
         />
         <el-table-column
           prop="device_name"

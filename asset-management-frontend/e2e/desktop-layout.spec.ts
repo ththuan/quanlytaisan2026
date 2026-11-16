@@ -271,3 +271,151 @@ test('desktop: STT tài sản hư hỏng từ 10 không xuống dòng', async ({
   expect(metrics.whiteSpace).toBe('nowrap');
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 1);
 });
+
+test('desktop: báo cáo kiểm kê không bẻ đôi từ tiếng Việt', async ({ page }) => {
+  await mock(page);
+  await page.route('**/api/inventory/reports/1', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        data: {
+          id: 1,
+          department: { id: 1, name: 'Phòng Kế toán' },
+          status: 'pending',
+          total_assets: 12,
+          matched_assets: 8,
+          missing_assets: 2,
+          needs_repair_assets: 1,
+          damaged_assets: 1,
+          details: Array.from({ length: 12 }).map((_, index) => ({
+            id: index + 1,
+            asset: {
+              id: index + 1,
+              name: `Máy tính xách tay ${index + 1}`,
+              asset_code: `TS-${String(index + 1).padStart(3, '0')}`,
+              category_code: '0504',
+              unit: 'Cái',
+              original_value: 25000000,
+              purchase_price: 25000000,
+              current_value: 12500000,
+            },
+            book_quantity: 1,
+            actual_quantity: index === 1 ? 0 : 1,
+            quantity_difference: index === 1 ? -1 : 0,
+            asset_condition: 'good',
+            check_status: index === 1 ? 'missing' : 'matched',
+            image_urls: [],
+            notes: '',
+          })),
+          image_urls: [],
+        },
+      }),
+    }),
+  );
+
+  await page.goto('/inventory/reports/1');
+  await page.waitForTimeout(500);
+
+  const matchedLabel = page.locator('.stat-card .stat-label').filter({ hasText: 'Khớp' }).first();
+  const missingLabel = page.locator('.stat-card .stat-label').filter({ hasText: 'Thiếu' }).first();
+  await expect(matchedLabel).toBeVisible();
+  await expect(missingLabel).toBeVisible();
+
+  for (const label of [matchedLabel, missingLabel]) {
+    const style = await label.evaluate((el) => {
+      const computed = getComputedStyle(el);
+      return {
+        wordBreak: computed.wordBreak,
+        overflowWrap: computed.overflowWrap,
+      };
+    });
+    expect(style.wordBreak).toBe('normal');
+    expect(style.overflowWrap).toBe('normal');
+  }
+
+  const headerCell = page.locator('.el-table__header th .cell').first();
+  const headerStyle = await headerCell.evaluate((el) => {
+    const computed = getComputedStyle(el);
+    return { wordBreak: computed.wordBreak, overflowWrap: computed.overflowWrap };
+  });
+  expect(headerStyle.wordBreak).toBe('normal');
+  expect(headerStyle.overflowWrap).toBe('normal');
+  await expect(headerCell).toHaveText('STT');
+
+  const sttCell = page.locator('.el-table__body td.inventory-index-cell .cell').nth(9);
+  await expect(sttCell).toHaveText('10');
+  const sttMetrics = await sttCell.evaluate((el) => ({
+    whiteSpace: getComputedStyle(el).whiteSpace,
+    scrollWidth: el.scrollWidth,
+    clientWidth: el.clientWidth,
+  }));
+  expect(sttMetrics.whiteSpace).toBe('nowrap');
+  expect(sttMetrics.scrollWidth).toBeLessThanOrEqual(sttMetrics.clientWidth + 1);
+});
+
+test('desktop: đợt kiểm kê không bẻ từ ở header Khớp/Thiếu', async ({ page }) => {
+  await mock(page);
+  await page.route('**/api/inventory/rounds/1', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        data: {
+          id: 1,
+          round_year: 2026,
+          round_name: 'Kiểm kê năm 2026',
+          start_date: '2026-11-01',
+          end_date: '2026-11-30',
+          status: 'in_progress',
+          total_departments: 12,
+          completed_departments: 8,
+        },
+      }),
+    }),
+  );
+  await page.route('**/api/inventory/reports?**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        data: Array.from({ length: 12 }).map((_, index) => ({
+          id: index + 1,
+          department: { id: index + 1, name: `Phòng ${index + 1}` },
+          total_assets: 10,
+          matched_assets: 8,
+          missing_assets: 1,
+          needs_repair_assets: 1,
+          damaged_assets: 0,
+          status: 'completed',
+        })),
+        total: 12,
+      }),
+    }),
+  );
+
+  await page.goto('/inventory/rounds/1');
+  await page.waitForTimeout(500);
+
+  const headers = page.locator('.el-table__header th .cell');
+  const matchedHeader = headers.filter({ hasText: 'Khớp' }).first();
+  const missingHeader = headers.filter({ hasText: 'Thiếu/Mất' }).first();
+  await expect(matchedHeader).toBeVisible();
+  await expect(missingHeader).toBeVisible();
+
+  for (const header of [matchedHeader, missingHeader]) {
+    const style = await header.evaluate((el) => {
+      const computed = getComputedStyle(el);
+      return { wordBreak: computed.wordBreak, overflowWrap: computed.overflowWrap };
+    });
+    expect(style.wordBreak).toBe('normal');
+    expect(style.overflowWrap).toBe('normal');
+  }
+
+  const sttCell = page.locator('.el-table__body td.app-index-cell .cell').nth(9);
+  await expect(sttCell).toHaveText('10');
+  expect(await sttCell.evaluate((el) => getComputedStyle(el).whiteSpace)).toBe('nowrap');
+});

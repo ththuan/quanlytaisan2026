@@ -76,6 +76,7 @@
           type="index"
           width="50"
           label="#"
+          class-name="app-index-cell"
         />
         <el-table-column
           label="Mã tài sản"

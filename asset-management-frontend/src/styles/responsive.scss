@@ -179,6 +179,24 @@ body {
 /* ─────────────────────────────────────────────────────────
    TABLES: Responsive wrapper cho tất cả bảng
    ───────────────────────────────────────────────────────── */
+@media (min-width: 768px) {
+  /* Không bẻ đôi từ tiếng Việt ở bảng / nhãn thống kê
+     (vd. "Khớp" thành "Kh" + "ớp", "Thiếu" thành "Th" + "iếu"). */
+  .el-main .el-table .cell,
+  .stat-label,
+  .stat-text {
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    hyphens: none !important;
+  }
+
+  /* STT và các cột số căn phải luôn nằm trên một dòng. */
+  .el-main .el-table .app-index-cell .cell,
+  .el-main .el-table .el-table__cell.is-right .cell {
+    white-space: nowrap !important;
+  }
+}
+
 .responsive-table {
   width: 100%;
   overflow-x: auto;

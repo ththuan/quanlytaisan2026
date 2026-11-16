@@ -868,6 +868,7 @@
             label="STT"
             width="60"
             align="center"
+            class-name="app-index-cell"
             :index="assetIndexMethod"
           />
           <el-table-column

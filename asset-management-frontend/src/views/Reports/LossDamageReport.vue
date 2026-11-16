@@ -101,7 +101,7 @@
             label="#"
             width="70"
             align="center"
-            class-name="loss-index-cell"
+            class-name="app-index-cell loss-index-cell"
           />
           <el-table-column
             label="Tài sản"
