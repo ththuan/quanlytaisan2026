@@ -56,11 +56,11 @@
             <el-table-column
               prop="equipment_name"
               label="Máy móc, thiết bị"
-              min-width="190"
+              width="210"
             />
             <el-table-column
               label="Phạm vi"
-              width="130"
+              width="110"
             >
               <template #default="{ row }">
                 {{ scopeLabel(row.scope) }}
@@ -79,7 +79,7 @@
             />
             <el-table-column
               label="SL tối đa"
-              width="90"
+              width="80"
               align="center"
             >
               <template #default="{ row }">
@@ -88,7 +88,7 @@
             </el-table-column>
             <el-table-column
               label="Giá tối đa (triệu)"
-              width="130"
+              width="115"
               align="right"
             >
               <template #default="{ row }">
@@ -97,7 +97,7 @@
             </el-table-column>
             <el-table-column
               label="Hiệu lực"
-              width="100"
+              width="125"
               align="center"
             >
               <template #default="{ row }">
@@ -112,7 +112,7 @@
             <el-table-column
               v-if="canEditNorms"
               label="Thao tác"
-              width="140"
+              width="120"
               align="center"
             >
               <template #default="{ row }">

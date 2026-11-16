@@ -189,11 +189,11 @@
           <el-table-column
             prop="title"
             label="Nội dung"
-            min-width="200"
+            width="240"
           />
           <el-table-column
             label="Cấp phát (đơn vị)"
-            min-width="170"
+            min-width="190"
           >
             <template #default="scope">
               {{ scope.row.receiving_department?.name || '—' }}
@@ -209,7 +209,7 @@
           </el-table-column>
           <el-table-column
             label="Trạng thái"
-            width="115"
+            min-width="140"
           >
             <template #default="scope">
               <el-tag :type="statusTagType(scope.row.status)">

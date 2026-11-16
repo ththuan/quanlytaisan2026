@@ -106,7 +106,7 @@
           </el-table-column>
           <el-table-column
             label="Vật tư"
-            min-width="180"
+            width="220"
           >
             <template #default="{ row }">
               <div style="font-weight: 600;">
@@ -143,7 +143,7 @@
           </el-table-column>
           <el-table-column
             label="Chi tiết"
-            min-width="190"
+            min-width="220"
           >
             <template #default="{ row }">
               <template v-if="row.type === 'in'">

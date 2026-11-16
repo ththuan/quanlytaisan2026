@@ -105,11 +105,11 @@
           <el-table-column
             prop="asset.name"
             :label="$t('transfers.assetName')"
-            min-width="145"
+            width="160"
           />
           <el-table-column
             :label="$t('transfers.fromDepartment')"
-            width="105"
+            min-width="100"
           >
             <template #default="{ row }">
               {{ row.from_department?.name || '-' }}
@@ -117,7 +117,7 @@
           </el-table-column>
           <el-table-column
             :label="$t('transfers.toDepartment')"
-            width="105"
+            min-width="100"
           >
             <template #default="{ row }">
               {{ row.to_department?.name || '-' }}
@@ -126,12 +126,12 @@
           <el-table-column
             prop="requester.fullname"
             :label="$t('transfers.requestedBy')"
-            width="105"
+            min-width="100"
           />
           <el-table-column
             prop="status"
             :label="$t('common.status')"
-            width="130"
+            width="165"
           >
             <template #default="{ row }">
               <el-tag :type="getStatusType(row.status)">
@@ -150,7 +150,7 @@
           </el-table-column>
           <el-table-column
             :label="$t('common.actions')"
-            width="150"
+            width="131"
             fixed="right"
           >
             <template #default="{ row }">

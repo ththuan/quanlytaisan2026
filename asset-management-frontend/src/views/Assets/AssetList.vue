@@ -407,7 +407,7 @@
           <el-table-column
             prop="name"
             :label="$t('assets.assetName')"
-            min-width="200"
+            width="210"
           >
             <template #default="{ row }">
               <div class="asset-name-cell">
@@ -418,7 +418,7 @@
           </el-table-column>
           <el-table-column
             label="SL / ĐVT"
-            width="100"
+            width="95"
             align="center"
           >
             <template #default="{ row }">
@@ -428,7 +428,7 @@
           <el-table-column
             prop="purchase_price"
             label="Nguyên giá"
-            width="150"
+            width="140"
             align="right"
           >
             <template #default="{ row }">
@@ -438,7 +438,7 @@
           <el-table-column
             prop="current_value"
             label="Giá trị còn lại"
-            width="150"
+            width="140"
             align="right"
           >
             <template #default="{ row }">
