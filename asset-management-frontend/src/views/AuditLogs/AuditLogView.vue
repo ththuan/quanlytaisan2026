@@ -168,13 +168,13 @@
         >
           <el-table-column
             type="index"
-            width="45"
+            width="55"
             label="#"
             class-name="app-index-cell"
           />
           <el-table-column
             label="Thời gian"
-            width="150"
+            width="135"
           >
             <template #default="{ row }">
               {{ formatDate(row.created_at) }}
@@ -182,7 +182,7 @@
           </el-table-column>
           <el-table-column
             label="Người thực hiện"
-            min-width="120"
+            width="140"
           >
             <template #default="{ row }">
               <div>{{ row.user?.fullname || row.user?.username || `User #${row.user_id}` }}</div>
@@ -196,7 +196,7 @@
           </el-table-column>
           <el-table-column
             label="Hành động"
-            width="100"
+            width="80"
           >
             <template #default="{ row }">
               <el-tag
@@ -210,7 +210,7 @@
           <el-table-column
             prop="table_name"
             label="Đối tượng"
-            width="130"
+            width="125"
           >
             <template #default="{ row }">
               {{ tableLabel(row.table_name) }}
@@ -223,7 +223,7 @@
           />
           <el-table-column
             label="Mô tả"
-            min-width="150"
+            min-width="220"
           >
             <template #default="{ row }">
               <span class="log-description">{{ row.description || row.new_value || '—' }}</span>
@@ -236,7 +236,7 @@
           />
           <el-table-column
             label="Chi tiết"
-            width="80"
+            width="70"
             fixed="right"
           >
             <template #default="{ row }">

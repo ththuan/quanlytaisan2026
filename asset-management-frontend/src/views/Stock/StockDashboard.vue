@@ -83,7 +83,7 @@
           <el-table-column
             prop="category"
             label="Nhóm vật tư"
-            width="180"
+            min-width="180"
           />
           <el-table-column
             prop="unit"

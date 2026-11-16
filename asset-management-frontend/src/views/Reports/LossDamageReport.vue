@@ -99,13 +99,13 @@
           <el-table-column
             type="index"
             label="#"
-            width="55"
+            width="60"
             align="center"
             class-name="app-index-cell loss-index-cell"
           />
           <el-table-column
             label="Tài sản"
-            min-width="260"
+            min-width="240"
           >
             <template #default="{ row }">
               <div class="loss-asset-cell">
@@ -127,7 +127,7 @@
           </el-table-column>
           <el-table-column
             label="Trạng thái"
-            width="90"
+            width="100"
             align="center"
           >
             <template #default="{ row }">
@@ -141,7 +141,7 @@
           </el-table-column>
           <el-table-column
             label="Giá trị"
-            width="140"
+            width="150"
             align="right"
           >
             <template #default="{ row }">
@@ -154,17 +154,17 @@
           <el-table-column
             prop="discrepancy_reason"
             label="Nguyên nhân"
-            width="115"
+            width="120"
           />
           <el-table-column
             prop="responsibility"
             label="Trách nhiệm"
-            width="95"
+            width="100"
           />
           <el-table-column
             v-if="isAdmin"
             label="Thao tác"
-            width="90"
+            width="80"
             align="center"
             fixed="right"
           >

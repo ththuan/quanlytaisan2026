@@ -69,7 +69,7 @@
             <el-table-column
               prop="position_group"
               label="Nhóm chức danh"
-              width="160"
+              min-width="150"
             />
             <el-table-column
               prop="unit"
@@ -88,7 +88,7 @@
             </el-table-column>
             <el-table-column
               label="Giá tối đa (triệu)"
-              width="115"
+              width="140"
               align="right"
             >
               <template #default="{ row }">
@@ -97,7 +97,7 @@
             </el-table-column>
             <el-table-column
               label="Hiệu lực"
-              width="120"
+              width="115"
               align="center"
             >
               <template #default="{ row }">
@@ -112,7 +112,7 @@
             <el-table-column
               v-if="canEditNorms"
               label="Thao tác"
-              width="115"
+              width="95"
               align="center"
             >
               <template #default="{ row }">

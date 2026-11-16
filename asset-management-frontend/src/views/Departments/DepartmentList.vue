@@ -119,7 +119,7 @@
           <el-table-column
             prop="name"
             :label="$t('departments.departmentName')"
-            min-width="260"
+            min-width="240"
           >
             <template #default="{ row }">
               <span :style="{ paddingLeft: row.parent_department_id ? '20px' : '0' }">
@@ -131,7 +131,7 @@
           <el-table-column
             prop="campus"
             label="Cơ sở"
-            width="130"
+            width="120"
           >
             <template #default="{ row }">
               {{ campusLabel(row.campus) }}
@@ -140,7 +140,7 @@
           <el-table-column
             prop="type"
             :label="$t('departments.departmentType')"
-            width="130"
+            width="120"
           >
             <template #default="{ row }">
               <el-tag
@@ -153,7 +153,7 @@
           </el-table-column>
           <el-table-column
             :label="$t('departments.parentDepartment')"
-            width="180"
+            width="140"
           >
             <template #default="{ row }">
               <span v-if="row.parent_department">{{ row.parent_department.name }}</span>
@@ -166,12 +166,12 @@
           <el-table-column
             prop="description"
             :label="$t('common.description')"
-            width="150"
+            min-width="140"
             show-overflow-tooltip
           />
           <el-table-column
             :label="$t('common.actions')"
-            width="160"
+            width="230"
             align="center"
           >
             <template #default="{ row }">

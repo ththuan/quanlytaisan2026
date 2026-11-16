@@ -130,7 +130,7 @@
           <el-table-column
             prop="fullname"
             :label="$t('users.fullname')"
-            min-width="140"
+            min-width="160"
           />
           <el-table-column
             prop="job_title"
@@ -156,7 +156,7 @@
           </el-table-column>
           <el-table-column
             label="Phân quyền"
-            width="135"
+            width="140"
           >
             <template #default="{ row }">
               <el-tag

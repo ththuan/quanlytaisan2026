@@ -85,11 +85,11 @@
           <el-table-column
             prop="date"
             label="Ngày"
-            width="120"
+            width="125"
           />
           <el-table-column
             label="Phiếu"
-            min-width="120"
+            min-width="110"
           >
             <template #default="{ row }">
               <div class="stock-code-cell">
@@ -106,7 +106,7 @@
           </el-table-column>
           <el-table-column
             label="Vật tư"
-            min-width="240"
+            min-width="220"
           >
             <template #default="{ row }">
               <div style="font-weight: 600;">
@@ -120,12 +120,12 @@
           <el-table-column
             prop="quantity"
             label="SL"
-            width="70"
+            width="65"
             align="right"
           />
           <el-table-column
             label="Đơn giá"
-            width="110"
+            width="145"
             align="right"
           >
             <template #default="{ row }">
@@ -134,7 +134,7 @@
           </el-table-column>
           <el-table-column
             label="Thành tiền"
-            width="120"
+            width="145"
             align="right"
           >
             <template #default="{ row }">
@@ -143,7 +143,7 @@
           </el-table-column>
           <el-table-column
             label="Chi tiết"
-            width="220"
+            min-width="190"
           >
             <template #default="{ row }">
               <template v-if="row.type === 'in'">

@@ -93,23 +93,23 @@
         >
           <el-table-column
             type="index"
-            width="40"
+            width="50"
             label="#"
             class-name="app-index-cell"
           />
           <el-table-column
             prop="asset.asset_code"
             :label="$t('transfers.assetCode')"
-            width="85"
+            width="90"
           />
           <el-table-column
             prop="asset.name"
             :label="$t('transfers.assetName')"
-            min-width="185"
+            min-width="190"
           />
           <el-table-column
             :label="$t('transfers.fromDepartment')"
-            width="110"
+            width="100"
           >
             <template #default="{ row }">
               {{ row.from_department?.name || '-' }}
@@ -117,7 +117,7 @@
           </el-table-column>
           <el-table-column
             :label="$t('transfers.toDepartment')"
-            width="110"
+            width="100"
           >
             <template #default="{ row }">
               {{ row.to_department?.name || '-' }}
@@ -126,7 +126,7 @@
           <el-table-column
             prop="requester.fullname"
             :label="$t('transfers.requestedBy')"
-            width="110"
+            width="100"
           />
           <el-table-column
             prop="status"
@@ -142,7 +142,7 @@
           <el-table-column
             prop="transfer_date"
             :label="$t('transfers.transferDate')"
-            width="105"
+            width="120"
           >
             <template #default="{ row }">
               {{ formatDate(row.transfer_date) }}

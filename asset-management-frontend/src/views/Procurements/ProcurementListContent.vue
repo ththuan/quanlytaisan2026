@@ -193,7 +193,7 @@
           />
           <el-table-column
             label="Cấp phát (đơn vị)"
-            width="190"
+            width="130"
           >
             <template #default="scope">
               {{ scope.row.receiving_department?.name || '—' }}
@@ -201,7 +201,7 @@
           </el-table-column>
           <el-table-column
             label="Ngày mua"
-            width="110"
+            width="130"
           >
             <template #default="scope">
               {{ formatDate(scope.row.purchase_date) }}
@@ -219,7 +219,7 @@
           </el-table-column>
           <el-table-column
             :label="$t('common.actions')"
-            width="200"
+            width="230"
             fixed="right"
           >
             <template #default="scope">

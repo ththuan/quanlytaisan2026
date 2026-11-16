@@ -407,7 +407,7 @@
           <el-table-column
             prop="name"
             :label="$t('assets.assetName')"
-            min-width="285"
+            min-width="220"
           >
             <template #default="{ row }">
               <div class="asset-name-cell">
@@ -428,7 +428,7 @@
           <el-table-column
             prop="purchase_price"
             label="Nguyên giá"
-            width="125"
+            width="150"
             align="right"
           >
             <template #default="{ row }">
@@ -438,7 +438,7 @@
           <el-table-column
             prop="current_value"
             label="Giá trị còn lại"
-            width="125"
+            width="150"
             align="right"
           >
             <template #default="{ row }">
@@ -448,7 +448,7 @@
           <el-table-column
             prop="status"
             :label="$t('common.status')"
-            width="140"
+            width="160"
           >
             <template #default="{ row }">
               <el-tag
@@ -463,7 +463,7 @@
           <el-table-column
             prop="current_department.name"
             :label="$t('assets.department')"
-            width="140"
+            width="130"
           >
             <template #default="{ row }">
               <div class="asset-dept-cell">
