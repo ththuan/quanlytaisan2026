@@ -3,6 +3,7 @@ import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errorHand
 import { Op } from 'sequelize';
 import { getPaginationParams, buildPaginationResult, getOffset, PaginationResult } from '../utils/pagination';
 import { SYSTEM_ADMIN_USERNAME } from '../config/adminCredentials';
+import { clearPermissionCache } from './permission.service';
 
 export interface CreateUserInput {
   username: string;
@@ -185,6 +186,7 @@ class UserService {
 
     // Update user
     await user.update(data);
+    clearPermissionCache(id);
 
     return this.getUserById(id);
   }
@@ -204,6 +206,7 @@ class UserService {
     try {
       // Hard delete - Admin can delete users directly in the application
       await user.destroy();
+      clearPermissionCache(id);
     } catch (err: any) {
       if (err.name === 'SequelizeForeignKeyConstraintError' || err.message?.includes('foreign key')) {
         throw new ConflictError(

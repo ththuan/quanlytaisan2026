@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -39,10 +39,24 @@ class UsersController {
     }
   }
 
-  async getUserById(req: Request, res: Response, next: NextFunction) {
+  async getUserById(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const userId = parseInt(req.params.id);
       const user = await userService.getUserById(userId);
+
+      // Trưởng đơn vị chỉ được xem người dùng thuộc đơn vị mình.
+      if (
+        req.user &&
+        req.user.role !== 'admin' &&
+        !req.permissionCustomized &&
+        req.user.role === 'department_head' &&
+        Number(user.department_id) !== Number(req.user.department_id)
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: 'Chỉ được xem người dùng thuộc đơn vị của mình',
+        });
+      }
 
       return res.json({
         success: true,

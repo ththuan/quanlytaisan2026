@@ -622,6 +622,121 @@ export interface PermissionGrantInput {
   scope: PermissionScope;
 }
 
+export type SystemRole = 'admin' | 'director' | 'department_head' | 'staff';
+
+export interface RoleDefaultPermissions {
+  role: SystemRole;
+  label: string;
+  fullAccess: boolean;
+  permissions: PermissionGrantInput[];
+}
+
+/**
+ * Quyền mặc định theo vai trò.
+ *
+ * Đây là bộ quyền được áp dụng tự động cho người dùng chưa được admin cấu hình
+ * quyền riêng (permissions_customized = false). Admin chỉ cần mở "Tùy chỉnh"
+ * khi muốn cấp thêm/bớt so với mặc định của vai trò.
+ */
+export const ROLE_DEFAULT_PERMISSIONS: RoleDefaultPermissions[] = [
+  {
+    role: 'admin',
+    label: 'Quản trị viên',
+    fullAccess: true,
+    permissions: [],
+  },
+  {
+    role: 'director',
+    label: 'Giám hiệu',
+    fullAccess: false,
+    permissions: [
+      { code: 'dashboard.view', scope: 'all' },
+      { code: 'assets.view', scope: 'all' },
+      { code: 'assets.export', scope: 'all' },
+      { code: 'transfers.view', scope: 'all' },
+      { code: 'transfers.approve', scope: 'all' },
+      { code: 'inventory.view', scope: 'all' },
+      { code: 'maintenance.view', scope: 'all' },
+      { code: 'maintenance.approve', scope: 'all' },
+      { code: 'reports.view', scope: 'all' },
+      { code: 'reports.approve', scope: 'all' },
+      { code: 'norms.view', scope: 'all' },
+      { code: 'norms.update', scope: 'all' },
+    ],
+  },
+  {
+    role: 'department_head',
+    label: 'Trưởng đơn vị',
+    fullAccess: false,
+    permissions: [
+      { code: 'dashboard.view', scope: 'department' },
+      { code: 'assets.view', scope: 'department' },
+      { code: 'assets.export', scope: 'department' },
+      { code: 'transfers.view', scope: 'department' },
+      { code: 'transfers.create', scope: 'department' },
+      { code: 'transfers.approve', scope: 'department' },
+      { code: 'inventory.view', scope: 'department' },
+      { code: 'inventory.count', scope: 'department' },
+      { code: 'inventory.submit', scope: 'department' },
+      { code: 'inventory.approve', scope: 'department' },
+      { code: 'maintenance.view', scope: 'department' },
+      { code: 'maintenance.create', scope: 'department' },
+      { code: 'maintenance.update', scope: 'department' },
+      { code: 'maintenance.delete', scope: 'department' },
+      { code: 'maintenance.submit', scope: 'department' },
+      { code: 'reports.view', scope: 'department' },
+      { code: 'users.view', scope: 'all' },
+    ],
+  },
+  {
+    role: 'staff',
+    label: 'Viên chức',
+    fullAccess: false,
+    permissions: [
+      { code: 'dashboard.view', scope: 'own' },
+      { code: 'assets.view', scope: 'department' },
+      { code: 'assets.export', scope: 'department' },
+      { code: 'transfers.view', scope: 'department' },
+      { code: 'transfers.create', scope: 'department' },
+      { code: 'inventory.view', scope: 'department' },
+      { code: 'inventory.count', scope: 'department' },
+      { code: 'inventory.submit', scope: 'department' },
+      { code: 'maintenance.view', scope: 'department' },
+      { code: 'maintenance.create', scope: 'department' },
+      { code: 'maintenance.update', scope: 'own' },
+      { code: 'maintenance.delete', scope: 'own' },
+      { code: 'maintenance.submit', scope: 'own' },
+      { code: 'reports.view', scope: 'department' },
+    ],
+  },
+];
+
+const ROLE_DEFAULT_MAP = new Map<SystemRole, RoleDefaultPermissions>(
+  ROLE_DEFAULT_PERMISSIONS.map((entry) => [entry.role, entry]),
+);
+
+export const isSystemRole = (role: string): role is SystemRole =>
+  ROLE_DEFAULT_MAP.has(role as SystemRole);
+
+export const getRoleDefaultPermissions = (role: string): Map<string, PermissionScope> => {
+  const defaults = new Map<string, PermissionScope>();
+  if (role === 'admin') {
+    PERMISSION_DEFINITIONS.forEach((definition) => {
+      if (!definition.adminOnly) defaults.set(definition.code, 'all');
+    });
+    return defaults;
+  }
+
+  if (!isSystemRole(role)) return defaults;
+
+  ROLE_DEFAULT_MAP.get(role)!.permissions.forEach((grant) => {
+    const definition = PERMISSION_MAP.get(grant.code);
+    if (!definition || definition.adminOnly) return;
+    defaults.set(grant.code, normalizePermissionScope(grant.code, grant.scope));
+  });
+  return defaults;
+};
+
 export const PERMISSION_PRESETS: Array<{
   code: string;
   label: string;

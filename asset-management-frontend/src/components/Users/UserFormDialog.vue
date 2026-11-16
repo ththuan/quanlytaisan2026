@@ -155,7 +155,7 @@
         type="info"
         :closable="false"
         show-icon
-        title="Admin có thể cấp quyền theo module và phạm vi. Quyền quản trị hệ thống vẫn chỉ dành cho admin."
+        title="Mặc định mỗi vai trò đã có bộ quyền phù hợp. Chỉ bật tùy chỉnh khi cần cấp thêm/bớt cho riêng người dùng này."
         class="permission-note"
       />
 
@@ -174,16 +174,64 @@
         <div class="permission-toggle">
           <el-switch
             v-model="permissionCustomized"
-            active-text="Dùng quyền tùy chỉnh"
-            @change="permissionChanged = true"
+            active-text="Tùy chỉnh quyền riêng"
+            @change="handleCustomizationChange"
           />
           <span class="permission-hint">
-            Tắt: dùng quyền mặc định theo vai trò
+            {{ permissionCustomized
+              ? 'Đang dùng quyền riêng do admin chọn.'
+              : `Đang dùng quyền mặc định của vai trò ${roleLabel} — không cần chọn thêm.` }}
           </span>
         </div>
 
-        <template v-if="permissionCustomized">
+        <template v-if="!permissionCustomized">
+          <div
+            v-if="currentRoleDefaults?.fullAccess"
+            class="permission-hint"
+          >
+            Vai trò Quản trị viên có toàn bộ quyền hệ thống.
+          </div>
+          <div
+            v-else
+            class="role-default-summary"
+          >
+            <div
+              v-for="module in defaultModules"
+              :key="module.module"
+              class="default-module"
+            >
+              <span class="default-module-label">{{ module.moduleLabel }}</span>
+              <el-tag
+                v-for="perm in module.permissions"
+                :key="perm.code"
+                size="small"
+                type="info"
+                effect="plain"
+                class="default-permission-tag"
+              >
+                {{ perm.label }}
+                <span class="default-permission-scope">· {{ scopeLabels[perm.scope] }}</span>
+              </el-tag>
+            </div>
+            <div
+              v-if="!defaultModules.length"
+              class="permission-hint"
+            >
+              Vai trò này chưa có quyền mặc định.
+            </div>
+          </div>
+        </template>
+
+        <template v-else>
           <div class="preset-row">
+            <el-button
+              type="primary"
+              plain
+              size="small"
+              @click="applyRoleDefaults"
+            >
+              Mặc định {{ roleLabel }}
+            </el-button>
             <el-button
               v-for="preset in permissionPresets"
               :key="preset.code"
@@ -280,6 +328,7 @@ import {
   type PermissionModule,
   type PermissionPreset,
   type PermissionScope,
+  type RoleDefaultPermissions,
 } from '@/services/permission.service';
 
 interface User {
@@ -313,8 +362,15 @@ const permissionCustomized = ref(false);
 const permissionChanged = ref(false);
 const permissionModules = ref<PermissionModule[]>([]);
 const permissionPresets = ref<PermissionPreset[]>([]);
+const roleDefaultPermissions = ref<RoleDefaultPermissions[]>([]);
 const permissionScopeOptions = ref<Array<{ value: PermissionScope; label: string }>>([]);
 const permissionSelection = reactive<Record<string, PermissionScope>>({});
+
+const scopeLabels: Record<PermissionScope, string> = {
+  own: 'Cá nhân',
+  department: 'Đơn vị',
+  all: 'Toàn trường',
+};
 
 const findPermission = (code: string): PermissionDefinition | undefined =>
   permissionModules.value.flatMap((module) => module.permissions).find((perm) => perm.code === code);
@@ -354,16 +410,24 @@ const setPermissionScope = (code: string, scope: PermissionScope) => {
 const countModuleSelected = (module: PermissionModule): number =>
   selectablePermissions(module).filter((perm) => isPermissionSelected(perm.code)).length;
 
-const clearPermissionSelection = () => {
+const clearSelection = () => {
   Object.keys(permissionSelection).forEach((code) => delete permissionSelection[code]);
+};
+
+const setSelection = (grants: Array<{ code: string; scope: PermissionScope }>) => {
+  clearSelection();
+  grants.forEach((grant) => {
+    permissionSelection[grant.code] = grant.scope;
+  });
+};
+
+const clearPermissionSelection = () => {
+  clearSelection();
   permissionChanged.value = true;
 };
 
 const applyPreset = (preset: PermissionPreset) => {
-  Object.keys(permissionSelection).forEach((code) => delete permissionSelection[code]);
-  preset.permissions.forEach((grant) => {
-    permissionSelection[grant.code] = grant.scope;
-  });
+  setSelection(preset.permissions);
   permissionCustomized.value = true;
   permissionChanged.value = true;
 };
@@ -373,6 +437,7 @@ const loadPermissionCatalog = async () => {
   const response = await permissionService.getCatalog();
   permissionModules.value = response.data.modules;
   permissionPresets.value = response.data.presets;
+  roleDefaultPermissions.value = response.data.role_defaults || [];
   permissionScopeOptions.value = response.data.scopes;
 };
 
@@ -380,17 +445,18 @@ const loadPermissionData = async () => {
   permissionLoading.value = true;
   try {
     await loadPermissionCatalog();
-    Object.keys(permissionSelection).forEach((code) => delete permissionSelection[code]);
+    clearSelection();
     permissionCustomized.value = false;
     permissionChanged.value = false;
 
     if (props.user && props.user.role !== 'admin') {
       const response = await permissionService.getUserPermissions(props.user.id);
       permissionCustomized.value = Boolean(response.data.permissions_customized);
-      response.data.permissions.forEach((grant) => {
-        permissionSelection[grant.code] = grant.scope;
-      });
+      setSelection(response.data.permissions);
+      return;
     }
+
+    setSelection(currentRoleDefaults.value?.permissions || []);
   } catch (error: any) {
     ElMessage.error(error.response?.data?.message || 'Không tải được danh mục quyền');
   } finally {
@@ -460,6 +526,48 @@ const userRoles = computed(() => [
   { value: 'department_head', label: t('users.roles.department_head') },
   { value: 'staff', label: t('users.roles.staff') },
 ]);
+
+const roleLabel = computed(
+  () => userRoles.value.find((role) => role.value === formData.role)?.label || formData.role,
+);
+
+const currentRoleDefaults = computed(
+  () => roleDefaultPermissions.value.find((entry) => entry.role === formData.role),
+);
+
+const defaultModules = computed(() => {
+  const defaults = currentRoleDefaults.value?.permissions || [];
+  if (!defaults.length) return [];
+
+  const scopeByCode = new Map(defaults.map((grant) => [grant.code, grant.scope]));
+  return permissionModules.value
+    .map((module) => ({
+      module: module.module,
+      moduleLabel: module.moduleLabel,
+      permissions: module.permissions
+        .filter((perm) => scopeByCode.has(perm.code))
+        .map((perm) => ({
+          code: perm.code,
+          label: perm.label,
+          scope: scopeByCode.get(perm.code)!,
+        })),
+    }))
+    .filter((module) => module.permissions.length > 0);
+});
+
+const applyRoleDefaults = () => {
+  setSelection(currentRoleDefaults.value?.permissions || []);
+  permissionCustomized.value = true;
+  permissionChanged.value = true;
+};
+
+const handleCustomizationChange = (value: string | number | boolean) => {
+  permissionCustomized.value = Boolean(value);
+  permissionChanged.value = true;
+  if (permissionCustomized.value && !Object.keys(permissionSelection).length) {
+    setSelection(currentRoleDefaults.value?.permissions || []);
+  }
+};
 
 const validatePassword = (_rule: any, value: string, callback: any) => {
   // Password is optional - if not provided, will use default password from backend config
@@ -578,6 +686,13 @@ const handleSubmit = async () => {
   });
 };
 
+watch(() => formData.role, () => {
+  if (!permissionCustomized.value) {
+    setSelection(currentRoleDefaults.value?.permissions || []);
+    permissionChanged.value = false;
+  }
+});
+
 watch(() => props.visible, async (newVal) => {
   if (newVal) {
     fetchJobTitleSuggestions();
@@ -639,6 +754,43 @@ watch(() => props.visible, async (newVal) => {
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 10px;
+}
+
+.role-default-summary {
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fafcff;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.default-module {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.default-module + .default-module {
+  border-top: 1px dashed #f0f2f5;
+}
+
+.default-module-label {
+  min-width: 132px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #303133;
+  flex-shrink: 0;
+}
+
+.default-permission-tag {
+  margin: 0 6px 6px 0;
+}
+
+.default-permission-scope {
+  color: #909399;
+  font-size: 11px;
 }
 
 .permission-collapse {

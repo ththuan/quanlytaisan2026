@@ -4,6 +4,7 @@ import {
   PERMISSION_DEFINITIONS,
   PERMISSION_MODULES,
   PERMISSION_PRESETS,
+  ROLE_DEFAULT_PERMISSIONS,
 } from '../constants/permissions';
 import {
   getPermissionDetails,
@@ -23,6 +24,7 @@ export const getPermissionCatalog = async (
         modules: PERMISSION_MODULES,
         definitions: PERMISSION_DEFINITIONS,
         presets: PERMISSION_PRESETS,
+        role_defaults: ROLE_DEFAULT_PERMISSIONS,
         scopes: [
           { value: 'own', label: 'Cá nhân' },
           { value: 'department', label: 'Đơn vị' },

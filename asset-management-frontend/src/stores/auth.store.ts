@@ -33,14 +33,18 @@ export const useAuthStore = defineStore('auth', () => {
     return 'own';
   };
 
-  /** Kiểm tra quyền chức năng. User chưa được cấu hình quyền thì fallback theo role cũ. */
+  /**
+   * Kiểm tra quyền chức năng.
+   * - User đã tùy chỉnh: chỉ dùng đúng quyền đã cấp.
+   * - User chưa tùy chỉnh: dùng bộ quyền mặc định theo vai trò (backend trả kèm
+   *   trong `permissions`), sau đó fallback về legacyRoles để tương thích ngược.
+   */
   function can(code: string, legacyRoles: string[] = ['admin']): boolean {
     const currentUser = user.value;
     if (!currentUser) return false;
     if (currentUser.role === 'admin') return true;
-    if (currentUser.permissions_customized) {
-      return permissionMap.value.has(code);
-    }
+    if (permissionMap.value.has(code)) return true;
+    if (currentUser.permissions_customized) return false;
     return legacyRoles.includes(currentUser.role);
   }
 
@@ -48,9 +52,9 @@ export const useAuthStore = defineStore('auth', () => {
     const currentUser = user.value;
     if (!currentUser) return null;
     if (currentUser.role === 'admin') return 'all';
-    if (currentUser.permissions_customized) {
-      return permissionMap.value.get(code) ?? null;
-    }
+    const scope = permissionMap.value.get(code);
+    if (scope) return scope;
+    if (currentUser.permissions_customized) return null;
     if (!legacyRoles.includes(currentUser.role)) return null;
     return legacyScopeForRole(currentUser.role);
   }

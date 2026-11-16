@@ -26,10 +26,20 @@ export interface PermissionPreset {
   permissions: Array<{ code: string; scope: PermissionScope }>;
 }
 
+export type SystemRole = 'admin' | 'director' | 'department_head' | 'staff';
+
+export interface RoleDefaultPermissions {
+  role: SystemRole;
+  label: string;
+  fullAccess: boolean;
+  permissions: Array<{ code: string; scope: PermissionScope }>;
+}
+
 export interface PermissionCatalog {
   modules: PermissionModule[];
   definitions: PermissionDefinition[];
   presets: PermissionPreset[];
+  role_defaults: RoleDefaultPermissions[];
   scopes: Array<{ value: PermissionScope; label: string }>;
 }
 

@@ -31,17 +31,15 @@ class ReportsController {
     try {
       const id = parseInt(req.params.id);
       const data = await reportService.getReportDetailPayload(id);
-      if (req.permissionCustomized) {
-        const report: any = data;
-        if (
-          req.permissionScope === 'department' &&
-          Number(report.department_id) !== Number(req.user?.department_id)
-        ) {
-          return res.status(403).json({ success: false, message: 'Chỉ được xem báo cáo thuộc đơn vị của mình' });
-        }
-        if (req.permissionScope === 'own' && Number(report.created_by) !== Number(req.user?.id)) {
-          return res.status(403).json({ success: false, message: 'Chỉ được xem báo cáo do mình tạo' });
-        }
+      const report: any = data;
+      if (
+        req.permissionScope === 'department' &&
+        Number(report.department_id) !== Number(req.user?.department_id)
+      ) {
+        return res.status(403).json({ success: false, message: 'Chỉ được xem báo cáo thuộc đơn vị của mình' });
+      }
+      if (req.permissionScope === 'own' && Number(report.created_by) !== Number(req.user?.id)) {
+        return res.status(403).json({ success: false, message: 'Chỉ được xem báo cáo do mình tạo' });
       }
 
       return res.json({

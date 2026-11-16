@@ -61,6 +61,16 @@ export const requirePermission = (
         return next();
       }
 
+      // Chưa tùy chỉnh: ưu tiên bộ quyền mặc định theo vai trò, sau đó mới
+      // fallback về danh sách legacyRoles để tương thích ngược.
+      const defaultScope = state.permissions.get(code);
+      if (defaultScope) {
+        req.permissionCode = code;
+        req.permissionScope = defaultScope;
+        req.permissionCustomized = false;
+        return next();
+      }
+
       if (!legacyRoles.includes(user.role as UserRole)) {
         throw new ForbiddenError('Bạn không có quyền thực hiện chức năng này');
       }
@@ -103,6 +113,15 @@ export const requireAnyPermission = (
         req.permissionCode = match;
         req.permissionScope = state.permissions.get(match);
         req.permissionCustomized = true;
+        next();
+        return;
+      }
+
+      const defaultMatch = codes.find((code) => state.permissions.has(code));
+      if (defaultMatch) {
+        req.permissionCode = defaultMatch;
+        req.permissionScope = state.permissions.get(defaultMatch);
+        req.permissionCustomized = false;
         next();
         return;
       }

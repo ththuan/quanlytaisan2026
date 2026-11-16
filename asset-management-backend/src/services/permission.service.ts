@@ -4,6 +4,7 @@ import {
   PERMISSION_MAP,
   PermissionGrantInput,
   PermissionScope,
+  getRoleDefaultPermissions,
   isPermissionCode,
   normalizePermissionScope,
 } from '../constants/permissions';
@@ -42,7 +43,7 @@ export const getPermissionState = async (userId: number): Promise<PermissionStat
   }
 
   const user = await User.findByPk(userId, {
-    attributes: ['id', 'permissions_customized'],
+    attributes: ['id', 'role', 'permissions_customized'],
   });
 
   if (!user) {
@@ -50,7 +51,9 @@ export const getPermissionState = async (userId: number): Promise<PermissionStat
   }
 
   const customized = Boolean(user.permissions_customized);
-  const permissions = new Map<string, PermissionScope>();
+  const permissions = customized
+    ? new Map<string, PermissionScope>()
+    : getRoleDefaultPermissions(user.role);
 
   if (customized) {
     const rows = await UserPermission.findAll({
@@ -84,29 +87,39 @@ export const getPermissionDetails = async (userId: number) => {
   });
   if (!user) throw new NotFoundError('Không tìm thấy người dùng');
 
-  const rows = await UserPermission.findAll({
-    where: { user_id: userId },
-    attributes: ['permission_code', 'scope', 'granted_by', 'created_at', 'updated_at'],
-    order: [['permission_code', 'ASC']],
-    raw: true,
-  });
+  const customized = Boolean(user.permissions_customized);
+
+  let grants: Array<{ code: string; scope: PermissionScope }>;
+  if (customized) {
+    const rows = await UserPermission.findAll({
+      where: { user_id: userId },
+      attributes: ['permission_code', 'scope', 'granted_by', 'created_at', 'updated_at'],
+      order: [['permission_code', 'ASC']],
+      raw: true,
+    });
+    grants = rows
+      .filter((row: any) => PERMISSION_MAP.has(row.permission_code))
+      .map((row: any) => ({ code: row.permission_code, scope: row.scope as PermissionScope }));
+  } else {
+    grants = Array.from(getRoleDefaultPermissions(user.role).entries())
+      .map(([code, scope]) => ({ code, scope }))
+      .sort((a, b) => a.code.localeCompare(b.code));
+  }
 
   return {
     user_id: userId,
-    permissions_customized: Boolean(user.permissions_customized),
-    permissions: rows
-      .filter((row: any) => PERMISSION_MAP.has(row.permission_code))
-      .map((row: any) => {
-        const definition = PERMISSION_MAP.get(row.permission_code)!;
-        return {
-          code: row.permission_code,
-          scope: row.scope as PermissionScope,
-          module: definition.module,
-          module_label: definition.moduleLabel,
-          label: definition.label,
-          action: definition.action,
-        };
-      }),
+    permissions_customized: customized,
+    permissions: grants.map((grant) => {
+      const definition = PERMISSION_MAP.get(grant.code)!;
+      return {
+        code: grant.code,
+        scope: grant.scope,
+        module: definition.module,
+        module_label: definition.moduleLabel,
+        label: definition.label,
+        action: definition.action,
+      };
+    }),
   };
 };
 
@@ -220,7 +233,13 @@ export const resetUserPermissionsToLegacy = async (
   });
 
   clearPermissionCache(userId);
-  return { permissions: [], permissions_customized: false };
+  return {
+    permissions: Array.from(getRoleDefaultPermissions(user.role).entries()).map(([code, scope]) => ({
+      code,
+      scope,
+    })),
+    permissions_customized: false,
+  };
 };
 
 export const countCustomizedUsers = async (): Promise<number> =>
