@@ -62,13 +62,17 @@
         </div>
       </div>
 
+      <TableLayoutToolbar :controller="stockTableLayout" />
+
       <div class="responsive-table app-desktop-table">
         <el-table
+          ref="stockTableRef"
           v-loading="loading"
           :data="items"
           border
           stripe
           class="list-table"
+          @header-dragend="stockTableLayout.onHeaderDragend"
         >
           <el-table-column
             prop="code"
@@ -709,12 +713,16 @@ import { ElMessage } from 'element-plus';
 import { useAuthStore } from '@/stores/auth.store';
 import { useDepartmentStore } from '@/stores/department.store';
 import stockService, { type StockItem } from '@/services/stock.service';
+import TableLayoutToolbar from '@/components/Common/TableLayoutToolbar.vue';
+import { useTableColumnLayout } from '@/composables/useTableColumnLayout';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const departmentStore = useDepartmentStore();
 
 const loading = ref(false);
+const stockTableRef = ref<any>(null);
+const stockTableLayout = useTableColumnLayout('stock-items', stockTableRef);
 const saving = ref(false);
 const search = ref('');
 const items = ref<StockItem[]>([]);

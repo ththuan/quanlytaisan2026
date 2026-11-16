@@ -175,11 +175,16 @@
         </el-button>
       </div>
 
+      <TableLayoutToolbar :controller="procurementTableLayout" />
+
       <div class="responsive-table app-desktop-table">
         <el-table
+          ref="procurementTableRef"
           v-loading="loading"
           :data="rows"
+          :border="procurementTableLayout.isEditing.value"
           style="width: 100%"
+          @header-dragend="procurementTableLayout.onHeaderDragend"
         >
           <el-table-column
             prop="code"
@@ -360,11 +365,15 @@ import procurementService from '@/services/procurement.service';
 import ProcurementFormDialog from '@/components/Procurements/ProcurementFormDialog.vue';
 import ProcurementDetailDialog from '@/components/Procurements/ProcurementDetailDialog.vue';
 import { useRecordLock } from '@/composables/useRecordLock';
+import TableLayoutToolbar from '@/components/Common/TableLayoutToolbar.vue';
+import { useTableColumnLayout } from '@/composables/useTableColumnLayout';
 
 const authStore = useAuthStore();
 const years = Array.from({ length: 15 }).map((_, i) => new Date().getFullYear() - i);
 
 const loading = ref(false);
+const procurementTableRef = ref<any>(null);
+const procurementTableLayout = useTableColumnLayout('procurements', procurementTableRef);
 const rows = ref<any[]>([]);
 const total = ref(0);
 const page = ref(1);

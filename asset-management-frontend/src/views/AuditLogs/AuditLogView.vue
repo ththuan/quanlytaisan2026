@@ -154,17 +154,21 @@
         </el-col>
       </el-row>
 
+      <TableLayoutToolbar :controller="auditTableLayout" />
+
       <!-- Table -->
       <div
         class="responsive-table"
         style="margin-top: 16px"
       >
         <el-table
+          ref="auditTableRef"
           v-loading="loading"
           :data="logs"
           stripe
           border
           style="width: 100%"
+          @header-dragend="auditTableLayout.onHeaderDragend"
         >
           <el-table-column
             type="index"
@@ -320,6 +324,8 @@ import { ref, onMounted, computed } from 'vue';
 import { Refresh, View } from '@element-plus/icons-vue';
 import { getAuditLogs } from '@/services/dashboard.service';
 import { useAuthStore } from '@/stores/auth.store';
+import TableLayoutToolbar from '@/components/Common/TableLayoutToolbar.vue';
+import { useTableColumnLayout } from '@/composables/useTableColumnLayout';
 
 interface AuditLog {
   id: number;
@@ -340,6 +346,8 @@ const authStore = useAuthStore();
 const isAdminOrDirector = computed(() => ['admin', 'director'].includes(authStore.user?.role || ''));
 
 const loading = ref(false);
+const auditTableRef = ref<any>(null);
+const auditTableLayout = useTableColumnLayout('audit-logs', auditTableRef);
 const logs = ref<AuditLog[]>([]);
 const total = ref(0);
 const page = ref(1);

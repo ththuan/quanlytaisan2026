@@ -47,11 +47,15 @@
             Tìm
           </el-button>
         </div>
+        <TableLayoutToolbar :controller="normTableLayout" />
         <div class="responsive-table">
           <el-table
+            ref="normTableRef"
             v-loading="loadingNorms"
             :data="norms"
             stripe
+            :border="normTableLayout.isEditing.value"
+            @header-dragend="normTableLayout.onHeaderDragend"
           >
             <el-table-column
               prop="equipment_name"
@@ -156,11 +160,15 @@
             Làm mới
           </el-button>
         </div>
+        <TableLayoutToolbar :controller="normWarningTableLayout" />
         <div class="responsive-table">
           <el-table
+            ref="normWarningTableRef"
             v-loading="loadingWarnings"
             :data="warnings"
             stripe
+            :border="normWarningTableLayout.isEditing.value"
+            @header-dragend="normWarningTableLayout.onHeaderDragend"
           >
             <el-table-column
               label="Thời gian"
@@ -362,11 +370,17 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus, Refresh } from '@element-plus/icons-vue';
 import normService, { type EquipmentNorm, type NormWarning } from '@/services/norm.service';
 import { useAuthStore } from '@/stores/auth.store';
+import TableLayoutToolbar from '@/components/Common/TableLayoutToolbar.vue';
+import { useTableColumnLayout } from '@/composables/useTableColumnLayout';
 
 const authStore = useAuthStore();
 const canEditNorms = computed(() => authStore.can('norms.update', ['admin']) || authStore.can('norms.create', ['admin']));
 
 const activeTab = ref<'norms' | 'warnings'>('norms');
+const normTableRef = ref<any>(null);
+const normWarningTableRef = ref<any>(null);
+const normTableLayout = useTableColumnLayout('norms', normTableRef);
+const normWarningTableLayout = useTableColumnLayout('norm-warnings', normWarningTableRef);
 
 const norms = ref<EquipmentNorm[]>([]);
 const loadingNorms = ref(false);

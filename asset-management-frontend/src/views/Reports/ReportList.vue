@@ -105,14 +105,18 @@
         </el-row>
       </div>
 
+      <TableLayoutToolbar :controller="reportTableLayout" />
+
       <div
         class="responsive-table"
       >
         <el-table
+          ref="reportTableRef"
           v-loading="reportStore.loading"
           :data="reportStore.reports"
           border
           stripe
+          @header-dragend="reportTableLayout.onHeaderDragend"
         >
           <el-table-column
             type="index"
@@ -296,9 +300,13 @@ import { ElMessage } from 'element-plus';
 import ReportFormDialog from '@/components/Reports/ReportFormDialog.vue';
 import ReportDetailDialog from '@/components/Reports/ReportDetailDialog.vue';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
+import TableLayoutToolbar from '@/components/Common/TableLayoutToolbar.vue';
+import { useTableColumnLayout } from '@/composables/useTableColumnLayout';
 
 const { t } = useI18n();
 const reportStore = useReportStore();
+const reportTableRef = ref<any>(null);
+const reportTableLayout = useTableColumnLayout('reports', reportTableRef);
 const authStore = useAuthStore();
 
 const canFilterByDepartment = computed(() => authStore.isAdmin || authStore.isDirector);

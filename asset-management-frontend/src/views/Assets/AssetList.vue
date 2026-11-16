@@ -392,17 +392,22 @@
         </div>
       </div>
 
+      <TableLayoutToolbar :controller="assetTableLayout" />
+
       <!-- Table -->
       <div
         class="responsive-table"
       >
         <el-table
+          ref="assetTableRef"
           :data="assetStore.assets"
           :loading="assetStore.loading"
           class="asset-table"
+          :border="assetTableLayout.isEditing.value"
           :row-class-name="tableRowClassName"
           style="width: 100%"
           @row-click="handleRowClick"
+          @header-dragend="assetTableLayout.onHeaderDragend"
         >
           <el-table-column
             prop="name"
@@ -936,9 +941,11 @@ import { useI18n } from 'vue-i18n';
 import { useAssetStore } from '@/stores/asset.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useDepartments } from '@/composables/useDepartments';
+import { useTableColumnLayout } from '@/composables/useTableColumnLayout';
 import { Plus, Search, Delete, Box, CircleCheck, Refresh, Upload, Download, CircleClose, QuestionFilled, DeleteFilled, Printer, Warning, User, Document } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import AssetFormDialog from '@/components/Assets/AssetFormDialog.vue';
+import TableLayoutToolbar from '@/components/Common/TableLayoutToolbar.vue';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 import importService, { type ImportResult } from '@/services/import.service';
 import exportService from '@/services/export.service';
@@ -1009,6 +1016,8 @@ const printListDeptIds = ref<number[]>([]);
 
 // Responsive dialog widths
 const windowWidth = ref(window.innerWidth);
+const assetTableRef = ref<any>(null);
+const assetTableLayout = useTableColumnLayout('assets', assetTableRef);
 const onResize = () => { windowWidth.value = window.innerWidth; };
 window.addEventListener('resize', onResize);
 

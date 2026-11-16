@@ -113,14 +113,18 @@
         </el-row>
       </div>
 
+      <TableLayoutToolbar :controller="userTableLayout" />
+
       <div
         class="responsive-table"
       >
         <el-table
+          ref="userTableRef"
           :data="filteredUsers"
           :loading="loading"
           border
           stripe
+          @header-dragend="userTableLayout.onHeaderDragend"
         >
           <el-table-column
             prop="username"
@@ -462,6 +466,8 @@ import { ElMessageBox, ElMessage } from 'element-plus';
 import api from '@/services/api';
 import userService, { type UserImportResult } from '@/services/user.service';
 import UserFormDialog from '@/components/Users/UserFormDialog.vue';
+import TableLayoutToolbar from '@/components/Common/TableLayoutToolbar.vue';
+import { useTableColumnLayout } from '@/composables/useTableColumnLayout';
 
 interface User {
   id: number;
@@ -478,6 +484,8 @@ const { t } = useI18n();
 
 const loading = ref(false);
 const users = ref<User[]>([]);
+const userTableRef = ref<any>(null);
+const userTableLayout = useTableColumnLayout('users', userTableRef);
 const searchQuery = ref('');
 const filterRole = ref('');
 const filterStatus = ref('');

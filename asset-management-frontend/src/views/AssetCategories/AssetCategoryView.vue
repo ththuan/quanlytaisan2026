@@ -139,13 +139,19 @@
 
       <!-- Table view -->
       <div class="responsive-table">
+        <TableLayoutToolbar
+          v-if="!treeMode"
+          :controller="categoryTableLayout"
+        />
         <el-table
           v-if="!treeMode"
+          ref="categoryTableRef"
           v-loading="loading"
           :data="filteredCategories"
           stripe
           border
           style="margin-top: 12px;"
+          @header-dragend="categoryTableLayout.onHeaderDragend"
         >
           <el-table-column
             prop="code"
@@ -365,10 +371,14 @@ import { Plus, Refresh, Search, Edit, Delete } from '@element-plus/icons-vue';
 import { assetCategoryService } from '@/services/assetCategory.service';
 import type { AssetCategory } from '@/services/assetCategory.service';
 import { useAuthStore } from '@/stores/auth.store';
+import TableLayoutToolbar from '@/components/Common/TableLayoutToolbar.vue';
+import { useTableColumnLayout } from '@/composables/useTableColumnLayout';
 
 const authStore = useAuthStore();
 
 const loading = ref(false);
+const categoryTableRef = ref<any>(null);
+const categoryTableLayout = useTableColumnLayout('asset-categories', categoryTableRef);
 const saving = ref(false);
 const categories = ref<AssetCategory[]>([]);
 const treeData = ref<any[]>([]);

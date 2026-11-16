@@ -419,3 +419,45 @@ test('desktop: đợt kiểm kê không bẻ từ ở header Khớp/Thiếu', as
   await expect(sttCell).toHaveText('10');
   expect(await sttCell.evaluate((el) => getComputedStyle(el).whiteSpace)).toBe('nowrap');
 });
+
+test('desktop: chỉnh và khóa bố cục cột tài sản', async ({ page }) => {
+  await mock(page);
+  await page.goto('/assets');
+  await page.waitForTimeout(500);
+
+  const editLayoutButton = page.getByRole('button', { name: 'Chỉnh bố cục cột' });
+  await expect(editLayoutButton).toBeVisible();
+  await editLayoutButton.click();
+
+  const nameHeader = page.locator('.el-table__header th').filter({ hasText: 'Tên tài sản' }).first();
+  const headerBox = await nameHeader.boundingBox();
+  expect(headerBox).not.toBeNull();
+  if (!headerBox) return;
+
+  const startX = headerBox.x + headerBox.width - 4;
+  const startY = headerBox.y + headerBox.height / 2;
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + 70, startY, { steps: 8 });
+  await page.mouse.up();
+
+  await page.getByRole('button', { name: 'Lưu & khóa' }).click();
+  await expect(page.getByText('Bố cục cột đã khóa')).toBeVisible();
+  await page.waitForTimeout(250);
+  const lockedWidth = Math.round((await nameHeader.boundingBox())?.width || 0);
+
+  const saved = await page.evaluate(() => {
+    const key = Object.keys(localStorage).find((item) => item.includes(':assets'));
+    return key ? localStorage.getItem(key) : null;
+  });
+  expect(saved).toBeTruthy();
+  expect(Object.keys(JSON.parse(saved || '{}')).length).toBeGreaterThan(0);
+
+  await page.reload();
+  await page.waitForTimeout(700);
+  await expect(page.getByText('Bố cục cột đã khóa')).toBeVisible();
+  const reloadedWidth = Math.round(
+    (await page.locator('.el-table__header th').filter({ hasText: 'Tên tài sản' }).first().boundingBox())?.width || 0,
+  );
+  expect(Math.abs(reloadedWidth - lockedWidth)).toBeLessThanOrEqual(2);
+});
