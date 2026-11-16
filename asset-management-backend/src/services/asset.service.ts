@@ -13,6 +13,7 @@ import depreciationCalculatorService, {
   type DepreciationCalculationResult,
   type DepreciationPrecachedCategory,
 } from './depreciationCalculator.service';
+import DepreciationService from './depreciation.service';
 
 export interface CreateAssetInput {
   asset_code: string;
@@ -249,7 +250,23 @@ class AssetService {
           assetData.depreciation_rate = depreciation.depreciationRate;
         }
       } catch {
-        // Giữ dữ liệu DB nếu tính toán lỗi (vd. 0504 thiếu thông tin)
+        // Fallback đồng bộ với trang chi tiết: tránh giữ current_value cũ
+        // (thường bằng nguyên giá) khi danh mục 0504 thiếu thời gian/tỷ lệ khấu hao.
+        const fallbackInfo = DepreciationService.calculateDepreciation(
+          Number(assetData.purchase_price) || 0,
+          assetData.purchase_date,
+          assetData.category || assetData.assetCategory?.name,
+          assetData.asset_type,
+          assetData.useful_life || undefined,
+          assetData.year_in_use || undefined,
+          assetData.depreciation_rate ? Number(assetData.depreciation_rate) : undefined,
+          assetData.is_depreciable !== undefined
+            ? assetData.is_depreciable
+            : assetData.assetCategory?.is_depreciable,
+        );
+        assetData.current_value = fallbackInfo.currentValue;
+        assetData.residual_value = fallbackInfo.currentValue;
+        assetData.accumulated_depreciation = fallbackInfo.accumulatedDepreciation;
       }
       return assetData;
     });
