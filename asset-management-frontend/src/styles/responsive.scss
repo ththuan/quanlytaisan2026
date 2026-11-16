@@ -64,24 +64,6 @@ body {
     padding-right: 16px;
   }
 
-  /* Nút thao tác trong bảng giữ kích thước gọn để không xuống dòng/đè cột. */
-  .el-main .el-table .el-button:not(.is-link):not(.is-text) {
-    min-height: 32px;
-    height: 32px;
-    padding: 0 10px;
-    font-size: 13px;
-  }
-
-  .el-main .el-table .el-button + .el-button {
-    margin-left: 6px;
-  }
-
-  .el-main .el-table .el-tag {
-    height: 22px;
-    padding: 0 7px;
-    font-size: 12px;
-  }
-
   .el-input--large,
   .el-select--large { --el-component-size-large: 46px; }
 
@@ -180,20 +162,40 @@ body {
    TABLES: Responsive wrapper cho tất cả bảng
    ───────────────────────────────────────────────────────── */
 @media (min-width: 768px) {
-  /* Không bẻ đôi từ tiếng Việt ở bảng / nhãn thống kê
-     (vd. "Khớp" thành "Kh" + "ớp", "Thiếu" thành "Th" + "iếu"). */
-  .el-main .el-table .cell,
+  /* Header và nhãn thống kê không bẻ đôi từ tiếng Việt.
+     Nếu chữ dài, cho xuống dòng tại khoảng trắng; không cắt "...". */
+  .el-main .el-table th .cell,
   .stat-label,
   .stat-text {
     word-break: normal !important;
     overflow-wrap: normal !important;
     hyphens: none !important;
+    white-space: normal !important;
+    text-overflow: clip !important;
+  }
+
+  /* Nội dung ô: cho phép xuống dòng và tăng chiều cao hàng,
+     không dùng ellipsis để che chữ. */
+  .el-main .el-table td .cell {
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    text-overflow: clip !important;
   }
 
   /* STT và các cột số căn phải luôn nằm trên một dòng. */
   .el-main .el-table .app-index-cell .cell,
   .el-main .el-table .el-table__cell.is-right .cell {
     white-space: nowrap !important;
+  }
+
+  /* Tag hiển thị đủ nội dung, không bị cắt "..."; hàng tự cao lên. */
+  .el-main .el-table .el-tag {
+    max-width: none !important;
+    height: auto !important;
+    min-height: 24px;
+    white-space: normal !important;
+    text-overflow: clip !important;
   }
 }
 
