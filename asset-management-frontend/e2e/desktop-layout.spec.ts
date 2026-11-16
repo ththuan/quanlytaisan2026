@@ -61,6 +61,25 @@ async function mock(page: Page): Promise<void> {
       }),
     }),
   );
+  await page.route('**/api/assets/loss-damage*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        data: Array.from({ length: 12 }).map((_, index) => ({
+          ...ASSET,
+          id: index + 1,
+          asset_code: `TS-${String(index + 1).padStart(3, '0')}`,
+          name: `Tài sản hư hỏng ${index + 1}`,
+          status: index % 2 === 0 ? 'lost' : 'damaged',
+          discrepancy_reason: 'Hư hỏng trong quá trình sử dụng',
+          responsibility: 'Cá nhân phụ trách',
+          department: { id: 1, name: 'Phòng Kế toán' },
+        })),
+      }),
+    }),
+  );
   await page.route('**/api/users*', (route) =>
     route.fulfill({
       status: 200,
@@ -230,3 +249,25 @@ for (const [path, name] of pages) {
     }
   });
 }
+
+test('desktop: STT tài sản hư hỏng từ 10 không xuống dòng', async ({ page }) => {
+  await mock(page);
+  await page.goto('/loss-damage');
+  await page.waitForTimeout(500);
+
+  const indexCell = page.locator('.el-table__body td.loss-index-cell .cell').nth(9);
+  await expect(indexCell).toHaveText('10');
+
+  const metrics = await indexCell.evaluate((el) => {
+    const style = getComputedStyle(el);
+    return {
+      whiteSpace: style.whiteSpace,
+      scrollWidth: el.scrollWidth,
+      clientWidth: el.clientWidth,
+      height: Math.round(el.getBoundingClientRect().height),
+    };
+  });
+
+  expect(metrics.whiteSpace).toBe('nowrap');
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth + 1);
+});

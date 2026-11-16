@@ -99,12 +99,13 @@
           <el-table-column
             type="index"
             label="#"
-            width="55"
+            width="70"
             align="center"
+            class-name="loss-index-cell"
           />
           <el-table-column
             label="Tài sản"
-            min-width="180"
+            min-width="175"
           >
             <template #default="{ row }">
               <div class="loss-asset-cell">
@@ -153,17 +154,17 @@
           <el-table-column
             prop="discrepancy_reason"
             label="Nguyên nhân"
-            min-width="130"
+            min-width="125"
           />
           <el-table-column
             prop="responsibility"
             label="Trách nhiệm"
-            min-width="110"
+            min-width="105"
           />
           <el-table-column
             v-if="isAdmin"
             label="Thao tác"
-            width="110"
+            width="100"
             align="center"
             fixed="right"
           >
@@ -493,5 +494,9 @@ onMounted(load);
 .loss-value-cell small {
   color: #94a3b8;
   font-size: 11.5px;
+}
+
+:deep(.loss-index-cell .cell) {
+  white-space: nowrap;
 }
 </style>
