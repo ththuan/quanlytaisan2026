@@ -32,7 +32,7 @@
             size="default"
             class="export-btn"
             :loading="exporting"
-            @click="handleExport"
+            @click="openExportDialog"
           >
             Xuất Excel
           </el-button>
@@ -436,13 +436,13 @@
             </template>
           </el-table-column>
           <el-table-column
-            prop="residual_value"
+            prop="current_value"
             label="Giá trị còn lại"
             width="140"
             align="right"
           >
             <template #default="{ row }">
-              <span class="price-value">{{ formatCurrencyDisplay(row.residual_value) }}</span>
+              <span class="price-value">{{ formatCurrencyDisplay(row.current_value ?? row.residual_value) }}</span>
             </template>
           </el-table-column>
           <el-table-column
@@ -804,6 +804,71 @@
       </template>
     </el-dialog>
 
+    <!-- Export Excel dialog: toàn bộ hoặc theo đơn vị -->
+    <el-dialog
+      v-model="showExportDialog"
+      title="Xuất Excel danh sách tài sản"
+      :width="windowWidth <= 640 ? '95vw' : '480px'"
+      append-to-body
+      :close-on-click-modal="false"
+    >
+      <el-form label-position="top">
+        <el-form-item label="Phạm vi xuất">
+          <el-radio-group v-model="exportScope">
+            <el-radio
+              v-if="canExportAll"
+              value="all"
+            >
+              Toàn bộ tài sản
+            </el-radio>
+            <el-radio value="department">
+              Theo đơn vị
+            </el-radio>
+          </el-radio-group>
+        </el-form-item>
+
+        <el-form-item
+          v-if="exportScope === 'department'"
+          label="Đơn vị"
+        >
+          <el-select
+            v-model="exportDepartmentId"
+            filterable
+            :disabled="!canExportAll"
+            placeholder="Chọn đơn vị"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="dept in departments"
+              :key="dept.id"
+              :label="dept.name"
+              :value="dept.id"
+            />
+          </el-select>
+        </el-form-item>
+
+        <el-alert
+          type="info"
+          :closable="false"
+          show-icon
+          title="File xuất toàn bộ dữ liệu theo phạm vi đã chọn, không phụ thuộc số dòng đang hiển thị trên màn hình."
+        />
+      </el-form>
+
+      <template #footer>
+        <el-button @click="showExportDialog = false">
+          Hủy
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="exporting"
+          @click="handleExportConfirm"
+        >
+          Xuất Excel
+        </el-button>
+      </template>
+    </el-dialog>
+
     <!-- Print asset list dialog (admin/director chọn đơn vị) -->
     <el-dialog
       v-model="showPrintListDialog"
@@ -888,6 +953,9 @@ const authStore = useAuthStore();
 const canManageAssets = computed(
   () => authStore.can('assets.create', ['admin']) || authStore.can('assets.update', ['admin']),
 );
+const canExportAll = computed(
+  () => authStore.permissionScope('assets.export', ['admin', 'director', 'department_head', 'staff']) === 'all',
+);
 const canFilterAllDepartments = computed(() => authStore.isAdmin || authStore.isDirector);
 const { t } = useI18n();
 
@@ -929,6 +997,9 @@ const importResult = ref<ImportResult | null>(null);
 
 // Export
 const exporting = ref(false);
+const showExportDialog = ref(false);
+const exportScope = ref<'all' | 'department'>('all');
+const exportDepartmentId = ref<number | null>(null);
 const generatingQR = ref(false);
 
 // Print asset list
@@ -1225,29 +1296,26 @@ const closeImportDialog = () => {
 };
 
 // Export functions
-const handleExport = async () => {
+const openExportDialog = () => {
+  exportScope.value = canExportAll.value ? 'all' : 'department';
+  exportDepartmentId.value = filterDepartment.value || authStore.userDepartmentId || null;
+  showExportDialog.value = true;
+};
+
+const handleExportConfirm = async () => {
+  if (exportScope.value === 'department' && !exportDepartmentId.value) {
+    ElMessage.warning('Vui lòng chọn đơn vị cần xuất');
+    return;
+  }
+
   exporting.value = true;
   try {
-    // Build export query params based on current filters
     const exportParams: any = {};
-    if (searchQuery.value) exportParams.search = searchQuery.value;
-    if (filterCategory.value) exportParams.category_code = filterCategory.value;
-    if (filterStatus.value) exportParams.status = filterStatus.value;
-    if (filterCampus.value) exportParams.campus = filterCampus.value;
-    
-    // Apply department filter based on user role
-    // Admin và Director: có thể export tất cả hoặc theo filter
-    // Trưởng đơn vị và Cán bộ: chỉ export tài sản của đơn vị mình (tự động áp dụng ở backend)
-    if (authStore.isAdmin || authStore.isDirector) {
-      if (filterDepartment.value) {
-        exportParams.current_department_id = filterDepartment.value;
-      }
-    } else if (authStore.userDepartmentId) {
-      // Trưởng đơn vị và cán bộ: backend tự động filter theo department_id của user
-      exportParams.current_department_id = authStore.userDepartmentId;
+    if (exportScope.value === 'department' && exportDepartmentId.value) {
+      exportParams.current_department_id = exportDepartmentId.value;
     }
-
     await exportService.exportAssets(exportParams);
+    showExportDialog.value = false;
     ElMessage.success('Đã xuất file Excel thành công');
   } catch (error: any) {
     console.error('Export error:', error);
@@ -1372,7 +1440,7 @@ const buildAssetListPrintHtml = (groups: PrintAssetGroup[]): string => {
         <td class="n">${escapeHtml(quantity)}</td>
         <td class="n">${escapeHtml(asset.year_in_use || '-')}</td>
         <td class="r">${escapeHtml(formatCurrencyDisplay(asset.purchase_price))}</td>
-        <td class="r">${escapeHtml(formatCurrencyDisplay(asset.residual_value ?? asset.current_value))}</td>
+        <td class="r">${escapeHtml(formatCurrencyDisplay(asset.current_value ?? asset.residual_value))}</td>
         <td>${escapeHtml(getStatusText(asset.status))}</td>
         <td>${escapeHtml(assignedUser)}</td>
       </tr>`;

@@ -920,11 +920,11 @@ const calculatedRemainingValue = computed(() => {
     }
   }
 
-  if (asset.residual_value !== undefined && asset.residual_value !== null) {
-    return Number(asset.residual_value);
-  }
   if (asset.current_value !== undefined && asset.current_value !== null) {
     return Number(asset.current_value);
+  }
+  if (asset.residual_value !== undefined && asset.residual_value !== null) {
+    return Number(asset.residual_value);
   }
 
   return null;

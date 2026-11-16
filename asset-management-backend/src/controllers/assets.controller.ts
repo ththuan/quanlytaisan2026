@@ -495,7 +495,12 @@ export const exportAssets = async (req: AuthRequest, res: Response, next: NextFu
     const buffer = await exportService.exportAssetsToExcel(
       query,
       user.role,
-      user.department_id
+      user.department_id,
+      {
+        customized: req.permissionCustomized,
+        scope: req.permissionScope,
+        userId: user.id,
+      },
     );
 
     // Set response headers

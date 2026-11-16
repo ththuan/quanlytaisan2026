@@ -18,14 +18,27 @@ import { ForbiddenError } from '../utils/errorHandler';
 export const exportAssetsToExcel = async (
   query: any,
   userRole: string,
-  userDepartmentId?: number
+  userDepartmentId?: number,
+  permission?: {
+    customized?: boolean;
+    scope?: 'own' | 'department' | 'all';
+    userId?: number;
+  },
 ): Promise<Buffer> => {
   // Apply permission-based filtering
   const exportQuery: any = { ...query };
-  
-  // Trưởng đơn vị và cán bộ chỉ export tài sản của đơn vị mình.
-  // Không gán đơn vị thì từ chối, tránh fail-open xuất toàn bộ dữ liệu.
-  if (userRole !== 'admin' && userRole !== 'director') {
+
+  if (permission?.customized) {
+    if (permission.scope === 'department') {
+      if (!userDepartmentId) {
+        throw new ForbiddenError('Tài khoản chưa được gán đơn vị nên không thể export dữ liệu.');
+      }
+      exportQuery.current_department_id = String(userDepartmentId);
+      exportQuery.include_children = 'false';
+    } else if (permission.scope === 'own') {
+      exportQuery.assigned_user_id = String(permission.userId || 0);
+    }
+  } else if (userRole !== 'admin' && userRole !== 'director') {
     if (!userDepartmentId) {
       throw new ForbiddenError('Tài khoản chưa được gán đơn vị nên không thể export dữ liệu.');
     }
@@ -33,17 +46,21 @@ export const exportAssetsToExcel = async (
     exportQuery.include_children = 'false';
   }
 
-  // Remove pagination to get all assets
-  delete exportQuery.page;
-  delete exportQuery.limit;
-  
-  // Set a high limit to get all matching assets
-  exportQuery.limit = 10000;
-  exportQuery.page = 1;
-
-  // Get all assets matching the query
-  const result = await assetService.getAllAssets(exportQuery);
-  const assets = result.data as any[];
+  // Lấy toàn bộ dữ liệu theo phân trang nội bộ, không phụ thuộc trang đang hiển thị.
+  const PAGE_SIZE = 1000;
+  const assets: any[] = [];
+  let page = 1;
+  let totalPages = 1;
+  do {
+    const result = await assetService.getAllAssets({
+      ...exportQuery,
+      page,
+      limit: PAGE_SIZE,
+    });
+    assets.push(...(result.data as any[]));
+    totalPages = Number(result.pagination?.totalPages) || 1;
+    page += 1;
+  } while (page <= totalPages);
 
   // Create workbook
   const workbook = new ExcelJS.Workbook();
@@ -97,7 +114,9 @@ export const exportAssetsToExcel = async (
       quantity: asset.quantity || 1,
       year_in_use: asset.year_in_use || '',
       purchase_price: asset.purchase_price ? Number(asset.purchase_price) : 0,
-      residual_value: asset.residual_value ? Number(asset.residual_value) : 0,
+      residual_value: asset.current_value != null
+        ? Number(asset.current_value)
+        : (asset.residual_value ? Number(asset.residual_value) : 0),
       accumulated_depreciation: asset.accumulated_depreciation ? Number(asset.accumulated_depreciation) : 0,
       depreciation_rate: asset.depreciation_rate ? Number(asset.depreciation_rate) : 0,
       useful_life: asset.useful_life || '',
