@@ -74,17 +74,13 @@
         </div>
       </div>
 
-      <TableLayoutToolbar :controller="stockHistoryTableLayout" />
-
       <div class="responsive-table app-desktop-table">
         <el-table
-          ref="stockHistoryTableRef"
           v-loading="loading"
           :data="rows"
           border
           stripe
           class="list-table"
-          @header-dragend="stockHistoryTableLayout.onHeaderDragend"
         >
           <el-table-column
             prop="date"
@@ -258,13 +254,9 @@
 import { onMounted, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import api from '@/services/api';
-import TableLayoutToolbar from '@/components/Common/TableLayoutToolbar.vue';
-import { useTableColumnLayout } from '@/composables/useTableColumnLayout';
 
 const loading = ref(false);
 const rows = ref<any[]>([]);
-const stockHistoryTableRef = ref<any>(null);
-const stockHistoryTableLayout = useTableColumnLayout('stock-history', stockHistoryTableRef);
 const type = ref<'all' | 'in' | 'out'>('all');
 const search = ref('');
 const dateRange = ref<[string, string] | null>(null);

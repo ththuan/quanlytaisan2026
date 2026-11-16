@@ -188,7 +188,6 @@ test('mobile: thanh lý, tăng tài sản, kho vật tư, điều chuyển dùng
   await mockModuleData(page);
 
   await page.goto('/transfers');
-  await expect(page.locator('.table-layout-toolbar')).toHaveCount(0);
   await expect(page.locator('.app-mobile-card').first()).toBeVisible();
   await expect(page.locator('.app-mobile-card').first()).toContainText('Máy tính xách tay Dell');
   await expect(page.locator('.app-desktop-table').first()).toBeHidden();

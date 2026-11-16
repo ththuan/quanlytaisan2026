@@ -64,17 +64,13 @@
       </el-row>
     </div>
 
-    <TableLayoutToolbar :controller="repairTableLayout" />
-
     <!-- Table -->
     <div class="responsive-table">
       <el-table
-        ref="repairTableRef"
         v-loading="loading"
         :data="requests"
         border
         stripe
-        @header-dragend="repairTableLayout.onHeaderDragend"
       >
         <el-table-column
           type="index"
@@ -388,8 +384,6 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import RepairFormDialog from './RepairFormDialog.vue';
 import MaintenanceDetailDialog from './MaintenanceDetailDialog.vue';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
-import TableLayoutToolbar from '@/components/Common/TableLayoutToolbar.vue';
-import { useTableColumnLayout } from '@/composables/useTableColumnLayout';
 import api from '@/services/api';
 import assetDisposalService from '@/services/assetDisposal.service';
 import SignaturePad from '@/components/Common/SignaturePad.vue';
@@ -405,8 +399,6 @@ const departmentStore = useDepartmentStore();
 
 const loading = ref(false);
 const requests = ref<any[]>([]);
-const repairTableRef = ref<any>(null);
-const repairTableLayout = useTableColumnLayout('repair-requests', repairTableRef);
 const pagination = ref<any>(null);
 const filterStatus = ref<string | null>(null);
 const filterDepartment = ref<number | null>(null);

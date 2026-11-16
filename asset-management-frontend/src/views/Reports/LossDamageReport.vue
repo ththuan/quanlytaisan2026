@@ -84,17 +84,12 @@
         </el-button>
       </div>
 
-      <TableLayoutToolbar :controller="lossDamageTableLayout" />
-
       <div class="responsive-table">
         <el-table
-          ref="lossDamageTableRef"
           v-loading="loading"
           :data="rows"
           stripe
-          :border="lossDamageTableLayout.isEditing.value"
           @selection-change="handleSelectionChange"
-          @header-dragend="lossDamageTableLayout.onHeaderDragend"
         >
           <el-table-column
             v-if="isAdmin"
@@ -300,8 +295,6 @@ import { assetService } from '@/services/asset.service';
 import { useAuthStore } from '@/stores/auth.store';
 import { CAMPUS_OPTIONS, campusLabel } from '@/constants/campuses';
 import { openPrintWindow, escapeHtml } from '@/utils/print';
-import TableLayoutToolbar from '@/components/Common/TableLayoutToolbar.vue';
-import { useTableColumnLayout } from '@/composables/useTableColumnLayout';
 
 const authStore = useAuthStore();
 const isAdmin = computed(() => authStore.user?.role === 'admin');
@@ -309,8 +302,6 @@ const canExport = computed(() => ['admin', 'director'].includes(authStore.user?.
 
 const rows = ref<any[]>([]);
 const loading = ref(false);
-const lossDamageTableRef = ref<any>(null);
-const lossDamageTableLayout = useTableColumnLayout('loss-damage', lossDamageTableRef);
 const exporting = ref(false);
 const departmentId = ref<number | null>(null);
 const status = ref<string>('');

@@ -108,18 +108,13 @@
         </el-row>
       </div>
 
-      <TableLayoutToolbar :controller="departmentTableLayout" />
-
       <div
         class="responsive-table"
       >
         <el-table
-          ref="departmentTableRef"
           :data="paginatedDepartments"
           :loading="loading"
-          :border="departmentTableLayout.isEditing.value"
           style="width: 100%"
-          @header-dragend="departmentTableLayout.onHeaderDragend"
         >
           <el-table-column
             prop="name"
@@ -279,8 +274,6 @@ import { Plus, Search, Upload, Download } from '@element-plus/icons-vue';
 import { ElMessageBox, ElMessage } from 'element-plus';
 import api from '@/services/api';
 import DepartmentFormDialog from '@/components/Departments/DepartmentFormDialog.vue';
-import TableLayoutToolbar from '@/components/Common/TableLayoutToolbar.vue';
-import { useTableColumnLayout } from '@/composables/useTableColumnLayout';
 import departmentService from '@/services/department.service';
 import { invalidateGlobalDepartmentCache } from '@/composables/useDepartments';
 import { campusLabel } from '@/constants/campuses';
@@ -301,8 +294,6 @@ const authStore = useAuthStore();
 const { t } = useI18n();
 
 const loading = ref(false);
-const departmentTableRef = ref<any>(null);
-const departmentTableLayout = useTableColumnLayout('departments', departmentTableRef);
 const departments = ref<Department[]>([]);
 const searchQuery = ref('');
 const filterType = ref('');

@@ -392,23 +392,25 @@
         </div>
       </div>
 
-      <TableLayoutToolbar :controller="assetTableLayout" />
-
       <!-- Table -->
       <div
         class="responsive-table"
       >
         <el-table
-          ref="assetTableRef"
           :data="assetStore.assets"
           :loading="assetStore.loading"
           class="asset-table"
-          :border="assetTableLayout.isEditing.value"
           :row-class-name="tableRowClassName"
           style="width: 100%"
           @row-click="handleRowClick"
-          @header-dragend="assetTableLayout.onHeaderDragend"
         >
+          <el-table-column
+            type="index"
+            label="STT"
+            width="65"
+            align="center"
+            class-name="app-index-cell"
+          />
           <el-table-column
             prop="name"
             :label="$t('assets.assetName')"
@@ -417,7 +419,11 @@
             <template #default="{ row }">
               <div class="asset-name-cell">
                 <span class="asset-name">{{ row.name }}</span>
-                <span class="asset-code">{{ row.category_code || '-' }}</span>
+                <span class="asset-code">
+                  {{ row.asset_code || row.category_code || '-' }}
+                  · {{ row.category || row.assetCategory?.name || '-' }}
+                  · {{ row.current_department?.name || '-' }}
+                </span>
               </div>
             </template>
           </el-table-column>
@@ -431,9 +437,20 @@
             </template>
           </el-table-column>
           <el-table-column
+            prop="year_in_use"
+            label="Năm SD"
+            width="90"
+            align="center"
+            class-name="app-index-cell"
+          >
+            <template #default="{ row }">
+              {{ row.year_in_use || '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column
             prop="purchase_price"
             label="Nguyên giá"
-            width="150"
+            width="135"
             align="right"
           >
             <template #default="{ row }">
@@ -443,7 +460,7 @@
           <el-table-column
             prop="current_value"
             label="Giá trị còn lại"
-            width="150"
+            width="135"
             align="right"
           >
             <template #default="{ row }">
@@ -453,7 +470,7 @@
           <el-table-column
             prop="status"
             :label="$t('common.status')"
-            width="160"
+            width="150"
           >
             <template #default="{ row }">
               <el-tag
@@ -466,20 +483,8 @@
             </template>
           </el-table-column>
           <el-table-column
-            prop="current_department.name"
-            :label="$t('assets.department')"
-            width="130"
-          >
-            <template #default="{ row }">
-              <div class="asset-dept-cell">
-                <span>{{ row.current_department?.name || '-' }}</span>
-                <small v-if="row.campus">{{ campusLabel(row.campus) }}</small>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column
             label="Người sử dụng"
-            width="130"
+            width="150"
           >
             <template #default="{ row }">
               <div
@@ -494,7 +499,7 @@
                 size="small"
                 type="info"
               >
-                Dùng chung
+                Đang chung
               </el-tag>
             </template>
           </el-table-column>
@@ -941,17 +946,15 @@ import { useI18n } from 'vue-i18n';
 import { useAssetStore } from '@/stores/asset.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useDepartments } from '@/composables/useDepartments';
-import { useTableColumnLayout } from '@/composables/useTableColumnLayout';
 import { Plus, Search, Delete, Box, CircleCheck, Refresh, Upload, Download, CircleClose, QuestionFilled, DeleteFilled, Printer, Warning, User, Document } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import AssetFormDialog from '@/components/Assets/AssetFormDialog.vue';
-import TableLayoutToolbar from '@/components/Common/TableLayoutToolbar.vue';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 import importService, { type ImportResult } from '@/services/import.service';
 import exportService from '@/services/export.service';
 import { openPrintWindow } from '@/utils/print';
 import { assetService, type AssetQueryParams } from '@/services/asset.service';
-import { CAMPUS_OPTIONS, campusLabel } from '@/constants/campuses';
+import { CAMPUS_OPTIONS } from '@/constants/campuses';
 
 const router = useRouter();
 const route = useRoute();
@@ -1016,8 +1019,6 @@ const printListDeptIds = ref<number[]>([]);
 
 // Responsive dialog widths
 const windowWidth = ref(window.innerWidth);
-const assetTableRef = ref<any>(null);
-const assetTableLayout = useTableColumnLayout('assets', assetTableRef);
 const onResize = () => { windowWidth.value = window.innerWidth; };
 window.addEventListener('resize', onResize);
 

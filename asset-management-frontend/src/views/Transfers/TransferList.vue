@@ -82,18 +82,14 @@
         </div>
       </div>
 
-      <TableLayoutToolbar :controller="transferTableLayout" />
-
       <div class="transfer-table-wrapper responsive-table app-desktop-table">
         <el-table
-          ref="transferTableRef"
           v-loading="transferStore.loading"
           :data="transferStore.transfers"
           border
           stripe
           class="list-table"
           style="width: 100%"
-          @header-dragend="transferTableLayout.onHeaderDragend"
         >
           <el-table-column
             type="index"
@@ -324,8 +320,6 @@ import { MoreFilled, Plus, Sort } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import TransferFormDialog from '@/components/Transfers/TransferFormDialog.vue';
 import TransferDetailDialog from '@/components/Transfers/TransferDetailDialog.vue';
-import TableLayoutToolbar from '@/components/Common/TableLayoutToolbar.vue';
-import { useTableColumnLayout } from '@/composables/useTableColumnLayout';
 import DepartmentTreeSelect from '@/components/Departments/DepartmentTreeSelect.vue';
 import SignaturePad from '@/components/Common/SignaturePad.vue';
 import { useSignature } from '@/composables/useSignature';
@@ -346,9 +340,6 @@ const {
 
 // Sử dụng composable mới với caching tự động
 useDepartments();
-
-const transferTableRef = ref<any>(null);
-const transferTableLayout = useTableColumnLayout('transfers', transferTableRef);
 
 const searchQuery = ref('');
 const filterStatus = ref('');
