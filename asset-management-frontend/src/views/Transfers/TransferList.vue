@@ -93,23 +93,23 @@
         >
           <el-table-column
             type="index"
-            width="50"
+            width="64"
             label="#"
             class-name="app-index-cell"
           />
           <el-table-column
             prop="asset.asset_code"
             :label="$t('transfers.assetCode')"
-            width="90"
+            width="150"
           />
           <el-table-column
             prop="asset.name"
             :label="$t('transfers.assetName')"
-            min-width="190"
+            min-width="240"
           />
           <el-table-column
             :label="$t('transfers.fromDepartment')"
-            width="100"
+            min-width="180"
           >
             <template #default="{ row }">
               {{ row.from_department?.name || '-' }}
@@ -117,7 +117,7 @@
           </el-table-column>
           <el-table-column
             :label="$t('transfers.toDepartment')"
-            width="100"
+            min-width="180"
           >
             <template #default="{ row }">
               {{ row.to_department?.name || '-' }}
@@ -126,12 +126,12 @@
           <el-table-column
             prop="requester.fullname"
             :label="$t('transfers.requestedBy')"
-            width="100"
+            min-width="160"
           />
           <el-table-column
             prop="status"
             :label="$t('common.status')"
-            width="145"
+            width="160"
           >
             <template #default="{ row }">
               <el-tag :type="getStatusType(row.status)">
@@ -142,7 +142,7 @@
           <el-table-column
             prop="transfer_date"
             :label="$t('transfers.transferDate')"
-            width="120"
+            width="130"
           >
             <template #default="{ row }">
               {{ formatDate(row.transfer_date) }}
@@ -150,7 +150,7 @@
           </el-table-column>
           <el-table-column
             :label="$t('common.actions')"
-            width="130"
+            width="160"
             fixed="right"
           >
             <template #default="{ row }">

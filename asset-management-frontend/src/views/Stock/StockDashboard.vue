@@ -73,7 +73,7 @@
           <el-table-column
             prop="code"
             label="Mã"
-            width="120"
+            width="150"
           />
           <el-table-column
             prop="name"
@@ -94,13 +94,13 @@
           <el-table-column
             prop="min_stock"
             label="Tồn tối thiểu"
-            width="120"
+            width="140"
             align="right"
           />
           <el-table-column
             prop="on_hand"
             label="Tồn kho"
-            width="120"
+            width="130"
             align="right"
           >
             <template #default="{ row }">

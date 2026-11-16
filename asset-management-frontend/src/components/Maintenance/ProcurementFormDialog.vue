@@ -134,7 +134,7 @@
         <el-table-column
           type="index"
           label="TT"
-          width="55"
+          width="64"
           align="center"
           class-name="app-index-cell"
         />

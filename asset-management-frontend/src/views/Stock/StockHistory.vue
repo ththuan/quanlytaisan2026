@@ -120,7 +120,7 @@
           <el-table-column
             prop="quantity"
             label="SL"
-            width="65"
+            width="80"
             align="right"
           />
           <el-table-column

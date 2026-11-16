@@ -194,13 +194,13 @@
             <el-table-column
               prop="round_year"
               label="Năm"
-              width="80"
+              width="90"
               align="center"
             />
             <el-table-column
               prop="round_name"
               label="Tên đợt kiểm kê"
-              min-width="200"
+              min-width="260"
             />
             <el-table-column
               label="Thời gian"
@@ -226,7 +226,7 @@
             <el-table-column
               prop="status"
               label="Trạng thái"
-              width="120"
+              width="160"
               align="center"
             >
               <template #default="{ row }">
@@ -345,11 +345,11 @@
             <el-table-column
               prop="department.name"
               label="Đơn vị"
-              min-width="150"
+              min-width="220"
             />
             <el-table-column
               label="Tổng TS"
-              width="80"
+              width="100"
               align="center"
             >
               <template #default="{ row }">
@@ -358,7 +358,7 @@
             </el-table-column>
             <el-table-column
               label="Khớp"
-              width="70"
+              width="90"
               align="center"
             >
               <template #default="{ row }">
@@ -367,7 +367,7 @@
             </el-table-column>
             <el-table-column
               label="Thiếu"
-              width="70"
+              width="90"
               align="center"
             >
               <template #default="{ row }">
@@ -376,7 +376,7 @@
             </el-table-column>
             <el-table-column
               label="Hỏng"
-              width="70"
+              width="90"
               align="center"
             >
               <template #default="{ row }">
@@ -386,7 +386,7 @@
             <el-table-column
               prop="status"
               label="Trạng thái"
-              width="130"
+              width="160"
               align="center"
             >
               <template #default="{ row }">

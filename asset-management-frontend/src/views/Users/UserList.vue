@@ -125,22 +125,22 @@
           <el-table-column
             prop="username"
             :label="$t('users.username')"
-            width="130"
+            width="150"
           />
           <el-table-column
             prop="fullname"
             :label="$t('users.fullname')"
-            min-width="160"
+            min-width="200"
           />
           <el-table-column
             prop="job_title"
             label="Chức danh"
-            width="125"
+            min-width="160"
           />
           <el-table-column
             prop="role"
             :label="$t('users.role')"
-            width="130"
+            width="150"
           >
             <template #default="{ row }">
               <el-tooltip
@@ -156,7 +156,7 @@
           </el-table-column>
           <el-table-column
             label="Phân quyền"
-            width="140"
+            width="150"
           >
             <template #default="{ row }">
               <el-tag
@@ -184,7 +184,7 @@
           </el-table-column>
           <el-table-column
             :label="$t('common.status')"
-            width="140"
+            width="150"
           >
             <template #default="{ row }">
               <el-tag :type="row.is_active === true ? 'success' : 'danger'">

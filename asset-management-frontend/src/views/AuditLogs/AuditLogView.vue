@@ -168,13 +168,13 @@
         >
           <el-table-column
             type="index"
-            width="55"
+            width="64"
             label="#"
             class-name="app-index-cell"
           />
           <el-table-column
             label="Thời gian"
-            width="135"
+            width="160"
           >
             <template #default="{ row }">
               {{ formatDate(row.created_at) }}
@@ -182,7 +182,7 @@
           </el-table-column>
           <el-table-column
             label="Người thực hiện"
-            width="140"
+            min-width="180"
           >
             <template #default="{ row }">
               <div>{{ row.user?.fullname || row.user?.username || `User #${row.user_id}` }}</div>
@@ -196,7 +196,7 @@
           </el-table-column>
           <el-table-column
             label="Hành động"
-            width="80"
+            width="120"
           >
             <template #default="{ row }">
               <el-tag
@@ -210,7 +210,7 @@
           <el-table-column
             prop="table_name"
             label="Đối tượng"
-            width="125"
+            width="150"
           >
             <template #default="{ row }">
               {{ tableLabel(row.table_name) }}
@@ -219,11 +219,11 @@
           <el-table-column
             prop="record_id"
             label="ID bản ghi"
-            width="90"
+            width="110"
           />
           <el-table-column
             label="Mô tả"
-            min-width="220"
+            min-width="280"
           >
             <template #default="{ row }">
               <span class="log-description">{{ row.description || row.new_value || '—' }}</span>
@@ -232,11 +232,11 @@
           <el-table-column
             prop="ip_address"
             label="IP"
-            width="100"
+            width="140"
           />
           <el-table-column
             label="Chi tiết"
-            width="70"
+            width="90"
             fixed="right"
           >
             <template #default="{ row }">

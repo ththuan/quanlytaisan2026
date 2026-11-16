@@ -407,14 +407,14 @@
           <el-table-column
             type="index"
             label="STT"
-            width="65"
+            width="64"
             align="center"
             class-name="app-index-cell"
           />
           <el-table-column
             prop="name"
             :label="$t('assets.assetName')"
-            min-width="220"
+            min-width="300"
           >
             <template #default="{ row }">
               <div class="asset-name-cell">
@@ -429,7 +429,7 @@
           </el-table-column>
           <el-table-column
             label="SL / ĐVT"
-            width="80"
+            width="110"
             align="center"
           >
             <template #default="{ row }">
@@ -439,7 +439,7 @@
           <el-table-column
             prop="year_in_use"
             label="Năm SD"
-            width="90"
+            width="100"
             align="center"
             class-name="app-index-cell"
           >
@@ -450,7 +450,7 @@
           <el-table-column
             prop="purchase_price"
             label="Nguyên giá"
-            width="135"
+            width="150"
             align="right"
           >
             <template #default="{ row }">
@@ -460,7 +460,7 @@
           <el-table-column
             prop="current_value"
             label="Giá trị còn lại"
-            width="135"
+            width="160"
             align="right"
           >
             <template #default="{ row }">
@@ -470,7 +470,7 @@
           <el-table-column
             prop="status"
             :label="$t('common.status')"
-            width="150"
+            width="160"
           >
             <template #default="{ row }">
               <el-tag
@@ -484,7 +484,7 @@
           </el-table-column>
           <el-table-column
             label="Người sử dụng"
-            width="150"
+            min-width="180"
           >
             <template #default="{ row }">
               <div
@@ -499,7 +499,7 @@
                 size="small"
                 type="info"
               >
-                Đang chung
+                Dùng chung
               </el-tag>
             </template>
           </el-table-column>

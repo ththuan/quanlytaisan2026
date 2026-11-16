@@ -204,13 +204,13 @@
             <el-table-column
               type="index"
               label="STT"
-              width="55"
+              width="64"
               align="center"
               class-name="app-index-cell inventory-index-cell"
             />
             <el-table-column
               label="Đơn vị"
-              min-width="190"
+              min-width="240"
             >
               <template #default="scope">
                 {{ scope.row.department?.name || '—' }}
@@ -218,7 +218,7 @@
             </el-table-column>
             <el-table-column
               label="Tổng TS"
-              width="90"
+              width="100"
               align="center"
             >
               <template #default="scope">
@@ -227,7 +227,7 @@
             </el-table-column>
             <el-table-column
               label="Khớp"
-              width="90"
+              width="100"
               align="center"
             >
               <template #default="scope">
@@ -236,7 +236,7 @@
             </el-table-column>
             <el-table-column
               label="Thiếu/Mất"
-              width="110"
+              width="120"
               align="center"
             >
               <template #default="scope">
@@ -245,7 +245,7 @@
             </el-table-column>
             <el-table-column
               label="Cần sửa"
-              width="100"
+              width="110"
               align="center"
             >
               <template #default="scope">
@@ -254,7 +254,7 @@
             </el-table-column>
             <el-table-column
               label="Hỏng/Thanh lý"
-              width="110"
+              width="140"
               align="center"
             >
               <template #default="scope">
@@ -263,7 +263,7 @@
             </el-table-column>
             <el-table-column
               label="Trạng thái"
-              width="140"
+              width="160"
               align="center"
             >
               <template #default="scope">

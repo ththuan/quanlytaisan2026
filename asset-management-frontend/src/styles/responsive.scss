@@ -197,6 +197,25 @@ body {
     white-space: normal !important;
     text-overflow: clip !important;
   }
+
+  /* Chuẩn desktop: tag trạng thái luôn trên một dòng. Không áp dụng cho PWA/tablet (html.app-overlay). */
+  html:not(.app-overlay) .el-main .el-table .el-tag {
+    min-height: 26px;
+    padding: 2px 10px;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    flex-shrink: 0;
+  }
+
+  html:not(.app-overlay) .el-main .el-table .el-tag .el-tag__content {
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+  }
+
+  html:not(.app-overlay) .el-main .el-table td .cell:has(> .el-tag:only-child),
+  html:not(.app-overlay) .el-main .el-table td .cell:has(> .price-value) {
+    white-space: nowrap !important;
+  }
 }
 
 .responsive-table {

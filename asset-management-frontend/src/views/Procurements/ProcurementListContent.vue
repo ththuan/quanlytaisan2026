@@ -56,7 +56,7 @@
           <el-table-column
             prop="category_code"
             label="Mã loại"
-            width="120"
+            width="150"
           />
           <el-table-column
             prop="category"
@@ -66,17 +66,17 @@
           <el-table-column
             prop="name"
             label="Tên tài sản"
-            min-width="220"
+            min-width="280"
           />
           <el-table-column
             prop="unit"
             label="Đơn vị"
-            width="120"
+            width="100"
           />
           <el-table-column
             prop="total_quantity"
             label="Tổng SL"
-            width="120"
+            width="110"
           />
           <el-table-column
             prop="total_amount"
@@ -184,16 +184,16 @@
           <el-table-column
             prop="code"
             label="Mã"
-            width="120"
+            width="150"
           />
           <el-table-column
             prop="title"
             label="Nội dung"
-            min-width="240"
+            min-width="280"
           />
           <el-table-column
             label="Cấp phát (đơn vị)"
-            width="130"
+            min-width="200"
           >
             <template #default="scope">
               {{ scope.row.receiving_department?.name || '—' }}
@@ -209,7 +209,7 @@
           </el-table-column>
           <el-table-column
             label="Trạng thái"
-            min-width="140"
+            width="160"
           >
             <template #default="scope">
               <el-tag :type="statusTagType(scope.row.status)">

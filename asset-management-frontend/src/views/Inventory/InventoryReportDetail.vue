@@ -314,14 +314,14 @@
             <el-table-column
               type="index"
               label="STT"
-              width="75"
+              width="64"
               align="center"
               class-name="app-index-cell inventory-index-cell"
               :index="detailIndexMethod"
             />
             <el-table-column
               label="Tài sản"
-              min-width="200"
+              min-width="280"
             >
               <template #default="{ row }">
                 <div class="detail-asset-cell">
@@ -334,7 +334,7 @@
             </el-table-column>
             <el-table-column
               label="Số lượng"
-              width="130"
+              width="140"
               align="center"
             >
               <template #default="{ row }">
@@ -347,7 +347,7 @@
             </el-table-column>
             <el-table-column
               label="Giá trị"
-              width="150"
+              width="160"
               align="right"
             >
               <template #default="{ row }">
@@ -359,7 +359,7 @@
             </el-table-column>
             <el-table-column
               label="Tình trạng"
-              width="130"
+              width="150"
               align="center"
             >
               <template #default="{ row }">
@@ -373,7 +373,7 @@
             </el-table-column>
             <el-table-column
               label="Kết quả"
-              width="100"
+              width="130"
               align="center"
             >
               <template #default="{ row }">
@@ -387,7 +387,7 @@
             </el-table-column>
             <el-table-column
               label="Ảnh"
-              width="85"
+              width="110"
               align="center"
             >
               <template #default="{ row }">
@@ -417,7 +417,7 @@
             </el-table-column>
             <el-table-column
               label="Ghi chú"
-              min-width="135"
+              min-width="180"
             >
               <template #default="{ row }">
                 <span v-if="row.notes">{{ row.notes }}</span>

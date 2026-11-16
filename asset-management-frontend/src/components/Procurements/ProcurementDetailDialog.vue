@@ -207,12 +207,12 @@
           <el-table-column
             prop="asset_code_prefix"
             label="Mã prefix"
-            min-width="100"
+            min-width="140"
           />
           <el-table-column
             prop="name"
             label="Tên"
-            min-width="200"
+            min-width="240"
           />
           <el-table-column
             label="Loại tài sản"
@@ -226,13 +226,13 @@
           <el-table-column
             prop="quantity"
             label="SL"
-            width="60"
+            width="80"
             align="center"
           />
           <el-table-column
             prop="purchase_price"
             label="Đơn giá"
-            width="120"
+            width="140"
             align="right"
           >
             <template #default="{ row }">
@@ -241,7 +241,7 @@
           </el-table-column>
           <el-table-column
             label="Thành tiền"
-            width="120"
+            width="140"
             align="right"
           >
             <template #default="{ row }">
@@ -251,18 +251,18 @@
           <el-table-column
             prop="unit"
             label="Đơn vị"
-            width="60"
+            width="90"
             align="center"
           />
           <el-table-column
             prop="serial_number"
             label="Serial"
-            width="120"
+            width="150"
           />
           <el-table-column
             prop="location"
             label="Vị trí"
-            min-width="120"
+            min-width="160"
           />
         </el-table>
       </div>

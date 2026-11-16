@@ -279,7 +279,7 @@
           <el-table-column
             prop="state"
             label="Trạng thái"
-            width="120"
+            width="140"
           >
             <template #default="{ row }">
               <el-tag

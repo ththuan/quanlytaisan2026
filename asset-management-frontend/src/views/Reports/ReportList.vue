@@ -116,13 +116,13 @@
         >
           <el-table-column
             type="index"
-            width="55"
+            width="64"
             label="#"
             class-name="app-index-cell"
           />
           <el-table-column
             :label="$t('reports.department')"
-            min-width="130"
+            min-width="220"
           >
             <template #default="{ row }">
               {{ row.department?.name || '—' }}
@@ -131,32 +131,32 @@
           <el-table-column
             prop="year"
             :label="$t('reports.year')"
-            width="75"
+            width="90"
           />
           <el-table-column
             prop="total_assets"
             :label="$t('reports.totalAssets')"
-            width="85"
+            width="120"
           />
           <el-table-column
             prop="active_assets"
             :label="$t('reports.activeAssets')"
-            width="85"
+            width="120"
           />
           <el-table-column
             prop="damaged_assets"
             :label="$t('reports.damagedAssets')"
-            width="85"
+            width="120"
           />
           <el-table-column
             prop="lost_assets"
             :label="$t('reports.lostAssets')"
-            width="75"
+            width="100"
           />
           <el-table-column
             prop="total_value"
             :label="$t('reports.totalValue')"
-            width="150"
+            width="160"
           >
             <template #default="{ row }">
               {{ formatCurrency(row.total_value) }}
@@ -165,7 +165,7 @@
           <el-table-column
             prop="status"
             :label="$t('common.status')"
-            width="110"
+            width="150"
           >
             <template #default="{ row }">
               <el-tag :type="getStatusType(row.status)">
