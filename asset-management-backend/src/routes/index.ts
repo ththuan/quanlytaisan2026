@@ -26,6 +26,7 @@ import searchRoutes from './search.routes';
 import tt120ExportRoutes from './tt120Export.routes';
 import signaturesRoutes from './signatures.routes';
 import normsRoutes from './norms.routes';
+import tableLayoutRoutes from './tableLayout.routes';
 
 const router = Router();
 
@@ -57,6 +58,7 @@ router.use('/dashboard', dashboardRoutes);
 router.use('/notifications', notificationsRoutes);
 router.use('/signatures', signaturesRoutes);
 router.use('/norms', normsRoutes);
+router.use('/table-layouts', tableLayoutRoutes);
 router.use('/search', searchRoutes);
 router.use('/system-admin', systemAdminRoutes);
 router.use('/export/tt120', tt120ExportRoutes);

@@ -420,8 +420,31 @@ test('desktop: đợt kiểm kê không bẻ từ ở header Khớp/Thiếu', as
   expect(await sttCell.evaluate((el) => getComputedStyle(el).whiteSpace)).toBe('nowrap');
 });
 
-test('desktop: chỉnh và khóa bố cục cột tài sản', async ({ page }) => {
+test('desktop: chỉnh và khóa bố cục cột tài sản dùng chung', async ({ page }) => {
   await mock(page);
+
+  let serverLayout: any = null;
+  await page.route('**/api/table-layouts/assets', (route) => {
+    if (route.request().method() === 'PUT') {
+      const payload = JSON.parse(route.request().postData() || '{}');
+      serverLayout = {
+        table_key: 'assets',
+        columns: payload.columns,
+        layout_version: payload.layout_version,
+      };
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: serverLayout }),
+      });
+    }
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: serverLayout }),
+    });
+  });
+
   await page.goto('/assets');
   await page.waitForTimeout(500);
 
@@ -442,20 +465,16 @@ test('desktop: chỉnh và khóa bố cục cột tài sản', async ({ page }) 
   await page.mouse.up();
 
   await page.getByRole('button', { name: 'Lưu & khóa' }).click();
-  await expect(page.getByText('Bố cục cột đã khóa')).toBeVisible();
+  await expect(page.getByText('Bố cục cột đã khóa cho tất cả tài khoản')).toBeVisible();
   await page.waitForTimeout(250);
   const lockedWidth = Math.round((await nameHeader.boundingBox())?.width || 0);
 
-  const saved = await page.evaluate(() => {
-    const key = Object.keys(localStorage).find((item) => item.includes(':assets'));
-    return key ? localStorage.getItem(key) : null;
-  });
-  expect(saved).toBeTruthy();
-  expect(Object.keys(JSON.parse(saved || '{}')).length).toBeGreaterThan(0);
+  expect(serverLayout).toBeTruthy();
+  expect(Object.keys(serverLayout?.columns || {}).length).toBeGreaterThan(0);
 
   await page.reload();
   await page.waitForTimeout(700);
-  await expect(page.getByText('Bố cục cột đã khóa')).toBeVisible();
+  await expect(page.getByText('Bố cục cột đã khóa cho tất cả tài khoản')).toBeVisible();
   const reloadedWidth = Math.round(
     (await page.locator('.el-table__header th').filter({ hasText: 'Tên tài sản' }).first().boundingBox())?.width || 0,
   );

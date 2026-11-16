@@ -1,12 +1,21 @@
-import { nextTick, onBeforeUnmount, onMounted, ref, type Ref } from 'vue';
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  type Ref,
+} from 'vue';
+import { ElMessage } from 'element-plus';
+import { useAuthStore } from '@/stores/auth.store';
+import tableLayoutService, { type TableLayoutData } from '@/services/tableLayout.service';
 
 /**
  * Tăng số này khi thay đổi cấu trúc cột để mở khóa bố cục cũ
- * và cho phép người dùng kéo chỉnh lại.
+ * và cho phép quản trị viên kéo chỉnh lại.
  */
 export const TABLE_LAYOUT_VERSION = 1;
 
-const STORAGE_PREFIX = `qlts:table-layout:v${TABLE_LAYOUT_VERSION}:`;
 const MIN_COLUMN_WIDTH = 40;
 
 type ColumnLike = {
@@ -30,14 +39,19 @@ export function useTableColumnLayout(
   tableKey: string,
   tableRef: Ref<any>,
 ) {
-  const storageKey = `${STORAGE_PREFIX}${tableKey}`;
+  const authStore = useAuthStore();
   const isDesktop = ref(false);
   const isEditing = ref(false);
   const isLocked = ref(false);
+  const isLoading = ref(true);
+  const isSaving = ref(false);
+  const savedLayout = ref<TableLayoutData | null>(null);
   const originalWidths = new Map<string, number>();
   let resizeObserver: ResizeObserver | null = null;
   let lastContainerWidth = 0;
   let applyTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const canManage = computed(() => authStore.isAdmin);
 
   const getColumns = (): ColumnLike[] =>
     tableRef.value?.store?.states?.columns?.value || [];
@@ -47,18 +61,6 @@ export function useTableColumnLayout(
 
   const getTableWidth = (): number =>
     getTableElement()?.clientWidth || 0;
-
-  const readSavedLayout = (): SavedLayout | null => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      if (!parsed || typeof parsed !== 'object') return null;
-      return parsed as SavedLayout;
-    } catch {
-      return null;
-    }
-  };
 
   const setColumnsResizable = (resizable: boolean) => {
     getColumns().forEach((column) => {
@@ -78,8 +80,7 @@ export function useTableColumnLayout(
     await nextTick();
     if (!isDesktop.value || isEditing.value) return;
 
-    const saved = readSavedLayout();
-    if (!saved) {
+    if (!savedLayout.value) {
       isLocked.value = false;
       setColumnsResizable(false);
       return;
@@ -90,7 +91,7 @@ export function useTableColumnLayout(
     if (!width || !columns.length) return;
 
     columns.forEach((column, index) => {
-      const ratio = clampRatio(saved[columnKey(column, index)]);
+      const ratio = clampRatio(savedLayout.value?.columns?.[columnKey(column, index)] || 0);
       if (!ratio) return;
       const nextWidth = Math.max(
         MIN_COLUMN_WIDTH,
@@ -114,8 +115,29 @@ export function useTableColumnLayout(
     }, 60);
   };
 
+  const loadLayout = async (): Promise<void> => {
+    isLoading.value = true;
+    try {
+      const response: any = await tableLayoutService.get(tableKey);
+      const data = response?.data;
+      if (
+        data?.columns &&
+        Number(data.layout_version) === TABLE_LAYOUT_VERSION
+      ) {
+        savedLayout.value = data as TableLayoutData;
+      } else {
+        savedLayout.value = null;
+      }
+    } catch {
+      savedLayout.value = null;
+    } finally {
+      isLoading.value = false;
+      await applySavedLayout();
+    }
+  };
+
   const startEditing = async (): Promise<void> => {
-    if (!isDesktop.value || isLocked.value) return;
+    if (!isDesktop.value || isLocked.value || !canManage.value) return;
 
     originalWidths.clear();
     getColumns().forEach((column, index) => {
@@ -144,12 +166,12 @@ export function useTableColumnLayout(
   const cancelEditing = async (): Promise<void> => {
     isEditing.value = false;
     restoreOriginalWidths();
-    isLocked.value = Boolean(readSavedLayout());
+    isLocked.value = Boolean(savedLayout.value);
     originalWidths.clear();
   };
 
   const saveAndLock = async (): Promise<void> => {
-    if (!isDesktop.value || !isEditing.value) return;
+    if (!isDesktop.value || !isEditing.value || !canManage.value) return;
 
     const width = getTableWidth();
     const columns = getColumns();
@@ -167,11 +189,27 @@ export function useTableColumnLayout(
       if (item.width > 0) saved[item.key] = item.width / total;
     });
 
-    localStorage.setItem(storageKey, JSON.stringify(saved));
-    isEditing.value = false;
-    isLocked.value = true;
-    originalWidths.clear();
-    await applySavedLayout();
+    isSaving.value = true;
+    try {
+      const response: any = await tableLayoutService.save(tableKey, {
+        columns: saved,
+        layout_version: TABLE_LAYOUT_VERSION,
+      });
+      savedLayout.value = response?.data || {
+        table_key: tableKey,
+        columns: saved,
+        layout_version: TABLE_LAYOUT_VERSION,
+      };
+      isEditing.value = false;
+      isLocked.value = true;
+      originalWidths.clear();
+      await applySavedLayout();
+      ElMessage.success('Đã lưu và khóa bố cục cột cho tất cả tài khoản');
+    } catch (error: any) {
+      ElMessage.error(error?.response?.data?.message || 'Không lưu được bố cục cột');
+    } finally {
+      isSaving.value = false;
+    }
   };
 
   const onHeaderDragend = (): void => {
@@ -185,7 +223,7 @@ export function useTableColumnLayout(
       setColumnsResizable(false);
       return;
     }
-    if (!isEditing.value && readSavedLayout()) {
+    if (!isEditing.value && savedLayout.value) {
       scheduleApply();
     }
   };
@@ -194,7 +232,7 @@ export function useTableColumnLayout(
     await nextTick();
     updateDesktopState();
     setColumnsResizable(false);
-    await applySavedLayout();
+    await loadLayout();
     window.addEventListener('resize', onWindowResize);
 
     const el = getTableElement();
@@ -203,7 +241,7 @@ export function useTableColumnLayout(
         const width = Math.round(entries[0]?.contentRect?.width || 0);
         if (!width || width === lastContainerWidth) return;
         lastContainerWidth = width;
-        if (!isEditing.value && readSavedLayout()) scheduleApply();
+        if (!isEditing.value && savedLayout.value) scheduleApply();
       });
       resizeObserver.observe(el);
     }
@@ -220,6 +258,9 @@ export function useTableColumnLayout(
     isDesktop,
     isEditing,
     isLocked,
+    isLoading,
+    isSaving,
+    canManage,
     startEditing,
     cancelEditing,
     saveAndLock,

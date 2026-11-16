@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="controller.isDesktop.value"
+    v-if="controller.isDesktop.value && controller.canManage.value"
     class="table-layout-toolbar"
   >
     <template v-if="controller.isEditing.value">
@@ -9,6 +9,7 @@
       </span>
       <el-button
         size="small"
+        :disabled="controller.isSaving.value"
         @click="controller.cancelEditing"
       >
         Hủy
@@ -16,6 +17,7 @@
       <el-button
         size="small"
         type="primary"
+        :loading="controller.isSaving.value"
         @click="controller.saveAndLock"
       >
         Lưu &amp; khóa
@@ -27,13 +29,14 @@
       class="table-layout-toolbar__locked"
     >
       <el-icon><Lock /></el-icon>
-      <span>Bố cục cột đã khóa</span>
+      <span>Bố cục cột đã khóa cho tất cả tài khoản</span>
     </div>
 
     <el-button
       v-else
       size="small"
       :icon="Grid"
+      :loading="controller.isLoading.value"
       @click="controller.startEditing"
     >
       Chỉnh bố cục cột
@@ -49,6 +52,9 @@ defineProps<{
     isDesktop: { value: boolean };
     isEditing: { value: boolean };
     isLocked: { value: boolean };
+    isLoading: { value: boolean };
+    isSaving: { value: boolean };
+    canManage: { value: boolean };
     startEditing: () => void | Promise<void>;
     cancelEditing: () => void | Promise<void>;
     saveAndLock: () => void | Promise<void>;

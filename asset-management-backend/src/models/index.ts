@@ -25,6 +25,7 @@ import EquipmentNorm from './EquipmentNorm';
 import NormWarning from './NormWarning';
 import AssetAssignment from './AssetAssignment';
 import PushSubscription from './PushSubscription';
+import TableLayout from './TableLayout';
 
 import StockItem from './StockItem';
 import StockReceipt from './StockReceipt';
@@ -65,6 +66,8 @@ UserPermission.belongsTo(User, { foreignKey: 'granted_by', as: 'grantedBy' });
 
 RecordLock.belongsTo(User, { foreignKey: 'locked_by', as: 'lockedBy' });
 User.hasMany(RecordLock, { foreignKey: 'locked_by', as: 'record_locks' });
+
+TableLayout.belongsTo(User, { foreignKey: 'updated_by', as: 'updatedBy' });
 
 Department.belongsTo(User, {
   foreignKey: 'manager_id',
@@ -590,6 +593,7 @@ export {
   NormWarning,
   AssetAssignment,
   PushSubscription,
+  TableLayout,
 };
 
 export default {
@@ -625,4 +629,5 @@ export default {
   NormWarning,
   AssetAssignment,
   PushSubscription,
+  TableLayout,
 };
