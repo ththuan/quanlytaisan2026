@@ -7,7 +7,7 @@
             <el-icon class="title-icon">
               <Tools />
             </el-icon>
-            Sửa chữa / Bảo trì thiết bị
+            Thiết bị
           </h1>
           <p class="page-subtitle">
             Theo dõi yêu cầu sửa chữa và bảo trì thiết bị

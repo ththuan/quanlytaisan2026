@@ -1,7 +1,7 @@
 export default {
   // Fallback khi meta.titleKey bị cache/trùng chuỗi tiếng Việt (breadcrumb)
   'Đề nghị mua sắm': 'Đề nghị mua sắm',
-  'Theo dõi sửa chữa': 'Theo dõi sửa chữa',
+  'Thiết bị': 'Thiết bị',
 
   // Common
   common: {
@@ -65,7 +65,7 @@ export default {
     reports: 'Báo cáo thường niên',
     maintenance: 'Mua sắm / Sửa chữa',
     purchaseRequests: 'Đề nghị mua sắm',
-    repairTracking: 'Theo dõi sửa chữa',
+    repairTracking: 'Thiết bị',
     construction: 'Xây dựng',
     procurements: 'Tăng/Giảm tài sản',
     transfers: 'Điều chuyển',
