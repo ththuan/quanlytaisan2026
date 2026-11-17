@@ -77,7 +77,7 @@
           />
           <el-table-column
             :label="$t('common.status')"
-            min-width="220"
+            width="180"
           >
             <template #default="scope">
               <el-tag :type="statusTagType(scope.row.status)">
@@ -87,7 +87,7 @@
           </el-table-column>
           <el-table-column
             :label="$t('common.createdAt')"
-            min-width="260"
+            width="200"
           >
             <template #default="scope">
               <span>{{ formatDateTime(scope.row.created_at || scope.row.createdAt) }}</span>
@@ -95,7 +95,7 @@
           </el-table-column>
           <el-table-column
             :label="$t('common.actions')"
-            min-width="180"
+            width="140"
             align="center"
             header-align="center"
           >

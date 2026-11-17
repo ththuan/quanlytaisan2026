@@ -140,7 +140,7 @@
           <el-table-column
             prop="role"
             :label="$t('users.role')"
-            width="130"
+            width="140"
           >
             <template #default="{ row }">
               <el-tooltip
@@ -156,7 +156,7 @@
           </el-table-column>
           <el-table-column
             label="Phân quyền"
-            width="130"
+            width="150"
           >
             <template #default="{ row }">
               <el-tag
@@ -379,12 +379,12 @@
               <el-table-column
                 prop="row"
                 label="Dòng"
-                width="60"
+                width="80"
               />
               <el-table-column
                 prop="field"
                 label="Trường"
-                width="100"
+                width="140"
               />
               <el-table-column
                 prop="message"

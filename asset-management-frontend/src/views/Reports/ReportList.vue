@@ -116,13 +116,13 @@
         >
           <el-table-column
             type="index"
-            width="64"
+            width="56"
             label="#"
             class-name="app-index-cell"
           />
           <el-table-column
             :label="$t('reports.department')"
-            min-width="220"
+            min-width="160"
           >
             <template #default="{ row }">
               {{ row.department?.name || '—' }}
@@ -131,32 +131,32 @@
           <el-table-column
             prop="year"
             :label="$t('reports.year')"
-            width="90"
+            width="70"
           />
           <el-table-column
             prop="total_assets"
             :label="$t('reports.totalAssets')"
-            width="120"
+            width="90"
           />
           <el-table-column
             prop="active_assets"
             :label="$t('reports.activeAssets')"
-            width="120"
+            width="90"
           />
           <el-table-column
             prop="damaged_assets"
             :label="$t('reports.damagedAssets')"
-            width="120"
+            width="90"
           />
           <el-table-column
             prop="lost_assets"
             :label="$t('reports.lostAssets')"
-            width="100"
+            width="80"
           />
           <el-table-column
             prop="total_value"
             :label="$t('reports.totalValue')"
-            width="160"
+            width="130"
           >
             <template #default="{ row }">
               {{ formatCurrency(row.total_value) }}
@@ -165,7 +165,7 @@
           <el-table-column
             prop="status"
             :label="$t('common.status')"
-            width="150"
+            width="120"
           >
             <template #default="{ row }">
               <el-tag :type="getStatusType(row.status)">
@@ -175,7 +175,7 @@
           </el-table-column>
           <el-table-column
             :label="$t('common.actions')"
-            width="160"
+            width="140"
           >
             <template #default="{ row }">
               <el-button

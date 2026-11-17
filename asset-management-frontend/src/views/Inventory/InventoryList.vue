@@ -200,7 +200,7 @@
             <el-table-column
               prop="round_name"
               label="Tên đợt kiểm kê"
-              min-width="260"
+              min-width="220"
             />
             <el-table-column
               label="Thời gian"
@@ -345,11 +345,11 @@
             <el-table-column
               prop="department.name"
               label="Đơn vị"
-              min-width="220"
+              min-width="160"
             />
             <el-table-column
               label="Tổng TS"
-              width="100"
+              width="80"
               align="center"
             >
               <template #default="{ row }">
@@ -358,7 +358,7 @@
             </el-table-column>
             <el-table-column
               label="Khớp"
-              width="90"
+              width="80"
               align="center"
             >
               <template #default="{ row }">
@@ -367,7 +367,7 @@
             </el-table-column>
             <el-table-column
               label="Thiếu"
-              width="90"
+              width="80"
               align="center"
             >
               <template #default="{ row }">
@@ -376,7 +376,7 @@
             </el-table-column>
             <el-table-column
               label="Hỏng"
-              width="90"
+              width="80"
               align="center"
             >
               <template #default="{ row }">
@@ -386,7 +386,7 @@
             <el-table-column
               prop="status"
               label="Trạng thái"
-              width="160"
+              width="140"
               align="center"
             >
               <template #default="{ row }">
@@ -410,7 +410,7 @@
             <el-table-column
               v-if="isAdminOrDirector"
               label="Thông tin từ chối"
-              width="200"
+              width="160"
             >
               <template #default="{ row }">
                 <div v-if="row.status === 'rejected_by_head' || row.status === 'rejected_by_admin'">

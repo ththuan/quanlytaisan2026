@@ -56,11 +56,11 @@
             <el-table-column
               prop="equipment_name"
               label="Máy móc, thiết bị"
-              min-width="280"
+              min-width="220"
             />
             <el-table-column
               label="Phạm vi"
-              width="130"
+              width="110"
             >
               <template #default="{ row }">
                 {{ scopeLabel(row.scope) }}
@@ -69,17 +69,17 @@
             <el-table-column
               prop="position_group"
               label="Nhóm chức danh"
-              min-width="180"
+              min-width="150"
             />
             <el-table-column
               prop="unit"
               label="ĐVT"
-              width="90"
+              width="70"
               align="center"
             />
             <el-table-column
               label="SL tối đa"
-              width="100"
+              width="90"
               align="center"
             >
               <template #default="{ row }">
@@ -88,7 +88,7 @@
             </el-table-column>
             <el-table-column
               label="Giá tối đa (triệu)"
-              width="160"
+              width="120"
               align="right"
             >
               <template #default="{ row }">
@@ -97,7 +97,7 @@
             </el-table-column>
             <el-table-column
               label="Hiệu lực"
-              width="150"
+              width="140"
               align="center"
             >
               <template #default="{ row }">
@@ -112,7 +112,7 @@
             <el-table-column
               v-if="canEditNorms"
               label="Thao tác"
-              width="110"
+              width="100"
               align="center"
             >
               <template #default="{ row }">
@@ -164,7 +164,7 @@
           >
             <el-table-column
               label="Thời gian"
-              width="170"
+              width="150"
             >
               <template #default="{ row }">
                 {{ formatDateTime(row.created_at) }}
@@ -172,7 +172,7 @@
             </el-table-column>
             <el-table-column
               label="Đơn vị"
-              min-width="180"
+              min-width="150"
             >
               <template #default="{ row }">
                 {{ row.department?.name || '-' }}
@@ -180,7 +180,7 @@
             </el-table-column>
             <el-table-column
               label="Tài sản"
-              min-width="220"
+              min-width="170"
             >
               <template #default="{ row }">
                 <span v-if="row.asset_code">{{ row.asset_code }} — </span>{{ row.asset_name || '-' }}
@@ -188,7 +188,7 @@
             </el-table-column>
             <el-table-column
               label="Loại"
-              width="110"
+              width="130"
               align="center"
             >
               <template #default="{ row }">
@@ -203,7 +203,7 @@
             <el-table-column
               prop="message"
               label="Nội dung"
-              min-width="320"
+              min-width="180"
             />
             <el-table-column
               label="Trạng thái"

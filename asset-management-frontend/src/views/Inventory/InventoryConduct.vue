@@ -866,7 +866,7 @@
           <el-table-column
             type="index"
             label="STT"
-            width="64"
+            width="56"
             align="center"
             class-name="app-index-cell"
             :index="assetIndexMethod"
@@ -874,17 +874,17 @@
           <el-table-column
             prop="asset_code"
             label="Mã tài sản"
-            width="150"
+            width="120"
           />
           <el-table-column
             prop="category_code"
             label="Mã loại TS"
-            width="120"
+            width="100"
           />
           <el-table-column
             prop="name"
             label="Tên tài sản"
-            min-width="280"
+            min-width="200"
           >
             <template #default="{ row }">
               {{ row.name }}
@@ -901,7 +901,7 @@
           <el-table-column
             prop="unit"
             label="ĐVT"
-            width="130"
+            width="110"
             align="center"
           >
             <template #default="{ row }">
@@ -918,7 +918,7 @@
           </el-table-column>
           <el-table-column
             label="SL sổ sách"
-            width="110"
+            width="90"
             align="center"
           >
             <template #default="{ row }">
@@ -927,7 +927,7 @@
           </el-table-column>
           <el-table-column
             label="SL thực tế"
-            width="110"
+            width="90"
             align="center"
           >
             <template #default="{ row }">
@@ -945,7 +945,7 @@
           </el-table-column>
           <el-table-column
             label="Chênh lệch"
-            width="110"
+            width="90"
             align="center"
           >
             <template #default="{ row }">
@@ -963,7 +963,7 @@
           </el-table-column>
           <el-table-column
             label="Nguyên giá (đồng)"
-            width="170"
+            width="130"
             align="right"
           >
             <template #default="{ row }">
@@ -972,7 +972,7 @@
           </el-table-column>
           <el-table-column
             label="Giá trị còn lại (đồng)"
-            width="190"
+            width="140"
             align="right"
           >
             <template #default="{ row }">
@@ -981,7 +981,7 @@
           </el-table-column>
           <el-table-column
             label="Tình trạng"
-            width="150"
+            width="120"
             align="center"
           >
             <template #default="{ row }">
@@ -1000,7 +1000,7 @@
           </el-table-column>
           <el-table-column
             label="Kết quả"
-            width="150"
+            width="120"
             align="center"
           >
             <template #default="{ row }">
@@ -1330,7 +1330,7 @@
           </el-table-column>
           <el-table-column
             label="Kết quả"
-            width="150"
+            width="110"
             align="center"
           >
             <template #default="{ row }">

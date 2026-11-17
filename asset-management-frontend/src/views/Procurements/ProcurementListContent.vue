@@ -56,17 +56,17 @@
           <el-table-column
             prop="category_code"
             label="Mã loại"
-            width="150"
+            width="130"
           />
           <el-table-column
             prop="category"
             label="Loại tài sản"
-            min-width="260"
+            min-width="200"
           />
           <el-table-column
             prop="name"
             label="Tên tài sản"
-            min-width="280"
+            min-width="240"
           />
           <el-table-column
             prop="unit"

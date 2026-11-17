@@ -74,13 +74,13 @@
       >
         <el-table-column
           type="index"
-          width="64"
+          width="56"
           label="#"
           class-name="app-index-cell"
         />
         <el-table-column
           label="Mã tài sản"
-          width="150"
+          width="120"
         >
           <template #default="{ row }">
             {{ row.asset?.asset_code || '-' }}
@@ -88,7 +88,7 @@
         </el-table-column>
         <el-table-column
           label="Tên tài sản"
-          min-width="240"
+          min-width="170"
         >
           <template #default="{ row }">
             {{ row.asset?.name || '-' }}
@@ -105,7 +105,7 @@
         </el-table-column>
         <el-table-column
           label="Nguyên giá"
-          width="150"
+          width="120"
           align="right"
         >
           <template #default="{ row }">
@@ -114,7 +114,7 @@
         </el-table-column>
         <el-table-column
           label="Chi phí dự kiến"
-          width="160"
+          width="120"
           align="right"
         >
           <template #default="{ row }">
@@ -123,7 +123,7 @@
         </el-table-column>
         <el-table-column
           label="Tỷ lệ"
-          width="90"
+          width="70"
           align="center"
         >
           <template #default="{ row }">
@@ -139,12 +139,12 @@
         <el-table-column
           prop="department.name"
           label="Đơn vị"
-          min-width="180"
+          min-width="110"
         />
         <el-table-column
           prop="status"
           label="Trạng thái"
-          width="160"
+          width="130"
         >
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)">
@@ -154,7 +154,7 @@
         </el-table-column>
         <el-table-column
           label="Thao tác"
-          width="150"
+          width="130"
         >
           <template #default="{ row }">
             <div class="maintenance-actions">

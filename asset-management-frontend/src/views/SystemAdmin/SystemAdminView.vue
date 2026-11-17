@@ -521,7 +521,7 @@
           <el-table-column
             prop="size"
             label="Kích thước"
-            width="120"
+            width="130"
           />
           <el-table-column
             prop="created"
@@ -529,7 +529,7 @@
             width="180"
           />
           <el-table-column
-            label="Thạo tác"
+            label="Thao tác"
             width="220"
             fixed="right"
           >

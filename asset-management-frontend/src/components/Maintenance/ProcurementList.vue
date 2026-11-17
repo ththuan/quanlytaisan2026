@@ -74,31 +74,31 @@
       >
         <el-table-column
           type="index"
-          width="64"
+          width="56"
           label="TT"
           class-name="app-index-cell"
         />
         <el-table-column
           prop="device_name"
           :label="$t('maintenance.procurement.deviceName')"
-          min-width="260"
+          min-width="180"
         />
         <el-table-column
           prop="quantity"
           :label="$t('maintenance.procurement.quantity')"
-          width="100"
+          width="70"
           align="center"
         />
         <el-table-column
           prop="unit"
           :label="$t('maintenance.procurement.unit')"
-          width="100"
+          width="80"
           align="center"
         />
         <el-table-column
           prop="unit_price"
           :label="$t('maintenance.procurement.unitPrice')"
-          width="160"
+          width="120"
           align="right"
         >
           <template #default="{ row }">
@@ -108,7 +108,7 @@
         <el-table-column
           prop="total_price"
           :label="$t('maintenance.procurement.totalPrice')"
-          width="160"
+          width="120"
           align="right"
         >
           <template #default="{ row }">
@@ -118,12 +118,12 @@
         <el-table-column
           prop="department.name"
           :label="$t('maintenance.procurement.directUser')"
-          min-width="200"
+          min-width="130"
         />
         <el-table-column
           prop="status"
           :label="$t('common.status')"
-          width="160"
+          width="130"
         >
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)">
@@ -133,7 +133,7 @@
         </el-table-column>
         <el-table-column
           :label="$t('common.actions')"
-          width="250"
+          width="230"
           fixed="right"
         >
           <template #default="{ row }">

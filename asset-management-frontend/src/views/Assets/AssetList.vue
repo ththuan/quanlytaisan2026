@@ -407,14 +407,14 @@
           <el-table-column
             type="index"
             label="STT"
-            width="64"
+            width="56"
             align="center"
             class-name="app-index-cell"
           />
           <el-table-column
             prop="name"
             :label="$t('assets.assetName')"
-            min-width="300"
+            min-width="174"
           >
             <template #default="{ row }">
               <div class="asset-name-cell">
@@ -427,7 +427,7 @@
           </el-table-column>
           <el-table-column
             label="Đơn vị / Cơ sở"
-            min-width="220"
+            min-width="160"
           >
             <template #default="{ row }">
               <div class="asset-dept-cell">
@@ -438,7 +438,7 @@
           </el-table-column>
           <el-table-column
             label="SL / ĐVT"
-            width="110"
+            width="80"
             align="center"
           >
             <template #default="{ row }">
@@ -448,7 +448,7 @@
           <el-table-column
             prop="year_in_use"
             label="Năm SD"
-            width="100"
+            width="76"
             align="center"
             class-name="app-index-cell"
           >
@@ -459,7 +459,7 @@
           <el-table-column
             prop="purchase_price"
             label="Nguyên giá"
-            width="150"
+            width="110"
             align="right"
           >
             <template #default="{ row }">
@@ -469,7 +469,7 @@
           <el-table-column
             prop="current_value"
             label="Giá trị còn lại"
-            width="160"
+            width="110"
             align="right"
           >
             <template #default="{ row }">
@@ -479,7 +479,7 @@
           <el-table-column
             prop="status"
             :label="$t('common.status')"
-            width="160"
+            width="136"
           >
             <template #default="{ row }">
               <el-tag
@@ -493,7 +493,7 @@
           </el-table-column>
           <el-table-column
             label="Người sử dụng"
-            min-width="180"
+            min-width="124"
           >
             <template #default="{ row }">
               <div
@@ -713,17 +713,17 @@
               <el-table-column
                 prop="row"
                 label="Dòng"
-                width="60"
+                width="80"
               />
               <el-table-column
                 prop="assetCode"
                 label="Mã TS"
-                width="120"
+                width="150"
               />
               <el-table-column
                 prop="field"
                 label="Trường"
-                width="120"
+                width="140"
               />
               <el-table-column
                 prop="message"
@@ -2131,6 +2131,13 @@ const handleExportQRPDF = async () => {
 
 .asset-table :deep(.cell) {
   white-space: nowrap;
+}
+
+/* Cột văn bản dài xuống dòng theo từ thay vì bị cắt. */
+.asset-table :deep(.asset-name-cell),
+.asset-table :deep(.asset-dept-cell),
+.asset-table :deep(.assigned-user-cell) {
+  white-space: normal;
 }
 
 @media (max-width: 768px) {
