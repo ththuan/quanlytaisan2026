@@ -112,8 +112,8 @@ const routes: RouteRecordRaw[] = [
         name: 'Construction',
         component: () => import('@/views/Construction/ConstructionWorkList.vue'),
         meta: {
-          permission: 'maintenance.view',
-          legacyRoles: ['admin', 'director', 'department_head', 'staff'],
+          permission: 'construction.view',
+          legacyRoles: ['admin'],
           titleKey: 'menu.construction',
         },
       },

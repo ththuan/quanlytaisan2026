@@ -153,6 +153,7 @@
           >
             <template #default="{ row }">
               <el-button
+                v-if="canUpdate"
                 link
                 type="primary"
                 @click="openEdit(row)"
@@ -211,6 +212,7 @@
           </div>
           <div class="app-mobile-card__actions">
             <el-button
+              v-if="canUpdate"
               size="small"
               @click="openEdit(row)"
             >
@@ -298,10 +300,13 @@ const statusOptions: Array<{ value: ConstructionStatus; label: string }> = [
 ];
 
 const canCreate = computed(() =>
-  authStore.can('maintenance.create', ['admin', 'director', 'department_head', 'staff']),
+  authStore.can('construction.create', ['admin']),
+);
+const canUpdate = computed(() =>
+  authStore.can('construction.update', ['admin']),
 );
 const canDelete = computed(() =>
-  authStore.can('maintenance.delete', ['admin', 'director', 'department_head', 'staff']),
+  authStore.can('construction.delete', ['admin']),
 );
 const canFilterDepartments = computed(() => authStore.isAdmin || authStore.isDirector);
 
