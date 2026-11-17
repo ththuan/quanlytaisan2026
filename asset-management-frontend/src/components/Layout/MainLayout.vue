@@ -102,6 +102,14 @@
             </el-menu-item>
 
             <el-menu-item
+              v-if="authStore.can('maintenance.view', ['admin', 'director', 'department_head', 'staff'])"
+              index="/construction"
+            >
+              <el-icon><OfficeBuilding /></el-icon>
+              <span>{{ $t('menu.construction') }}</span>
+            </el-menu-item>
+
+            <el-menu-item
               v-if="authStore.can('procurement.view', ['admin'])"
               index="/procurements"
             >

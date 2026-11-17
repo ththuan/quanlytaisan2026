@@ -66,6 +66,7 @@ export default {
     maintenance: 'Mua sắm / Sửa chữa',
     purchaseRequests: 'Đề nghị mua sắm',
     repairTracking: 'Theo dõi sửa chữa',
+    construction: 'Xây dựng',
     procurements: 'Tăng/Giảm tài sản',
     transfers: 'Điều chuyển',
     stock: 'Kho vật tư',

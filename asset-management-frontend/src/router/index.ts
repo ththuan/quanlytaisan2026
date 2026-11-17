@@ -108,6 +108,16 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: '/construction',
+        name: 'Construction',
+        component: () => import('@/views/Construction/ConstructionWorkList.vue'),
+        meta: {
+          permission: 'maintenance.view',
+          legacyRoles: ['admin', 'director', 'department_head', 'staff'],
+          titleKey: 'menu.construction',
+        },
+      },
+      {
         path: '/maintenance',
         name: 'Maintenance',
         component: () => import('@/views/Maintenance/RepairRequestView.vue'),

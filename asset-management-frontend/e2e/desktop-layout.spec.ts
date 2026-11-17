@@ -195,6 +195,7 @@ const pages: Array<[string, string]> = [
   ['/reports', 'reports'],
   ['/loss-damage', 'loss-damage'],
   ['/maintenance', 'maintenance'],
+  ['/construction', 'construction'],
   ['/inventory', 'inventory'],
   ['/asset-categories', 'asset-categories'],
   ['/norms', 'norms'],
@@ -418,4 +419,45 @@ test('desktop: đợt kiểm kê không bẻ từ ở header Khớp/Thiếu', as
   const sttCell = page.locator('.el-table__body td.app-index-cell .cell').nth(9);
   await expect(sttCell).toHaveText('10');
   expect(await sttCell.evaluate((el) => getComputedStyle(el).whiteSpace)).toBe('nowrap');
+});
+
+test('desktop: tạo công trình xây dựng', async ({ page }) => {
+  await mock(page);
+  let created: any = null;
+
+  await page.route('**/api/construction-works*', (route) => {
+    if (route.request().method() === 'POST') {
+      created = route.request().postDataJSON();
+      return route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: { id: 1, code: 'XD-2026-001', ...created },
+        }),
+      });
+    }
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        data: [],
+        pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
+      }),
+    });
+  });
+
+  await page.goto('/construction');
+  await expect(page.getByRole('heading', { name: 'Xây dựng' })).toBeVisible();
+  await page.getByRole('button', { name: 'Tạo công trình' }).click();
+
+  const dialog = page.locator('.el-dialog').first();
+  await expect(dialog).toBeVisible();
+  await dialog.getByPlaceholder('VD: Lót gạch nền phòng A101').fill('Lót gạch nền phòng A101');
+  await dialog.getByPlaceholder('VD: Phòng A101, Tầng 1, Nhà A').fill('Phòng A101, Nhà A');
+  await dialog.getByRole('button', { name: 'Lưu' }).click();
+
+  await expect.poll(() => created?.name).toBe('Lót gạch nền phòng A101');
+  expect(created?.location).toBe('Phòng A101, Nhà A');
 });

@@ -150,26 +150,26 @@
           <el-table-column
             prop="code"
             label="Mã"
-            width="150"
+            width="110"
           />
           <el-table-column
             prop="name"
             label="Tên danh mục"
-            min-width="280"
+            min-width="240"
           />
           <el-table-column
             prop="category_group"
             label="Nhóm"
-            min-width="150"
+            min-width="130"
           />
           <el-table-column
             prop="unit"
             label="Đơn vị"
-            width="100"
+            width="80"
           />
           <el-table-column
             label="Khấu hao"
-            width="140"
+            width="120"
           >
             <template #default="{ row }">
               <el-tag
@@ -191,11 +191,11 @@
           <el-table-column
             label="Năm SD"
             prop="useful_life_years"
-            width="100"
+            width="80"
           />
           <el-table-column
             label="Trạng thái"
-            width="140"
+            width="120"
           >
             <template #default="{ row }">
               <el-tag
@@ -208,7 +208,7 @@
           </el-table-column>
           <el-table-column
             label="Thao tác"
-            width="110"
+            width="105"
             fixed="right"
           >
             <template #default="{ row }">

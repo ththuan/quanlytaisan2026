@@ -25,6 +25,7 @@ import EquipmentNorm from './EquipmentNorm';
 import NormWarning from './NormWarning';
 import AssetAssignment from './AssetAssignment';
 import PushSubscription from './PushSubscription';
+import ConstructionWork from './ConstructionWork';
 
 import StockItem from './StockItem';
 import StockReceipt from './StockReceipt';
@@ -65,6 +66,13 @@ UserPermission.belongsTo(User, { foreignKey: 'granted_by', as: 'grantedBy' });
 
 RecordLock.belongsTo(User, { foreignKey: 'locked_by', as: 'lockedBy' });
 User.hasMany(RecordLock, { foreignKey: 'locked_by', as: 'record_locks' });
+
+ConstructionWork.belongsTo(Asset, { foreignKey: 'asset_id', as: 'asset' });
+Asset.hasMany(ConstructionWork, { foreignKey: 'asset_id', as: 'construction_works' });
+ConstructionWork.belongsTo(Department, { foreignKey: 'department_id', as: 'department' });
+Department.hasMany(ConstructionWork, { foreignKey: 'department_id', as: 'construction_works' });
+ConstructionWork.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+ConstructionWork.belongsTo(User, { foreignKey: 'updated_by', as: 'updater' });
 
 Department.belongsTo(User, {
   foreignKey: 'manager_id',
@@ -590,6 +598,7 @@ export {
   NormWarning,
   AssetAssignment,
   PushSubscription,
+  ConstructionWork,
 };
 
 export default {
@@ -625,4 +634,5 @@ export default {
   NormWarning,
   AssetAssignment,
   PushSubscription,
+  ConstructionWork,
 };
