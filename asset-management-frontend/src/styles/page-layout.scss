@@ -618,6 +618,107 @@ html.app-overlay .page-header .header-right {
   }
 }
 
+/* Card bảng: bỏ nền sọc/hover và viền ngoài của Element, căn trái đồng nhất. */
+@media (max-width: 1367px) {
+  html.app-overlay .mobile-card-table .el-table::before,
+  html.app-overlay .mobile-card-table .el-table::after,
+  html.app-overlay .mobile-card-table .el-table--border::before,
+  html.app-overlay .mobile-card-table .el-table--border::after,
+  html.app-overlay .mobile-card-table .el-table__inner-wrapper::before,
+  html.app-overlay .mobile-card-table .el-table__inner-wrapper::after {
+    display: none !important;
+  }
+
+  html.app-overlay .mobile-card-table .el-table__border-left-patch,
+  html.app-overlay .mobile-card-table .el-table__border-bottom-patch {
+    display: none !important;
+  }
+
+  /* Bảng rỗng: bỏ header bị cắt, căn giữa dòng "No Data". */
+  html.app-overlay .el-main .el-table:has(.el-table__empty-block) .el-table__header-wrapper {
+    display: none;
+  }
+
+  html.app-overlay .el-main .el-table__empty-block {
+    width: 100% !important;
+    min-width: 0;
+  }
+
+  html.app-overlay .el-main .el-table__empty-text {
+    width: 100%;
+    text-align: center;
+  }
+
+  html.app-overlay .el-main .filter-row,
+  html.app-overlay .el-main .filters,
+  html.app-overlay .el-main .filter-section,
+  html.app-overlay .el-main .filter-section .el-row {
+    row-gap: 10px;
+  }
+
+  html.app-overlay .mobile-card-table .el-table__body tr.el-table__row > td.el-table__cell,
+  html.app-overlay .mobile-card-table .el-table__body tr.el-table__row:hover > td.el-table__cell,
+  html.app-overlay .mobile-card-table .el-table--striped .el-table__body tr.el-table__row--striped > td.el-table__cell {
+    background: transparent !important;
+  }
+
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell,
+  html.app-overlay .mobile-card-table .el-table__row > td.el-table__cell .cell {
+    text-align: left !important;
+  }
+}
+
+/* Nút đầu trang trên điện thoại: lưới 2 cột đều nhau, nút lẻ cuối chiếm cả hàng. */
+@media (max-width: 767px) {
+  html.app-overlay .page-header .header-right {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    justify-content: stretch;
+  }
+
+  html.app-overlay .page-header .header-right > * {
+    margin: 0 !important;
+    min-width: 0;
+  }
+
+  html.app-overlay .page-header .header-right .el-button {
+    width: 100%;
+    height: 40px;
+    margin: 0 !important;
+    justify-content: center;
+  }
+
+  html.app-overlay .page-header .header-right > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Bộ lọc trên tablet: lưới 3 cột thay vì xếp dọc từng ô. */
+@media (min-width: 768px) and (max-width: 1367px) {
+  html.app-overlay .el-main .filter-row {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px !important;
+    align-items: stretch;
+  }
+
+  html.app-overlay .el-main .filter-row .filter-item {
+    flex: none !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  html.app-overlay .el-main .filter-row .filter-item.search-input,
+  html.app-overlay .el-main .filter-row .filter-actions {
+    grid-column: 1 / -1;
+  }
+
+  html.app-overlay .el-main .filter-row .filter-actions {
+    justify-content: flex-end;
+  }
+}
+
 /* ============================================================
    MOBILE CARD LIST DÙNG CHUNG
    Danh sách mobile/tablet thay bảng ngang bằng card dọc.

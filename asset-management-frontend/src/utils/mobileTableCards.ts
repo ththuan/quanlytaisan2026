@@ -28,7 +28,7 @@ const isActionLabel = (label: string) => /(thao tác|chi tiết|hành động|ac
 const isStatusLabel = (label: string) => /(trạng thái|tiến độ|status)/i.test(label);
 const isTitleLabel = (label: string) => {
   if (!label) return false;
-  if (!/(tên|tiêu đề|nội dung|đợt kiểm kê|vật tư|máy móc|họ và tên|họ tên)/i.test(label)) return false;
+  if (!/(tên|tiêu đề|nội dung|đợt kiểm kê|vật tư|máy móc|họ và tên|họ tên|tài sản|thiết bị)/i.test(label)) return false;
   return !/(mã|loại|nhóm|đăng nhập|chức danh|người|trạng thái|tiến độ|ngày|thời gian)/i.test(label);
 };
 const isCodeLabel = (label: string) => /(mã|code)/i.test(label);

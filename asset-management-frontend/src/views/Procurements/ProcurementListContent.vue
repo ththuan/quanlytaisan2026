@@ -676,7 +676,8 @@ onMounted(() => {
   
   .summary-filters .el-select,
   .summary-filters .el-button {
-    width: 100%;
+    width: 100% !important;
+    margin-left: 0 !important;
   }
 }
 

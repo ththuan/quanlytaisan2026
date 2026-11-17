@@ -1175,6 +1175,15 @@ const toggleSidebar = () => {
 }
 
 @media (max-width: 1367px) {
+  .header-left .breadcrumb {
+    flex-shrink: 1;
+    overflow: hidden;
+  }
+
+  .header-right {
+    flex-shrink: 0;
+  }
+
   .mobile-app-title {
     display: inline-block;
     min-width: 0;
