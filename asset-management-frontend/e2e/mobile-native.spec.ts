@@ -289,3 +289,20 @@ test('tablet: tabbar nổi và form-sheet căn giữa', async ({ page }) => {
   expect(Math.round(dialogBox?.y ?? 0)).toBeGreaterThanOrEqual(72);
   expect(Math.round((dialogBox?.y ?? 0) + (dialogBox?.height ?? 0))).toBeLessThanOrEqual(768);
 });
+
+test('mobile: dropdown vai trò trong dialog người dùng hiển thị phía trên overlay', async ({ page }) => {
+  await mockAuthenticated(page);
+  await page.goto('/users');
+  await page.getByRole('button', { name: /Thêm người dùng/ }).click();
+
+  const dialog = page.locator('.el-dialog').first();
+  await expect(dialog).toBeVisible();
+
+  const roleSelect = dialog.locator('.el-select').first();
+  await roleSelect.click();
+
+  const options = page.locator('.el-select-dropdown:visible .el-select-dropdown__item');
+  await expect(options).toHaveCount(4);
+  await options.nth(1).click();
+  await expect(roleSelect).toContainText('Giám');
+});

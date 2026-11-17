@@ -443,6 +443,12 @@ html.app-overlay .el-overlay {
   z-index: 3000 !important;
 }
 
+html.app-overlay .el-select__popper.el-popper,
+html.app-overlay .el-dropdown__popper.el-popper,
+html.app-overlay .el-picker__popper.el-popper {
+  z-index: 3100 !important;
+}
+
 /* Element Plus khóa scroll body khi có modal; ẩn tabbar để modal/footer
    không bị tabbar đè hoặc chiếm vùng bấm. */
 html.app-overlay body.el-popup-parent--hidden .mobile-tabbar {
@@ -461,7 +467,7 @@ html.app-overlay body.el-popup-parent--hidden .mobile-tabbar {
     padding-bottom: 0;
     padding-left: 0;
     padding-right: 0;
-    overflow: visible;
+    overflow: hidden;
     box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
   }
 

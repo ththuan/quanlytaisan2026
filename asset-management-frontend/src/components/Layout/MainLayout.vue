@@ -1151,36 +1151,6 @@ const toggleSidebar = () => {
   transform: scale(0.9);
 }
 
-.mobile-tabbar__item--home {
-  justify-content: flex-end;
-  overflow: visible;
-  padding-top: 0;
-  padding-bottom: 6px;
-}
-
-.mobile-tabbar__item--home .el-icon,
-.mobile-tabbar__item--home.active .el-icon {
-  width: 50px;
-  height: 50px;
-  flex: 0 0 50px;
-  margin-top: -28px;
-  margin-bottom: 2px;
-  border: 3px solid #fff;
-  border-radius: 50%;
-  color: #fff;
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.32);
-}
-
-.mobile-tabbar__item--home.active .el-icon {
-  background: linear-gradient(135deg, #1d4ed8, #2563eb);
-  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.42);
-}
-
-.mobile-tabbar__item--home:active .el-icon {
-  transform: scale(0.94);
-}
-
 .has-mobile-tabbar .el-main {
   padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
 }

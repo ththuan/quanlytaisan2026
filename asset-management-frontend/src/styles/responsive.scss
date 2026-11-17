@@ -886,6 +886,10 @@ body {
 }
 
 /* El-Select dropdown - cần z-index cao hơn trên iOS */
+.el-select__popper.el-popper {
+  z-index: 9999 !important;
+}
+
 .el-select-dropdown {
   z-index: 9999 !important;
 }
