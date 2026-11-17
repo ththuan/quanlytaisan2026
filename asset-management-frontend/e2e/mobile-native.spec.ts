@@ -54,6 +54,26 @@ test('mobile: tabbar native, bottom sheet và drag-to-dismiss', async ({ page })
   await page.goto('/assets');
   await expect(page.locator('.mobile-tabbar')).toBeVisible();
 
+  const tabItems = page.locator('.mobile-tabbar__item');
+  await expect(tabItems).toHaveCount(5);
+  expect((await tabItems.allInnerTexts()).map((label) => label.trim())).toEqual([
+    'Điều chuyển',
+    'Tài sản',
+    'Trang chủ',
+    'Kiểm kê',
+    'Menu',
+  ]);
+
+  const tabbarBox = await page.locator('.mobile-tabbar').boundingBox();
+  const homeBox = await page.locator('.mobile-tabbar__item--home').boundingBox();
+  expect(tabbarBox).not.toBeNull();
+  expect(homeBox).not.toBeNull();
+  expect(
+    Math.abs(
+      (homeBox!.x + homeBox!.width / 2) - (tabbarBox!.x + tabbarBox!.width / 2),
+    ),
+  ).toBeLessThanOrEqual(2);
+
   const htmlClass = (await page.locator('html').getAttribute('class')) ?? '';
   expect(htmlClass).toContain('app-overlay');
 

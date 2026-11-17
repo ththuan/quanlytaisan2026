@@ -322,14 +322,15 @@
       aria-label="Điều hướng ứng dụng"
     >
       <button
+        v-if="authStore.can('transfers.view', ['admin', 'director', 'department_head', 'staff'])"
         type="button"
         class="mobile-tabbar__item"
-        :class="{ active: isTabActive('/') }"
-        :aria-current="isTabActive('/') ? 'page' : undefined"
-        @click="navigateTab('/')"
+        :class="{ active: isTabActive('/transfers') }"
+        :aria-current="isTabActive('/transfers') ? 'page' : undefined"
+        @click="navigateTab('/transfers')"
       >
-        <el-icon><House /></el-icon>
-        <span>Trang chủ</span>
+        <el-icon><Switch /></el-icon>
+        <span>Điều chuyển</span>
       </button>
       <button
         v-if="authStore.can('assets.view', ['admin', 'director', 'department_head', 'staff'])"
@@ -341,6 +342,16 @@
       >
         <el-icon><Box /></el-icon>
         <span>Tài sản</span>
+      </button>
+      <button
+        type="button"
+        class="mobile-tabbar__item mobile-tabbar__item--home"
+        :class="{ active: isTabActive('/') }"
+        :aria-current="isTabActive('/') ? 'page' : undefined"
+        @click="navigateTab('/')"
+      >
+        <el-icon><House /></el-icon>
+        <span>Trang chủ</span>
       </button>
       <button
         v-if="authStore.can('inventory.view', ['admin', 'director', 'department_head', 'staff'])"
@@ -356,7 +367,7 @@
       <button
         type="button"
         class="mobile-tabbar__item"
-        :class="{ active: !isHidden }"
+        :class="{ active: isMenuActive }"
         :aria-expanded="!isHidden"
         @click="toggleSidebar"
       >
@@ -439,7 +450,7 @@ const scrollMainToTop = (smooth = false) => {
   el.scrollTo({ top: 0, behavior: smooth ? 'smooth' : 'auto' });
 };
 
-const TAB_ROOT_PATHS = new Set(['/', '/assets', '/inventory']);
+const TAB_ROOT_PATHS = new Set(['/', '/transfers', '/assets', '/inventory']);
 
 const isTabRootPath = (path: string): boolean => TAB_ROOT_PATHS.has(path);
 
@@ -448,6 +459,14 @@ const isTabActive = (path: string): boolean => {
   if (path === '/') return current === '/';
   return current === path || current.startsWith(`${path}/`);
 };
+
+const isMenuActive = computed(() => {
+  const current = router.currentRoute.value.path;
+  if (current === '/') return false;
+  return !Array.from(TAB_ROOT_PATHS).some(
+    (path) => path !== '/' && (current === path || current.startsWith(`${path}/`)),
+  );
+});
 
 const navigateTab = (path: string) => {
   const current = router.currentRoute.value.path;
@@ -1130,6 +1149,36 @@ const toggleSidebar = () => {
 
 .mobile-tabbar__item:active .el-icon {
   transform: scale(0.9);
+}
+
+.mobile-tabbar__item--home {
+  justify-content: flex-end;
+  overflow: visible;
+  padding-top: 0;
+  padding-bottom: 6px;
+}
+
+.mobile-tabbar__item--home .el-icon,
+.mobile-tabbar__item--home.active .el-icon {
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+  margin-top: -28px;
+  margin-bottom: 2px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.32);
+}
+
+.mobile-tabbar__item--home.active .el-icon {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.42);
+}
+
+.mobile-tabbar__item--home:active .el-icon {
+  transform: scale(0.94);
 }
 
 .has-mobile-tabbar .el-main {
