@@ -102,9 +102,9 @@
             </el-card>
           </el-col>
 
-          <!-- 3. Sửa chữa (admin) -->
+          <!-- 3. Thiết bị (admin hoặc được cấp quyền) -->
           <el-col
-            v-if="FEATURES.repairModule && authStore.isAdmin"
+            v-if="FEATURES.repairModule && authStore.can('maintenance.view', ['admin'])"
             :xs="12"
             :sm="8"
             :md="6"
@@ -130,14 +130,49 @@
                     <AnimatedNumber :value="stats.repairTotal" />
                   </div>
                   <div class="stat-label">
-                    Sửa chữa
+                    Thiết bị
                   </div>
                 </template>
               </div>
             </el-card>
           </el-col>
 
-          <!-- 4. Điều chuyển -->
+          <!-- 4. Xây dựng (admin hoặc được cấp quyền) -->
+          <el-col
+            v-if="authStore.can('construction.view', ['admin'])"
+            :xs="12"
+            :sm="8"
+            :md="6"
+          >
+            <el-card
+              class="stat-card stat-clickable"
+              shadow="hover"
+              @click="$router.push('/construction')"
+            >
+              <div class="stat-icon maintenance-icon">
+                <el-icon size="24">
+                  <OfficeBuilding />
+                </el-icon>
+              </div>
+              <div class="stat-content">
+                <el-skeleton
+                  v-if="loading"
+                  :rows="1"
+                  animated
+                />
+                <template v-else>
+                  <div class="stat-value text-truncate">
+                    <AnimatedNumber :value="constructionTotal" />
+                  </div>
+                  <div class="stat-label">
+                    Xây dựng
+                  </div>
+                </template>
+              </div>
+            </el-card>
+          </el-col>
+
+          <!-- 5. Điều chuyển -->
           <el-col
             :xs="12"
             :sm="8"
@@ -401,12 +436,13 @@
 import { ref, reactive, onMounted, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { Box, Goods, ShoppingCart, Setting, Sort, List, Delete, Warning, Document } from '@element-plus/icons-vue';
+import { Box, Goods, ShoppingCart, Setting, Sort, List, Delete, Warning, Document, OfficeBuilding } from '@element-plus/icons-vue';
 import VChart from 'vue-echarts';
 import AnimatedNumber from '@/components/animate/AnimatedNumber.vue';
 import * as dashboardService from '@/services/dashboard.service';
 import { inventoryService } from '@/services/inventory.service';
 import { assetService } from '@/services/asset.service';
+import constructionWorkService from '@/services/constructionWork.service';
 import { useAuthStore } from '@/stores/auth.store';
 import { FEATURES } from '@/constants/features';
 
@@ -441,6 +477,10 @@ const stats = reactive({
 
 const inventoryPending = ref(0);
 const disposalPending = ref(0);
+const constructionTotal = ref(0);
+const canViewConstruction = computed(() =>
+  authStore.can('construction.view', ['admin']),
+);
 
 const assetsByStatus = ref<{ status: string; count: number }[]>([]);
 const assetsByCategory = ref<{ category: string; code: string; count: number; filter: Record<string, any> }[]>([]);
@@ -480,7 +520,7 @@ watch(() => authStore.user?.id, () => {
 const loadDashboardData = async () => {
   loading.value = true;
   try {
-    const [overviewRes, statusRes, deptRes, stockRes, catRes, maintRes, inventoryRes, hierarchyRes, lossDamageRes] = await Promise.all([
+    const [overviewRes, statusRes, deptRes, stockRes, catRes, maintRes, inventoryRes, hierarchyRes, lossDamageRes, constructionRes] = await Promise.all([
       dashboardService.getOverviewStats({}),
       dashboardService.getAssetStatusStats({}),
       dashboardService.getDepartmentStats(),
@@ -490,6 +530,9 @@ const loadDashboardData = async () => {
       inventoryService.getPendingReportsCount(),
       dashboardService.getHierarchyStats({}),
       assetService.getLossDamage({}).catch(() => ({ data: [] } as any)),
+      canViewConstruction.value
+        ? constructionWorkService.list({ page: 1, limit: 1 }).catch(() => null)
+        : Promise.resolve(null),
     ]);
 
     // axios interceptor in `src/services/api.ts` trả về `response.data`
@@ -507,6 +550,7 @@ const loadDashboardData = async () => {
     inventoryPending.value = pendingInv;
     assetsHierarchy.value = hierarchy;
     disposalPending.value = Number(overview.disposal_pending || 0);
+    constructionTotal.value = Number((constructionRes as any)?.pagination?.total || 0);
 
     // Fix swapped or inaccurate stats from API
     stats.assetsTotal = Number(overview.assets_total || 0);
