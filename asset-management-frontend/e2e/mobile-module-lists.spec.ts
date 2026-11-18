@@ -110,6 +110,58 @@ async function mockModuleData(page: Page): Promise<void> {
       }),
     }),
   );
+  await page.route('**/api/maintenance*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        data: [
+          {
+            id: 41,
+            asset_id: 101,
+            asset: {
+              id: 101,
+              asset_code: 'TS-001',
+              name: 'Máy tính xách tay Dell',
+              purchase_price: 20000000,
+            },
+            department: { id: 1, name: 'Phòng Kế toán' },
+            status: 'pending',
+            estimated_cost: 2000000,
+            created_at: '2026-11-14T08:00:00.000Z',
+          },
+        ],
+        pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      }),
+    }),
+  );
+
+  await page.route('**/api/construction-works*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        success: true,
+        data: [
+          {
+            id: 51,
+            code: 'XD-2026-001',
+            name: 'Lát gạch nền phòng A101',
+            location: 'Phòng A101',
+            department: { id: 1, name: 'Phòng Kế toán' },
+            start_date: '2026-11-10',
+            end_date: '2026-11-20',
+            estimated_cost: 15000000,
+            actual_cost: 14500000,
+            status: 'in_progress',
+          },
+        ],
+        pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      }),
+    }),
+  );
+
   await page.route('**/api/procurements/summary/yearly*', (route) =>
     route.fulfill({
       status: 200,
@@ -231,6 +283,31 @@ test('mobile: thanh lý, tăng tài sản, kho vật tư, điều chuyển dùng
   await expect(page.locator('.app-mobile-card').first()).toBeVisible();
   await expect(page.locator('.app-mobile-card').first()).toContainText('Bút bi xanh');
   await expect(page.locator('.app-desktop-table').first()).toBeHidden();
+  await expectNoHorizontalScroll(page);
+});
+
+test('mobile: thiết bị và xây dựng dùng card list, không tràn ngang', async ({ page }) => {
+  await mockModuleData(page);
+
+  await page.goto('/maintenance');
+  await expect(page.locator('.app-mobile-card').first()).toBeVisible();
+  await expect(page.locator('.app-mobile-card').first()).toContainText('Máy tính xách tay Dell');
+  await expect(page.locator('.app-mobile-card').first()).toContainText('Phòng Kế toán');
+  await expect(page.locator('.app-desktop-table').first()).toBeHidden();
+  await expectNoHorizontalScroll(page);
+
+  await page.goto('/construction');
+  await expect(page.locator('.app-mobile-card').first()).toBeVisible();
+  await expect(page.locator('.app-mobile-card').first()).toContainText('Lát gạch nền phòng A101');
+  await expect(page.locator('.app-desktop-table').first()).toBeHidden();
+  await expectNoHorizontalScroll(page);
+
+  await page.getByRole('button', { name: 'Tạo công trình' }).click();
+  const dialog = page.locator('.el-dialog:visible').first();
+  await expect(dialog).toBeVisible();
+  const dialogBox = await dialog.boundingBox();
+  expect(dialogBox).not.toBeNull();
+  expect(Math.round(dialogBox?.width ?? 0)).toBeLessThanOrEqual(390);
   await expectNoHorizontalScroll(page);
 });
 

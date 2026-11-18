@@ -65,7 +65,7 @@
     </div>
 
     <!-- Table -->
-    <div class="responsive-table">
+    <div class="responsive-table app-desktop-table">
       <el-table
         v-loading="loading"
         :data="requests"
@@ -128,10 +128,10 @@
         >
           <template #default="{ row }">
             <span
-              v-if="row.asset?.purchase_price && row.estimated_cost" 
-              :style="{ color: (Number(row.estimated_cost) / Number(row.asset.purchase_price) * 100) > 30 ? '#f56c6c' : '#67c23a' }"
+              v-if="getCostRatio(row) !== null"
+              :style="{ color: getCostRatioColor(row) }"
             >
-              {{ ((Number(row.estimated_cost) / Number(row.asset.purchase_price)) * 100).toFixed(1) }}%
+              {{ getCostRatioText(row) }}
             </span>
             <span v-else>-</span>
           </template>
@@ -240,6 +240,154 @@
           </template>
         </el-table-column>
       </el-table>
+    </div>
+
+    <div
+      v-loading="loading"
+      class="app-mobile-list maintenance-mobile-list"
+    >
+      <article
+        v-for="row in requests"
+        :key="row.id"
+        class="app-mobile-card"
+      >
+        <div class="app-mobile-card__head">
+          <div class="app-mobile-card__heading">
+            <span class="app-mobile-card__title">{{ row.asset?.name || 'Không xác định' }}</span>
+            <span class="app-mobile-card__subtitle">
+              {{ row.asset?.asset_code || '-' }} · {{ row.department?.name || '-' }}
+            </span>
+          </div>
+          <el-tag
+            :type="getStatusType(row.status)"
+            size="small"
+            class="app-mobile-card__status"
+          >
+            {{ getStatusText(row.status) }}
+          </el-tag>
+        </div>
+        <el-tag
+          v-if="row.source_inventory_report_id"
+          size="small"
+          type="info"
+          class="maintenance-mobile-source"
+        >
+          Từ kiểm kê
+        </el-tag>
+        <div class="app-mobile-card__grid">
+          <div class="app-mobile-card__field">
+            <span class="app-mobile-card__field-label">Nguyên giá</span>
+            <span class="app-mobile-card__field-value">
+              {{ row.asset?.purchase_price ? formatCurrency(Number(row.asset.purchase_price)) : '-' }}
+            </span>
+          </div>
+          <div class="app-mobile-card__field">
+            <span class="app-mobile-card__field-label">Chi phí dự kiến</span>
+            <span class="app-mobile-card__field-value app-mobile-card__field-value--strong">
+              {{ row.estimated_cost ? formatCurrency(Number(row.estimated_cost)) : '-' }}
+            </span>
+          </div>
+          <div class="app-mobile-card__field">
+            <span class="app-mobile-card__field-label">Tỷ lệ / nguyên giá</span>
+            <span
+              class="app-mobile-card__field-value"
+              :style="{ color: getCostRatioColor(row) }"
+            >
+              {{ getCostRatioText(row) }}
+            </span>
+          </div>
+          <div class="app-mobile-card__field">
+            <span class="app-mobile-card__field-label">Đơn vị</span>
+            <span class="app-mobile-card__field-value">{{ row.department?.name || '-' }}</span>
+          </div>
+        </div>
+        <div class="app-mobile-card__actions">
+          <el-button
+            size="small"
+            @click="handleView(row)"
+          >
+            {{ $t('common.view') }}
+          </el-button>
+          <el-dropdown
+            v-if="hasRowActions(row)"
+            trigger="click"
+            placement="top-end"
+            @command="(command: MaintenanceRowCommand) => handleRowCommand(command, row)"
+          >
+            <el-button
+              size="small"
+              :icon="MoreFilled"
+            >
+              Thao tác
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item
+                  v-if="authStore.isAdmin && row.asset?.status === 'pending_disposal'"
+                  disabled
+                >
+                  Đã chuyển thanh lý
+                </el-dropdown-item>
+                <el-dropdown-item
+                  v-if="canEdit(row)"
+                  command="edit"
+                >
+                  {{ $t('common.edit') }}
+                </el-dropdown-item>
+                <el-dropdown-item
+                  v-if="canDelete(row)"
+                  command="delete"
+                >
+                  {{ $t('common.delete') }}
+                </el-dropdown-item>
+                <el-dropdown-item
+                  v-if="canSubmitRow(row)"
+                  command="submit"
+                >
+                  Gửi phê duyệt
+                </el-dropdown-item>
+                <el-dropdown-item
+                  v-if="canApproveAtCurrentLevel(row)"
+                  command="approve"
+                >
+                  {{ getApproveButtonText(row) }}
+                </el-dropdown-item>
+                <el-dropdown-item
+                  v-if="canRejectRepair(row)"
+                  command="reject"
+                >
+                  Từ chối sửa chữa
+                </el-dropdown-item>
+                <el-dropdown-item
+                  v-if="canCompleteRepair(row)"
+                  command="complete"
+                >
+                  Hoàn thành sửa chữa
+                </el-dropdown-item>
+                <el-dropdown-item
+                  v-if="canTransferDisposal(row)"
+                  command="disposal"
+                  divided
+                  :disabled="toDisposalLoading"
+                >
+                  Chuyển sang Thanh lý/Tiêu hủy
+                </el-dropdown-item>
+                <el-dropdown-item
+                  v-if="authStore.isAdmin && row.linked_disposal_case_id"
+                  command="view-disposal"
+                >
+                  Xem hồ sơ Thanh lý/Tiêu hủy
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
+      </article>
+      <el-empty
+        v-if="!loading && requests.length === 0"
+        description="Chưa có yêu cầu sửa chữa nào"
+        :image-size="80"
+      />
     </div>
 
     <!-- Pagination -->
@@ -895,6 +1043,19 @@ const formatCurrency = (value: number) => {
   if (!value) return '-';
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
 };
+
+const getCostRatio = (row: any): number | null => {
+  if (!row.asset?.purchase_price || !row.estimated_cost) return null;
+  return (Number(row.estimated_cost) / Number(row.asset.purchase_price)) * 100;
+};
+
+const getCostRatioText = (row: any): string => {
+  const ratio = getCostRatio(row);
+  return ratio === null ? '-' : `${ratio.toFixed(1)}%`;
+};
+
+const getCostRatioColor = (row: any): string =>
+  (getCostRatio(row) ?? 0) > 30 ? '#f56c6c' : '#67c23a';
 </script>
 
 <style scoped>
@@ -946,6 +1107,14 @@ const formatCurrency = (value: number) => {
 .more-actions-button {
   width: 32px;
   padding: 0;
+}
+
+.maintenance-mobile-source {
+  align-self: flex-start;
+}
+
+.maintenance-mobile-list .app-mobile-card__actions {
+  align-items: center;
 }
 
 @media (max-width: 768px) {
